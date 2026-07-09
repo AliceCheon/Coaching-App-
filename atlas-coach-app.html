@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <title>Atlas</title>
+  <title>bitch, you better be coaching</title>
   <style>
     :root {
       color-scheme: dark;
@@ -221,6 +221,7 @@
       border: 1px solid rgba(255,255,255,.08);
       overflow: hidden;
       position: relative;
+      isolation: isolate;
       display: grid;
       grid-template-rows: auto auto 1fr;
     }
@@ -341,6 +342,8 @@
       min-height: 0;
       overflow: auto;
       padding: 18px 28px 32px;
+      position: relative;
+      z-index: 1;
       scrollbar-width: thin;
       scrollbar-color: rgba(255,111,203,.34) transparent;
     }
@@ -366,6 +369,10 @@
       align-items: center;
       box-shadow: 0 -12px 40px rgba(0,0,0,.32);
       backdrop-filter: blur(10px);
+      z-index: 80;
+      pointer-events: auto;
+      touch-action: manipulation;
+      transform: translateZ(0);
     }
 
     .nav-button {
@@ -378,6 +385,9 @@
       font-size: .62rem;
       text-transform: uppercase;
       font-weight: 800;
+      position: relative;
+      z-index: 2;
+      touch-action: manipulation;
     }
 
     .nav-button svg, .rail-dot svg {
@@ -999,6 +1009,45 @@
       font-size: .78rem;
     }
 
+    .signal-note {
+      margin-top: 12px;
+      border: 1px solid rgba(216,164,255,.18);
+      border-radius: 14px;
+      background: rgba(216,164,255,.07);
+      padding: 11px;
+      color: var(--muted);
+      font-size: .78rem;
+      line-height: 1.45;
+    }
+
+    .signal-note strong {
+      color: var(--text);
+    }
+
+    .signal-legend {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .signal-legend-item {
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: rgba(255,255,255,.035);
+      padding: 9px;
+      color: var(--muted);
+      font-size: .72rem;
+      line-height: 1.35;
+    }
+
+    .signal-legend-item strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 3px;
+      font-size: .74rem;
+    }
+
     .volume-grid {
       display: grid;
       gap: 10px;
@@ -1584,6 +1633,209 @@
       line-height: 1.2;
     }
 
+    .builder-v24-shell {
+      border: 1px solid rgba(216,164,255,.24);
+      border-radius: 14px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top right, rgba(216,164,255,.12), transparent 34%),
+        rgba(255,255,255,.035);
+    }
+
+    .builder-v24-head {
+      display: grid;
+      grid-template-columns: 1.1fr .7fr .9fr .8fr 1fr;
+      gap: 10px;
+      padding: 12px;
+      background: linear-gradient(135deg, rgba(216,164,255,.22), rgba(255,111,203,.12));
+      border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+
+    .builder-v24-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+      background: rgba(216,164,255,.07);
+    }
+
+    .builder-v24-toolbar span {
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 800;
+    }
+
+    .builder-v24-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .mini-button {
+      min-height: 34px;
+      border-radius: 8px;
+      padding: 0 10px;
+      background: rgba(255,255,255,.075);
+      border: 1px solid rgba(255,255,255,.14);
+      color: var(--text);
+      font-size: .74rem;
+      font-weight: 850;
+    }
+
+    .builder-v24-scroll {
+      overflow: auto;
+    }
+
+    .builder-v24-table {
+      width: 100%;
+      min-width: 1280px;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .builder-v24-table th,
+    .builder-v24-table td {
+      border-bottom: 1px solid rgba(255,255,255,.075);
+      border-right: 1px solid rgba(255,255,255,.045);
+      padding: 8px 7px;
+      text-align: left;
+      vertical-align: top;
+      font-size: .72rem;
+    }
+
+    .builder-v24-table th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: rgba(25,18,38,.98);
+      color: #ecd8ff;
+      text-transform: uppercase;
+      font-size: .62rem;
+      font-weight: 950;
+    }
+
+    .builder-v24-table select,
+    .builder-v24-table input,
+    .builder-v24-table textarea,
+    .builder-v24-head select,
+    .builder-v24-head input {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid rgba(216,164,255,.18);
+      background: rgba(4,4,12,.52);
+      color: var(--text);
+      padding: 8px;
+      font-size: .76rem;
+    }
+
+    .builder-v24-table textarea {
+      min-height: 58px;
+      resize: vertical;
+    }
+
+    .builder-v24-table select option,
+    .builder-v24-head select option {
+      background: #241936;
+      color: #fff8ff;
+    }
+
+    .builder-v24-table .col-group { width: 126px; }
+    .builder-v24-table .col-exercise { width: 250px; }
+    .builder-v24-table .col-notes { width: 292px; }
+    .builder-v24-table .col-som { width: 142px; }
+    .builder-v24-table .col-small { width: 68px; }
+    .builder-v24-table .col-week { width: 68px; }
+
+    .builder-row-tools {
+      display: grid;
+      gap: 6px;
+    }
+
+    .builder-row-tools .micro-copy {
+      font-size: .66rem;
+    }
+
+    .builder-stimulus-flags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 7px;
+    }
+
+    .builder-stimulus-flags span {
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      padding: 4px 6px;
+      color: #eedcff;
+      background: rgba(255,255,255,.055);
+      font-size: .62rem;
+      font-weight: 850;
+    }
+
+    .builder-v24-live {
+      display: grid;
+      grid-template-columns: minmax(260px, .9fr) minmax(320px, 1.1fr);
+      gap: 12px;
+      padding: 12px;
+      border-top: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.025);
+    }
+
+    .builder-v24-feedback,
+    .builder-v24-volume {
+      border: 1px solid rgba(216,164,255,.16);
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+      padding: 12px;
+    }
+
+    .builder-v24-volume-rows {
+      display: grid;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .builder-v24-volume-row {
+      display: grid;
+      grid-template-columns: 112px 1fr 46px;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: .72rem;
+    }
+
+    .builder-v24-volume-bar {
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.09);
+      overflow: hidden;
+    }
+
+    .builder-v24-volume-bar span {
+      display: block;
+      height: 100%;
+      width: var(--w, 0%);
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), var(--gold-2));
+    }
+
+    .builder-add-row td {
+      background: rgba(216,164,255,.04);
+      border-bottom-style: dashed;
+    }
+
+    .builder-add-row-button {
+      width: 100%;
+      min-height: 34px;
+      border-radius: 8px;
+      border: 1px dashed rgba(216,164,255,.42);
+      background: rgba(216,164,255,.08);
+      color: #f1e2ff;
+      font-weight: 900;
+    }
+
     .coach-create-grid {
       overflow: auto;
       border: 1px solid var(--line-soft);
@@ -2097,6 +2349,7 @@
       }
 
       .bottom-nav {
+        position: fixed;
         display: grid;
         left: 18px;
         right: 18px;
@@ -2108,6 +2361,8 @@
         grid-auto-rows: 1fr;
         padding: 6px;
         border-radius: 22px;
+        z-index: 999;
+        pointer-events: auto;
       }
 
       .bottom-nav .coach-nav {
@@ -2115,7 +2370,7 @@
       }
 
       .screen {
-        padding-bottom: calc(96px + env(safe-area-inset-bottom));
+        padding-bottom: calc(118px + env(safe-area-inset-bottom));
       }
     }
 
@@ -2126,6 +2381,7 @@
       }
 
       .bottom-nav {
+        position: fixed;
         display: grid;
         left: 10px;
         right: 10px;
@@ -2137,6 +2393,7 @@
         grid-auto-rows: 1fr;
         border-radius: 20px;
         padding: 5px;
+        z-index: 999;
       }
 
       .bottom-nav .coach-nav {
@@ -2152,10 +2409,14 @@
       .screen {
         padding-left: 16px;
         padding-right: 16px;
-        padding-bottom: calc(86px + env(safe-area-inset-bottom));
+        padding-bottom: calc(112px + env(safe-area-inset-bottom));
       }
 
       .form-grid, .grid-2, .target-grid, .set-log-grid, .coach-grid, .coach-layout-grid, .coach-workbench, .feedback-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .signal-legend {
         grid-template-columns: 1fr;
       }
 
@@ -2253,7 +2514,7 @@
       </button>
     </aside>
 
-    <section class="phone-shell" aria-label="Atlas">
+    <section class="phone-shell" aria-label="bitch, you better be coaching">
       <div class="phone">
         <div class="phone-status">
           <span>9:41</span>
@@ -2369,6 +2630,923 @@
     const ANNUAL_PHASES = [{"phase":"1.Volume","objective":"Ipertrofia e Basi","scheme":"3x6 -\u003e 6x6 (o 5x8)","load":"Carico iniziale basato su 10 RM","duration":"6 - 8 Settimane","current":true},{"phase":"2.Intensificazione","objective":"Forza Submassimale","scheme":"4x6 Costante","load":"Incremento dei kg ogni settimana","duration":"6 - 8/12 Settimane","current":false},{"phase":"3.IntensitÃ ","objective":"Forza Massima","scheme":"8 - X - X (a scalare)","load":"Massimo sforzo (RPE molto alto)","duration":"3 - 4 Settimane (Picco)","current":false},{"phase":"4. Stabilizzazione","objective":"Consolidamento","scheme":"2 - 10/x","load":"Controllo tecnico e tenuta","duration":"2 - 3 Settimane","current":false},{"phase":"5. Restart Tecnico","objective":"Scarico e Reset","scheme":"3x8 Leggero","load":"Pulizia dei difetti esecutivi","duration":"1 - 2 Settimane (Reset)","current":false}];
 
     const VOLUME_HISTORY = [{"title":"Volume B program 1","source":"Programmazione annuale","rows":[{"muscle":"Glutei","weeks":[0,28,28,19,30,30,19,10],"total":164,"average":20.5},{"muscle":"Quadricipiti","weeks":[6,6,6,4,6,6,6,4],"total":44,"average":5.5},{"muscle":"Femorali","weeks":[6,6,6,4,6,6,5,3],"total":42,"average":5.25},{"muscle":"Spalle","weeks":[12,12,13,8,14,15,10,6],"total":90,"average":11.25},{"muscle":"Bicipiti","weeks":[4,4,4,3,4,4,4,3],"total":30,"average":3.75},{"muscle":"Tricipiti","weeks":[12,12,12,9,12,12,12,9],"total":90,"average":11.25},{"muscle":"Dorsali","weeks":[7,11,11,9,11,11,10,4],"total":74,"average":9.25},{"muscle":"Centro schiena","weeks":[6,6,6,4,8,8,4,2],"total":44,"average":5.5},{"muscle":"Polpacci","weeks":[4,4,4,4,4,4,4,4],"total":32,"average":4},{"muscle":"Petto","weeks":[0,0,0,0,0,0,0,0],"total":0,"average":0}]},{"title":"Volume B program 2","source":"Programmazione annuale","rows":[{"muscle":"Glutei","weeks":[21,24,26,13,26,23,14,15],"total":162,"average":20.25},{"muscle":"Quadricipiti","weeks":[6,6,6,4,6,6,6,4],"total":44,"average":5.5},{"muscle":"Femorali","weeks":[7,6,5,4,6,6,5,3],"total":42,"average":5.25},{"muscle":"Spalle","weeks":[12,13,14,7,14,14,9,6],"total":89,"average":11.12},{"muscle":"Bicipiti","weeks":[8,8,8,6,8,8,8,6],"total":60,"average":7.5},{"muscle":"Tricipiti","weeks":[8,8,8,6,8,8,8,6],"total":60,"average":7.5},{"muscle":"Dorsali","weeks":[12,11,10,4,11,11,10,4],"total":73,"average":9.12},{"muscle":"Centro schiena","weeks":[6,6,6,4,8,8,4,2],"total":44,"average":5.5},{"muscle":"Polpacci","weeks":[4,4,4,4,4,4,4,4],"total":32,"average":4},{"muscle":"Petto","weeks":[0,0,0,0,0,0,0,0],"total":0,"average":0}]},{"title":"Volume B program 3","source":"Programmazione annuale","rows":[{"muscle":"Glutei","weeks":[20,21,24,15,24,20,15,10],"total":149,"average":18.62},{"muscle":"Quadricipiti","weeks":[6,6,6,6,6,6,6,4],"total":46,"average":5.75},{"muscle":"Femorali","weeks":[8,8,8,7,8,8,7,4],"total":58,"average":7.25},{"muscle":"Spalle","weeks":[12,12,13,13,13,14,10,6],"total":93,"average":11.62},{"muscle":"Bicipiti","weeks":[4,4,4,4,4,4,4,4],"total":32,"average":4},{"muscle":"Tricipiti","weeks":[10,11,12,10,12,11,10,7],"total":83,"average":10.38},{"muscle":"Dorsali","weeks":[12,12,11,6,11,11,10,4],"total":77,"average":9.62},{"muscle":"Centro schiena","weeks":[6,6,6,5,8,8,4,2],"total":45,"average":5.62},{"muscle":"Polpacci","weeks":[4,4,4,4,4,4,4,4],"total":32,"average":4},{"muscle":"Petto","weeks":[0,0,0,0,0,0,0,0],"total":0,"average":0}]},{"title":"Volume Intensificazione","source":"Programmazione annuale","rows":[{"muscle":"Glutei","weeks":[19,19,20,18,19,20,20,15],"total":150,"average":18.75},{"muscle":"Quadricipiti","weeks":[19,19,19,17,19,19,19,13],"total":144,"average":18},{"muscle":"Femorali","weeks":[15,15,15,13,15,15,15,10],"total":113,"average":14.12},{"muscle":"Spalle","weeks":[22,22,22,21,22,22,22,15],"total":168,"average":21},{"muscle":"Bicipiti","weeks":[6,6,6,6,6,6,6,6],"total":48,"average":6},{"muscle":"Tricipiti","weeks":[5,5,5,5,5,5,5,5],"total":40,"average":5},{"muscle":"Dorsali","weeks":[12,12,13,10,14,14,14,6],"total":95,"average":11.88},{"muscle":"Centro schiena","weeks":[5,5,5,5,6,6,6,4],"total":42,"average":5.25},{"muscle":"Polpacci","weeks":[6,6,6,4,5,6,6,6],"total":45,"average":5.62},{"muscle":"Petto","weeks":[0,0,0,0,0,0,0,0],"total":0,"average":0},{"muscle":"Cardio","weeks":[2,2,2,2,2,2,2,2],"total":16,"average":2}]},{"title":"Volume Intensita","source":"calcolato dalla scheda Intensita","rows":[{"muscle":"Bicipiti","weeks":[3,3,3,2,3,3,3,2],"total":22,"average":2.75},{"muscle":"Cardio","weeks":[2,2,2,2,2,2,2,2],"total":16,"average":2},{"muscle":"Femorali","weeks":[11,12,13,8,13,12,12,9],"total":90,"average":11.25},{"muscle":"Glutei","weeks":[10,12,11,8,12,11,12,7],"total":83,"average":10.38},{"muscle":"Petto","weeks":[3,3,3,1,3,3,3,2],"total":21,"average":2.62},{"muscle":"Polpacci","weeks":[1,1,1,1,1,1,1,1],"total":8,"average":1},{"muscle":"Quadricipiti","weeks":[14,14,14,10,13,13,13,8],"total":99,"average":12.38},{"muscle":"Spalle","weeks":[21,21,22,14,22,21,21,13],"total":155,"average":19.38},{"muscle":"Tricipiti","weeks":[3,3,3,2,3,3,3,3],"total":23,"average":2.88}]}];
+    const COACH_EXERCISE_LIBRARY = {
+    "Spalle":  [
+                   {
+                       "name":  "Push Press Ktb",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Arnold Press",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Croci inverse manubri",
+                       "som":  "Spalle",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Face Pull",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Alzate laterali",
+                       "som":  "Spalle",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Y raises cavo alto",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Esercizio custom",
+                       "som":  "Spalle",
+                       "stimulus":  "da definire"
+                   },
+                   {
+                       "name":  "Face pull reverse pec",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Alzate deltoidi posteriori",
+                       "som":  "Spalle",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Lento avanti machine",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Alzate laterali + alzate frontali panca 70°",
+                       "som":  "Spalle",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Military al multypower panca70°",
+                       "som":  "Spalle",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Lento avanti manubri",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Alzate laterali Seduta",
+                       "som":  "Spalle",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Alzata laterale su panca inclinata 30°",
+                       "som":  "Spalle",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Alzate laterali cavo basso cavigliera polso",
+                       "som":  "Spalle",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Military press",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Alzate laterali macchinario",
+                       "som":  "Spalle",
+                       "stimulus":  "accorciamento"
+                   }
+               ],
+    "Petto":  [
+                  {
+                      "name":  "Cross over ai cavi",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Dips inclinato in avanti",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Croci manubri",
+                      "som":  "Petto",
+                      "stimulus":  "allungamento"
+                  },
+                  {
+                      "name":  "Croci ai cavi",
+                      "som":  "Petto",
+                      "stimulus":  "allungamento"
+                  },
+                  {
+                      "name":  "Piegamenti sulle braccia",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Esercizio custom",
+                      "som":  "Petto",
+                      "stimulus":  "da definire"
+                  },
+                  {
+                      "name":  "Squez Press",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Push Up",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Floor press bilanciere",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Floor press manubri",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Panca piana",
+                      "som":  "Petto",
+                      "stimulus":  "allungamento"
+                  },
+                  {
+                      "name":  "Panca inclinata",
+                      "som":  "Petto",
+                      "stimulus":  "allungamento"
+                  },
+                  {
+                      "name":  "Chest press",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Croci manubri su panca inclinata",
+                      "som":  "Petto",
+                      "stimulus":  "allungamento"
+                  },
+                  {
+                      "name":  "Distensioni manubri su piana",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Distensione manubri su inclinata",
+                      "som":  "Petto",
+                      "stimulus":  "allungamento"
+                  }
+              ],
+    "Quadricipiti":  [
+                         {
+                             "name":  "Sissy squat in piedi",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Goblet squat",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Leg Extension",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "accorciamento"
+                         },
+                         {
+                             "name":  "Leg extension singola",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "accorciamento"
+                         },
+                         {
+                             "name":  "Pendulum",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Esercizio custom",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "da definire"
+                         },
+                         {
+                             "name":  "Front squat machine",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Pressa mono gamba",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Squat Bulgaro focus quads",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Leg press steso",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "stimolo da definire"
+                         },
+                         {
+                             "name":  "Pressa 45°",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Squat",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Adductor",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "accorciamento"
+                         },
+                         {
+                             "name":  "Affondi forntali manubri",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "stimolo da definire"
+                         },
+                         {
+                             "name":  "Affondi al multypower",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "stimolo da definire"
+                         },
+                         {
+                             "name":  "Hack Squat con elastico",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Squat al multypower",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         }
+                     ],
+    "Femorali":  [
+                     {
+                         "name":  "Ghd",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Hamstring Destroyers",
+                         "som":  "Femorali",
+                         "stimulus":  "stimolo da definire"
+                     },
+                     {
+                         "name":  "Stacco da rialzi",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Jefferson Culs",
+                         "som":  "Femorali",
+                         "stimulus":  "stimolo da definire"
+                     },
+                     {
+                         "name":  "Stacco B Stance cavo",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Esercizio custom",
+                         "som":  "Femorali",
+                         "stimulus":  "da definire"
+                     },
+                     {
+                         "name":  "Leg Curs Fitbal",
+                         "som":  "Femorali",
+                         "stimulus":  "stimolo da definire"
+                     },
+                     {
+                         "name":  "Hyperstension con cuscinetto",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "RDL Belt machine",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Stacco RDL",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Stacco gambe semi tese",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Stacco Regular",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Stacco Sumo",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Leg curls singolo",
+                         "som":  "Femorali",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Stacco mono gamba",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Leg curls",
+                         "som":  "Femorali",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Leg curls seduta",
+                         "som":  "Femorali",
+                         "stimulus":  "accorciamento"
+                     }
+                 ],
+    "Dorsali":  [
+                    {
+                        "name":  "Pull down sbarra",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Pullover manubrio",
+                        "som":  "Dorsali",
+                        "stimulus":  "allungamento"
+                    },
+                    {
+                        "name":  "Lat mono braccio",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Pull Down corda",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Trazioni gironda",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Esercizio custom",
+                        "som":  "Dorsali",
+                        "stimulus":  "da definire"
+                    },
+                    {
+                        "name":  "Pullover bilanciere",
+                        "som":  "Dorsali",
+                        "stimulus":  "allungamento"
+                    },
+                    {
+                        "name":  "Stretchers",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Trazioni supine",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Trazioni neutre",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Trazioni",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Trazioni assistite",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Vertical Traction",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Lat machine Triangolo",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Lat machine",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Lat Machine supina",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    }
+                ],
+    "Centro schiena":  [
+                           {
+                               "name":  "Krock Row",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Gentlemen row",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Pulley sbarra presa larga supina",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "T bar",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Scrollate con manubri",
+                               "som":  "Centro schiena",
+                               "stimulus":  "accorciamento"
+                           },
+                           {
+                               "name":  "Peck deck",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Esercizio custom",
+                               "som":  "Centro schiena",
+                               "stimulus":  "da definire"
+                           },
+                           {
+                               "name":  "Croci inverse con uso delle scapole",
+                               "som":  "Centro schiena",
+                               "stimulus":  "allungamento"
+                           },
+                           {
+                               "name":  "Renegade row",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Row machine panatta",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Rematore Bilanciere Z",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Rematore Dead Stop",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Pendaly Row",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Rematore supino",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Reamtore mono braccio corda bassa",
+                               "som":  "Centro schiena",
+                               "stimulus":  "stimolo da definire"
+                           },
+                           {
+                               "name":  "Pulley triangolo",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Rematore manubri panca 30°",
+                               "som":  "Centro schiena",
+                               "stimulus":  "allungamento"
+                           },
+                           {
+                               "name":  "Rematore bilanciere",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           }
+                       ],
+    "Bicipiti":  [
+                     {
+                         "name":  "Curls martello panca inlinata 45°",
+                         "som":  "Bicipiti",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Curls martello panca",
+                         "som":  "Bicipiti",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Curls martello in piedi",
+                         "som":  "Bicipiti",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Esercizio custom",
+                         "som":  "Bicipiti",
+                         "stimulus":  "da definire"
+                     },
+                     {
+                         "name":  "Curls trx",
+                         "som":  "Bicipiti",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Spider curls",
+                         "som":  "Bicipiti",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Curls panca 45°",
+                         "som":  "Bicipiti",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Curls panca scoot",
+                         "som":  "Bicipiti",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Curl manubri",
+                         "som":  "Bicipiti",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Curls manubri schiena al muro",
+                         "som":  "Bicipiti",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Curls Bilaciere Z",
+                         "som":  "Bicipiti",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Curl cavo basso con bilancere piccolo",
+                         "som":  "Bicipiti",
+                         "stimulus":  "accorciamento"
+                     }
+                 ],
+    "Tricipiti":  [
+                      {
+                          "name":  "Push ups",
+                          "som":  "Tricipiti",
+                          "stimulus":  "stimolo da definire"
+                      },
+                      {
+                          "name":  "Tricipiti mono braccio cavo alto",
+                          "som":  "Tricipiti",
+                          "stimulus":  "accorciamento"
+                      },
+                      {
+                          "name":  "Dips stretti",
+                          "som":  "Tricipiti",
+                          "stimulus":  "stimolo da definire"
+                      },
+                      {
+                          "name":  "Esercizio custom",
+                          "som":  "Tricipiti",
+                          "stimulus":  "da definire"
+                      },
+                      {
+                          "name":  "Kick back",
+                          "som":  "Tricipiti",
+                          "stimulus":  "accorciamento"
+                      },
+                      {
+                          "name":  "Tricipiti manubrio dietro la testa",
+                          "som":  "Tricipiti",
+                          "stimulus":  "accorciamento"
+                      },
+                      {
+                          "name":  "French press panca 40°",
+                          "som":  "Tricipiti",
+                          "stimulus":  "allungamento"
+                      },
+                      {
+                          "name":  "French press bilanciere Z",
+                          "som":  "Tricipiti",
+                          "stimulus":  "allungamento"
+                      },
+                      {
+                          "name":  "French press manubri",
+                          "som":  "Tricipiti",
+                          "stimulus":  "allungamento"
+                      },
+                      {
+                          "name":  "Tricipiti Pullover",
+                          "som":  "Tricipiti",
+                          "stimulus":  "allungamento"
+                      },
+                      {
+                          "name":  "Tricipiti cavo basso dietro la testa",
+                          "som":  "Tricipiti",
+                          "stimulus":  "accorciamento"
+                      },
+                      {
+                          "name":  "Tricipiti cavo alto in corda",
+                          "som":  "Tricipiti",
+                          "stimulus":  "accorciamento"
+                      }
+                  ],
+    "Addominali":  [
+                       {
+                           "name":  "crunch obliqui",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Crunch machine",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Leg raise",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Farmer Walk",
+                           "som":  "Addominali",
+                           "stimulus":  "stimolo da definire"
+                       },
+                       {
+                           "name":  "GHD lateral crunch",
+                           "som":  "Addominali",
+                           "stimulus":  "allungamento"
+                       },
+                       {
+                           "name":  "Esercizio custom",
+                           "som":  "Addominali",
+                           "stimulus":  "da definire"
+                       },
+                       {
+                           "name":  "Dead bug dinamico",
+                           "som":  "Addominali",
+                           "stimulus":  "stimolo da definire"
+                       },
+                       {
+                           "name":  "GHD sit up crunch",
+                           "som":  "Addominali",
+                           "stimulus":  "allungamento"
+                       },
+                       {
+                           "name":  "Addominali livello 1",
+                           "som":  "Addominali",
+                           "stimulus":  "stimolo da definire"
+                       },
+                       {
+                           "name":  "Hollow position",
+                           "som":  "Addominali",
+                           "stimulus":  "stimolo da definire"
+                       },
+                       {
+                           "name":  "Crunch classici",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Crunch gambe 90°",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Plank statico",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Dragon Flag",
+                           "som":  "Addominali",
+                           "stimulus":  "stimolo da definire"
+                       },
+                       {
+                           "name":  "Side Plank",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Ab Roll",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Dragon Flag mono",
+                           "som":  "Addominali",
+                           "stimulus":  "stimolo da definire"
+                       }
+                   ],
+    "Glutei":  [
+                   {
+                       "name":  "Glutes machine",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Clam shell side plank",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Slanci cavo basso",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Affondo pesante triset",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Affondo con rotazione busto triset",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Passo del granchio",
+                       "som":  "Glutei",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Pressa verticale panatta",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Esercizio custom",
+                       "som":  "Glutei",
+                       "stimulus":  "da definire"
+                   },
+                   {
+                       "name":  "Triset glutei",
+                       "som":  "Glutei",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Frog Pump con elastico",
+                       "som":  "Glutei",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Rotazioni cavo medio",
+                       "som":  "Glutei",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Hip Thrust",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Pressa45° piedi alti schienale chiuso",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Hip Thrust statico",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Abductor",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Hip Trust mono",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Hypersetensioni con cuscino",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Stacco B stance con cavo",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Slancio laterale cavo basso triset",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Bulgaro focus glutei",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "RDL focus Gluteo Belt machine",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "RDL focus Gluteo",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   }
+               ],
+    "Polpacci":  [
+                     {
+                         "name":  "Polpacci seduto",
+                         "som":  "Polpacci",
+                         "stimulus":  "stimolo da definire"
+                     },
+                     {
+                         "name":  "Calf machine",
+                         "som":  "Polpacci",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Esercizio custom",
+                         "som":  "Polpacci",
+                         "stimulus":  "da definire"
+                     },
+                     {
+                         "name":  "Calf Frog",
+                         "som":  "Polpacci",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Polpacci in piedi",
+                         "som":  "Polpacci",
+                         "stimulus":  "stimolo da definire"
+                     },
+                     {
+                         "name":  "Calf al multypower",
+                         "som":  "Polpacci",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Donkey calf",
+                         "som":  "Polpacci",
+                         "stimulus":  "accorciamento"
+                     }
+                 ],
+    "Cardio":  [
+                   {
+                       "name":  "Cyclette",
+                       "som":  "Cardio",
+                       "stimulus":  "cardio"
+                   },
+                   {
+                       "name":  "Camminata in salita",
+                       "som":  "Cardio",
+                       "stimulus":  "cardio"
+                   },
+                   {
+                       "name":  "Esercizio custom",
+                       "som":  "Cardio",
+                       "stimulus":  "da definire"
+                   },
+                   {
+                       "name":  "Cardio libero",
+                       "som":  "Cardio",
+                       "stimulus":  "cardio"
+                   },
+                   {
+                       "name":  "Tapis roulant",
+                       "som":  "Cardio",
+                       "stimulus":  "cardio"
+                   },
+                   {
+                       "name":  "Tapins + corsa",
+                       "som":  "Cardio",
+                       "stimulus":  "cardio"
+                   }
+               ]
+};
+
 
     const baseState = {
       profile: {
@@ -2831,19 +4009,19 @@
     function displayLabel(value) {
       return cleanText(value)
         .replaceAll("_", " ")
-        .replaceAll("Intensita", "IntensitÃ ")
-        .replaceAll("IntensitÃ ", "IntensitÃ ");
+        .replaceAll("Intensita", "Intensità")
+        .replaceAll("IntensitÃ ", "Intensità");
     }
 
     function cleanText(value) {
       return String(value ?? "")
         .replaceAll("\u00c2\u00b7", " - ")
-        .replaceAll("\u00c3\u00a0", "Ã ")
-        .replaceAll("\u00c3\u00a8", "Ã¨")
-        .replaceAll("\u00c3\u00a9", "Ã©")
-        .replaceAll("\u00c3\u00ac", "Ã¬")
-        .replaceAll("\u00c3\u00b2", "Ã²")
-        .replaceAll("\u00c3\u00b9", "Ã¹")
+        .replaceAll("\u00c3\u00a0", "à")
+        .replaceAll("\u00c3\u00a8", "è")
+        .replaceAll("\u00c3\u00a9", "é")
+        .replaceAll("\u00c3\u00ac", "ì")
+        .replaceAll("\u00c3\u00b2", "ò")
+        .replaceAll("\u00c3\u00b9", "ù")
         .replaceAll("\u00e2\u0086\u0092", "->")
         .replaceAll("\u00e2\u0080\u0099", "'")
         .replaceAll("\u00e2\u0080\u009c", "\"")
@@ -2951,6 +4129,17 @@
       return { level: 5, label: "OK", color: colors.green, text: "Puoi progredire con piccoli aumenti misurati." };
     }
 
+    function decisionReasonText() {
+      const decision = decisionPriority();
+      if (decision.label === "Calo") return "Qui sta guardando soprattutto il logbook: confronta il totale carichi dell'ultimo allenamento con quello precedente. Se l'ultimo totale scende molto, esce Calo.";
+      if (decision.label === "Recupero") return "Qui sta guardando il questionario: sonno scarso o recupero molto basso pesano piu dei carichi.";
+      if (decision.label === "Sicurezza") return "Qui sta guardando dolore, recupero e stress: se segnali dolore o rischio alto, ti protegge e consiglia prudenza.";
+      if (decision.label === "Scheda da rivedere") return "Qui sta guardando le risposte del questionario su workout e sensazione della scheda.";
+      if (decision.label === "Aderenza") return "Qui sta guardando quanti allenamenti risultano salvati e l'aderenza manuale se la compili.";
+      if (decision.label === "Stallo") return "Qui incrocia energia, andamento carichi, aderenza e feedback sulla scheda: non e un allarme, e un invito a cambiare stimolo.";
+      return "Qui i segnali principali sono buoni: questionario, recupero e andamento del logbook non mostrano problemi importanti.";
+    }
+
     function setScreen(screen) {
       if (screen === "coach" && !coachDesktopAllowed()) {
         activeScreen = "dashboard";
@@ -3038,6 +4227,7 @@
       const ready = readinessScore();
       const last = latestSession();
       const context = currentTrainingContext();
+      const decision = decisionPriority();
       return `
         <div class="hero-title">
           <h2>Ciao Alice! <span>${ready >= 70 ? "giornata buona" : "allenamento pronto"}</span></h2>
@@ -3057,17 +4247,23 @@
         </div>
         ${missionHtml(context)}
         <section class="card">
-          <div class="row"><h3>Semaforo allenamento</h3><span class="chip">${decisionPriority().level} - ${decisionPriority().label}</span></div>
-          <p class="micro-copy">Incrocia questionario, recupero, stress/sonno, storico dei carichi e qualita dei log per dirti se spingere, mantenere o rivedere qualcosa.</p>
+          <div class="row"><h3>Semaforo allenamento</h3><span class="chip" style="color:${decision.color}">${decision.level} - ${decision.label}</span></div>
+          <p class="micro-copy">${escapeHtml(decision.text)}</p>
           <div class="mini-bars">
             ${bar("Prontezza", ready, colors.green)}
             ${bar("Carichi", performanceScore(), colors.gold)}
             ${bar("Aderenza", adherenceScore(), colors.blue)}
             ${bar("Rischio", structuralRisk(), colors.red)}
           </div>
+          <div class="signal-note"><strong>Perche esce cosi:</strong> ${escapeHtml(decisionReasonText())}</div>
+          <div class="signal-legend">
+            <div class="signal-legend-item"><strong>Questionario</strong>energia, sonno, stress, dolore, recupero e sensazione workout.</div>
+            <div class="signal-legend-item"><strong>Logbook</strong>confronto degli ultimi carichi salvati e costanza degli allenamenti.</div>
+            <div class="signal-legend-item"><strong>Manuale</strong>se compili metriche tipo energia, sonno o aderenza, l'app usa quei valori.</div>
+          </div>
           <div class="history">
             <div class="history-row"><span>Prontezza</span><strong>sonno + stress + energia</strong></div>
-            <div class="history-row"><span>Carichi</span><strong>trend ultimi logbook</strong></div>
+            <div class="history-row"><span>Carichi</span><strong>ultimo vs precedente logbook</strong></div>
             <div class="history-row"><span>Rischio</span><strong>dolore + fatica + recupero</strong></div>
           </div>
         </section>
@@ -3357,7 +4553,7 @@
 
     function coachWorkbenchHtml() {
       const tab = state.coach.activeTab || "create";
-      const athleteOn = Boolean(state.coach.athleteView);
+      const athleteOn = true;
       const athleteLayout = state.coach.athleteLayout || "compact";
       const layoutClass = athleteOn ? `athlete-${athleteLayout}` : "no-athlete";
       return `
@@ -3472,51 +4668,158 @@
       `;
     }
 
+    function coachExerciseGroups() {
+      return Object.keys(COACH_EXERCISE_LIBRARY || {});
+    }
+
+    function coachExercisesForGroup(group) {
+      return COACH_EXERCISE_LIBRARY[group] || COACH_EXERCISE_LIBRARY[coachExerciseGroups()[0]] || [];
+    }
+
+    function coachExerciseMeta(group, name) {
+      return coachExercisesForGroup(group).find((item) => item.name === name) || coachExercisesForGroup(group)[0] || { name: "", som: group || "", stimulus: "" };
+    }
+
+    function emptyBuilderRow(group = "Glutei") {
+      const meta = coachExercisesForGroup(group)[0] || { name: "", som: group, stimulus: "" };
+      return {
+        group,
+        exercise: meta.name || "",
+        note: "",
+        som: meta.som || group,
+        approach: "",
+        weeks: Array.from({ length: 8 }, () => "")
+      };
+    }
+
+    function coachBuilderRows() {
+      const b = state.coach.builder;
+      if (!Array.isArray(b.rows) || !b.rows.length) b.rows = [emptyBuilderRow(b.muscle || "Glutei")];
+      b.rows.forEach((row) => {
+        if (!row.group) row.group = "Glutei";
+        if (!Array.isArray(row.weeks)) row.weeks = Array.from({ length: 8 }, (_, index) => row[`week${index + 1}`] || "");
+        const items = coachExercisesForGroup(row.group);
+        if (!row.exercise || !items.some((item) => item.name === row.exercise)) row.exercise = items[0]?.name || "";
+        const meta = coachExerciseMeta(row.group, row.exercise);
+        if (!row.som) row.som = meta.som || row.group;
+      });
+      return b.rows;
+    }
+
+    function parseWeekSets(value) {
+      const match = String(value || "").match(/\d+/);
+      return match ? Number(match[0]) : 0;
+    }
+
+    function coachBuilderVolumeRows() {
+      const totals = new Map();
+      coachBuilderRows().forEach((row) => {
+        if (!row.exercise) return;
+        const weeks = totals.get(row.group) || Array(8).fill(0);
+        row.weeks.forEach((week, index) => { weeks[index] += parseWeekSets(week); });
+        totals.set(row.group, weeks);
+      });
+      return Array.from(totals.entries()).map(([group, weeks]) => ({
+        group,
+        weeks,
+        average: weeks.reduce((sum, value) => sum + value, 0) / 8
+      })).filter((row) => row.average > 0);
+    }
+
+    function coachBuilderFeedback() {
+      const rows = coachBuilderRows().filter((row) => row.exercise && row.weeks.some(Boolean));
+      if (!rows.length) return { score: 0, tag: "da compilare", title: "Scheda vuota", text: "Inserisci gruppo, esercizio e almeno una settimana per attivare il feedback." };
+      const duplicates = rows.filter((row, index, list) => list.findIndex((other) => other.group === row.group && other.exercise === row.exercise) !== index);
+      const byGroup = new Map();
+      rows.forEach((row) => {
+        const meta = coachExerciseMeta(row.group, row.exercise);
+        byGroup.set(row.group, [...(byGroup.get(row.group) || []), meta.stimulus || ""]);
+      });
+      const missingBalance = Array.from(byGroup.entries()).filter(([group, stim]) => group !== "Cardio" && !(stim.some((s) => /allungamento|vertical|horizontal|press/.test(s)) && stim.some((s) => /accorciamento|isolamento|posteriore/.test(s))));
+      const score = Math.max(30, Math.min(96, 55 + rows.length * 7 - duplicates.length * 12 - missingBalance.length * 8));
+      if (duplicates.length) return { score, tag: "ridondanza", title: `${rows.length} righe in scheda`, text: `Hai duplicato ${duplicates[0].exercise}. Va bene se e una tecnica speciale, ma scrivilo nelle note.` };
+      if (missingBalance.length) return { score, tag: "da bilanciare", title: `${rows.length} righe in scheda`, text: `${missingBalance[0][0]} sembra poco bilanciato: prova ad avere almeno uno stimolo in allungamento e uno in accorciamento quando ha senso.` };
+      return { score, tag: "buona base", title: `${rows.length} righe in scheda`, text: "Copertura ordinata. Ora controlla volume medio e progressione sulle 8 settimane." };
+    }
+
+    function coachBuilderVolumeHtml() {
+      const rows = coachBuilderVolumeRows();
+      if (!rows.length) return `<div class="athlete-note"><strong>Nessun volume</strong> Compila almeno S1 per vedere il calcolo.</div>`;
+      const max = Math.max(1, ...rows.map((row) => row.average));
+      return `<div class="builder-v24-volume-rows">${rows.map((row) => `
+        <div class="builder-v24-volume-row"><span>${escapeHtml(row.group)}</span><div class="builder-v24-volume-bar"><span style="--w:${Math.round(row.average / max * 100)}%"></span></div><strong>${row.average.toFixed(1)}</strong></div>
+      `).join("")}</div>`;
+    }
+
+    function coachBuilderRowHtml(row, index) {
+      const groups = coachExerciseGroups();
+      const exercises = coachExercisesForGroup(row.group);
+      const meta = coachExerciseMeta(row.group, row.exercise);
+      return `
+        <tr data-builder-row="${index}" style="--exercise-accent:${muscleColor(row.group)}">
+          <td>
+            <select data-builder-row-field="group" data-builder-index="${index}">
+              ${groups.map((group) => `<option value="${escapeHtml(group)}" ${group === row.group ? "selected" : ""}>${escapeHtml(group)}</option>`).join("")}
+            </select>
+            <div class="builder-stimulus-flags"><span>${escapeHtml(meta.stimulus || "stimolo?")}</span></div>
+          </td>
+          <td>
+            <div class="builder-row-tools">
+              <select data-builder-row-field="exercise" data-builder-index="${index}">
+                ${exercises.map((item) => `<option value="${escapeHtml(item.name)}" ${item.name === row.exercise ? "selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}
+              </select>
+              <span class="micro-copy">Tecniche speciali nelle note o su riga duplicata.</span>
+            </div>
+          </td>
+          <td><textarea data-builder-row-field="note" data-builder-index="${index}" placeholder="Setup, tecnica, rest pause, back off...">${escapeHtml(row.note || "")}</textarea></td>
+          <td><input data-builder-row-field="som" data-builder-index="${index}" value="${escapeHtml(row.som || meta.som || "")}" placeholder="SOM"></td>
+          <td><input data-builder-row-field="approach" data-builder-index="${index}" value="${escapeHtml(row.approach || "")}" placeholder="1-2"></td>
+          ${Array.from({ length: 8 }, (_, weekIndex) => `<td><input data-builder-week="${weekIndex}" data-builder-index="${index}" value="${escapeHtml(row.weeks?.[weekIndex] || "")}" placeholder="${weekIndex === 3 ? "scarico" : weekIndex === 7 ? "test" : "3x10"}"></td>`).join("")}
+        </tr>
+      `;
+    }
+
     function coachBuilderHtml() {
       const b = state.coach.builder;
-      const library = libraryItems();
-      const selected = library.find((item) => item.name === b.exercise) || library[0] || { name: b.exercise || "" };
-      if (!b.exercise && selected.name) b.exercise = selected.name;
-      const current = state.coach.customSessions.find((item) => item.code === b.code);
+      const rows = coachBuilderRows();
+      const feedback = coachBuilderFeedback();
       return `
         <section class="coach-builder-strip excel-builder">
           <div class="row"><h3 class="coach-section-title">CREA NUOVA SCHEDA</h3><span class="chip">${escapeHtml(b.code || "nuova scheda")}</span></div>
-          <div class="builder-desktop-grid">
-            <div class="builder-input-panel">
-              <div class="form-grid">
-                <label>Fase programmazione<input type="text" data-field="coach.builder.phase" value="${escapeHtml(b.phase)}" placeholder="es. Intensificazione"></label>
-                <label>Codice scheda<input type="text" data-field="coach.builder.code" value="${escapeHtml(b.code)}" placeholder="es. D5"></label>
-                <label>Scheda<input type="text" data-field="coach.builder.name" value="${escapeHtml(b.name)}" placeholder="Scheda spalle"></label>
-                <label>Focus<input type="text" data-field="coach.builder.focus" value="${escapeHtml(b.focus)}" placeholder="Spalle, tricipiti"></label>
-              </div>
-              <div class="builder-row-fields">
-                <label>Gruppo muscolare<input type="text" data-field="coach.builder.muscle" value="${escapeHtml(b.muscle || b.focus || "")}" placeholder="Glutei"></label>
-                <label>Esercizio
-                  <select data-field="coach.builder.exercise" id="coachBuilderExercise">
-                    ${library.map((item) => `<option value="${escapeHtml(item.name)}" ${item.name === b.exercise ? "selected" : ""}>${escapeHtml(displayExerciseName(item.name))}</option>`).join("")}
-                  </select>
-                </label>
-                <label>SOM<input type="text" data-field="coach.builder.som" value="${escapeHtml(b.som || "")}" placeholder="SOM"></label>
-                <label>Serie avvicinamento<input type="text" data-field="coach.builder.approach" value="${escapeHtml(b.approach || "")}" placeholder="1-2"></label>
-                <label class="full">Note esercizio<textarea data-field="coach.builder.note" placeholder="Setup, tecnica, cue...">${escapeHtml(b.note)}</textarea></label>
+          <div class="builder-v24-shell">
+            <div class="builder-v24-head">
+              <label>Nome programma<input data-field="coach.builder.name" value="${escapeHtml(b.name || "")}" placeholder="es. Lower + dorso focus"></label>
+              <label>Data inizio<input data-field="coach.builder.startDate" value="${escapeHtml(b.startDate || todayInput())}" placeholder="gg/mm/aaaa"></label>
+              <label>Split<input data-field="coach.builder.split" value="${escapeHtml(b.split || "")}" placeholder="scrivi tu: 4 giorni, A/B/C..."></label>
+              <label>Fase<select data-field="coach.builder.phase"><option ${b.phase === "Volume" ? "selected" : ""}>Volume</option><option ${b.phase === "Intensificazione" ? "selected" : ""}>Intensificazione</option><option ${b.phase === "Intensita" || b.phase === "Intensità" ? "selected" : ""} value="Intensita">Intensità</option><option ${b.phase === "Scarico" ? "selected" : ""}>Scarico</option><option ${b.phase === "Restart tecnico" ? "selected" : ""}>Restart tecnico</option></select></label>
+              <label>Codice scheda<input data-field="coach.builder.code" value="${escapeHtml(b.code || "")}" placeholder="es. CC-A1"></label>
+              <label>Obiettivo<input data-field="coach.builder.focus" value="${escapeHtml(b.focus || "")}" placeholder="es. Glutei, femorali"></label>
+            </div>
+            <div class="builder-v24-toolbar">
+              <span>Compila una riga, poi copia/incolla la progressione sulle righe simili.</span>
+              <div class="builder-v24-actions">
+                <button class="mini-button" type="button" id="copyBuilderWeeks">Copia settimane</button>
+                <button class="mini-button" type="button" id="pasteBuilderWeeks">Incolla settimane</button>
+                <button class="mini-button" type="button" id="clearBuilderRow">Svuota riga</button>
               </div>
             </div>
-            <div class="builder-weeks-panel">
-              <h3>Settimane 1-8</h3>
-              <div class="builder-week-grid">
-                ${Array.from({ length: 8 }, (_, index) => {
-                  const key = `week${index + 1}`;
-                  return `<label>Week ${index + 1}<input type="text" data-field="coach.builder.${key}" value="${escapeHtml(b[key] || "")}" placeholder="serie x reps"></label>`;
-                }).join("")}
-              </div>
+            <div class="builder-v24-scroll">
+              <table class="builder-v24-table">
+                <colgroup><col class="col-group"><col class="col-exercise"><col class="col-notes"><col class="col-som"><col class="col-small">${Array.from({ length: 8 }, () => `<col class="col-week">`).join("")}</colgroup>
+                <thead><tr><th>Gruppo</th><th>Esercizio</th><th>Note / setup</th><th>SOM</th><th>Avvic.</th><th>S1</th><th>S2</th><th>S3</th><th>S4</th><th>S5</th><th>S6</th><th>S7</th><th>S8</th></tr></thead>
+                <tbody>
+                  ${rows.map((row, index) => coachBuilderRowHtml(row, index)).join("")}
+                  <tr class="builder-add-row"><td colspan="13"><button class="builder-add-row-button" type="button" data-builder-add-row>+ aggiungi nuova riga esercizio</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="builder-v24-live">
+              <div class="builder-v24-feedback"><div class="row"><h3>${escapeHtml(feedback.title)}</h3><span class="chip">${feedback.score}% - ${escapeHtml(feedback.tag)}</span></div><p class="micro-copy">${escapeHtml(feedback.text)}</p></div>
+              <div class="builder-v24-volume"><div class="row"><h3>Volume medio 8 settimane</h3><span class="chip">live</span></div><p class="micro-copy">Quando salvi, questa scheda entra nella zona Volume come blocco custom.</p>${coachBuilderVolumeHtml()}</div>
             </div>
           </div>
-          <div class="builder-live-summary">
-            <strong>Anteprima live: ${escapeHtml(b.code || "CC-A1")} - ${escapeHtml(b.name || "Nuova scheda")}</strong>
-            <span>${escapeHtml(b.muscle || b.focus || "Gruppo")} - ${escapeHtml(displayExerciseName(b.exercise || selected.name || "Esercizio"))} - ${escapeHtml(b.week1 || "--")} -> ${escapeHtml(b.week8 || "--")}</span>
-          </div>
-          <button class="gold-button" style="width:100%;margin-top:12px" id="saveCoachSession">Aggiungi esercizio alla scheda</button>
-          ${coachCreatedSheetPreviewHtml(current)}
+          <button class="gold-button" style="width:100%;margin-top:12px" id="saveCoachSession">Salva scheda e aggiorna volume</button>
+          ${coachCreatedSheetPreviewHtml(coachBuilderSessionPreview())}
         </section>
       `;
     }
@@ -3631,9 +4934,7 @@
 
     function coachBuilderSessionPreview() {
       const b = state.coach.builder;
-      const existing = (state.coach.customSessions || []).find((item) => item.code === b.code);
-      if (existing) return existing;
-      const name = b.exercise || libraryItems()[0]?.name || "";
+      const rows = coachBuilderRows();
       return {
         code: b.code || "Nuova",
         day: 1,
@@ -3642,25 +4943,28 @@
         name: b.name || "Scheda in costruzione",
         phase: b.phase || "Coach custom",
         focus: b.focus || "Da definire",
-        note: "Anteprima scheda in costruzione",
-        exercises: name ? [{
-          name: name.trim().replaceAll(" ", "_"),
-          muscle: b.muscle || b.focus || "Custom",
-          sets: b.week1 || b.sets || "3",
-          reps: b.week1 || b.reps || "8-12",
-          rir: b.rir || "",
-          rest: b.rest || "90 sec",
-          warmup: b.approach || "--",
-          som: b.som || "",
-          weeks: Array.from({ length: 8 }, (_, index) => b[`week${index + 1}`] || ""),
-          tempo: "coach",
-          note: b.note || "Note esercizio da completare",
-          today: "",
-          ref: ""
-        }] : []
+        split: b.split || "",
+        startDate: b.startDate || todayInput(),
+        note: `${b.phase || "Coach custom"} - anteprima builder`,
+        exercises: rows
+          .filter((row) => row.exercise || row.note || row.weeks.some(Boolean))
+          .map((row) => ({
+            name: String(row.exercise || "Esercizio custom").trim(),
+            muscle: row.group || "Custom",
+            sets: row.weeks?.[0] || "",
+            reps: row.weeks?.[0] || "",
+            rir: "",
+            rest: "",
+            warmup: row.approach || "--",
+            som: row.som || row.group || "",
+            weeks: Array.from({ length: 8 }, (_, index) => row.weeks?.[index] || ""),
+            tempo: "coach",
+            note: row.note || "Note esercizio da completare",
+            today: "",
+            ref: ""
+          }))
       };
     }
-
     function athleteExerciseCard(session, exercise, index) {
       const history = exerciseHistory(exercise, 1, exercise.jump || "");
       const latest = history[0];
@@ -3700,10 +5004,12 @@
         const totals = {};
         (session.exercises || []).forEach((exercise) => {
           const muscle = exercise.muscle || session.focus || "Custom";
-          totals[muscle] = (totals[muscle] || 0) + number(String(exercise.sets || "1").match(/\d+/)?.[0], 1);
+          const weeks = Array.isArray(exercise.weeks) && exercise.weeks.length ? exercise.weeks : [exercise.sets || "1"];
+          const avg = weeks.reduce((sum, week) => sum + parseWeekSets(week), 0) / Math.max(1, weeks.length || 1);
+          totals[muscle] = (totals[muscle] || 0) + avg;
         });
         const max = Math.max(1, ...Object.values(totals));
-        return `<article class="volume-block"><h4><em>"${escapeHtml(session.code)} - ${escapeHtml(session.name)}"</em></h4>${Object.entries(totals).map(([muscle, total]) => `<div class="volume-row"><span>${escapeHtml(muscle)}</span><div class="bar-track"><div class="bar-fill" style="--w:${Math.round(total / max * 100)}%;--c:${colors.green}"></div></div><strong>${total}</strong></div>`).join("")}</article>`;
+        return `<article class="volume-block"><h4><em>"${escapeHtml(session.code)} - ${escapeHtml(session.name)}"</em></h4><p class="micro-copy">Media calcolata sulle 8 settimane della scheda custom.</p>${Object.entries(totals).map(([muscle, total]) => `<div class="volume-row"><span>${escapeHtml(muscle)}</span><div class="bar-track"><div class="bar-fill" style="--w:${Math.round(total / max * 100)}%;--c:${colors.green}"></div></div><strong>${Number(total).toFixed(1)}</strong></div>`).join("")}</article>`;
       }).join("")}</div>`;
     }
 
@@ -4075,6 +5381,91 @@
           render();
         });
       }
+      document.querySelectorAll("[data-builder-row], [data-builder-row-field], [data-builder-week]").forEach((element) => {
+        element.addEventListener("focusin", () => {
+          const row = element.closest("[data-builder-row]");
+          if (row) state.coach.builder.activeRow = Number(row.dataset.builderRow) || 0;
+        });
+      });
+      document.querySelectorAll("[data-builder-row-field]").forEach((field) => {
+        field.addEventListener("input", () => {
+          const rows = coachBuilderRows();
+          const row = rows[Number(field.dataset.builderIndex)];
+          if (!row) return;
+          row[field.dataset.builderRowField] = field.value;
+        });
+        field.addEventListener("change", () => {
+          const rows = coachBuilderRows();
+          const row = rows[Number(field.dataset.builderIndex)];
+          if (!row) return;
+          row[field.dataset.builderRowField] = field.value;
+          if (field.dataset.builderRowField === "group") {
+            const meta = coachExercisesForGroup(row.group)[0] || {};
+            row.exercise = meta.name || "";
+            row.som = meta.som || row.group;
+          }
+          if (field.dataset.builderRowField === "exercise") {
+            const meta = coachExerciseMeta(row.group, row.exercise);
+            row.som = meta.som || row.som || row.group;
+          }
+          saveState();
+          render();
+        });
+      });
+      document.querySelectorAll("[data-builder-week]").forEach((field) => {
+        field.addEventListener("input", () => {
+          const rows = coachBuilderRows();
+          const row = rows[Number(field.dataset.builderIndex)];
+          if (!row) return;
+          row.weeks[Number(field.dataset.builderWeek)] = field.value;
+        });
+        field.addEventListener("change", () => {
+          saveState();
+          render();
+        });
+      });
+      document.querySelectorAll("[data-builder-add-row]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const rows = coachBuilderRows();
+          rows.push(emptyBuilderRow(rows[rows.length - 1]?.group || "Glutei"));
+          state.coach.builder.activeRow = rows.length - 1;
+          saveState();
+          render();
+        });
+      });
+      const copyBuilderWeeks = document.getElementById("copyBuilderWeeks");
+      if (copyBuilderWeeks) {
+        copyBuilderWeeks.addEventListener("click", () => {
+          const rows = coachBuilderRows();
+          const index = Number(state.coach.builder.activeRow || 0);
+          state.coach.builder.copiedWeeks = [...(rows[index]?.weeks || [])];
+          saveState();
+          showToast("Progressione copiata.");
+        });
+      }
+      const pasteBuilderWeeks = document.getElementById("pasteBuilderWeeks");
+      if (pasteBuilderWeeks) {
+        pasteBuilderWeeks.addEventListener("click", () => {
+          const rows = coachBuilderRows();
+          const index = Number(state.coach.builder.activeRow || 0);
+          if (!rows[index] || !Array.isArray(state.coach.builder.copiedWeeks)) return showToast("Copia prima una progressione.");
+          rows[index].weeks = [...state.coach.builder.copiedWeeks];
+          saveState();
+          render();
+        });
+      }
+      const clearBuilderRow = document.getElementById("clearBuilderRow");
+      if (clearBuilderRow) {
+        clearBuilderRow.addEventListener("click", () => {
+          const rows = coachBuilderRows();
+          const index = Number(state.coach.builder.activeRow || 0);
+          if (!rows[index]) return;
+          rows[index] = emptyBuilderRow(rows[index].group || "Glutei");
+          state.coach.builder.activeRow = index;
+          saveState();
+          render();
+        });
+      }
       document.querySelectorAll("[data-coach-tab]").forEach((button) => {
         button.addEventListener("click", () => {
           state.coach.activeTab = button.dataset.coachTab;
@@ -4313,47 +5704,29 @@
 
     function saveCoachSession() {
       const b = state.coach.builder;
-      if (!String(b.exercise || "").trim()) {
+      const session = coachBuilderSessionPreview();
+      if (!session.exercises.length) {
         showToast("Inserisci almeno un esercizio.");
         return;
       }
-      let session = state.coach.customSessions.find((item) => item.code === b.code);
-      if (!session) {
-        session = {
-          code: b.code || `CC-${Date.now()}`,
-          day: 1,
-          letter: sessionLetter(b.code) || "C",
-          week: 1,
-          name: b.name || "Scheda coach",
-          phase: b.phase || "Coach custom",
-          focus: b.focus || "Custom",
-          note: `${b.phase || "Coach custom"} - creata in Coach Mode`,
-          exercises: []
-        };
-        state.coach.customSessions.push(session);
-        state.training.program.push(session);
-      }
-      session.exercises.push({
-        name: String(b.exercise || "").trim().replaceAll(" ", "_"),
-        muscle: b.muscle || b.focus || "Custom",
-        sets: b.week1 || b.sets || "3",
-        reps: b.week1 || b.reps || "8-12",
-        rir: b.rir || "",
-        rest: b.rest || "90 sec",
-        warmup: b.approach || "--",
-        som: b.som || "",
-        weeks: Array.from({ length: 8 }, (_, index) => b[`week${index + 1}`] || ""),
-        tempo: "coach",
-        note: b.note || "Istruzioni coach",
-        today: "",
-        ref: ""
-      });
+      session.code = b.code || `CC-${Date.now()}`;
+      session.letter = sessionLetter(session.code) || "C";
+      session.name = b.name || "Scheda coach";
+      session.phase = b.phase || "Coach custom";
+      session.focus = b.focus || session.exercises.map((item) => item.muscle).filter(Boolean).slice(0, 3).join(", ") || "Custom";
+      session.note = `${session.phase} - creata in Coach Mode`;
+      const customIndex = state.coach.customSessions.findIndex((item) => item.code === session.code);
+      if (customIndex >= 0) state.coach.customSessions[customIndex] = session;
+      else state.coach.customSessions.push(session);
+      const programIndex = state.training.program.findIndex((item) => item.code === session.code);
+      if (programIndex >= 0) state.training.program[programIndex] = session;
+      else state.training.program.push(session);
       state.training.exercises = buildExerciseIndex(state.training.program, state.training.sessions);
+      state.coach.viewChoice = "builder";
       saveState();
-      showToast("Scheda custom aggiornata.");
+      showToast("Scheda salvata e volume aggiornato.");
       render();
     }
-
     function unlockCoachStudio() {
       const pin = document.getElementById("coachPinInput")?.value || "";
       if (pin === state.profile.coachPin) {
@@ -4391,7 +5764,7 @@
 
     function exportBackup() {
       const payload = {
-        app: "Atlas",
+        app: "bitch, you better be coaching",
         exportedAt: new Date().toISOString(),
         state
       };
@@ -4697,4 +6070,9 @@
   </script>
 </body>
 </html>
+
+
+
+
+
 
