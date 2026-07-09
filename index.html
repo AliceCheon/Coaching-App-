@@ -2484,8 +2484,10 @@
     if (["auto", "E5", "D5"].includes(state.training.sessionName)) state.training.sessionName = "A6";
     state.training.exercises = buildExerciseIndex(state.training.program, state.training.sessions);
     if (state.profile.coachPin === "2507") state.profile.coachPin = "ettorino1";
-    let activeScreen = "dashboard";
-    let activeBottom = "home";
+    const initialHash = String(location.hash || "").replace("#", "");
+    const initialScreens = new Set(["dashboard", "training", "progress", "nutrition", "quiz", "coach"]);
+    let activeScreen = initialScreens.has(initialHash) ? initialHash : "dashboard";
+    let activeBottom = activeScreen === "training" ? "workout" : activeScreen === "dashboard" ? "home" : activeScreen;
     let timerHandle = null;
 
     function clone(obj) {
@@ -3946,7 +3948,7 @@
       });
       document.querySelectorAll("[data-workout-toggle]").forEach((button) => {
         button.addEventListener("click", () => {
-          state.training.openExercise = button.dataset.workoutToggle;
+          state.training.openExercise = state.training.openExercise === button.dataset.workoutToggle ? "" : button.dataset.workoutToggle;
           saveState();
           render();
         });
