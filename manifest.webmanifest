@@ -2,7 +2,7 @@
   "name": "bitch, you better be coaching",
   "short_name": "Coaching",
   "description": "Allenamento, logbook, progressioni e volume annuale di Alice.",
-  "start_url": "./index.html?v=28",
+  "start_url": "./index.html?v=29",
   "id": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -31,7 +31,7 @@
       "name": "Workout",
       "short_name": "Workout",
       "description": "Apri subito il logbook allenamento.",
-      "url": "./index.html?v=28#training",
+      "url": "./index.html?v=29#training",
       "icons": [
         {
           "src": "./app-icon-192.png",
@@ -44,7 +44,7 @@
       "name": "Coach",
       "short_name": "Coach",
       "description": "Apri la zona coach.",
-      "url": "./index.html?v=28#coach",
+      "url": "./index.html?v=29#coach",
       "icons": [
         {
           "src": "./app-icon-192.png",
