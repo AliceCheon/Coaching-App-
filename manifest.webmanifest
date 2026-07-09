@@ -1,8 +1,8 @@
-{
+﻿{
   "name": "Atlas",
   "short_name": "Atlas",
   "description": "Allenamento, logbook, progressioni e volume annuale di Alice.",
-  "start_url": "./index.html?v=16",
+  "start_url": "./index.html?v=21",
   "scope": "./",
   "display": "fullscreen",
   "display_override": ["fullscreen", "standalone"],
@@ -24,3 +24,6 @@
     }
   ]
 }
+
+
+
