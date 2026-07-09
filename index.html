@@ -4675,17 +4675,16 @@
       return `
         <div class="hero-title">
           <h2>Coach Studio <span>Alice</span></h2>
-          <p>Programmi, vista atleta, note e feedback in una schermata da PC.</p>
+          <p>Programmi, vista atleta, progressioni e volume in una schermata da PC.</p>
         </div>
         ${coachCommandHtml()}
         <div class="coach-grid">
           <article class="coach-tile"><span>Schede custom</span><strong>${customCount}</strong><span>create dal builder</span></article>
           <article class="coach-tile"><span>Blocchi importati</span><strong>${importedGroups}</strong><span>schede base modificabili</span></article>
           <article class="coach-tile"><span>Check-in</span><strong>${p.level}</strong><span>${escapeHtml(p.label)}</span></article>
-          <article class="coach-tile"><span>Feedback</span><strong>${state.coach.feedback.length}</strong><span>note coach/tecnica</span></article>
+          <article class="coach-tile"><span>Volume</span><strong>${VOLUME_HISTORY.length + customCount}</strong><span>blocchi monitorati</span></article>
         </div>
         ${coachWorkbenchHtml()}
-        ${coachFeedbackBoardHtml()}
         <section class="coach-section">${coachVolumePanelHtml()}</section>
       `;
     }
