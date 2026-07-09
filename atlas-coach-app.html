@@ -5381,19 +5381,33 @@
       };
     }
 
+    function checkinSignals() {
+      const energy = checkinValue("energy");
+      const sleep = checkinValue("sleep");
+      const doms = checkinValue("doms");
+      const stress = checkinValue("stress");
+      const hunger = checkinValue("hunger");
+      const wellbeingScore = Math.round((energy + sleep + (6 - doms) + (6 - stress) + Math.min(hunger, 4)) / 5 * 20);
+      const recoveryScore = Math.round((sleep + (6 - doms) + (6 - stress)) / 3 * 20);
+      const checkinLabel = wellbeingScore < 45 ? "prudenza" : wellbeingScore < 65 ? "monitor" : "ok";
+      const recoveryLabel = recoveryScore < 45 ? "basso" : recoveryScore < 65 ? "medio" : "ok";
+      const checkinColor = wellbeingScore < 45 ? colors.orange : wellbeingScore < 65 ? colors.blue : colors.green;
+      const recoveryColor = recoveryScore < 45 ? colors.orange : recoveryScore < 65 ? colors.blue : colors.green;
+      return { energy, sleep, doms, stress, hunger, wellbeingScore, recoveryScore, checkinLabel, recoveryLabel, checkinColor, recoveryColor };
+    }
+
     function checkinTrafficHtml() {
       const meta = checkinStatusMeta();
       const trend = exerciseTrendSummary();
-      const risk = structuralRisk();
-      const recoveryText = state.quiz.recovery === "distrutta" ? "basso" : state.quiz.recovery === "indolenzita" ? "medio" : "ok";
+      const signals = checkinSignals();
       const downText = trend.downNames.length ? trend.downNames.join(", ") : "nessun calo importante";
       return `<section class="card checkin-status-card">
         <div class="row"><h3>Semaforo allenamento</h3><span class="status-pill" style="--status-color:${meta.color}">${escapeHtml(meta.status)}</span></div>
         <p class="micro-copy">${escapeHtml(meta.text)}</p>
         <div class="signal-source-grid">
           <div class="signal-source" style="--dot:${trend.down >= 2 ? colors.orange : colors.green}"><i></i><div><strong>Carichi</strong>${trend.total ? `${trend.up} su, ${trend.stable} stabili, ${trend.down} giu` : "pochi confronti nel logbook"}</div><span>${trend.down >= 2 ? "check" : "ok"}</span></div>
-          <div class="signal-source" style="--dot:${risk > 65 ? colors.red : colors.green}"><i></i><div><strong>Check-in</strong>sonno, stress, DOMS, dolore e feeling</div><span>${risk > 65 ? "alto" : "ok"}</span></div>
-          <div class="signal-source" style="--dot:${recoveryText === "basso" ? colors.orange : colors.blue}"><i></i><div><strong>Recupero</strong>recupero muscolare percepito</div><span>${recoveryText}</span></div>
+          <div class="signal-source" style="--dot:${signals.checkinColor}"><i></i><div><strong>Check-in</strong>energia ${signals.energy}/5, sonno ${signals.sleep}/5, stress ${signals.stress}/5</div><span>${signals.checkinLabel}</span></div>
+          <div class="signal-source" style="--dot:${signals.recoveryColor}"><i></i><div><strong>Recupero</strong>sonno ${signals.sleep}/5, DOMS ${signals.doms}/5, stress ${signals.stress}/5</div><span>${signals.recoveryLabel}</span></div>
         </div>
         <div class="signal-note"><strong>Da dove arriva:</strong> logbook ultimi allenamenti, check-in benessere e note dolore/fatica. Dettaglio carichi: ${escapeHtml(downText)}.</div>
       </section>`;
