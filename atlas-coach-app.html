@@ -5389,11 +5389,24 @@
       const hunger = checkinValue("hunger");
       const wellbeingScore = Math.round((energy + sleep + (6 - doms) + (6 - stress) + Math.min(hunger, 4)) / 5 * 20);
       const recoveryScore = Math.round((sleep + (6 - doms) + (6 - stress)) / 3 * 20);
-      const checkinLabel = wellbeingScore < 45 ? "prudenza" : wellbeingScore < 65 ? "monitor" : "ok";
-      const recoveryLabel = recoveryScore < 45 ? "basso" : recoveryScore < 65 ? "medio" : "ok";
-      const checkinColor = wellbeingScore < 45 ? colors.orange : wellbeingScore < 65 ? colors.blue : colors.green;
-      const recoveryColor = recoveryScore < 45 ? colors.orange : recoveryScore < 65 ? colors.blue : colors.green;
-      return { energy, sleep, doms, stress, hunger, wellbeingScore, recoveryScore, checkinLabel, recoveryLabel, checkinColor, recoveryColor };
+      const checkinHardStop = energy <= 2 || sleep <= 2 || stress >= 4 || doms >= 4;
+      const recoveryHardStop = sleep <= 2 || doms >= 4 || stress >= 4;
+      const checkinLabel = checkinHardStop ? "prudenza" : wellbeingScore < 65 ? "monitor" : "ok";
+      const recoveryLabel = recoveryHardStop ? "basso" : recoveryScore < 65 ? "medio" : "ok";
+      const checkinColor = checkinHardStop ? colors.orange : wellbeingScore < 65 ? colors.blue : colors.green;
+      const recoveryColor = recoveryHardStop ? colors.orange : recoveryScore < 65 ? colors.blue : colors.green;
+      const checkinDetail = [
+        energy <= 2 ? "energia bassa" : "",
+        sleep <= 2 ? "sonno basso" : "",
+        stress >= 4 ? "stress alto" : "",
+        doms >= 4 ? "DOMS pesanti" : ""
+      ].filter(Boolean).join(", ") || `score ${wellbeingScore}/100`;
+      const recoveryDetail = [
+        sleep <= 2 ? "sonno basso" : "",
+        doms >= 4 ? "DOMS pesanti" : "",
+        stress >= 4 ? "stress alto" : ""
+      ].filter(Boolean).join(", ") || `score ${recoveryScore}/100`;
+      return { energy, sleep, doms, stress, hunger, wellbeingScore, recoveryScore, checkinLabel, recoveryLabel, checkinColor, recoveryColor, checkinDetail, recoveryDetail };
     }
 
     function checkinTrafficHtml() {
@@ -5406,8 +5419,8 @@
         <p class="micro-copy">${escapeHtml(meta.text)}</p>
         <div class="signal-source-grid">
           <div class="signal-source" style="--dot:${trend.down >= 2 ? colors.orange : colors.green}"><i></i><div><strong>Carichi</strong>${trend.total ? `${trend.up} su, ${trend.stable} stabili, ${trend.down} giu` : "pochi confronti nel logbook"}</div><span>${trend.down >= 2 ? "check" : "ok"}</span></div>
-          <div class="signal-source" style="--dot:${signals.checkinColor}"><i></i><div><strong>Check-in</strong>energia ${signals.energy}/5, sonno ${signals.sleep}/5, stress ${signals.stress}/5</div><span>${signals.checkinLabel}</span></div>
-          <div class="signal-source" style="--dot:${signals.recoveryColor}"><i></i><div><strong>Recupero</strong>sonno ${signals.sleep}/5, DOMS ${signals.doms}/5, stress ${signals.stress}/5</div><span>${signals.recoveryLabel}</span></div>
+          <div class="signal-source" style="--dot:${signals.checkinColor}"><i></i><div><strong>Check-in</strong>${escapeHtml(signals.checkinDetail)}</div><span>${signals.checkinLabel}</span></div>
+          <div class="signal-source" style="--dot:${signals.recoveryColor}"><i></i><div><strong>Recupero</strong>${escapeHtml(signals.recoveryDetail)}</div><span>${signals.recoveryLabel}</span></div>
         </div>
         <div class="signal-note"><strong>Da dove arriva:</strong> logbook ultimi allenamenti, check-in benessere e note dolore/fatica. Dettaglio carichi: ${escapeHtml(downText)}.</div>
       </section>`;
