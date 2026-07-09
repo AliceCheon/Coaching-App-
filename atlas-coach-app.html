@@ -1048,6 +1048,154 @@
       font-size: .74rem;
     }
 
+    .checkin-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, .9fr) minmax(320px, 1.1fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .checkin-status-card {
+      position: relative;
+      overflow: hidden;
+      border-color: rgba(105,230,176,.2);
+      background:
+        radial-gradient(circle at 88% 10%, rgba(105,230,176,.14), transparent 34%),
+        linear-gradient(135deg, rgba(216,164,255,.12), rgba(255,111,203,.06)),
+        var(--panel);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border-radius: 999px;
+      padding: 8px 11px;
+      border: 1px solid color-mix(in srgb, var(--status-color, var(--green)) 40%, transparent);
+      background: color-mix(in srgb, var(--status-color, var(--green)) 14%, transparent);
+      color: var(--status-color, var(--green));
+      font-size: .78rem;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .status-pill::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: currentColor;
+      box-shadow: 0 0 16px currentColor;
+    }
+
+    .signal-source-grid {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .signal-source {
+      display: grid;
+      grid-template-columns: 14px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      border-radius: 12px;
+      border: 1px solid var(--line-soft);
+      background: rgba(255,255,255,.04);
+      padding: 10px;
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    .signal-source i {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--dot, var(--green));
+      box-shadow: 0 0 12px var(--dot, var(--green));
+    }
+
+    .signal-source strong {
+      color: var(--text);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .signal-source span:last-child {
+      color: var(--text);
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .checkin-form-card {
+      background:
+        radial-gradient(circle at 10% 0%, rgba(169,144,255,.13), transparent 32%),
+        var(--panel);
+    }
+
+    .checkin-slider-grid {
+      display: grid;
+      gap: 9px;
+      margin-top: 10px;
+    }
+
+    .checkin-slider {
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .checkin-slider-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--text);
+      font-size: .82rem;
+      font-weight: 900;
+    }
+
+    .checkin-scale {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .checkin-scale button {
+      min-height: 34px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.055);
+      color: var(--muted);
+      font-weight: 900;
+    }
+
+    .checkin-scale button.active {
+      background: linear-gradient(135deg, rgba(216,164,255,.38), rgba(105,230,176,.18));
+      border-color: rgba(216,164,255,.45);
+      color: var(--text);
+      box-shadow: 0 0 18px rgba(216,164,255,.16);
+    }
+
+    .coach-result {
+      margin-top: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(105,230,176,.2);
+      background: rgba(105,230,176,.07);
+      padding: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .coach-result strong {
+      color: var(--text);
+      display: block;
+      margin-bottom: 4px;
+    }
+
     .volume-grid {
       display: grid;
       gap: 10px;
@@ -1779,8 +1927,8 @@
       grid-template-columns: minmax(260px, .9fr) minmax(320px, 1.1fr);
       gap: 12px;
       padding: 12px;
-      border-top: 1px solid rgba(255,255,255,.1);
-      background: rgba(255,255,255,.025);
+      border-bottom: 1px solid rgba(255,255,255,.1);
+      background: linear-gradient(135deg, rgba(216,164,255,.12), rgba(139,201,255,.06));
     }
 
     .builder-v24-feedback,
@@ -2372,6 +2520,10 @@
       .screen {
         padding-bottom: calc(118px + env(safe-area-inset-bottom));
       }
+
+      .checkin-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 430px) {
@@ -2412,7 +2564,7 @@
         padding-bottom: calc(112px + env(safe-area-inset-bottom));
       }
 
-      .form-grid, .grid-2, .target-grid, .set-log-grid, .coach-grid, .coach-layout-grid, .coach-workbench, .feedback-metrics {
+      .form-grid, .grid-2, .target-grid, .set-log-grid, .coach-grid, .coach-layout-grid, .coach-workbench, .feedback-metrics, .checkin-grid {
         grid-template-columns: 1fr;
       }
 
@@ -2509,7 +2661,7 @@
       <button class="rail-dot" data-jump="nutrition" title="Nutrizione" aria-label="Nutrizione">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19c5-9 9-14 16-14"/><path d="M5 5c5 2 8 6 9 12"/><path d="M4 19c7 1 13-2 16-14"/></svg>
       </button>
-      <button class="rail-dot" data-bottom="quiz" title="Questionario" aria-label="Questionario">
+      <button class="rail-dot" data-bottom="quiz" title="Check-in" aria-label="Check-in">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       </button>
     </aside>
@@ -2542,7 +2694,7 @@
           <button class="top-tab" data-screen="progress">Progressioni</button>
           <button class="top-tab coach-tab" data-screen="coach">Coach</button>
           <button class="top-tab" data-screen="nutrition">Nutrizione</button>
-          <button class="top-tab" data-screen="quiz">Questionario</button>
+          <button class="top-tab" data-screen="quiz">Check-in</button>
         </div>
 
         <main class="screen" id="screen"></main>
@@ -2570,7 +2722,7 @@
           </button>
           <button class="nav-button" data-bottom="quiz">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            Quest.
+            Check
           </button>
         </nav>
       </div>
@@ -4048,12 +4200,44 @@
       return state.training.sessions[state.training.sessions.length - 1] || null;
     }
 
-    function performanceScore() {
+    function exerciseTrendSummary() {
       const sessions = state.training.sessions;
-      if (sessions.length < 2) return sessions.length ? 62 : 0;
-      const last = sessions[sessions.length - 1].total;
-      const prev = sessions[sessions.length - 2].total || 1;
-      return clamp(Math.round(70 + ((last - prev) / prev) * 120), 0, 100);
+      if (sessions.length < 2) return { score: sessions.length ? 62 : 0, up: 0, stable: 0, down: 0, total: 0, downNames: [], label: sessions.length ? "primo log" : "senza dati" };
+      const previousByName = new Map();
+      sessions.slice(0, -1).reverse().forEach((session) => {
+        (session.exercises || []).forEach((exercise) => {
+          const key = normalizeExerciseName(exercise.name);
+          const value = number(exercise.maxKg || exercise.kg, null);
+          if (key && Number.isFinite(value) && value > 0 && !previousByName.has(key)) previousByName.set(key, value);
+        });
+      });
+      const compared = [];
+      (sessions[sessions.length - 1].exercises || []).forEach((exercise) => {
+        const key = normalizeExerciseName(exercise.name);
+        const current = number(exercise.maxKg || exercise.kg, null);
+        const previous = previousByName.get(key);
+        if (!key || !Number.isFinite(current) || !Number.isFinite(previous) || previous <= 0) return;
+        const change = (current - previous) / previous;
+        compared.push({ name: displayExerciseName(exercise.name), change });
+      });
+      if (!compared.length) return { score: 64, up: 0, stable: 0, down: 0, total: 0, downNames: [], label: "pochi confronti" };
+      const up = compared.filter((item) => item.change >= .04);
+      const down = compared.filter((item) => item.change <= -.06);
+      const stable = compared.length - up.length - down.length;
+      const score = clamp(Math.round(68 + up.length * 8 + stable * 3 - down.length * 10), 0, 100);
+      return {
+        score,
+        up: up.length,
+        stable,
+        down: down.length,
+        total: compared.length,
+        downNames: down.slice(0, 3).map((item) => item.name),
+        label: down.length ? `${down.length} in calo` : "stabili"
+      };
+    }
+
+    function performanceScore() {
+      return exerciseTrendSummary().score;
     }
 
     function adherenceScore() {
@@ -4122,7 +4306,7 @@
       const response = programResponse();
       if (state.quiz.recovery === "distrutta" || state.quiz.sleepQuality === "male") return { level: 1, label: "Recupero", color: colors.red, text: "Recupero basso: oggi meglio non cercare PR, tieni tecnica pulita e scala se serve." };
       if (risk >= 66 || state.quiz.pain === "si") return { level: 1, label: "Sicurezza", color: colors.red, text: "Riduci carico, niente progressioni aggressive, controlla i segnali." };
-      if (perf <= 38 && state.training.sessions.length >= 2) return { level: 2, label: "Calo", color: colors.orange, text: "Mantieni volume e rivedi recupero prima di spingere." };
+      if (perf <= 38 && exerciseTrendSummary().down >= 2) return { level: 2, label: "Calo", color: colors.orange, text: "Due o piu esercizi risultano in calo nel logbook: mantieni volume e controlla recupero." };
       if (state.quiz.workout === "male" || state.quiz.sheetFit === "male") return { level: 3, label: "Scheda da rivedere", color: colors.orange, text: "Segnale utile: annota esercizi che non senti e valuta sostituzioni mirate." };
       if (adherence < 55) return { level: 3, label: "Aderenza", color: colors.gold, text: "Semplifica la scheda e proteggi la costanza." };
       if (response < 58) return { level: 4, label: "Stallo", color: colors.blue, text: "Cambia stimolo o riduci fatica accumulata." };
@@ -4131,7 +4315,7 @@
 
     function decisionReasonText() {
       const decision = decisionPriority();
-      if (decision.label === "Calo") return "Qui sta guardando soprattutto il logbook: confronta il totale carichi dell'ultimo allenamento con quello precedente. Se l'ultimo totale scende molto, esce Calo.";
+      if (decision.label === "Calo") return "Qui sta guardando il logbook esercizio per esercizio: esce Calo solo se piu esercizi scendono davvero, non per un singolo calf o per una scheda diversa.";
       if (decision.label === "Recupero") return "Qui sta guardando il questionario: sonno scarso o recupero molto basso pesano piu dei carichi.";
       if (decision.label === "Sicurezza") return "Qui sta guardando dolore, recupero e stress: se segnali dolore o rischio alto, ti protegge e consiglia prudenza.";
       if (decision.label === "Scheda da rivedere") return "Qui sta guardando le risposte del questionario su workout e sensazione della scheda.";
@@ -4191,7 +4375,7 @@
         progress: ["Progressioni", "Trend carichi e score"],
         nutrition: ["Nutrizione", "Dashboard alimentazione"],
         volume: ["Volume", "Programmazione annuale"],
-        quiz: ["Questionario", "Check decisionale"],
+        quiz: ["Check-in", "Semaforo e benessere"],
         coach: ["Coach", "Back office"]
       };
       document.getElementById("appTitle").textContent = titleMap[activeScreen][0];
@@ -4247,25 +4431,9 @@
         </div>
         ${missionHtml(context)}
         <section class="card">
-          <div class="row"><h3>Semaforo allenamento</h3><span class="chip" style="color:${decision.color}">${decision.level} - ${decision.label}</span></div>
-          <p class="micro-copy">${escapeHtml(decision.text)}</p>
-          <div class="mini-bars">
-            ${bar("Prontezza", ready, colors.green)}
-            ${bar("Carichi", performanceScore(), colors.gold)}
-            ${bar("Aderenza", adherenceScore(), colors.blue)}
-            ${bar("Rischio", structuralRisk(), colors.red)}
-          </div>
-          <div class="signal-note"><strong>Perche esce cosi:</strong> ${escapeHtml(decisionReasonText())}</div>
-          <div class="signal-legend">
-            <div class="signal-legend-item"><strong>Questionario</strong>energia, sonno, stress, dolore, recupero e sensazione workout.</div>
-            <div class="signal-legend-item"><strong>Logbook</strong>confronto degli ultimi carichi salvati e costanza degli allenamenti.</div>
-            <div class="signal-legend-item"><strong>Manuale</strong>se compili metriche tipo energia, sonno o aderenza, l'app usa quei valori.</div>
-          </div>
-          <div class="history">
-            <div class="history-row"><span>Prontezza</span><strong>sonno + stress + energia</strong></div>
-            <div class="history-row"><span>Carichi</span><strong>ultimo vs precedente logbook</strong></div>
-            <div class="history-row"><span>Rischio</span><strong>dolore + fatica + recupero</strong></div>
-          </div>
+          <div class="row"><h3>Check-in allenamento</h3><span class="chip" style="color:${decision.color}">${escapeHtml(checkinStatusMeta().status)}</span></div>
+          <p class="micro-copy">Semaforo, fonti del dato e questionario stanno in una sezione dedicata.</p>
+          <button class="ghost-button" style="width:100%;margin-top:10px" data-screen-target="quiz">Apri Check-in</button>
         </section>
       `;
     }
@@ -4494,13 +4662,12 @@
         <div class="coach-grid">
           <article class="coach-tile"><span>Schede custom</span><strong>${customCount}</strong><span>create dal builder</span></article>
           <article class="coach-tile"><span>Blocchi importati</span><strong>${importedGroups}</strong><span>schede base modificabili</span></article>
-          <article class="coach-tile"><span>Questionario</span><strong>${p.level}</strong><span>${escapeHtml(p.label)}</span></article>
+          <article class="coach-tile"><span>Check-in</span><strong>${p.level}</strong><span>${escapeHtml(p.label)}</span></article>
           <article class="coach-tile"><span>Feedback</span><strong>${state.coach.feedback.length}</strong><span>note coach/tecnica</span></article>
         </div>
         ${coachWorkbenchHtml()}
         ${coachFeedbackBoardHtml()}
         <section class="coach-section">${coachVolumePanelHtml()}</section>
-        <section class="coach-section">${coachQuizReviewHtml()}</section>
       `;
     }
 
@@ -4525,7 +4692,7 @@
               <button class="ghost-button" id="exportData">Esporta dati</button>
               <label class="ghost-button" for="importData">Importa backup</label>
               <input id="importData" type="file" accept="application/json" hidden>
-              <button class="ghost-button" data-screen-target="quiz">Questionario</button>
+              <button class="ghost-button" data-screen-target="quiz">Check-in</button>
             </div>
             <button class="view-toggle-button ${state.coach.athleteView ? "active" : ""}" data-toggle-athlete-view>Vista Atleta</button>
             ${state.coach.athleteView ? `
@@ -4553,7 +4720,7 @@
 
     function coachWorkbenchHtml() {
       const tab = state.coach.activeTab || "create";
-      const athleteOn = true;
+      const athleteOn = !!state.coach.athleteView;
       const athleteLayout = state.coach.athleteLayout || "compact";
       const layoutClass = athleteOn ? `athlete-${athleteLayout}` : "no-athlete";
       return `
@@ -4590,7 +4757,7 @@
           <div class="history">
             <div class="history-row"><span>Creazione e modifica schede</span><strong>Builder</strong></div>
             <div class="history-row"><span>Schede importate modificabili</span><strong>Archivio</strong></div>
-            <div class="history-row"><span>Feedback e review questionario</span><strong>Check</strong></div>
+            <div class="history-row"><span>Builder, vista atleta e feedback coach</span><strong>Check</strong></div>
           </div>
         </section>
       `;
@@ -4803,6 +4970,10 @@
                 <button class="mini-button" type="button" id="clearBuilderRow">Svuota riga</button>
               </div>
             </div>
+            <div class="builder-v24-live">
+              <div class="builder-v24-feedback"><div class="row"><h3>Guida progressioni</h3><span class="chip">${feedback.score}% - ${escapeHtml(feedback.tag)}</span></div><p><strong>${escapeHtml(feedback.title)}</strong></p><p class="micro-copy">${escapeHtml(feedback.text)}</p></div>
+              <div class="builder-v24-volume"><div class="row"><h3>Volume medio 8 settimane</h3><span class="chip">live</span></div><p class="micro-copy">Quando salvi, questa scheda entra nella zona Volume come blocco custom.</p>${coachBuilderVolumeHtml()}</div>
+            </div>
             <div class="builder-v24-scroll">
               <table class="builder-v24-table">
                 <colgroup><col class="col-group"><col class="col-exercise"><col class="col-notes"><col class="col-som"><col class="col-small">${Array.from({ length: 8 }, () => `<col class="col-week">`).join("")}</colgroup>
@@ -4812,10 +4983,6 @@
                   <tr class="builder-add-row"><td colspan="13"><button class="builder-add-row-button" type="button" data-builder-add-row>+ aggiungi nuova riga esercizio</button></td></tr>
                 </tbody>
               </table>
-            </div>
-            <div class="builder-v24-live">
-              <div class="builder-v24-feedback"><div class="row"><h3>${escapeHtml(feedback.title)}</h3><span class="chip">${feedback.score}% - ${escapeHtml(feedback.tag)}</span></div><p class="micro-copy">${escapeHtml(feedback.text)}</p></div>
-              <div class="builder-v24-volume"><div class="row"><h3>Volume medio 8 settimane</h3><span class="chip">live</span></div><p class="micro-copy">Quando salvi, questa scheda entra nella zona Volume come blocco custom.</p>${coachBuilderVolumeHtml()}</div>
             </div>
           </div>
           <button class="gold-button" style="width:100%;margin-top:12px" id="saveCoachSession">Salva scheda e aggiorna volume</button>
@@ -5112,82 +5279,106 @@
       `;
     }
 
-    function quizHtml() {
+    function checkinValue(key) {
+      const maps = {
+        energy: { basso: 2, medio: 3, alto: 5 },
+        sleep: { male: 1, ok: 3, bene: 5 },
+        doms: { ok: 1, indolenzita: 3, distrutta: 5 },
+        stress: { basso: 1, medio: 3, alto: 5 },
+        hunger: { bassa: 2, normale: 3, alta: 4, "fame assurda": 5 }
+      };
+      if (key === "energy") return maps.energy[state.quiz.feeling] || 3;
+      if (key === "sleep") return maps.sleep[state.quiz.sleepQuality] || 3;
+      if (key === "doms") return maps.doms[state.quiz.recovery] || 1;
+      if (key === "stress") return maps.stress[state.quiz.stress] || 3;
+      if (key === "hunger") return maps.hunger[state.quiz.hunger] || 3;
+      return 3;
+    }
+
+    function checkinScale(key, label, hint) {
+      const active = checkinValue(key);
+      return `<div class="checkin-slider">
+        <div class="checkin-slider-top"><span>${label}</span><small>${hint}</small></div>
+        <div class="checkin-scale" data-checkin-scale="${key}">
+          ${[1, 2, 3, 4, 5].map((value) => `<button type="button" class="${value === active ? "active" : ""}" data-checkin-value="${value}" aria-label="${label} ${value}">${value}</button>`).join("")}
+        </div>
+      </div>`;
+    }
+
+    function checkinStatusMeta() {
       const p = decisionPriority();
+      const trend = exerciseTrendSummary();
+      const risk = structuralRisk();
+      if (p.label === "Sicurezza" || p.label === "Recupero") return { ...p, status: "prudenza", color: colors.orange };
+      if (trend.down >= 2 || p.label === "Calo") return { ...p, status: "da controllare", color: colors.orange };
+      if (risk < 55 && trend.down <= 1) return { ...p, status: "stabile", color: colors.green, text: trend.down === 1 ? `Volume ok. Occhio solo a ${trend.downNames[0] || "un esercizio"}: sembra l'unico dato in calo.` : "Volume ok, carichi stabili e check-in senza segnali pesanti." };
+      return { ...p, status: "monitor", color: colors.blue };
+    }
+
+    function checkinTrafficHtml() {
+      const meta = checkinStatusMeta();
+      const trend = exerciseTrendSummary();
+      const risk = structuralRisk();
+      const recoveryText = state.quiz.recovery === "distrutta" ? "basso" : state.quiz.recovery === "indolenzita" ? "medio" : "ok";
+      const downText = trend.downNames.length ? trend.downNames.join(", ") : "nessun calo importante";
+      return `<section class="card checkin-status-card">
+        <div class="row"><h3>Semaforo allenamento</h3><span class="status-pill" style="--status-color:${meta.color}">${escapeHtml(meta.status)}</span></div>
+        <p class="micro-copy">${escapeHtml(meta.text)}</p>
+        <div class="signal-source-grid">
+          <div class="signal-source" style="--dot:${trend.down >= 2 ? colors.orange : colors.green}"><i></i><div><strong>Carichi</strong>${trend.total ? `${trend.up} su, ${trend.stable} stabili, ${trend.down} giu` : "pochi confronti nel logbook"}</div><span>${trend.down >= 2 ? "check" : "ok"}</span></div>
+          <div class="signal-source" style="--dot:${risk > 65 ? colors.red : colors.green}"><i></i><div><strong>Check-in</strong>sonno, stress, DOMS, dolore e feeling</div><span>${risk > 65 ? "alto" : "ok"}</span></div>
+          <div class="signal-source" style="--dot:${recoveryText === "basso" ? colors.orange : colors.blue}"><i></i><div><strong>Recupero</strong>recupero muscolare percepito</div><span>${recoveryText}</span></div>
+        </div>
+        <div class="signal-note"><strong>Da dove arriva:</strong> logbook ultimi allenamenti, check-in benessere e note dolore/fatica. Dettaglio carichi: ${escapeHtml(downText)}.</div>
+      </section>`;
+    }
+
+    function quizHtml() {
+      const p = checkinStatusMeta();
       return `
         <div class="hero-title">
-          <h2>Questionario <span>coaching</span></h2>
-          <p>Domande mirate per capire se spingere, tenere o rivedere qualcosa.</p>
+          <h2>Check-in <span>allenamento</span></h2>
+          <p>Semaforo spiegato e check-in rapido, separati dal workout e dalla zona coach.</p>
         </div>
-        <section class="card">
-          <div class="form-grid">
-            <label>Come ti senti?
-              <select data-field="quiz.feeling">
-                ${["basso", "medio", "alto"].map((value) => `<option value="${value}" ${state.quiz.feeling === value ? "selected" : ""}>${value}</option>`).join("")}
-              </select>
-            </label>
-            <label>Come va l'allenamento?
-              <select data-field="quiz.workout">
-                ${["male", "neutro", "bene", "benissimo"].map((value) => `<option value="${value}" ${state.quiz.workout === value ? "selected" : ""}>${value}</option>`).join("")}
-              </select>
-            </label>
-            <label>Dormi bene?
-              <select data-field="quiz.sleepQuality">
-                ${["male", "ok", "bene"].map((value) => `<option value="${value}" ${state.quiz.sleepQuality === value ? "selected" : ""}>${value}</option>`).join("")}
-              </select>
-            </label>
-            <label>Fame
-              <select data-field="quiz.hunger">
-                ${["bassa", "normale", "alta", "fame assurda"].map((value) => `<option value="${value}" ${state.quiz.hunger === value ? "selected" : ""}>${value}</option>`).join("")}
-              </select>
-            </label>
-            <label>Bagno/digestione
-              <select data-field="quiz.digestion">
-                ${["regolare", "cosi cosi", "problemi"].map((value) => `<option value="${value}" ${state.quiz.digestion === value ? "selected" : ""}>${value}</option>`).join("")}
-              </select>
-            </label>
-            <label>Stress
-              <select data-field="quiz.stress">
-                ${["basso", "medio", "alto"].map((value) => `<option value="${value}" ${state.quiz.stress === value ? "selected" : ""}>${value}</option>`).join("")}
-              </select>
-            </label>
-            <label>Recupero muscolare
-              <select data-field="quiz.recovery">
-                ${["ok", "indolenzita", "distrutta"].map((value) => `<option value="${value}" ${state.quiz.recovery === value ? "selected" : ""}>${value}</option>`).join("")}
-              </select>
-            </label>
-            <label>Dolori fastidiosi?
-              <select data-field="quiz.pain">
-                <option value="no" ${state.quiz.pain === "no" ? "selected" : ""}>no</option>
-                <option value="si" ${state.quiz.pain === "si" ? "selected" : ""}>si</option>
-              </select>
-            </label>
-            <label>Come ti trovi con la scheda?
-              <select data-field="quiz.sheetFit">
-                ${["male", "ok", "bene"].map((value) => `<option value="${value}" ${state.quiz.sheetFit === value ? "selected" : ""}>${value}</option>`).join("")}
-              </select>
-            </label>
-            <label>Motivazione
-              <select data-field="quiz.motivation">
-                ${["bassa", "media", "alta"].map((value) => `<option value="${value}" ${state.quiz.motivation === value ? "selected" : ""}>${value}</option>`).join("")}
-              </select>
-            </label>
-            <label class="full">Esercizi che senti bene<textarea data-field="quiz.goodExercises" placeholder="es. lento avanti, alzate, pressa...">${state.quiz.goodExercises}</textarea></label>
-            <label class="full">Esercizi che senti poco<textarea data-field="quiz.weakExercises" placeholder="quelli dove non capisci bene il target">${state.quiz.weakExercises}</textarea></label>
-            <label class="full">Cosa cambieresti<textarea data-field="quiz.changeExercises" placeholder="esercizi, recuperi, ordine, fastidi...">${state.quiz.changeExercises}</textarea></label>
-            <label class="full">Note libere<textarea data-field="quiz.note" placeholder="qualsiasi cosa utile">${state.quiz.note}</textarea></label>
-          </div>
-          <button class="gold-button" style="width:100%;margin-top:12px" id="saveQuiz">Salva Questionario</button>
-        </section>
-        <section class="card">
-          <div class="row"><h3>Responso</h3><span class="chip" style="color:${p.color}">${p.level} - ${p.label}</span></div>
-          <p>${p.text}</p>
-          <div class="mini-bars">
-            ${bar("Prontezza", readinessScore(), colors.green)}
-            ${bar("Risposta", programResponse(), colors.blue)}
-            ${bar("Rischio", structuralRisk(), colors.red)}
-          </div>
-        </section>
+        <div class="checkin-grid">
+          ${checkinTrafficHtml()}
+          <section class="card checkin-form-card">
+            <div class="row"><h3>Check-in benessere</h3><span class="chip">1-5</span></div>
+            <div class="checkin-slider-grid">
+              ${checkinScale("energy", "Energia", "1 scarica - 5 alta")}
+              ${checkinScale("sleep", "Sonno", "1 male - 5 bene")}
+              ${checkinScale("doms", "DOMS", "1 ok - 5 pesanti")}
+              ${checkinScale("stress", "Stress", "1 basso - 5 alto")}
+              ${checkinScale("hunger", "Fame", "1 bassa - 5 alta")}
+            </div>
+            <div class="form-grid" style="margin-top:12px">
+              <label>Workout
+                <select data-field="quiz.workout">
+                  ${["male", "neutro", "bene", "benissimo"].map((value) => `<option value="${value}" ${state.quiz.workout === value ? "selected" : ""}>${value}</option>`).join("")}
+                </select>
+              </label>
+              <label>Dolori fastidiosi?
+                <select data-field="quiz.pain">
+                  <option value="no" ${state.quiz.pain === "no" ? "selected" : ""}>no</option>
+                  <option value="si" ${state.quiz.pain === "si" ? "selected" : ""}>si</option>
+                </select>
+              </label>
+              <label>Digestione
+                <select data-field="quiz.digestion">
+                  ${["regolare", "cosi cosi", "problemi"].map((value) => `<option value="${value}" ${state.quiz.digestion === value ? "selected" : ""}>${value}</option>`).join("")}
+                </select>
+              </label>
+              <label>Scheda
+                <select data-field="quiz.sheetFit">
+                  ${["male", "ok", "bene"].map((value) => `<option value="${value}" ${state.quiz.sheetFit === value ? "selected" : ""}>${value}</option>`).join("")}
+                </select>
+              </label>
+              <label class="full">Note coach<textarea data-field="quiz.note" placeholder="fastidi, energia, esercizi da controllare...">${state.quiz.note}</textarea></label>
+            </div>
+            <div class="coach-result"><strong>Risultato coach</strong>${escapeHtml(p.text)}</div>
+            <button class="gold-button" style="width:100%;margin-top:12px" id="saveQuiz">Salva check-in</button>
+          </section>
+        </div>
         <section class="card">
           <button class="ghost-button" style="width:100%" id="exportData">Esporta backup locale</button>
           <button class="danger-button" style="width:100%;margin-top:8px" id="clearData">Svuota dati</button>
@@ -5250,6 +5441,21 @@
           state.training.feeling = button.dataset.choice;
           saveState();
           render();
+        });
+      });
+      document.querySelectorAll("[data-checkin-scale]").forEach((group) => {
+        group.querySelectorAll("[data-checkin-value]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const value = Number(button.dataset.checkinValue || 3);
+            const key = group.dataset.checkinScale;
+            if (key === "energy") state.quiz.feeling = value <= 2 ? "basso" : value >= 4 ? "alto" : "medio";
+            if (key === "sleep") state.quiz.sleepQuality = value <= 2 ? "male" : value >= 4 ? "bene" : "ok";
+            if (key === "doms") state.quiz.recovery = value <= 2 ? "ok" : value >= 4 ? "distrutta" : "indolenzita";
+            if (key === "stress") state.quiz.stress = value <= 2 ? "basso" : value >= 4 ? "alto" : "medio";
+            if (key === "hunger") state.quiz.hunger = value <= 2 ? "bassa" : value === 3 ? "normale" : value === 4 ? "alta" : "fame assurda";
+            saveState();
+            render();
+          });
         });
       });
       document.querySelectorAll("[data-workout-toggle]").forEach((button) => {
@@ -5495,7 +5701,7 @@
         saveQuiz.addEventListener("click", () => {
           saveState();
           const p = decisionPriority();
-          showToast(`Questionario salvato: ${p.level} - ${p.label}`);
+          showToast(`Check-in salvato: ${p.level} - ${p.label}`);
           render();
         });
       }
