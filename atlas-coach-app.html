@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8">
@@ -8,8 +8,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="app-icon.svg" type="image/svg+xml">
-  <title>Alice Method App</title>
+  <link rel="icon" href="app-icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <title>Atlas</title>
   <style>
     :root {
       color-scheme: dark;
@@ -489,6 +490,90 @@
       font-size: .72rem;
     }
 
+
+    .mission-card {
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top right, rgba(255,111,203,.2), transparent 34%),
+        linear-gradient(180deg, rgba(216,164,255,.08), transparent 180px),
+        var(--card);
+    }
+
+    .mission-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .mission-head span {
+      display: block;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: .68rem;
+      font-weight: 850;
+      letter-spacing: .04em;
+      margin-bottom: 5px;
+    }
+
+    .mission-head h3 {
+      margin: 0;
+      font-size: 1.18rem;
+    }
+
+    .mission-pill {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      border: 1px solid rgba(105,230,176,.34);
+      background: rgba(105,230,176,.12);
+      color: var(--green);
+      padding: 7px 10px;
+      font-size: .72rem;
+      font-weight: 900;
+    }
+
+    .mission-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 9px;
+      margin-bottom: 12px;
+    }
+
+    .mission-stat {
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      background: rgba(255,255,255,.035);
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .mission-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: .66rem;
+      text-transform: uppercase;
+      font-weight: 850;
+      letter-spacing: .04em;
+      margin-bottom: 6px;
+    }
+
+    .mission-stat strong {
+      display: block;
+      font-size: 1.05rem;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    .mission-focus {
+      border-top: 1px solid var(--line-soft);
+      padding-top: 12px;
+    }
+
+    .mission-focus strong {
+      color: var(--text);
+    }
     .gold-button, .ghost-button, .danger-button {
       min-height: 38px;
       border-radius: 10px;
@@ -1806,7 +1891,7 @@
       </button>
     </aside>
 
-    <section class="phone-shell" aria-label="Alice Method App">
+    <section class="phone-shell" aria-label="Atlas">
       <div class="phone">
         <div class="phone-status">
           <span>9:41</span>
@@ -2149,6 +2234,39 @@
       return clamp(match ? Number(match[0]) : 1, 1, 8);
     }
 
+
+    function missionHtml(context) {
+      const session = context.session;
+      const exercises = session.exercises || [];
+      const totalSets = exercises.reduce((total, exercise) => total + setCountFor(exercise), 0);
+      const first = exercises[0];
+      const focus = displayLabel(session.focus || session.phase || "Allenamento");
+      if (context.isRestDay) {
+        return `
+          <section class="card mission-card">
+            <div class="mission-head">
+              <div><span>Missione di oggi</span><h3>Recupero attivo</h3></div>
+              <div class="mission-pill">Reset</div>
+            </div>
+            <p class="micro-copy">Oggi niente scheda automatica: tieni alta la qualita con mobilita, passi e recupero.</p>
+          </section>
+        `;
+      }
+      return `
+        <section class="card mission-card">
+          <div class="mission-head">
+            <div><span>Missione di oggi</span><h3>${escapeHtml(session.name || session.code)}</h3></div>
+            <div class="mission-pill">${escapeHtml(session.code || "--")}</div>
+          </div>
+          <div class="mission-grid">
+            <div class="mission-stat"><span>Focus</span><strong>${escapeHtml(focus)}</strong></div>
+            <div class="mission-stat"><span>Esercizi</span><strong>${exercises.length || "--"}</strong></div>
+            <div class="mission-stat"><span>Serie</span><strong>${totalSets || "--"}</strong></div>
+          </div>
+          <p class="mission-focus">Parti da <strong>${escapeHtml(displayExerciseName(first?.name || "primo esercizio"))}</strong>${first?.reps ? `: target ${escapeHtml(first.reps)}` : ""}.</p>
+        </section>
+      `;
+    }
     function repTargetsFor(exercise) {
       const count = setCountFor(exercise);
       const reps = String(exercise.reps || "").trim();
@@ -2518,6 +2636,7 @@
             <small>${last ? `${last.date} · ${last.exercises.length} esercizi` : "Nessuna sessione importata"}</small>
           </article>
         </div>
+        ${missionHtml(context)}
         <section class="card">
           <div class="row"><h3>Semaforo allenamento</h3><span class="chip">${decisionPriority().level} · ${decisionPriority().label}</span></div>
           <p class="micro-copy">Incrocia questionario, recupero, stress/sonno, storico dei carichi e qualita dei log per dirti se spingere, mantenere o rivedere qualcosa.</p>
@@ -3779,7 +3898,7 @@
 
     function exportBackup() {
       const payload = {
-        app: "Alice Method App",
+        app: "Atlas",
         exportedAt: new Date().toISOString(),
         state
       };

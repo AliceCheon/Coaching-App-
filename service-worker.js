@@ -1,11 +1,14 @@
-const CACHE_NAME = "alice-method-app-v14";
+const CACHE_NAME = "atlas-app-v15";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./atlas-coach-app.html",
   "./nutrizione/index.html",
   "./manifest.webmanifest",
-  "./app-icon.svg"
+  "./app-icon.png",
+  "./app-icon-192.png",
+  "./app-icon-512.png",
+  "./apple-touch-icon.png"
 ];
 
 self.addEventListener("install", (event) => {
