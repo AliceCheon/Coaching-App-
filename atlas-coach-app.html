@@ -1164,20 +1164,31 @@
       gap: 6px;
     }
 
-    .checkin-scale button {
+    .checkin-option {
       position: relative;
       z-index: 1;
+      display: grid;
+      place-items: center;
       min-height: 34px;
       border-radius: 10px;
       border: 1px solid rgba(255,255,255,.12);
       background: rgba(255,255,255,.055);
       color: var(--muted);
       font-weight: 900;
+      cursor: pointer;
       pointer-events: auto;
       touch-action: manipulation;
+      user-select: none;
     }
 
-    .checkin-scale button.active {
+    .checkin-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .checkin-option.active,
+    .checkin-option:has(input:checked) {
       background: linear-gradient(135deg, rgba(216,164,255,.38), rgba(105,230,176,.18));
       border-color: rgba(216,164,255,.45);
       color: var(--text);
@@ -5321,7 +5332,7 @@
       return `<div class="checkin-slider">
         <div class="checkin-slider-top"><span>${label}</span><small>${hint}</small></div>
         <div class="checkin-scale" data-checkin-scale="${key}">
-          ${[1, 2, 3, 4, 5].map((value) => `<button type="button" class="${value === active ? "active" : ""}" data-checkin-value="${value}" aria-label="${label} ${value}">${value}</button>`).join("")}
+          ${[1, 2, 3, 4, 5].map((value) => `<label class="checkin-option ${value === active ? "active" : ""}" aria-label="${label} ${value}"><input type="radio" name="checkin-${key}" value="${value}" data-checkin-input="${key}" ${value === active ? "checked" : ""}><span>${value}</span></label>`).join("")}
         </div>
       </div>`;
     }
@@ -5475,15 +5486,11 @@
           render();
         });
       });
-      document.querySelectorAll("[data-checkin-scale]").forEach((group) => {
-        group.querySelectorAll("[data-checkin-value]").forEach((button) => {
-          button.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setCheckinValue(group.dataset.checkinScale, button.dataset.checkinValue);
-            saveState();
-            render();
-          });
+      document.querySelectorAll("[data-checkin-input]").forEach((input) => {
+        input.addEventListener("change", () => {
+          setCheckinValue(input.dataset.checkinInput, input.value);
+          saveState();
+          render();
         });
       });
       document.querySelectorAll("[data-workout-toggle]").forEach((button) => {

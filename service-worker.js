@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = "atlas-app-v27";
+﻿const CACHE_NAME = "atlas-app-v28";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -41,6 +41,7 @@ self.addEventListener("fetch", (event) => {
     )
   );
 });
+
 
 
 
