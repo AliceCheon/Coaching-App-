@@ -1165,12 +1165,16 @@
     }
 
     .checkin-scale button {
+      position: relative;
+      z-index: 1;
       min-height: 34px;
       border-radius: 10px;
       border: 1px solid rgba(255,255,255,.12);
       background: rgba(255,255,255,.055);
       color: var(--muted);
       font-weight: 900;
+      pointer-events: auto;
+      touch-action: manipulation;
     }
 
     .checkin-scale button.active {
@@ -4254,21 +4258,19 @@
       const stress = state.metrics.stress === "" ? (stressMap[state.quiz.stress] ?? 42) : number(state.metrics.stress, 0);
       const sleep = state.metrics.sleep === "" ? (sleepMap[state.quiz.sleepQuality] ?? 6.8) : number(state.metrics.sleep, 8);
       const soreness = recoveryMap[state.quiz.recovery] ?? number(state.body.soreness, 0);
-      const pain = state.quiz.pain === "si" ? 28 : 0;
-      const digestion = state.quiz.digestion === "problemi" ? 12 : 0;
+      const pain = 0;
+      const digestion = 0;
       return clamp(Math.round(stress * .34 + Math.max(0, 8 - sleep) * 8 + soreness * .26 + pain + digestion), 0, 100);
     }
 
     function programResponse() {
       const feelingMap = { basso: 32, medio: 58, alto: 82 };
-      const workoutMap = { male: 34, neutro: 56, bene: 76, benissimo: 88 };
-      const sheetMap = { male: 38, ok: 58, bene: 76 };
       const energy = state.metrics.energy === "" ? (feelingMap[state.quiz.feeling] ?? 58) : number(state.metrics.energy, 50);
       const perf = performanceScore();
       const adherence = adherenceScore();
-      const workout = workoutMap[state.quiz.workout] ?? 56;
-      const sheet = sheetMap[state.quiz.sheetFit] ?? 58;
-      return clamp(Math.round(energy * .24 + perf * .26 + adherence * .22 + workout * .18 + sheet * .1), 0, 100);
+      const sleep = checkinValue("sleep") * 20;
+      const stress = 100 - checkinValue("stress") * 16;
+      return clamp(Math.round(energy * .3 + perf * .3 + adherence * .18 + sleep * .12 + stress * .1), 0, 100);
     }
 
     function readinessScore() {
@@ -4305,9 +4307,8 @@
       const perf = performanceScore();
       const response = programResponse();
       if (state.quiz.recovery === "distrutta" || state.quiz.sleepQuality === "male") return { level: 1, label: "Recupero", color: colors.red, text: "Recupero basso: oggi meglio non cercare PR, tieni tecnica pulita e scala se serve." };
-      if (risk >= 66 || state.quiz.pain === "si") return { level: 1, label: "Sicurezza", color: colors.red, text: "Riduci carico, niente progressioni aggressive, controlla i segnali." };
+      if (risk >= 66) return { level: 1, label: "Sicurezza", color: colors.red, text: "Riduci carico, niente progressioni aggressive, controlla i segnali." };
       if (perf <= 38 && exerciseTrendSummary().down >= 2) return { level: 2, label: "Calo", color: colors.orange, text: "Due o piu esercizi risultano in calo nel logbook: mantieni volume e controlla recupero." };
-      if (state.quiz.workout === "male" || state.quiz.sheetFit === "male") return { level: 3, label: "Scheda da rivedere", color: colors.orange, text: "Segnale utile: annota esercizi che non senti e valuta sostituzioni mirate." };
       if (adherence < 55) return { level: 3, label: "Aderenza", color: colors.gold, text: "Semplifica la scheda e proteggi la costanza." };
       if (response < 58) return { level: 4, label: "Stallo", color: colors.blue, text: "Cambia stimolo o riduci fatica accumulata." };
       return { level: 5, label: "OK", color: colors.green, text: "Puoi progredire con piccoli aumenti misurati." };
@@ -5315,6 +5316,40 @@
       return { ...p, status: "monitor", color: colors.blue };
     }
 
+    function checkinAdvice() {
+      const energy = checkinValue("energy");
+      const sleep = checkinValue("sleep");
+      const doms = checkinValue("doms");
+      const stress = checkinValue("stress");
+      const hunger = checkinValue("hunger");
+      if (sleep <= 2 || doms >= 4 || stress >= 4) {
+        return {
+          title: "Giornata da gestire",
+          text: "Allenati, ma tieni 1-2 RIR in piu, evita test o PR e taglia una serie se senti che la tecnica cala.",
+          color: colors.orange
+        };
+      }
+      if (energy >= 4 && sleep >= 4 && doms <= 2 && stress <= 2) {
+        return {
+          title: "Puoi spingere",
+          text: "Buoni segnali: puoi provare una piccola progressione di carico o reps, restando pulita nella tecnica.",
+          color: colors.green
+        };
+      }
+      if (hunger >= 5 && energy <= 3) {
+        return {
+          title: "Occhio alla benzina",
+          text: "Fame alta ed energia non top: cura il pre-workout e non forzare progressioni aggressive oggi.",
+          color: colors.gold
+        };
+      }
+      return {
+        title: "Mantieni progressione",
+        text: "Segnali medi: fai la scheda prevista, prova a confermare i carichi e aumenta solo dove senti controllo.",
+        color: colors.blue
+      };
+    }
+
     function checkinTrafficHtml() {
       const meta = checkinStatusMeta();
       const trend = exerciseTrendSummary();
@@ -5335,6 +5370,7 @@
 
     function quizHtml() {
       const p = checkinStatusMeta();
+      const advice = checkinAdvice();
       return `
         <div class="hero-title">
           <h2>Check-in <span>allenamento</span></h2>
@@ -5351,31 +5387,7 @@
               ${checkinScale("stress", "Stress", "1 basso - 5 alto")}
               ${checkinScale("hunger", "Fame", "1 bassa - 5 alta")}
             </div>
-            <div class="form-grid" style="margin-top:12px">
-              <label>Workout
-                <select data-field="quiz.workout">
-                  ${["male", "neutro", "bene", "benissimo"].map((value) => `<option value="${value}" ${state.quiz.workout === value ? "selected" : ""}>${value}</option>`).join("")}
-                </select>
-              </label>
-              <label>Dolori fastidiosi?
-                <select data-field="quiz.pain">
-                  <option value="no" ${state.quiz.pain === "no" ? "selected" : ""}>no</option>
-                  <option value="si" ${state.quiz.pain === "si" ? "selected" : ""}>si</option>
-                </select>
-              </label>
-              <label>Digestione
-                <select data-field="quiz.digestion">
-                  ${["regolare", "cosi cosi", "problemi"].map((value) => `<option value="${value}" ${state.quiz.digestion === value ? "selected" : ""}>${value}</option>`).join("")}
-                </select>
-              </label>
-              <label>Scheda
-                <select data-field="quiz.sheetFit">
-                  ${["male", "ok", "bene"].map((value) => `<option value="${value}" ${state.quiz.sheetFit === value ? "selected" : ""}>${value}</option>`).join("")}
-                </select>
-              </label>
-              <label class="full">Note coach<textarea data-field="quiz.note" placeholder="fastidi, energia, esercizi da controllare...">${state.quiz.note}</textarea></label>
-            </div>
-            <div class="coach-result"><strong>Risultato coach</strong>${escapeHtml(p.text)}</div>
+            <div class="coach-result" style="border-color:${advice.color};background:color-mix(in srgb, ${advice.color} 10%, transparent)"><strong>${escapeHtml(advice.title)}</strong>${escapeHtml(advice.text)}</div>
             <button class="gold-button" style="width:100%;margin-top:12px" id="saveQuiz">Salva check-in</button>
           </section>
         </div>
@@ -5445,7 +5457,9 @@
       });
       document.querySelectorAll("[data-checkin-scale]").forEach((group) => {
         group.querySelectorAll("[data-checkin-value]").forEach((button) => {
-          button.addEventListener("click", () => {
+          button.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
             const value = Number(button.dataset.checkinValue || 3);
             const key = group.dataset.checkinScale;
             if (key === "energy") state.quiz.feeling = value <= 2 ? "basso" : value >= 4 ? "alto" : "medio";
