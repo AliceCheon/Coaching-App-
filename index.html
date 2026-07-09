@@ -3795,6 +3795,13 @@
         ]
       },
       quiz: {
+        checkin: {
+          energy: 3,
+          sleep: 3,
+          doms: 1,
+          stress: 3,
+          hunger: 3
+        },
         feeling: "medio",
         fatigue: "medio",
         pain: "no",
@@ -5281,6 +5288,8 @@
     }
 
     function checkinValue(key) {
+      const saved = Number(state.quiz?.checkin?.[key]);
+      if (Number.isFinite(saved) && saved >= 1 && saved <= 5) return saved;
       const maps = {
         energy: { basso: 2, medio: 3, alto: 5 },
         sleep: { male: 1, ok: 3, bene: 5 },
@@ -5294,6 +5303,17 @@
       if (key === "stress") return maps.stress[state.quiz.stress] || 3;
       if (key === "hunger") return maps.hunger[state.quiz.hunger] || 3;
       return 3;
+    }
+
+    function setCheckinValue(key, value) {
+      const clean = clamp(Number(value || 3), 1, 5);
+      if (!state.quiz.checkin) state.quiz.checkin = {};
+      state.quiz.checkin[key] = clean;
+      if (key === "energy") state.quiz.feeling = clean <= 2 ? "basso" : clean >= 4 ? "alto" : "medio";
+      if (key === "sleep") state.quiz.sleepQuality = clean <= 2 ? "male" : clean >= 4 ? "bene" : "ok";
+      if (key === "doms") state.quiz.recovery = clean <= 2 ? "ok" : clean >= 4 ? "distrutta" : "indolenzita";
+      if (key === "stress") state.quiz.stress = clean <= 2 ? "basso" : clean >= 4 ? "alto" : "medio";
+      if (key === "hunger") state.quiz.hunger = clean <= 2 ? "bassa" : clean === 3 ? "normale" : clean === 4 ? "alta" : "fame assurda";
     }
 
     function checkinScale(key, label, hint) {
@@ -5460,13 +5480,7 @@
           button.addEventListener("click", (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const value = Number(button.dataset.checkinValue || 3);
-            const key = group.dataset.checkinScale;
-            if (key === "energy") state.quiz.feeling = value <= 2 ? "basso" : value >= 4 ? "alto" : "medio";
-            if (key === "sleep") state.quiz.sleepQuality = value <= 2 ? "male" : value >= 4 ? "bene" : "ok";
-            if (key === "doms") state.quiz.recovery = value <= 2 ? "ok" : value >= 4 ? "distrutta" : "indolenzita";
-            if (key === "stress") state.quiz.stress = value <= 2 ? "basso" : value >= 4 ? "alto" : "medio";
-            if (key === "hunger") state.quiz.hunger = value <= 2 ? "bassa" : value === 3 ? "normale" : value === 4 ? "alta" : "fame assurda";
+            setCheckinValue(group.dataset.checkinScale, button.dataset.checkinValue);
             saveState();
             render();
           });
