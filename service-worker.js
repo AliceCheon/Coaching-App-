@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v38";
+const CACHE_NAME = "atlas-app-v39";
 const APP_SHELL = [
   "./",
   "./index.html",
