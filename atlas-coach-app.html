@@ -15,17 +15,17 @@
     :root {
       color-scheme: dark;
       --bg: #050308;
-      --phone: #10090d;
-      --card: #1b1117;
-      --card-2: #2a1821;
-      --line: rgba(255, 143, 189, .24);
+      --phone: #08050d;
+      --card: #170a19;
+      --card-2: #25102b;
+      --line: rgba(255, 111, 203, .28);
       --line-soft: rgba(255, 255, 255, .08);
       --text: #fbf4ff;
-      --muted: #d0abb8;
-      --dim: #9f7d89;
-      --gold: #ff8fbd;
-      --gold-2: #ffd4a3;
-      --gold-3: #b85f85;
+      --muted: #c7abc9;
+      --dim: #89708d;
+      --gold: #ff6fcb;
+      --gold-2: #b388ff;
+      --gold-3: #8d43d0;
       --green: #69e6b0;
       --blue: #a990ff;
       --red: #ff6e7d;
@@ -406,19 +406,19 @@
 
     .daily-boost {
       margin: 10px 0 14px;
-      border: 1px solid rgba(255,143,189,.36);
+      border: 1px solid rgba(255,111,203,.36);
       border-radius: 18px;
       padding: 14px 16px;
       background:
-        radial-gradient(circle at top right, rgba(255,212,163,.22), transparent 40%),
-        linear-gradient(135deg, rgba(255,143,189,.22), rgba(255,212,163,.13)),
-        rgba(37,22,30,.9);
-      box-shadow: 0 18px 48px rgba(255,143,189,.14);
+        radial-gradient(circle at top right, rgba(179,136,255,.22), transparent 40%),
+        linear-gradient(135deg, rgba(255,111,203,.22), rgba(179,136,255,.13)),
+        rgba(28,12,32,.9);
+      box-shadow: 0 18px 48px rgba(255,111,203,.14);
     }
 
     .daily-boost span {
       display: block;
-      color: #ffd4a3;
+      color: #f4d7ff;
       font-size: .72rem;
       font-weight: 950;
       text-transform: uppercase;
@@ -441,7 +441,7 @@
       height: 38px;
       margin-left: 8px;
       border-radius: 999px;
-      background: linear-gradient(135deg, rgba(255,143,189,.28), rgba(255,212,163,.18));
+      background: linear-gradient(135deg, rgba(255,111,203,.28), rgba(179,136,255,.2));
       border: 1px solid rgba(255,255,255,.16);
       vertical-align: middle;
       font-size: 1.15rem;
@@ -470,7 +470,7 @@
     .card {
       border-radius: 18px;
       border: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(255,143,189,.08), rgba(255,212,163,.035) 180px), color-mix(in srgb, var(--card) 86%, #ffffff 14%);
+      background: linear-gradient(180deg, rgba(255,111,203,.075), rgba(179,136,255,.04) 180px), color-mix(in srgb, var(--card) 88%, #ffffff 12%);
       padding: 16px;
       margin-bottom: 12px;
       box-shadow: 0 18px 50px rgba(0,0,0,.22);
@@ -1901,12 +1901,12 @@
     .athlete-view-panel,
     .coach-builder-strip,
     .feedback-board {
-      border: 1px solid rgba(255,143,189,.32);
+      border: 1px solid rgba(255,111,203,.32);
       border-radius: 16px;
       background:
-        radial-gradient(circle at top right, rgba(255,212,163,.18), transparent 42%),
-        linear-gradient(180deg, rgba(52,33,41,.96), rgba(19,11,15,.96));
-      box-shadow: 0 28px 90px rgba(0,0,0,.48), 0 0 0 1px rgba(255,212,163,.08) inset;
+        radial-gradient(circle at top right, rgba(179,136,255,.18), transparent 42%),
+        linear-gradient(180deg, rgba(41,19,49,.96), rgba(13,6,16,.96));
+      box-shadow: 0 28px 90px rgba(0,0,0,.5), 0 0 0 1px rgba(255,111,203,.08) inset;
     }
 
     .coach-program-panel,
@@ -1916,13 +1916,13 @@
 
     .coach-program-panel > .form-grid {
       padding: 12px;
-      background: rgba(255,237,220,.045);
-      border-bottom: 1px solid rgba(255,212,163,.12);
+      background: rgba(255,111,203,.045);
+      border-bottom: 1px solid rgba(255,111,203,.13);
     }
 
     .panel-head {
       padding: 12px;
-      border-bottom: 1px solid rgba(255,212,163,.16);
+      border-bottom: 1px solid rgba(255,111,203,.16);
       display: flex;
       gap: 10px;
       justify-content: space-between;
@@ -1933,7 +1933,7 @@
     .coach-program-scroll {
       overflow: auto;
       max-height: min(760px, calc(100dvh - 220px));
-      background: rgba(12,7,10,.42);
+      background: rgba(7,3,9,.5);
     }
 
     .coach-program-table {
@@ -1944,8 +1944,8 @@
 
     .coach-program-table th,
     .coach-program-table td {
-      border-bottom: 1px solid rgba(255,212,163,.1);
-      border-right: 1px solid rgba(255,212,163,.055);
+      border-bottom: 1px solid rgba(255,111,203,.105);
+      border-right: 1px solid rgba(179,136,255,.06);
       padding: 8px;
       vertical-align: top;
       text-align: left;
@@ -1956,15 +1956,15 @@
       position: sticky;
       top: 0;
       z-index: 2;
-      background: #3a2430;
-      color: #ffd4a3;
+      background: #281430;
+      color: #f4d7ff;
       text-transform: uppercase;
       font-size: .66rem;
       letter-spacing: 0;
     }
 
     .coach-program-table tr:hover td {
-      background: rgba(255,143,189,.105);
+      background: rgba(255,111,203,.105);
     }
 
     .coach-program-table input,
@@ -1972,15 +1972,15 @@
     .coach-program-table textarea {
       width: 100%;
       border-radius: 10px;
-      border: 1px solid rgba(255,212,163,.28);
-      background: rgba(67,43,54,.94);
+      border: 1px solid rgba(179,136,255,.28);
+      background: rgba(32,15,39,.94);
       color: var(--text);
       padding: 8px;
       font-size: .76rem;
     }
 
     .coach-program-table select option {
-      background: #35202b;
+      background: #24112c;
       color: #fff8ff;
     }
 
@@ -2012,14 +2012,14 @@
     .coach-builder-strip {
       padding: 12px;
       margin-bottom: 14px;
-      background: linear-gradient(135deg, rgba(255,143,189,.18), rgba(255,212,163,.1));
+      background: linear-gradient(135deg, rgba(255,111,203,.18), rgba(179,136,255,.12));
     }
 
     .excel-builder {
       background:
-        radial-gradient(circle at top right, rgba(255,212,163,.18), transparent 36%),
-        linear-gradient(180deg, rgba(58,34,44,.97), rgba(29,17,24,.98)),
-        rgba(255,143,189,.08);
+        radial-gradient(circle at top right, rgba(179,136,255,.18), transparent 36%),
+        linear-gradient(180deg, rgba(43,20,53,.97), rgba(18,8,23,.98)),
+        rgba(255,111,203,.08);
     }
 
     .builder-desktop-grid {
@@ -2095,12 +2095,12 @@
     }
 
     .builder-v24-shell {
-      border: 1px solid rgba(255,212,163,.24);
+      border: 1px solid rgba(255,111,203,.24);
       border-radius: 14px;
       overflow: hidden;
       background:
-        radial-gradient(circle at top right, rgba(255,212,163,.16), transparent 34%),
-        rgba(255,237,220,.055);
+        radial-gradient(circle at top right, rgba(179,136,255,.16), transparent 34%),
+        rgba(255,111,203,.055);
     }
 
     .builder-v24-head {
@@ -2108,8 +2108,8 @@
       grid-template-columns: 1.1fr .7fr .9fr .8fr 1fr;
       gap: 10px;
       padding: 12px;
-      background: linear-gradient(135deg, rgba(255,143,189,.2), rgba(255,212,163,.13));
-      border-bottom: 1px solid rgba(255,212,163,.13);
+      background: linear-gradient(135deg, rgba(255,111,203,.2), rgba(179,136,255,.13));
+      border-bottom: 1px solid rgba(255,111,203,.13);
     }
 
     .builder-v24-toolbar {
@@ -2118,8 +2118,8 @@
       justify-content: space-between;
       gap: 10px;
       padding: 10px 12px;
-      border-bottom: 1px solid rgba(255,212,163,.13);
-      background: rgba(255,212,163,.08);
+      border-bottom: 1px solid rgba(255,111,203,.13);
+      background: rgba(179,136,255,.08);
     }
 
     .builder-v24-toolbar span {
@@ -2147,7 +2147,7 @@
 
     .builder-v24-scroll {
       overflow: auto;
-      background: rgba(11,7,10,.5);
+      background: rgba(7,3,9,.52);
     }
 
     .builder-v24-table {
@@ -2159,8 +2159,8 @@
 
     .builder-v24-table th,
     .builder-v24-table td {
-      border-bottom: 1px solid rgba(255,212,163,.105);
-      border-right: 1px solid rgba(255,212,163,.06);
+      border-bottom: 1px solid rgba(255,111,203,.105);
+      border-right: 1px solid rgba(179,136,255,.06);
       padding: 8px 7px;
       text-align: left;
       vertical-align: top;
@@ -2171,8 +2171,8 @@
       position: sticky;
       top: 0;
       z-index: 2;
-      background: #3a2430;
-      color: #ffd4a3;
+      background: #281430;
+      color: #f4d7ff;
       text-transform: uppercase;
       font-size: .62rem;
       font-weight: 950;
@@ -2185,8 +2185,8 @@
     .builder-v24-head input {
       width: 100%;
       border-radius: 8px;
-      border: 1px solid rgba(255,212,163,.26);
-      background: rgba(67,43,54,.94);
+      border: 1px solid rgba(179,136,255,.26);
+      background: rgba(32,15,39,.94);
       color: var(--text);
       padding: 8px;
       font-size: .76rem;
@@ -2199,17 +2199,17 @@
 
     .builder-v24-table select option,
     .builder-v24-head select option {
-      background: #35202b;
+      background: #24112c;
       color: #fff8ff;
     }
 
     .builder-v24-table tbody tr:nth-child(even) td,
     .coach-program-table tbody tr:nth-child(even) td {
-      background: rgba(255,237,220,.035);
+      background: rgba(255,111,203,.035);
     }
 
     .builder-v24-table tbody tr:hover td {
-      background: rgba(255,143,189,.11);
+      background: rgba(255,111,203,.11);
     }
 
     .builder-v24-table .col-group { width: 126px; }
@@ -5528,7 +5528,8 @@
       const exercises = coachExercisesForGroup(group);
       const notes = exerciseNotes(exercise, 2);
       const code = String.fromCharCode(65 + index);
-      const hasExerciseMatch = exercises.some((item) => exerciseMatches(item.name, exercise.name));
+      const selectedName = normalizeExerciseName(exercise.name);
+      const hasExerciseMatch = exercises.some((item) => normalizeExerciseName(item.name) === selectedName);
       const hasGroupMatch = groups.includes(group);
       return `
         <tr>
@@ -5541,7 +5542,7 @@
           </td>
           <td>
             <select data-edit-exercise="${index}" data-edit-key="name">
-              ${exercises.map((item) => `<option value="${escapeHtml(item.name)}" ${exerciseMatches(item.name, exercise.name) ? "selected" : ""}>${escapeHtml(displayExerciseName(item.name))}</option>`).join("")}
+              ${exercises.map((item) => `<option value="${escapeHtml(item.name)}" ${normalizeExerciseName(item.name) === selectedName ? "selected" : ""}>${escapeHtml(displayExerciseName(item.name))}</option>`).join("")}
               ${hasExerciseMatch ? "" : `<option value="${escapeHtml(exercise.name || "")}" selected>${escapeHtml(displayExerciseName(exercise.name || ""))}</option>`}
             </select>
           </td>
@@ -6545,7 +6546,7 @@
             exercise.name = first.name || exercise.name || "";
             exercise.note = first.note || exercise.note || "";
           } else {
-            exercise[key] = key === "name" ? value.replaceAll(" ", "_") : value;
+            exercise[key] = key === "name" ? value : value;
           }
           if (key === "name") {
             const group = coachEditorExerciseGroup(exercise);
@@ -6557,7 +6558,7 @@
           }
           state.training.exercises = buildExerciseIndex(state.training.program, state.training.sessions);
           saveState();
-          if (key === "name" || key === "muscle") render();
+          if (key === "muscle") setTimeout(render, 0);
         });
       });
       const saveFeedback = document.getElementById("saveFeedback");
