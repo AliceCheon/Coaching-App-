@@ -1088,6 +1088,82 @@
       box-shadow: 0 14px 30px rgba(255,111,203,.2);
     }
 
+    .login-gate {
+      min-height: calc(100dvh - 180px);
+      display: grid;
+      place-items: center;
+      padding: 24px 0;
+    }
+
+    .login-panel {
+      width: min(460px, 100%);
+      border: 1px solid rgba(255,111,203,.22);
+      border-radius: 28px;
+      padding: 26px;
+      background:
+        radial-gradient(circle at 84% 0%, rgba(255,111,203,.22), transparent 36%),
+        linear-gradient(145deg, rgba(40,22,43,.96), rgba(14,8,18,.98));
+      box-shadow: 0 26px 90px rgba(0,0,0,.42), 0 0 40px rgba(255,111,203,.08);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-panel::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -78px auto;
+      width: 190px;
+      height: 190px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,111,203,.22);
+      pointer-events: none;
+    }
+
+    .login-icon {
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 16px;
+      border-radius: 26px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #f7a8cf, #bb5f8a);
+      color: #2a1024;
+      font-size: 2rem;
+      font-weight: 950;
+      border: 1px solid rgba(255,255,255,.22);
+      box-shadow: 0 18px 48px rgba(255,111,203,.22);
+    }
+
+    .login-panel h2 {
+      margin: 0;
+      font-size: clamp(1.9rem, 8vw, 3.2rem);
+      line-height: .95;
+      letter-spacing: 0;
+    }
+
+    .login-panel p {
+      margin: 12px auto 0;
+      max-width: 34ch;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .login-panel .google-button {
+      width: 100%;
+      min-height: 52px;
+      margin-top: 20px;
+      font-size: .95rem;
+    }
+
+    .login-small {
+      display: block;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: .76rem;
+      line-height: 1.45;
+    }
+
     .signal-note {
       margin-top: 12px;
       border: 1px solid rgba(216,164,255,.18);
@@ -4054,6 +4130,7 @@
     let cloudUser = null;
     let cloudSaveTimer = null;
     let cloudLoading = false;
+    let authReady = false;
 
     function clone(obj) {
       return JSON.parse(JSON.stringify(obj));
@@ -4103,7 +4180,11 @@
       authService = window.firebase.auth();
       dbService = window.firebase.firestore ? window.firebase.firestore() : null;
       authService.setPersistence(window.firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+      authService.getRedirectResult().catch(() => {
+        showToast("Login Google non completato. Controlla domini autorizzati.");
+      });
       authService.onAuthStateChanged(async (user) => {
+        authReady = true;
         cloudUser = user || null;
         state.profile.account = user ? {
           uid: user.uid,
@@ -4125,6 +4206,12 @@
         render();
       });
       return true;
+    }
+
+    function shouldUseRedirectLogin() {
+      const standalone = window.matchMedia?.("(display-mode: standalone)")?.matches || navigator.standalone;
+      const mobile = window.matchMedia?.("(max-width: 760px)")?.matches;
+      return standalone || mobile;
     }
 
     function cloudDocument() {
@@ -4193,10 +4280,18 @@
       const provider = new window.firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
       try {
+        if (shouldUseRedirectLogin()) {
+          await authService.signInWithRedirect(provider);
+          return;
+        }
         await authService.signInWithPopup(provider);
       } catch (error) {
-        if (String(error?.code || "").includes("popup")) await authService.signInWithRedirect(provider);
-        else showToast("Accesso Google non completato.");
+        const code = String(error?.code || "");
+        if (code.includes("popup") || code.includes("unauthorized-domain") || code.includes("operation-not-supported")) {
+          await authService.signInWithRedirect(provider);
+        } else {
+          showToast("Accesso Google non completato. Controlla dominio e chiave API.");
+        }
       }
     }
 
@@ -4204,6 +4299,15 @@
       if (!authService) return;
       await authService.signOut();
       showToast("Account scollegato. I dati locali restano qui.");
+    }
+
+    function loginRequired() {
+      return firebaseConfigured() && !cloudUser;
+    }
+
+    function greetingName() {
+      const hour = new Date().getHours();
+      return `${hour >= 18 || hour < 5 ? "Buonasera" : "Buongiorno"} Alice`;
     }
 
     function clamp(value, min, max) {
@@ -4744,6 +4848,14 @@
       document.body.classList.toggle("coach-mode", state.profile.mode === "coach");
       updateNav();
       const screen = document.getElementById("screen");
+      if (loginRequired()) {
+        document.getElementById("appTitle").textContent = APP_NAME;
+        document.getElementById("appSubtitle").textContent = authReady ? "Accedi per sincronizzare i tuoi dati" : "Controllo accesso...";
+        document.getElementById("modeButton").textContent = "PIN";
+        screen.innerHTML = loginGateHtml();
+        bindScreen();
+        return;
+      }
       const titleMap = {
         dashboard: [APP_NAME, OPENING_QUOTE],
         training: ["Allenamento", state.profile.phase],
@@ -4789,7 +4901,7 @@
       const decision = decisionPriority();
       return `
         <div class="hero-title">
-          <h2>Barbell diva <span>${ready >= 70 ? "giornata buona" : "allenamento pronto"}</span></h2>
+          <h2>${greetingName()}</h2>
           <p>${escapeHtml(OPENING_QUOTE)} · ${currentDate()} · scheda di oggi, progressi e risposta al programma.</p>
         </div>
         <div class="grid-2">
@@ -4810,7 +4922,21 @@
           <p class="micro-copy">Semaforo, fonti del dato e questionario stanno in una sezione dedicata.</p>
           <button class="ghost-button" style="width:100%;margin-top:10px" data-screen-target="quiz">Apri Check-in</button>
         </section>
-        ${accountCardHtml()}
+      `;
+    }
+
+    function loginGateHtml() {
+      const readyText = authReady ? "Accedi una volta: poi telefono e PC restano sincronizzati in automatico." : "Sto controllando se eri gia loggata.";
+      return `
+        <div class="login-gate">
+          <section class="login-panel">
+            <div class="login-icon">BD</div>
+            <h2>Barbell diva</h2>
+            <p>${escapeHtml(readyText)}</p>
+            <button class="google-button" id="googleLoginButton">Accedi con Google</button>
+            <span class="login-small">I tuoi dati restano legati al tuo account Google e vengono salvati su Firebase.</span>
+          </section>
+        </div>
       `;
     }
 
