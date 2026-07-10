@@ -4557,6 +4557,45 @@
         .join(" ");
     }
 
+    function addExerciseMuscle(matches, muscle) {
+      const normalized = normalizeExerciseName(muscle || "");
+      if (normalized) matches.add(normalized);
+    }
+
+    function inferredExerciseMuscles(value, exercise = null) {
+      const matches = new Set();
+      if (exercise) {
+        addExerciseMuscle(matches, exercise.muscle);
+        addExerciseMuscle(matches, exercise.som);
+        (Array.isArray(exercise.muscles) ? exercise.muscles : []).forEach((muscle) => addExerciseMuscle(matches, muscle));
+      }
+      const names = canonicalExerciseNames(value || exercise?.name || "");
+      Object.entries(COACH_EXERCISE_LIBRARY || {}).forEach(([group, exercises]) => {
+        (exercises || []).forEach((item) => {
+          const itemNames = canonicalExerciseNames(item.name);
+          if ([...names].some((name) => itemNames.has(name))) {
+            addExerciseMuscle(matches, item.som || group);
+          }
+        });
+      });
+      PROGRAM_LIBRARY.forEach((program) => {
+        (program.exercises || []).forEach((item) => {
+          const itemNames = canonicalExerciseNames(item.name);
+          if ([...names].some((name) => itemNames.has(name))) {
+            addExerciseMuscle(matches, item.muscle);
+          }
+        });
+      });
+      return matches;
+    }
+
+    function exerciseMusclesCompatible(leftExercise, rightExercise) {
+      const left = inferredExerciseMuscles(leftExercise?.name || leftExercise, leftExercise);
+      const right = inferredExerciseMuscles(rightExercise?.name || rightExercise, rightExercise);
+      if (!left.size || !right.size) return true;
+      return [...left].some((muscle) => right.has(muscle));
+    }
+
     function signatureMatches(left, right) {
       const a = exerciseSignature(left);
       const b = exerciseSignature(right);
@@ -4567,7 +4606,7 @@
       const aTokens = new Set(a.split(" ").filter(Boolean));
       const bTokens = new Set(b.split(" ").filter(Boolean));
       const shared = [...aTokens].filter((token) => bTokens.has(token));
-      return shared.length >= Math.min(2, aTokens.size, bTokens.size);
+      return shared.length >= 2;
     }
 
     function exerciseMatches(left, right) {
@@ -4583,7 +4622,7 @@
       state.training.sessions.forEach((session) => {
         const sameLetter = !wantedLetter || sessionLetter(session.sessionCode) === wantedLetter;
         session.exercises
-          .filter((item) => exerciseMatches(item.name, exercise.name))
+          .filter((item) => exerciseMatches(item.name, exercise.name) && exerciseMusclesCompatible(item, exercise))
           .forEach((item) => rows.push({ ...item, _sameLetter: sameLetter, date: item.date || session.date, dateInput: session.dateInput || "", week: session.week, sessionCode: session.sessionCode }));
       });
       return rows
@@ -4595,7 +4634,7 @@
       const rows = [];
       state.training.sessions.forEach((session) => {
         session.exercises
-          .filter((item) => exerciseMatches(item.name, exercise.name))
+          .filter((item) => exerciseMatches(item.name, exercise.name) && exerciseMusclesCompatible(item, exercise))
           .forEach((item) => {
             const text = [item.userNote, item.notes, item.note, session.note].filter(Boolean).join(" - ").trim();
             if (text) rows.push({ text, date: item.date || session.date, dateInput: session.dateInput || "" });
