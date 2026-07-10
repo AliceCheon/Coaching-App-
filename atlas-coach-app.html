@@ -4201,9 +4201,14 @@
           provider: "",
           cloudStatus: "locale"
         };
-        if (user) await loadCloudState();
         saveState({ cloud: false });
         render();
+        if (user) {
+          loadCloudState().then(() => {
+            saveState({ cloud: false });
+            render();
+          });
+        }
       });
       return true;
     }
@@ -4249,7 +4254,7 @@
       if (!doc) return;
       cloudLoading = true;
       try {
-        const snapshot = await doc.get();
+        const snapshot = await withTimeout(doc.get(), 5000);
         if (snapshot.exists && snapshot.data()?.state) {
           const account = state.profile.account;
           state = mergeState(clone(baseState), snapshot.data().state);
@@ -4266,6 +4271,13 @@
       } finally {
         cloudLoading = false;
       }
+    }
+
+    function withTimeout(promise, ms) {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms))
+      ]);
     }
 
     async function signInWithGoogle() {
@@ -4290,7 +4302,7 @@
         if (code.includes("popup") || code.includes("unauthorized-domain") || code.includes("operation-not-supported")) {
           await authService.signInWithRedirect(provider);
         } else {
-          showToast("Accesso Google non completato. Controlla dominio e chiave API.");
+          showToast(`Accesso Google non completato: ${code || "errore"}.`);
         }
       }
     }
