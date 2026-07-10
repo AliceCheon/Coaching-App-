@@ -4131,6 +4131,7 @@
     let cloudSaveTimer = null;
     let cloudLoading = false;
     let authReady = false;
+    let localLoginBypass = localStorage.getItem(`${STORE_KEY}.loginBypass`) === "1";
 
     function clone(obj) {
       return JSON.parse(JSON.stringify(obj));
@@ -4314,7 +4315,7 @@
     }
 
     function loginRequired() {
-      return firebaseConfigured() && !cloudUser;
+      return firebaseConfigured() && !cloudUser && !localLoginBypass;
     }
 
     function greetingName() {
@@ -4946,6 +4947,7 @@
             <h2>Barbell diva</h2>
             <p>${escapeHtml(readyText)}</p>
             <button class="google-button" id="googleLoginButton">Accedi con Google</button>
+            <button class="ghost-button" style="width:100%;margin-top:10px" id="continueLocalButton">Continua senza login</button>
             <span class="login-small">I tuoi dati restano legati al tuo account Google e vengono salvati su Firebase.</span>
           </section>
         </div>
@@ -6356,6 +6358,15 @@
       if (googleInfoButton) googleInfoButton.addEventListener("click", () => {
         showToast(firebaseConfigured() ? "Puoi accedere con Google." : "Manca solo la configurazione Firebase.");
       });
+      const continueLocalButton = document.getElementById("continueLocalButton");
+      if (continueLocalButton) {
+        continueLocalButton.addEventListener("click", () => {
+          localLoginBypass = true;
+          localStorage.setItem(`${STORE_KEY}.loginBypass`, "1");
+          showToast("Modalità locale attiva. Puoi usare l'app.");
+          render();
+        });
+      }
     }
 
     function setDeepValue(path, value) {
