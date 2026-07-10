@@ -24,6 +24,10 @@ Questi valori sono gia compilati nella `v35`.
 3. In Authentication attiva Google.
 4. In Firestore crea il database.
 5. In Authentication > Settings > Authorized domains aggiungi il dominio GitHub Pages.
+6. In Google Cloud > API key > Website restrictions consenti:
+   - `https://alicecheon.github.io/*`
+   - `https://alicecheon.github.io/Coaching-App-/*`
+   - `https://barbell-diva.firebaseapp.com/*`
 
 Il pulsante in Dashboard ora e operativo se Authentication Google e Firestore sono attivi nel progetto Firebase.
 
