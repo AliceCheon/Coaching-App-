@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <title>bitch, you better be coaching</title>
+  <title>Barbell diva</title>
   <style>
     :root {
       color-scheme: dark;
@@ -1009,6 +1009,85 @@
       font-size: .78rem;
     }
 
+    .account-card {
+      overflow: hidden;
+      position: relative;
+      background:
+        radial-gradient(circle at 92% 6%, rgba(255,111,203,.18), transparent 32%),
+        linear-gradient(135deg, rgba(255,111,203,.10), rgba(216,164,255,.06)),
+        var(--panel);
+    }
+
+    .account-card::after {
+      content: "";
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      right: -48px;
+      bottom: -58px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,111,203,.25);
+      pointer-events: none;
+    }
+
+    .account-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: .82rem;
+      line-height: 1.35;
+    }
+
+    .account-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      flex: 0 0 auto;
+      background: linear-gradient(135deg, var(--pink), var(--violet));
+      color: #160c18;
+      font-weight: 950;
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 0 22px rgba(255,111,203,.18);
+    }
+
+    .account-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .account-status strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+
+    .account-actions {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .google-button {
+      min-height: 42px;
+      border: 0;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #f7c0df, #ff6fcb);
+      color: #170a17;
+      font-weight: 950;
+      cursor: pointer;
+      box-shadow: 0 14px 30px rgba(255,111,203,.2);
+    }
+
     .signal-note {
       margin-top: 12px;
       border: 1px solid rgba(216,164,255,.18);
@@ -1058,11 +1137,50 @@
     .checkin-status-card {
       position: relative;
       overflow: hidden;
-      border-color: rgba(105,230,176,.2);
+      border-color: rgba(216,164,255,.2);
       background:
-        radial-gradient(circle at 88% 10%, rgba(105,230,176,.14), transparent 34%),
-        linear-gradient(135deg, rgba(216,164,255,.12), rgba(255,111,203,.06)),
+        radial-gradient(circle at 88% 10%, rgba(216,164,255,.13), transparent 34%),
+        linear-gradient(135deg, rgba(20,13,27,.98), rgba(40,25,49,.92)),
         var(--panel);
+    }
+
+    .traffic-hero {
+      display: grid;
+      grid-template-columns: 74px 1fr;
+      gap: 14px;
+      align-items: center;
+      border-radius: 18px;
+      padding: 16px;
+      margin-top: 12px;
+      color: #130d18;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--traffic-color, var(--green)) 78%, white), color-mix(in srgb, var(--traffic-color, var(--green)) 38%, white));
+      box-shadow: 0 18px 42px color-mix(in srgb, var(--traffic-color, var(--green)) 18%, transparent);
+    }
+
+    .traffic-hero-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: rgba(20,13,27,.88);
+      color: color-mix(in srgb, var(--traffic-color, var(--green)) 78%, white);
+      font-size: 1.8rem;
+      font-weight: 950;
+    }
+
+    .traffic-hero strong {
+      display: block;
+      font-size: clamp(1.8rem, 6vw, 2.7rem);
+      line-height: .95;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .traffic-hero span {
+      display: block;
+      margin-top: 5px;
+      font-weight: 750;
     }
 
     .status-pill {
@@ -1097,23 +1215,29 @@
 
     .signal-source {
       display: grid;
-      grid-template-columns: 14px 1fr auto;
-      gap: 8px;
+      grid-template-columns: 38px 1fr 20px;
+      gap: 12px;
       align-items: center;
-      border-radius: 12px;
-      border: 1px solid var(--line-soft);
-      background: rgba(255,255,255,.04);
-      padding: 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(216,164,255,.18);
+      background: linear-gradient(135deg, rgba(255,255,255,.055), rgba(216,164,255,.045));
+      padding: 12px;
       color: var(--muted);
-      font-size: .78rem;
+      font-size: .84rem;
     }
 
     .signal-source i {
-      width: 10px;
-      height: 10px;
+      width: 38px;
+      height: 38px;
       border-radius: 999px;
-      background: var(--dot, var(--green));
-      box-shadow: 0 0 12px var(--dot, var(--green));
+      display: grid;
+      place-items: center;
+      background: color-mix(in srgb, var(--dot, var(--green)) 16%, rgba(255,255,255,.06));
+      border: 1px solid color-mix(in srgb, var(--dot, var(--green)) 42%, transparent);
+      color: var(--dot, var(--green));
+      box-shadow: 0 0 18px color-mix(in srgb, var(--dot, var(--green)) 16%, transparent);
+      font-style: normal;
+      font-weight: 950;
     }
 
     .signal-source strong {
@@ -1123,7 +1247,8 @@
     }
 
     .signal-source span:last-child {
-      color: var(--text);
+      color: var(--pink-2);
+      font-size: 1.6rem;
       font-weight: 900;
       white-space: nowrap;
     }
@@ -1136,17 +1261,39 @@
 
     .checkin-slider-grid {
       display: grid;
-      gap: 9px;
+      gap: 10px;
       margin-top: 10px;
     }
 
     .checkin-slider {
-      border: 1px solid var(--line-soft);
-      border-radius: 12px;
-      background: rgba(255,255,255,.04);
-      padding: 10px;
+      --accent: var(--pink);
+      border: 1px solid color-mix(in srgb, var(--accent) 34%, rgba(255,255,255,.12));
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 42%),
+        linear-gradient(135deg, rgba(255,255,255,.06), rgba(216,164,255,.045));
+      padding: 12px;
       display: grid;
-      gap: 8px;
+      grid-template-columns: 58px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .checkin-slider-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 15px;
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 13%, rgba(255,255,255,.04));
+      border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+      font-size: 1.45rem;
+      font-weight: 950;
+    }
+
+    .checkin-slider-main {
+      min-width: 0;
     }
 
     .checkin-slider-top {
@@ -1154,14 +1301,30 @@
       justify-content: space-between;
       gap: 10px;
       color: var(--text);
-      font-size: .82rem;
+      font-size: .86rem;
       font-weight: 900;
     }
 
     .checkin-scale {
+      --active-pos: 3;
+      position: relative;
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 6px;
+      margin-top: 8px;
+    }
+
+    .checkin-scale::before {
+      content: "";
+      position: absolute;
+      left: 9%;
+      right: 9%;
+      top: 50%;
+      height: 3px;
+      transform: translateY(-50%);
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent) calc((var(--active-pos) - 1) * 25%), rgba(255,255,255,.18) 0);
+      pointer-events: none;
     }
 
     .checkin-option {
@@ -1170,9 +1333,9 @@
       display: grid;
       place-items: center;
       min-height: 34px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.055);
+      border-radius: 999px;
+      border: 0;
+      background: transparent;
       color: var(--muted);
       font-weight: 900;
       cursor: pointer;
@@ -1189,10 +1352,10 @@
 
     .checkin-option.active,
     .checkin-option:has(input:checked) {
-      background: linear-gradient(135deg, rgba(216,164,255,.38), rgba(105,230,176,.18));
-      border-color: rgba(216,164,255,.45);
+      background: color-mix(in srgb, var(--accent) 22%, rgba(20,13,27,.9));
+      outline: 4px solid color-mix(in srgb, var(--accent) 62%, transparent);
       color: var(--text);
-      box-shadow: 0 0 18px rgba(216,164,255,.16);
+      box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 18%, transparent);
     }
 
     .coach-result {
@@ -2681,7 +2844,7 @@
       </button>
     </aside>
 
-    <section class="phone-shell" aria-label="bitch, you better be coaching">
+    <section class="phone-shell" aria-label="Barbell diva">
       <div class="phone">
         <div class="phone-status">
           <span>9:41</span>
@@ -2691,8 +2854,8 @@
 
         <header class="app-header">
           <div>
-            <h1 id="appTitle">Dashboard</h1>
-            <p id="appSubtitle">Ciao Alice</p>
+            <h1 id="appTitle">Barbell diva</h1>
+            <p id="appSubtitle">Lift. Slay. Repeat.</p>
           </div>
           <div class="round-actions">
             <button class="round-button" id="modeButton" title="Coach" aria-label="Coach">PIN</button>
@@ -2747,8 +2910,45 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script>
     const STORE_KEY = "alice-method-app.v8";
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
+      authDomain: "barbell-diva.firebaseapp.com",
+      projectId: "barbell-diva",
+      storageBucket: "barbell-diva.firebasestorage.app",
+      messagingSenderId: "411536425865",
+      appId: "1:411536425865:web:17bcd9f10b6ba1a9b49758",
+      measurementId: "G-FNKXLKQFT8"
+    };
+    const CLOUD_COLLECTION = "barbellDivaAccounts";
+    const APP_NAME = "Barbell diva";
+    const DIVA_QUOTES = [
+      "💅 Lift. Slay. Repeat.",
+      "👑 Built to Slay.",
+      "😈 Bitch, lift heavier.",
+      "💖 Pretty isn't weak.",
+      "🏋️ Heavy is the standard.",
+      "✨ Earn your mirror check.",
+      "🔥 Lift like they doubted you.",
+      "🌸 Strong is the new pretty.",
+      "🚪 Leave your excuses at the door.",
+      "📈 Your PR won't hit itself.",
+      "💋 Hot girls hit PRs.",
+      "🎀 Too pretty to lift light.",
+      "😭 Lift first. Cry later.",
+      "💗 Pretty is the aesthetic. Heavy is the mindset.",
+      "🤨 Bitch, you better be lifting.",
+      "😌 Respectfully... add more weight.",
+      "🐴 If the ponytail is still perfect, you have reps left.",
+      "📊 Being iconic is progressive overload.",
+      "👑 Who needs a prince when you can deadlift?",
+      "💅 Bitch, you better be coaching."
+    ];
+    const OPENING_QUOTE = DIVA_QUOTES[Math.floor(Math.random() * DIVA_QUOTES.length)];
     const colors = {
       gold: "#ff6fcb",
       green: "#69e6b0",
@@ -3723,7 +3923,15 @@
         phaseLength: 8,
         mode: "athlete",
         coachPin: "ettorino1",
-        theme: "dark"
+        theme: "dark",
+        account: {
+          uid: "",
+          name: "",
+          email: "",
+          photo: "",
+          provider: "",
+          cloudStatus: "locale"
+        }
       },
       metrics: {
         weight: "",
@@ -3841,6 +4049,11 @@
     let activeScreen = initialScreens.has(initialHash) ? initialHash : "dashboard";
     let activeBottom = activeScreen === "training" ? "workout" : activeScreen === "dashboard" ? "home" : activeScreen;
     let timerHandle = null;
+    let authService = null;
+    let dbService = null;
+    let cloudUser = null;
+    let cloudSaveTimer = null;
+    let cloudLoading = false;
 
     function clone(obj) {
       return JSON.parse(JSON.stringify(obj));
@@ -3866,8 +4079,131 @@
       return base;
     }
 
-    function saveState() {
+    function saveState(options = {}) {
       localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      if (options.cloud !== false) scheduleCloudSave();
+    }
+
+    function firebaseConfigured() {
+      return !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.authDomain && FIREBASE_CONFIG.projectId && FIREBASE_CONFIG.appId);
+    }
+
+    function accountStatusText() {
+      if (!firebaseConfigured()) return "Login Google pronto, ma Firebase non e ancora configurato.";
+      if (!window.firebase) return "Firebase non caricato: serve connessione internet.";
+      if (!cloudUser) return "Dati salvati su questo dispositivo. Accedi per prepararli al cloud.";
+      return state.profile.account?.cloudStatus === "sync"
+        ? "Accesso Google attivo. I dati vengono sincronizzati nel cloud."
+        : "Accesso Google attivo. Sincronizzazione in preparazione.";
+    }
+
+    function initFirebase() {
+      if (!firebaseConfigured() || !window.firebase) return false;
+      if (!window.firebase.apps.length) window.firebase.initializeApp(FIREBASE_CONFIG);
+      authService = window.firebase.auth();
+      dbService = window.firebase.firestore ? window.firebase.firestore() : null;
+      authService.setPersistence(window.firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+      authService.onAuthStateChanged(async (user) => {
+        cloudUser = user || null;
+        state.profile.account = user ? {
+          uid: user.uid,
+          name: user.displayName || "Alice",
+          email: user.email || "",
+          photo: user.photoURL || "",
+          provider: "google",
+          cloudStatus: "login"
+        } : {
+          uid: "",
+          name: "",
+          email: "",
+          photo: "",
+          provider: "",
+          cloudStatus: "locale"
+        };
+        if (user) await loadCloudState();
+        saveState({ cloud: false });
+        render();
+      });
+      return true;
+    }
+
+    function cloudDocument() {
+      if (!dbService || !cloudUser) return null;
+      return dbService.collection(CLOUD_COLLECTION).doc(cloudUser.uid);
+    }
+
+    function scheduleCloudSave() {
+      if (!cloudUser || !dbService || cloudLoading) return;
+      clearTimeout(cloudSaveTimer);
+      cloudSaveTimer = setTimeout(saveCloudState, 900);
+    }
+
+    async function saveCloudState() {
+      const doc = cloudDocument();
+      if (!doc) return;
+      const payload = clone(state);
+      try {
+        payload.profile.account.cloudStatus = "sync";
+        await doc.set({
+          updatedAt: new Date().toISOString(),
+          app: APP_NAME,
+          state: payload
+        }, { merge: true });
+        state.profile.account.cloudStatus = "sync";
+        localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      } catch (error) {
+        state.profile.account.cloudStatus = "errore sync";
+        localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      }
+    }
+
+    async function loadCloudState() {
+      const doc = cloudDocument();
+      if (!doc) return;
+      cloudLoading = true;
+      try {
+        const snapshot = await doc.get();
+        if (snapshot.exists && snapshot.data()?.state) {
+          const account = state.profile.account;
+          state = mergeState(clone(baseState), snapshot.data().state);
+          state.profile.account = { ...account, cloudStatus: "sync" };
+          showToast("Dati cloud caricati.");
+        } else {
+          state.profile.account.cloudStatus = "sync";
+          await saveCloudState();
+          showToast("Account Google collegato.");
+        }
+      } catch (error) {
+        state.profile.account.cloudStatus = "errore cloud";
+        showToast("Login ok, cloud non raggiungibile.");
+      } finally {
+        cloudLoading = false;
+      }
+    }
+
+    async function signInWithGoogle() {
+      if (!firebaseConfigured()) {
+        showToast("Firebase non configurato: preparo il posto per le chiavi.");
+        return;
+      }
+      if (!initFirebase()) {
+        showToast("Firebase non caricato. Controlla connessione o GitHub Pages.");
+        return;
+      }
+      const provider = new window.firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      try {
+        await authService.signInWithPopup(provider);
+      } catch (error) {
+        if (String(error?.code || "").includes("popup")) await authService.signInWithRedirect(provider);
+        else showToast("Accesso Google non completato.");
+      }
+    }
+
+    async function signOutGoogle() {
+      if (!authService) return;
+      await authService.signOut();
+      showToast("Account scollegato. I dati locali restano qui.");
     }
 
     function clamp(value, min, max) {
@@ -4189,6 +4525,26 @@
 
     function cleanText(value) {
       return String(value ?? "")
+        .replaceAll("Â°", "°")
+        .replaceAll("Â·", " - ")
+        .replaceAll("Ã ", "à")
+        .replaceAll("Ã¨", "è")
+        .replaceAll("Ã©", "é")
+        .replaceAll("Ã¬", "ì")
+        .replaceAll("Ã²", "ò")
+        .replaceAll("Ã¹", "ù")
+        .replaceAll("Ã€", "À")
+        .replaceAll("Ãˆ", "È")
+        .replaceAll("Ã‰", "É")
+        .replaceAll("ÃŒ", "Ì")
+        .replaceAll("Ã’", "Ò")
+        .replaceAll("Ã™", "Ù")
+        .replaceAll("â€™", "'")
+        .replaceAll("â€œ", "\"")
+        .replaceAll("â€", "\"")
+        .replaceAll("â€“", "-")
+        .replaceAll("â€”", "-")
+        .replaceAll("â†’", "->")
         .replaceAll("\u00c2\u00b7", " - ")
         .replaceAll("\u00c3\u00a0", "à")
         .replaceAll("\u00c3\u00a8", "è")
@@ -4389,7 +4745,7 @@
       updateNav();
       const screen = document.getElementById("screen");
       const titleMap = {
-        dashboard: ["Dashboard", "Ciao Alice"],
+        dashboard: [APP_NAME, OPENING_QUOTE],
         training: ["Allenamento", state.profile.phase],
         progress: ["Progressioni", "Trend carichi e score"],
         nutrition: ["Nutrizione", "Dashboard alimentazione"],
@@ -4433,8 +4789,8 @@
       const decision = decisionPriority();
       return `
         <div class="hero-title">
-          <h2>Ciao Alice! <span>${ready >= 70 ? "giornata buona" : "allenamento pronto"}</span></h2>
-          <p>${currentDate()} - scheda di oggi, progressi e risposta al programma.</p>
+          <h2>Barbell diva <span>${ready >= 70 ? "giornata buona" : "allenamento pronto"}</span></h2>
+          <p>${escapeHtml(OPENING_QUOTE)} · ${currentDate()} · scheda di oggi, progressi e risposta al programma.</p>
         </div>
         <div class="grid-2">
           <article class="card metric-card">
@@ -4453,6 +4809,32 @@
           <div class="row"><h3>Check-in allenamento</h3><span class="chip" style="color:${decision.color}">${escapeHtml(checkinStatusMeta().status)}</span></div>
           <p class="micro-copy">Semaforo, fonti del dato e questionario stanno in una sezione dedicata.</p>
           <button class="ghost-button" style="width:100%;margin-top:10px" data-screen-target="quiz">Apri Check-in</button>
+        </section>
+        ${accountCardHtml()}
+      `;
+    }
+
+    function accountCardHtml() {
+      const account = state.profile.account || {};
+      const connected = !!account.uid;
+      const initial = escapeHtml((account.name || account.email || "B").slice(0, 1).toUpperCase());
+      return `
+        <section class="card account-card">
+          <div class="row">
+            <h3>Account Google</h3>
+            <span class="chip">${connected ? "cloud" : "locale"}</span>
+          </div>
+          <div class="account-status">
+            <div class="account-avatar">${account.photo ? `<img src="${escapeHtml(account.photo)}" alt="">` : initial}</div>
+            <div>
+              <strong>${connected ? escapeHtml(account.name || account.email || "Account collegato") : "Salvataggio locale"}</strong>
+              <span>${escapeHtml(accountStatusText())}</span>
+            </div>
+          </div>
+          <div class="account-actions">
+            <button class="google-button" id="googleLoginButton">${connected ? "Sincronizza ora" : "Accedi con Google"}</button>
+            ${connected ? `<button class="ghost-button" id="googleLogoutButton">Esci</button>` : `<button class="ghost-button" id="googleInfoButton">Info</button>`}
+          </div>
         </section>
       `;
     }
@@ -5328,10 +5710,15 @@
 
     function checkinScale(key, label, hint) {
       const active = checkinValue(key);
-      return `<div class="checkin-slider">
-        <div class="checkin-slider-top"><span>${label}</span><small>${hint}</small></div>
-        <div class="checkin-scale" data-checkin-scale="${key}">
-          ${[1, 2, 3, 4, 5].map((value) => `<label class="checkin-option ${value === active ? "active" : ""}" aria-label="${label} ${value}"><input type="radio" name="checkin-${key}" value="${value}" data-checkin-input="${key}" ${value === active ? "checked" : ""}><span>${value}</span></label>`).join("")}
+      const icons = { energy: "E", sleep: "S", doms: "D", stress: "!", hunger: "F" };
+      const accents = { energy: colors.pink, sleep: colors.violet, doms: "#ff9c8e", stress: colors.blue, hunger: colors.green };
+      return `<div class="checkin-slider" style="--accent:${accents[key] || colors.pink}">
+        <div class="checkin-slider-icon">${icons[key] || label.slice(0, 1)}</div>
+        <div class="checkin-slider-main">
+          <div class="checkin-slider-top"><span>${label}</span><small>${hint}</small></div>
+          <div class="checkin-scale" data-checkin-scale="${key}" style="--active-pos:${active}">
+            ${[1, 2, 3, 4, 5].map((value) => `<label class="checkin-option ${value === active ? "active" : ""}" aria-label="${label} ${value}"><input type="radio" name="checkin-${key}" value="${value}" data-checkin-input="${key}" ${value === active ? "checked" : ""}><span>${value}</span></label>`).join("")}
+          </div>
         </div>
       </div>`;
     }
@@ -5413,14 +5800,20 @@
       const trend = exerciseTrendSummary();
       const signals = checkinSignals();
       const downText = trend.downNames.length ? trend.downNames.join(", ") : "nessun calo importante";
+      const heroLabel = meta.status === "stabile" ? "Stabile" : meta.status === "prudenza" ? "Prudenza" : meta.status === "da controllare" ? "Check" : "Monitor";
+      const heroText = meta.status === "stabile" ? "Puoi procedere con il piano" : meta.status === "prudenza" ? "Scala se serve e cura la tecnica" : meta.status === "da controllare" ? "Controlla carichi e recupero" : "Allenati, ma ascolta i segnali";
       return `<section class="card checkin-status-card">
         <div class="row"><h3>Semaforo allenamento</h3><span class="status-pill" style="--status-color:${meta.color}">${escapeHtml(meta.status)}</span></div>
-        <p class="micro-copy">${escapeHtml(meta.text)}</p>
-        <div class="signal-source-grid">
-          <div class="signal-source" style="--dot:${trend.down >= 2 ? colors.orange : colors.green}"><i></i><div><strong>Carichi</strong>${trend.total ? `${trend.up} su, ${trend.stable} stabili, ${trend.down} giu` : "pochi confronti nel logbook"}</div><span>${trend.down >= 2 ? "check" : "ok"}</span></div>
-          <div class="signal-source" style="--dot:${signals.checkinColor}"><i></i><div><strong>Check-in</strong>${escapeHtml(signals.checkinDetail)}</div><span>${signals.checkinLabel}</span></div>
-          <div class="signal-source" style="--dot:${signals.recoveryColor}"><i></i><div><strong>Recupero</strong>${escapeHtml(signals.recoveryDetail)}</div><span>${signals.recoveryLabel}</span></div>
+        <div class="traffic-hero" style="--traffic-color:${meta.color}">
+          <div class="traffic-hero-icon">~</div>
+          <div><strong>${escapeHtml(heroLabel)}</strong><span>${escapeHtml(heroText)}</span></div>
         </div>
+        <div class="signal-source-grid">
+          <div class="signal-source" style="--dot:${trend.down >= 2 ? colors.orange : colors.green}"><i>kg</i><div><strong>Carichi: ${trend.down >= 2 ? "da guardare" : "stabili"}</strong>${trend.total ? `${trend.up} su, ${trend.stable} stabili, ${trend.down} giù` : "pochi confronti nel logbook"}</div><span>›</span></div>
+          <div class="signal-source" style="--dot:${signals.checkinColor}"><i>✓</i><div><strong>Questionario: ${signals.checkinLabel}</strong>${escapeHtml(signals.checkinDetail)}</div><span>›</span></div>
+          <div class="signal-source" style="--dot:${signals.recoveryColor}"><i>R</i><div><strong>Recupero: ${signals.recoveryLabel}</strong>${escapeHtml(signals.recoveryDetail)}</div><span>›</span></div>
+        </div>
+        ${trend.downNames.length ? `<div class="signal-note"><strong>Da monitorare:</strong> ${escapeHtml(downText)}.</div>` : ""}
         <div class="signal-note"><strong>Da dove arriva:</strong> logbook ultimi allenamenti, check-in benessere e note dolore/fatica. Dettaglio carichi: ${escapeHtml(downText)}.</div>
       </section>`;
     }
@@ -5437,6 +5830,7 @@
           ${checkinTrafficHtml()}
           <section class="card checkin-form-card">
             <div class="row"><h3>Check-in benessere</h3><span class="chip">1-5</span></div>
+            <p class="micro-copy" style="margin-top:6px">Come ti senti oggi? Valuta da 1 a 5.</p>
             <div class="checkin-slider-grid">
               ${checkinScale("energy", "Energia", "1 scarica - 5 alta")}
               ${checkinScale("sleep", "Sonno", "1 male - 5 bene")}
@@ -5811,6 +6205,19 @@
       }
       const clearData = document.getElementById("clearData");
       if (clearData) clearData.addEventListener("click", clearAllData);
+      const googleLoginButton = document.getElementById("googleLoginButton");
+      if (googleLoginButton) {
+        googleLoginButton.addEventListener("click", () => {
+          if (cloudUser) saveCloudState().then(() => showToast("Sincronizzazione inviata."));
+          else signInWithGoogle();
+        });
+      }
+      const googleLogoutButton = document.getElementById("googleLogoutButton");
+      if (googleLogoutButton) googleLogoutButton.addEventListener("click", signOutGoogle);
+      const googleInfoButton = document.getElementById("googleInfoButton");
+      if (googleInfoButton) googleInfoButton.addEventListener("click", () => {
+        showToast(firebaseConfigured() ? "Puoi accedere con Google." : "Manca solo la configurazione Firebase.");
+      });
     }
 
     function setDeepValue(path, value) {
@@ -6031,7 +6438,7 @@
 
     function exportBackup() {
       const payload = {
-        app: "bitch, you better be coaching",
+        app: APP_NAME,
         exportedAt: new Date().toISOString(),
         state
       };
@@ -6315,7 +6722,7 @@
         activeBottom = "home";
         saveState();
         render();
-        showToast("ModalitÃ  atleta.");
+        showToast("Modalità atleta.");
         return;
       }
       setScreen("coach");
@@ -6333,6 +6740,7 @@
     }
 
     window.addEventListener("resize", drawCharts);
+    initFirebase();
     render();
   </script>
 </body>
