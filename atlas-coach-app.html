@@ -4171,7 +4171,7 @@
       if (!window.firebase) return "Firebase non caricato: serve connessione internet.";
       if (!cloudUser) return "Dati salvati su questo dispositivo. Accedi per prepararli al cloud.";
       return state.profile.account?.cloudStatus === "sync"
-        ? "Accesso Google attivo. I dati vengono sincronizzati nel cloud."
+        ? "Accesso Google attivo. Sync automatico acceso."
         : "Accesso Google attivo. Sincronizzazione in preparazione.";
     }
 
@@ -4191,23 +4191,32 @@
           localLoginBypass = false;
           localStorage.removeItem(`${STORE_KEY}.loginBypass`);
         }
+        const previousAccount = state.profile.account || {};
         state.profile.account = user ? {
           uid: user.uid,
           name: user.displayName || "Alice",
           email: user.email || "",
           photo: user.photoURL || "",
           provider: "google",
-          cloudStatus: "login"
+          cloudStatus: previousAccount.syncReady ? "sync" : "login",
+          syncReady: !!previousAccount.syncReady
         } : {
           uid: "",
           name: "",
           email: "",
           photo: "",
           provider: "",
-          cloudStatus: "locale"
+          cloudStatus: "locale",
+          syncReady: false
         };
         saveState({ cloud: false });
         render();
+        if (user && state.profile.account.syncReady) {
+          loadCloudState({ silent: true }).then(() => {
+            saveState({ cloud: false });
+            render();
+          });
+        }
       });
       return true;
     }
@@ -4218,7 +4227,7 @@
     }
 
     function scheduleCloudSave() {
-      if (!cloudUser || !dbService || cloudLoading) return;
+      if (!cloudUser || !dbService || cloudLoading || !state.profile.account?.syncReady) return;
       clearTimeout(cloudSaveTimer);
       cloudSaveTimer = setTimeout(saveCloudState, 900);
     }
@@ -4229,6 +4238,7 @@
       const payload = clone(state);
       try {
         payload.profile.account.cloudStatus = "sync";
+        payload.profile.account.syncReady = true;
         await doc.set({
           updatedAt: new Date().toISOString(),
           app: APP_NAME,
@@ -4242,7 +4252,7 @@
       }
     }
 
-    async function loadCloudState() {
+    async function loadCloudState(options = {}) {
       const doc = cloudDocument();
       if (!doc) return;
       cloudLoading = true;
@@ -4251,19 +4261,28 @@
         if (snapshot.exists && snapshot.data()?.state) {
           const account = state.profile.account;
           state = mergeState(clone(baseState), snapshot.data().state);
-          state.profile.account = { ...account, cloudStatus: "sync" };
-          showToast("Dati cloud caricati.");
+          state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
+          if (!options.silent) showToast("Dati cloud caricati.");
         } else {
           state.profile.account.cloudStatus = "sync";
+          state.profile.account.syncReady = true;
           await saveCloudState();
-          showToast("Account Google collegato.");
+          if (!options.silent) showToast("Account Google collegato.");
         }
       } catch (error) {
         state.profile.account.cloudStatus = "errore cloud";
-        showToast("Login ok, cloud non raggiungibile.");
+        if (!options.silent) showToast("Login ok, cloud non raggiungibile.");
       } finally {
         cloudLoading = false;
       }
+    }
+
+    function refreshCloudIfSynced() {
+      if (!cloudUser || !dbService || !state.profile.account?.syncReady || cloudLoading) return;
+      loadCloudState({ silent: true }).then(() => {
+        saveState({ cloud: false });
+        render();
+      });
     }
 
     function withTimeout(promise, ms) {
@@ -4305,7 +4324,10 @@
         showToast("Accedi prima con Google.");
         return;
       }
+      state.profile.account.syncReady = true;
+      state.profile.account.cloudStatus = "sync";
       await saveCloudState();
+      localStorage.setItem(STORE_KEY, JSON.stringify(state));
       showToast("Questo dispositivo e stato caricato nel cloud.");
       render();
     }
@@ -4316,6 +4338,8 @@
         return;
       }
       await loadCloudState();
+      state.profile.account.syncReady = true;
+      state.profile.account.cloudStatus = "sync";
       saveState({ cloud: false });
       render();
     }
@@ -4947,6 +4971,11 @@
           <p class="micro-copy">Semaforo, fonti del dato e questionario stanno in una sezione dedicata.</p>
           <button class="ghost-button" style="width:100%;margin-top:10px" data-screen-target="quiz">Apri Check-in</button>
         </section>
+        <section class="card coach-desktop-card">
+          <div class="row"><h3>Coach Studio</h3><span class="chip">${state.profile.mode === "coach" ? "sbloccato" : "PIN"}</span></div>
+          <p class="micro-copy">Da PC trovi builder schede, vista atleta, volume e archivio.</p>
+          <button class="ghost-button" style="width:100%;margin-top:10px" data-screen-target="coach">Apri Coach Studio</button>
+        </section>
         ${accountCardHtml()}
       `;
     }
@@ -4971,12 +5000,13 @@
     function accountCardHtml() {
       const account = state.profile.account || {};
       const connected = !!account.uid;
+      const syncReady = !!account.syncReady;
       const initial = escapeHtml((account.name || account.email || "B").slice(0, 1).toUpperCase());
       return `
         <section class="card account-card">
           <div class="row">
             <h3>Account Google</h3>
-            <span class="chip">${connected ? "cloud" : "locale"}</span>
+            <span class="chip">${connected ? syncReady ? "auto sync" : "cloud" : "locale"}</span>
           </div>
           <div class="account-status">
             <div class="account-avatar">${account.photo ? `<img src="${escapeHtml(account.photo)}" alt="">` : initial}</div>
@@ -4987,8 +5017,8 @@
           </div>
           ${connected ? `
             <div class="account-actions">
-              <button class="google-button" id="uploadLocalCloud">Carica questo dispositivo</button>
-              <button class="ghost-button" id="downloadCloudLocal">Scarica cloud</button>
+              <button class="google-button" id="uploadLocalCloud">${syncReady ? "Forza upload" : "Carica questo dispositivo"}</button>
+              <button class="ghost-button" id="downloadCloudLocal">${syncReady ? "Aggiorna da cloud" : "Scarica cloud"}</button>
             </div>
             <button class="ghost-button" style="width:100%;margin-top:8px" id="googleLogoutButton">Esci</button>
           ` : `
@@ -6921,6 +6951,10 @@
     }
 
     window.addEventListener("resize", drawCharts);
+    window.addEventListener("focus", refreshCloudIfSynced);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refreshCloudIfSynced();
+    });
     initFirebase();
     render();
   </script>
