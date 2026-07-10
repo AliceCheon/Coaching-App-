@@ -4091,7 +4091,8 @@
         kcal: "",
         protein: "",
         water: "",
-        context: "soft"
+        context: "soft",
+        dashboard: {}
       },
       body: {
         waist: "",
@@ -4231,6 +4232,55 @@
       if (options.cloud !== false) scheduleCloudSave();
     }
 
+    function mergeRowsByKey(current = [], incoming = [], keyFn = (row) => JSON.stringify(row || {})) {
+      const rows = new Map();
+      [...(Array.isArray(current) ? current : []), ...(Array.isArray(incoming) ? incoming : [])].filter(Boolean).forEach((row) => {
+        const key = keyFn(row);
+        if (String(key || "").replace(/\|/g, "").trim()) rows.set(key, row);
+      });
+      return Array.from(rows.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+    }
+
+    function mergeNutritionDashboard(current = {}, incoming = {}) {
+      const merged = { ...(current || {}), ...(incoming || {}) };
+      merged.log = mergeRowsByKey(current.log, incoming.log, (row) => row.date || JSON.stringify(row));
+      merged.measures = mergeRowsByKey(current.measures, incoming.measures, (row) => row.date || JSON.stringify(row));
+      merged.photos = mergeRowsByKey(current.photos, incoming.photos, (photo) => [
+        photo.date || "",
+        photo.front || "",
+        photo.side || "",
+        photo.back || "",
+        photo.notes || ""
+      ].join("|"));
+      return merged;
+    }
+
+    function nutritionPayloadHasUserData(payload = {}) {
+      return !!(
+        (Array.isArray(payload.photos) && payload.photos.length) ||
+        (Array.isArray(payload.log) && payload.log.length) ||
+        (Array.isArray(payload.measures) && payload.measures.some((row) => String(row.source || "").toLowerCase() === "app"))
+      );
+    }
+
+    function receiveNutritionDashboard(payload) {
+      if (!payload || typeof payload !== "object") return;
+      if (!nutritionPayloadHasUserData(payload)) return;
+      if (!state.nutrition) state.nutrition = {};
+      const before = JSON.stringify(state.nutrition.dashboard || {});
+      state.nutrition.dashboard = mergeNutritionDashboard(state.nutrition.dashboard || {}, payload);
+      if (JSON.stringify(state.nutrition.dashboard || {}) !== before) saveState();
+    }
+
+    function pushNutritionDashboardToFrame() {
+      const frame = document.querySelector(".nutrition-frame");
+      if (!frame?.contentWindow) return;
+      frame.contentWindow.postMessage({
+        type: "barbell-diva:nutrition-load",
+        state: state.nutrition?.dashboard || {}
+      }, window.location.origin);
+    }
+
     function firebaseConfigured() {
       return !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.authDomain && FIREBASE_CONFIG.projectId && FIREBASE_CONFIG.appId);
     }
@@ -4331,6 +4381,7 @@
           const account = state.profile.account;
           state = mergeState(clone(baseState), snapshot.data().state);
           state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
+          setTimeout(pushNutritionDashboardToFrame, 0);
           if (!options.silent) showToast("Dati cloud caricati.");
         } else {
           state.profile.account.cloudStatus = "sync";
@@ -4351,6 +4402,7 @@
       loadCloudState({ silent: true }).then(() => {
         saveState({ cloud: false });
         render();
+        setTimeout(pushNutritionDashboardToFrame, 0);
       });
     }
 
@@ -6243,6 +6295,11 @@
       document.querySelectorAll("[data-bottom-target]").forEach((button) => {
         button.addEventListener("click", () => setBottom(button.dataset.bottomTarget));
       });
+      const nutritionFrame = document.querySelector(".nutrition-frame");
+      if (nutritionFrame) {
+        nutritionFrame.addEventListener("load", pushNutritionDashboardToFrame);
+        setTimeout(pushNutritionDashboardToFrame, 80);
+      }
       document.querySelectorAll("[data-choice]").forEach((button) => {
         button.addEventListener("click", () => {
           state.training.feeling = button.dataset.choice;
@@ -7133,6 +7190,12 @@
       navigator.serviceWorker.register("./service-worker.js").catch(() => {});
     }
 
+    window.addEventListener("message", (event) => {
+      const frame = document.querySelector(".nutrition-frame");
+      if (frame && event.source !== frame.contentWindow) return;
+      const message = event.data || {};
+      if (message.type === "barbell-diva:nutrition-save") receiveNutritionDashboard(message.state);
+    });
     window.addEventListener("resize", drawCharts);
     window.addEventListener("focus", refreshCloudIfSynced);
     document.addEventListener("visibilitychange", () => {
