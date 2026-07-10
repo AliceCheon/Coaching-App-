@@ -4208,20 +4208,8 @@
         };
         saveState({ cloud: false });
         render();
-        if (user) {
-          loadCloudState().then(() => {
-            saveState({ cloud: false });
-            render();
-          });
-        }
       });
       return true;
-    }
-
-    function shouldUseRedirectLogin() {
-      const standalone = window.matchMedia?.("(display-mode: standalone)")?.matches || navigator.standalone;
-      const mobile = window.matchMedia?.("(max-width: 760px)")?.matches;
-      return standalone || mobile;
     }
 
     function cloudDocument() {
@@ -4285,7 +4273,7 @@
       ]);
     }
 
-    async function signInWithGoogle() {
+    async function signInWithGoogle(mode = "popup") {
       if (!firebaseConfigured()) {
         showToast("Firebase non configurato: preparo il posto per le chiavi.");
         return;
@@ -4297,7 +4285,7 @@
       const provider = new window.firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
       try {
-        if (shouldUseRedirectLogin()) {
+        if (mode === "redirect") {
           await authService.signInWithRedirect(provider);
           return;
         }
@@ -4305,11 +4293,31 @@
       } catch (error) {
         const code = String(error?.code || "");
         if (code.includes("popup") || code.includes("unauthorized-domain") || code.includes("operation-not-supported")) {
-          await authService.signInWithRedirect(provider);
+          showToast("Popup non riuscito. Prova accesso alternativo.");
         } else {
           showToast(`Accesso Google non completato: ${code || "errore"}.`);
         }
       }
+    }
+
+    async function uploadThisDeviceToCloud() {
+      if (!cloudUser) {
+        showToast("Accedi prima con Google.");
+        return;
+      }
+      await saveCloudState();
+      showToast("Questo dispositivo e stato caricato nel cloud.");
+      render();
+    }
+
+    async function downloadCloudToThisDevice() {
+      if (!cloudUser) {
+        showToast("Accedi prima con Google.");
+        return;
+      }
+      await loadCloudState();
+      saveState({ cloud: false });
+      render();
     }
 
     async function signOutGoogle() {
@@ -4951,9 +4959,10 @@
             <div class="login-icon">BD</div>
             <h2>Barbell diva</h2>
             <p>${escapeHtml(readyText)}</p>
-            <button class="google-button" id="googleLoginButton">Accedi con Google</button>
+            <button class="google-button" id="googleLoginButton" data-login-mode="popup">Accedi con Google</button>
+            <button class="ghost-button" style="width:100%;margin-top:10px" id="googleRedirectButton" data-login-mode="redirect">Accesso alternativo</button>
             <button class="ghost-button" style="width:100%;margin-top:10px" id="continueLocalButton">Continua senza login</button>
-            <span class="login-small">I tuoi dati restano legati al tuo account Google e vengono salvati su Firebase.</span>
+            <span class="login-small">Se il primo pulsante torna qui senza entrare, prova Accesso alternativo.</span>
           </section>
         </div>
       `;
@@ -4976,10 +4985,19 @@
               <span>${escapeHtml(accountStatusText())}</span>
             </div>
           </div>
-          <div class="account-actions">
-            <button class="google-button" id="googleLoginButton">${connected ? "Sincronizza ora" : "Accedi con Google"}</button>
-            ${connected ? `<button class="ghost-button" id="googleLogoutButton">Esci</button>` : `<button class="ghost-button" id="googleInfoButton">Info</button>`}
-          </div>
+          ${connected ? `
+            <div class="account-actions">
+              <button class="google-button" id="uploadLocalCloud">Carica questo dispositivo</button>
+              <button class="ghost-button" id="downloadCloudLocal">Scarica cloud</button>
+            </div>
+            <button class="ghost-button" style="width:100%;margin-top:8px" id="googleLogoutButton">Esci</button>
+          ` : `
+            <div class="account-actions">
+              <button class="google-button" id="googleLoginButton" data-login-mode="popup">Accedi con Google</button>
+              <button class="ghost-button" id="googleInfoButton">Info</button>
+            </div>
+            <button class="ghost-button" style="width:100%;margin-top:8px" id="googleRedirectButton" data-login-mode="redirect">Accesso alternativo</button>
+          `}
         </section>
       `;
     }
@@ -6353,10 +6371,19 @@
       const googleLoginButton = document.getElementById("googleLoginButton");
       if (googleLoginButton) {
         googleLoginButton.addEventListener("click", () => {
-          if (cloudUser) saveCloudState().then(() => showToast("Sincronizzazione inviata."));
-          else signInWithGoogle();
+          signInWithGoogle(googleLoginButton.dataset.loginMode || "popup");
         });
       }
+      const googleRedirectButton = document.getElementById("googleRedirectButton");
+      if (googleRedirectButton) {
+        googleRedirectButton.addEventListener("click", () => {
+          signInWithGoogle("redirect");
+        });
+      }
+      const uploadLocalCloud = document.getElementById("uploadLocalCloud");
+      if (uploadLocalCloud) uploadLocalCloud.addEventListener("click", uploadThisDeviceToCloud);
+      const downloadCloudLocal = document.getElementById("downloadCloudLocal");
+      if (downloadCloudLocal) downloadCloudLocal.addEventListener("click", downloadCloudToThisDevice);
       const googleLogoutButton = document.getElementById("googleLogoutButton");
       if (googleLogoutButton) googleLogoutButton.addEventListener("click", signOutGoogle);
       const googleInfoButton = document.getElementById("googleInfoButton");
