@@ -404,6 +404,49 @@
       margin: 10px 0 12px;
     }
 
+    .daily-boost {
+      margin: 10px 0 14px;
+      border: 1px solid rgba(255,111,203,.34);
+      border-radius: 18px;
+      padding: 14px 16px;
+      background:
+        radial-gradient(circle at top right, rgba(255,111,203,.24), transparent 40%),
+        linear-gradient(135deg, rgba(216,164,255,.18), rgba(255,111,203,.13)),
+        rgba(28,18,36,.82);
+      box-shadow: 0 18px 48px rgba(255,111,203,.14);
+    }
+
+    .daily-boost span {
+      display: block;
+      color: #f9d6ff;
+      font-size: .72rem;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .daily-boost strong {
+      display: block;
+      margin-top: 5px;
+      color: #fff8ff;
+      font-size: clamp(1.55rem, 3vw, 2.8rem);
+      line-height: 1.04;
+      font-weight: 950;
+    }
+
+    .daily-face {
+      display: inline-grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      margin-left: 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(255,111,203,.24), rgba(216,164,255,.2));
+      border: 1px solid rgba(255,255,255,.16);
+      vertical-align: middle;
+      font-size: 1.15rem;
+    }
+
     .hero-title h2 {
       margin: 0;
       font-size: 1.55rem;
@@ -427,7 +470,7 @@
     .card {
       border-radius: 18px;
       border: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(255,111,203,.045), transparent 160px), var(--card);
+      background: linear-gradient(180deg, rgba(216,164,255,.09), rgba(255,111,203,.035) 180px), color-mix(in srgb, var(--card) 78%, #ffffff 22%);
       padding: 16px;
       margin-bottom: 12px;
       box-shadow: 0 18px 50px rgba(0,0,0,.22);
@@ -1860,7 +1903,9 @@
     .feedback-board {
       border: 1px solid var(--line);
       border-radius: 16px;
-      background: linear-gradient(180deg, rgba(18,26,46,.78), rgba(9,8,18,.78));
+      background:
+        radial-gradient(circle at top right, rgba(216,164,255,.18), transparent 42%),
+        linear-gradient(180deg, rgba(42,28,58,.92), rgba(26,17,36,.92));
       box-shadow: var(--shadow);
     }
 
@@ -1907,15 +1952,15 @@
       position: sticky;
       top: 0;
       z-index: 2;
-      background: rgba(9,8,18,.96);
-      color: #84d8ff;
+      background: #2f2145;
+      color: #f0d8ff;
       text-transform: uppercase;
       font-size: .66rem;
       letter-spacing: 0;
     }
 
     .coach-program-table tr:hover td {
-      background: rgba(169,144,255,.055);
+      background: rgba(216,164,255,.09);
     }
 
     .coach-program-table input,
@@ -1923,11 +1968,16 @@
     .coach-program-table textarea {
       width: 100%;
       border-radius: 10px;
-      border: 1px solid rgba(169,144,255,.18);
-      background: rgba(4,4,12,.52);
+      border: 1px solid rgba(216,164,255,.3);
+      background: rgba(44,31,59,.86);
       color: var(--text);
       padding: 8px;
       font-size: .76rem;
+    }
+
+    .coach-program-table select option {
+      background: #2b1d3f;
+      color: #fff8ff;
     }
 
     .coach-program-table textarea {
@@ -1937,30 +1987,35 @@
 
     .coach-program-table th:nth-child(2),
     .coach-program-table td:nth-child(2) {
-      min-width: 320px;
+      min-width: 160px;
     }
 
     .coach-program-table th:nth-child(3),
     .coach-program-table td:nth-child(3) {
+      min-width: 290px;
+    }
+
+    .coach-program-table th:nth-child(4),
+    .coach-program-table td:nth-child(4) {
       min-width: 260px;
     }
 
-    .coach-program-table th:nth-child(8),
-    .coach-program-table td:nth-child(8) {
+    .coach-program-table th:nth-child(9),
+    .coach-program-table td:nth-child(9) {
       min-width: 210px;
     }
 
     .coach-builder-strip {
       padding: 12px;
       margin-bottom: 14px;
-      background: linear-gradient(135deg, rgba(255,184,77,.12), rgba(255,111,203,.07));
+      background: linear-gradient(135deg, rgba(216,164,255,.18), rgba(255,111,203,.12));
     }
 
     .excel-builder {
       background:
-        radial-gradient(circle at top right, rgba(139,201,255,.12), transparent 36%),
-        linear-gradient(135deg, rgba(255,184,77,.1), rgba(255,111,203,.06)),
-        rgba(255,255,255,.035);
+        radial-gradient(circle at top right, rgba(255,111,203,.18), transparent 36%),
+        linear-gradient(180deg, rgba(55,34,72,.96), rgba(35,22,48,.96)),
+        rgba(216,164,255,.08);
     }
 
     .builder-desktop-grid {
@@ -2040,8 +2095,8 @@
       border-radius: 14px;
       overflow: hidden;
       background:
-        radial-gradient(circle at top right, rgba(216,164,255,.12), transparent 34%),
-        rgba(255,255,255,.035);
+        radial-gradient(circle at top right, rgba(255,111,203,.16), transparent 34%),
+        rgba(216,164,255,.08);
     }
 
     .builder-v24-head {
@@ -2060,7 +2115,7 @@
       gap: 10px;
       padding: 10px 12px;
       border-bottom: 1px solid rgba(255,255,255,.1);
-      background: rgba(216,164,255,.07);
+      background: rgba(216,164,255,.13);
     }
 
     .builder-v24-toolbar span {
@@ -2126,7 +2181,7 @@
       width: 100%;
       border-radius: 8px;
       border: 1px solid rgba(216,164,255,.18);
-      background: rgba(4,4,12,.52);
+      background: rgba(44,31,59,.86);
       color: var(--text);
       padding: 8px;
       font-size: .76rem;
@@ -4359,6 +4414,13 @@
       return `${hour >= 18 || hour < 5 ? "Buonasera" : "Buongiorno"} Alice`;
     }
 
+    function dailyFace() {
+      const faces = ["😌", "💅", "😈", "👑", "🤨", "💖", "🔥", "✨", "😎"];
+      const today = todayInput().replaceAll("-", "");
+      const seed = Number(today) || new Date().getDate();
+      return faces[seed % faces.length];
+    }
+
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
     }
@@ -4989,8 +5051,12 @@
       const decision = decisionPriority();
       return `
         <div class="hero-title">
-          <h2>${greetingName()}</h2>
-          <p>${escapeHtml(OPENING_QUOTE)} · ${currentDate()} · scheda di oggi, progressi e risposta al programma.</p>
+          <h2>${greetingName()} <span class="daily-face" aria-label="faccina del giorno">${dailyFace()}</span></h2>
+          <p>${currentDate()} · scheda di oggi, progressi e risposta al programma.</p>
+        </div>
+        <div class="daily-boost">
+          <span>Messaggio del giorno</span>
+          <strong>${escapeHtml(OPENING_QUOTE)}</strong>
         </div>
         <div class="grid-2">
           <article class="card metric-card">
@@ -5429,7 +5495,7 @@
             <table class="coach-program-table">
               <thead>
                 <tr>
-                  <th>Cod</th><th>Esercizio</th><th>Note coach</th><th>Serie</th><th>Reps</th><th>RIR</th><th>Rec.</th><th>Note atleta/logbook</th>
+                  <th>Cod</th><th>Gruppo</th><th>Esercizio</th><th>Note coach</th><th>Serie</th><th>Reps</th><th>RIR</th><th>Rec.</th><th>Note atleta/logbook</th>
                 </tr>
               </thead>
               <tbody>
@@ -5443,19 +5509,27 @@
     }
 
     function coachExerciseEditorRow(exercise, index) {
-      const library = libraryItems();
+      const groups = coachExerciseGroups();
+      const group = coachEditorExerciseGroup(exercise);
+      const exercises = coachExercisesForGroup(group);
       const notes = exerciseNotes(exercise, 2);
       const code = String.fromCharCode(65 + index);
-      const hasLibraryMatch = library.some((item) => exerciseMatches(item.name, exercise.name));
+      const hasExerciseMatch = exercises.some((item) => exerciseMatches(item.name, exercise.name));
+      const hasGroupMatch = groups.includes(group);
       return `
         <tr>
           <td><span class="exercise-letter">${code}</span></td>
           <td>
-            <select data-edit-exercise="${index}" data-edit-key="name">
-              ${library.map((item) => `<option value="${escapeHtml(item.name)}" ${exerciseMatches(item.name, exercise.name) ? "selected" : ""}>${escapeHtml(displayExerciseName(item.name))}</option>`).join("")}
-              ${hasLibraryMatch ? "" : `<option value="${escapeHtml(exercise.name || "")}" selected>${escapeHtml(displayExerciseName(exercise.name || ""))}</option>`}
+            <select data-edit-exercise="${index}" data-edit-key="muscle">
+              ${groups.map((item) => `<option value="${escapeHtml(item)}" ${item === group ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}
+              ${hasGroupMatch ? "" : `<option value="${escapeHtml(group)}" selected>${escapeHtml(group)}</option>`}
             </select>
-            <input style="margin-top:6px" data-edit-exercise="${index}" data-edit-key="muscle" value="${escapeHtml(exercise.muscle || "")}" placeholder="Muscolo">
+          </td>
+          <td>
+            <select data-edit-exercise="${index}" data-edit-key="name">
+              ${exercises.map((item) => `<option value="${escapeHtml(item.name)}" ${exerciseMatches(item.name, exercise.name) ? "selected" : ""}>${escapeHtml(displayExerciseName(item.name))}</option>`).join("")}
+              ${hasExerciseMatch ? "" : `<option value="${escapeHtml(exercise.name || "")}" selected>${escapeHtml(displayExerciseName(exercise.name || ""))}</option>`}
+            </select>
           </td>
           <td><textarea data-edit-exercise="${index}" data-edit-key="note">${escapeHtml(exercise.note || "")}</textarea></td>
           <td><input data-edit-exercise="${index}" data-edit-key="sets" value="${escapeHtml(exercise.sets || "")}"></td>
@@ -5469,6 +5543,16 @@
 
     function coachExerciseGroups() {
       return Object.keys(COACH_EXERCISE_LIBRARY || {});
+    }
+
+    function coachEditorExerciseGroup(exercise) {
+      const explicit = exercise?.muscle || exercise?.som || "";
+      if (coachExerciseGroups().includes(explicit)) return explicit;
+      const inferred = inferredExerciseMuscles(exercise?.name || "", exercise);
+      const match = coachExerciseGroups().find((group) => inferred.has(normalizeExerciseName(group)));
+      if (match) return match;
+      const byLibrary = coachExerciseGroups().find((group) => coachExercisesForGroup(group).some((item) => exerciseMatches(item.name, exercise?.name || "")));
+      return byLibrary || coachExerciseGroups()[0] || "";
     }
 
     function coachExercisesForGroup(group) {
@@ -5865,7 +5949,20 @@
     }
 
     function libraryItems() {
-      return state.training.exercises.concat(state.coach.exerciseLibrary).filter((item, index, list) => list.findIndex((row) => row.name === item.name) === index);
+      const aliasOnlyNames = new Set();
+      Object.entries(EXERCISE_ALIASES).forEach(([canonical, aliases]) => {
+        aliases.forEach((alias) => {
+          if (normalizeExerciseName(alias) !== normalizeExerciseName(canonical)) aliasOnlyNames.add(normalizeExerciseName(alias));
+        });
+      });
+      const coachNames = new Set((state.coach.exerciseLibrary || []).map((item) => normalizeExerciseName(item.name)));
+      const historyItems = state.training.exercises.filter((item) => {
+        if (!aliasOnlyNames.has(normalizeExerciseName(item.name))) return true;
+        return !(state.coach.exerciseLibrary || []).some((coachItem) => exerciseMatches(coachItem.name, item.name) && exerciseMusclesCompatible(coachItem, item));
+      });
+      return state.coach.exerciseLibrary
+        .concat(historyItems.filter((item) => !coachNames.has(normalizeExerciseName(item.name))))
+        .filter((item, index, list) => list.findIndex((row) => row.name === item.name) === index);
     }
 
     function workoutHistoryHtml() {
@@ -6421,6 +6518,34 @@
       if (saveCoach) saveCoach.addEventListener("click", saveCoachSession);
       const saveEditedProgram = document.getElementById("saveEditedProgram");
       if (saveEditedProgram) saveEditedProgram.addEventListener("click", saveEditedProgramSession);
+      document.querySelectorAll("[data-edit-exercise]").forEach((field) => {
+        field.addEventListener("change", () => {
+          const session = selectedCoachProgramSession();
+          const exercise = session?.exercises?.[Number(field.dataset.editExercise)];
+          if (!exercise) return;
+          const key = field.dataset.editKey;
+          const value = field.value.trim();
+          if (key === "muscle") {
+            const first = coachExercisesForGroup(value)[0] || {};
+            exercise.muscle = value;
+            exercise.name = first.name || exercise.name || "";
+            exercise.note = first.note || exercise.note || "";
+          } else {
+            exercise[key] = key === "name" ? value.replaceAll(" ", "_") : value;
+          }
+          if (key === "name") {
+            const group = coachEditorExerciseGroup(exercise);
+            const libraryItem = coachExercisesForGroup(group).find((item) => item.name === value || normalizeExerciseName(item.name) === normalizeExerciseName(value));
+            if (libraryItem) {
+              exercise.muscle = libraryItem.som || exercise.muscle || group;
+              if (!exercise.note && libraryItem.note) exercise.note = libraryItem.note;
+            }
+          }
+          state.training.exercises = buildExerciseIndex(state.training.program, state.training.sessions);
+          saveState();
+          if (key === "name" || key === "muscle") render();
+        });
+      });
       const saveFeedback = document.getElementById("saveFeedback");
       if (saveFeedback) saveFeedback.addEventListener("click", saveCoachFeedback);
       const exportData = document.getElementById("exportData");
@@ -6620,6 +6745,10 @@
         exercise[key] = key === "name" ? value.replaceAll(" ", "_") : value;
       });
       state.training.exercises = buildExerciseIndex(state.training.program, state.training.sessions);
+      const volumeSnapshot = JSON.parse(JSON.stringify(session));
+      const customIndex = state.coach.customSessions.findIndex((item) => item.code === volumeSnapshot.code);
+      if (customIndex >= 0) state.coach.customSessions[customIndex] = volumeSnapshot;
+      else state.coach.customSessions.push(volumeSnapshot);
       if (state.training.sessionName === session.code) state.training.selected = session.exercises[0]?.name || state.training.selected;
       saveState();
       showToast(`${session.code} aggiornata.`);
