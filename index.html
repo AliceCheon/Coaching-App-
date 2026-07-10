@@ -4255,6 +4255,65 @@
       return merged;
     }
 
+    function nutritionPhotoId(photo = {}) {
+      const text = [photo.date || "", photo.front || "", photo.side || "", photo.back || "", photo.notes || ""].join("|");
+      let hash = 0;
+      for (let index = 0; index < text.length; index += 1) {
+        hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
+      }
+      return `photo-${Math.abs(hash).toString(36)}-${String(photo.date || "no-date").replace(/[^a-z0-9-]/gi, "-")}`;
+    }
+
+    function nutritionPhotoMeta(photo = {}) {
+      return {
+        id: nutritionPhotoId(photo),
+        date: photo.date || "",
+        notes: photo.notes || "",
+        hasFront: !!photo.front,
+        hasSide: !!photo.side,
+        hasBack: !!photo.back
+      };
+    }
+
+    function splitNutritionPhotosForCloud(payload) {
+      const photos = Array.isArray(payload.nutrition?.dashboard?.photos) ? payload.nutrition.dashboard.photos : [];
+      if (payload.nutrition?.dashboard) payload.nutrition.dashboard.photos = photos.map(nutritionPhotoMeta);
+      return photos;
+    }
+
+    function nutritionPhotosCollection() {
+      const doc = cloudDocument();
+      return doc ? doc.collection("nutritionPhotos") : null;
+    }
+
+    async function saveNutritionPhotosToCloud(photos = []) {
+      const collection = nutritionPhotosCollection();
+      if (!collection) return;
+      const validPhotos = photos.filter((photo) => photo && (photo.front || photo.side || photo.back));
+      const activeIds = new Set(validPhotos.map(nutritionPhotoId));
+      const writes = validPhotos.map((photo) => {
+        const id = nutritionPhotoId(photo);
+        return collection.doc(id).set({ ...photo, id, updatedAt: new Date().toISOString() }, { merge: true });
+      });
+      const snapshot = await collection.get();
+      snapshot.forEach((item) => {
+        if (!activeIds.has(item.id)) writes.push(collection.doc(item.id).delete().catch(() => null));
+      });
+      await Promise.all(writes);
+    }
+
+    async function loadNutritionPhotosFromCloud() {
+      const collection = nutritionPhotosCollection();
+      if (!collection) return [];
+      const snapshot = await withTimeout(collection.get(), 5000);
+      const photos = [];
+      snapshot.forEach((item) => {
+        const photo = item.data();
+        if (photo && (photo.front || photo.side || photo.back)) photos.push(photo);
+      });
+      return photos.sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+    }
+
     function nutritionPayloadHasUserData(payload = {}) {
       return !!(
         (Array.isArray(payload.photos) && payload.photos.length) ||
@@ -4355,6 +4414,7 @@
       const doc = cloudDocument();
       if (!doc) return;
       const payload = clone(state);
+      const nutritionPhotos = splitNutritionPhotosForCloud(payload);
       try {
         payload.profile.account.cloudStatus = "sync";
         payload.profile.account.syncReady = true;
@@ -4363,6 +4423,7 @@
           app: APP_NAME,
           state: payload
         }, { merge: true });
+        await saveNutritionPhotosToCloud(nutritionPhotos);
         state.profile.account.cloudStatus = "sync";
         localStorage.setItem(STORE_KEY, JSON.stringify(state));
       } catch (error) {
@@ -4380,7 +4441,11 @@
         if (snapshot.exists && snapshot.data()?.state) {
           const account = state.profile.account;
           state = mergeState(clone(baseState), snapshot.data().state);
+          const nutritionPhotos = await loadNutritionPhotosFromCloud().catch(() => []);
+          if (!state.nutrition) state.nutrition = {};
+          state.nutrition.dashboard = mergeNutritionDashboard(state.nutrition.dashboard || {}, { photos: nutritionPhotos });
           state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
+          localStorage.setItem(STORE_KEY, JSON.stringify(state));
           setTimeout(pushNutritionDashboardToFrame, 0);
           if (!options.silent) showToast("Dati cloud caricati.");
         } else {
