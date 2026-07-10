@@ -4187,6 +4187,10 @@
       authService.onAuthStateChanged(async (user) => {
         authReady = true;
         cloudUser = user || null;
+        if (user) {
+          localLoginBypass = false;
+          localStorage.removeItem(`${STORE_KEY}.loginBypass`);
+        }
         state.profile.account = user ? {
           uid: user.uid,
           name: user.displayName || "Alice",
@@ -4935,6 +4939,7 @@
           <p class="micro-copy">Semaforo, fonti del dato e questionario stanno in una sezione dedicata.</p>
           <button class="ghost-button" style="width:100%;margin-top:10px" data-screen-target="quiz">Apri Check-in</button>
         </section>
+        ${accountCardHtml()}
       `;
     }
 
