@@ -1,0 +1,32 @@
+ATLAS V51 - CORREZIONI DEL 13 LUGLIO 2026
+
+FOOD
+- Pliche, circonferenze, peso e foto restano salvati dopo la riapertura.
+- I dati locali non vengono piu sostituiti da una copia precedente del contenitore.
+- La sincronizzazione locale/cloud unisce gli storici invece di cancellare una delle due copie.
+- Il peso principale mostra l'ultima registrazione del Registro, non l'ultima plicometria.
+- Ogni salvataggio mostra una conferma verde immediata.
+
+ALLENAMENTI
+- Il tasto Salva Sessione mostra subito una conferma chiara.
+- La schermata Allenamento contiene ora lo Storico allenamenti salvati.
+- Salvando nuovamente la stessa scheda nella stessa data, la sessione viene aggiornata
+  invece di creare doppioni.
+- Lo storico rimane presente anche dopo la chiusura e la riapertura dell'app.
+
+PROGRESSIONI
+- Military al multipower riconosce lo storico precedente chiamato Military press.
+- La ricerca delle progressioni usa un indice rapido e non ricalcola tutto il programma
+  a ogni apertura.
+
+VELOCITA E STILE
+- Gli esercizi partono chiusi e calcolano lo storico solo quando vengono aperti.
+- Apertura Allenamento ed esercizi resa molto piu rapida.
+- I pulsanti Food non ridisegnano inutilmente tutti i grafici a ogni cambio sezione.
+- Font aggiornato con uno stile piu morbido e moderno, senza scaricare font esterni.
+
+AGGIORNAMENTO
+- Cache PWA aggiornata ad atlas-app-v51.
+- Dopo la pubblicazione, aprire una volta l'app con ?v=51 per forzare l'aggiornamento
+  sui dispositivi che conservano ancora la vecchia versione.
+
