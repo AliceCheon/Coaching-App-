@@ -4230,6 +4230,7 @@
     let cloudUser = null;
     let cloudSaveTimer = null;
     let cloudLoading = false;
+    let nutritionPhotosUnsubscribe = null;
     let authReady = false;
     let localLoginBypass = localStorage.getItem(`${STORE_KEY}.loginBypass`) === "1";
 
@@ -4261,7 +4262,7 @@
 
     function saveState(options = {}) {
       if (options.touch !== false) {
-        state.meta = { ...(state.meta || {}), updatedAt: new Date().toISOString(), version: 53 };
+        state.meta = { ...(state.meta || {}), updatedAt: new Date().toISOString(), version: 54 };
       }
       localStorage.setItem(STORE_KEY, JSON.stringify(state));
       if (options.cloud !== false) scheduleCloudSave();
@@ -4348,19 +4349,11 @@
         id: `${nutritionPhotoId(photo)}-${slot}`,
         baseId: nutritionPhotoId(photo), date: photo.date || "", notes: photo.notes || "", slot, image: photo[slot]
       })));
-      const activeIds = new Set(pieces.map((piece) => piece.id));
       const writes = pieces.map((piece) => collection.doc(piece.id).set({ ...piece, updatedAt: new Date().toISOString() }));
-      const snapshot = await collection.get();
-      snapshot.forEach((item) => {
-        if (!activeIds.has(item.id)) writes.push(collection.doc(item.id).delete().catch(() => null));
-      });
       await Promise.all(writes);
     }
 
-    async function loadNutritionPhotosFromCloud() {
-      const collection = nutritionPhotosCollection();
-      if (!collection) return [];
-      const snapshot = await withTimeout(collection.get(), 5000);
+    function nutritionPhotosFromSnapshot(snapshot) {
       const grouped = new Map();
       snapshot.forEach((item) => {
         const photo = item.data();
@@ -4376,6 +4369,33 @@
       return Array.from(grouped.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
     }
 
+    async function loadNutritionPhotosFromCloud() {
+      const collection = nutritionPhotosCollection();
+      if (!collection) return [];
+      const snapshot = await withTimeout(collection.get(), 5000);
+      return nutritionPhotosFromSnapshot(snapshot);
+    }
+
+    function stopNutritionPhotosRealtime() {
+      if (typeof nutritionPhotosUnsubscribe === "function") nutritionPhotosUnsubscribe();
+      nutritionPhotosUnsubscribe = null;
+    }
+
+    function startNutritionPhotosRealtime() {
+      stopNutritionPhotosRealtime();
+      const collection = nutritionPhotosCollection();
+      if (!collection || !state.profile.account?.syncReady) return;
+      nutritionPhotosUnsubscribe = collection.onSnapshot((snapshot) => {
+        const cloudPhotos = nutritionPhotosFromSnapshot(snapshot);
+        if (!state.nutrition) state.nutrition = {};
+        const before = JSON.stringify(state.nutrition.dashboard?.photos || []);
+        state.nutrition.dashboard = mergeNutritionDashboard(state.nutrition.dashboard || {}, { photos: cloudPhotos });
+        if (JSON.stringify(state.nutrition.dashboard.photos || []) === before) return;
+        localStorage.setItem(STORE_KEY, JSON.stringify(state));
+        pushNutritionDashboardToFrame();
+      }, () => {});
+    }
+
     function nutritionPayloadHasUserData(payload = {}) {
       return !!(
         (Array.isArray(payload.photos) && payload.photos.length) ||
@@ -4384,7 +4404,7 @@
       );
     }
 
-    function receiveNutritionDashboard(payload) {
+    async function receiveNutritionDashboard(payload) {
       if (!payload || typeof payload !== "object") return;
       if (!nutritionPayloadHasUserData(payload)) return;
       if (!state.nutrition) state.nutrition = {};
@@ -4394,7 +4414,9 @@
         saveState({ cloud: false });
         if (cloudUser && dbService && state.profile.account?.syncReady) {
           clearTimeout(cloudSaveTimer);
-          saveCloudState();
+          const synced = await saveCloudState();
+          const frame = document.querySelector(".nutrition-frame");
+          frame?.contentWindow?.postMessage({ type: "barbell-diva:nutrition-synced", ok: synced }, window.location.origin);
         } else scheduleCloudSave();
       }
     }
@@ -4461,7 +4483,10 @@
           loadCloudState({ silent: true }).then(() => {
             saveState({ cloud: false });
             render();
+            startNutritionPhotosRealtime();
           });
+        } else {
+          stopNutritionPhotosRealtime();
         }
       });
       return true;
@@ -4583,6 +4608,7 @@
       state.profile.account.syncReady = true;
       state.profile.account.cloudStatus = "sync";
       await saveCloudState();
+      startNutritionPhotosRealtime();
       localStorage.setItem(STORE_KEY, JSON.stringify(state));
       showToast("Questo dispositivo e stato caricato nel cloud.");
       render();
@@ -4597,6 +4623,7 @@
       state.profile.account.syncReady = true;
       state.profile.account.cloudStatus = "sync";
       saveState({ cloud: false });
+      startNutritionPhotosRealtime();
       render();
     }
 
@@ -5577,7 +5604,7 @@
             <h3>Dashboard alimentazione</h3>
             <a class="ghost-button" href="./nutrizione/index.html" target="_blank" rel="noopener">Apri completa</a>
           </div>
-          <iframe class="nutrition-frame" src="./nutrizione/index.html?v=53" title="Dashboard nutrizione"></iframe>
+          <iframe class="nutrition-frame" src="./nutrizione/index.html?v=54" title="Dashboard nutrizione"></iframe>
         </section>
       `;
     }
@@ -7408,11 +7435,11 @@
 
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (sessionStorage.getItem("atlas-v53-reload")) return;
-        sessionStorage.setItem("atlas-v53-reload", "1");
+        if (sessionStorage.getItem("atlas-v54-reload")) return;
+        sessionStorage.setItem("atlas-v54-reload", "1");
         location.reload();
       });
-      navigator.serviceWorker.register("./service-worker.js?v=53", { updateViaCache: "none" })
+      navigator.serviceWorker.register("./service-worker.js?v=54", { updateViaCache: "none" })
         .then((registration) => registration.update())
         .catch(() => {});
     }
