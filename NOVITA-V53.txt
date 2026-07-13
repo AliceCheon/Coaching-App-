@@ -1,0 +1,10 @@
+ATLAS V53 - 13 LUGLIO 2026
+
+- Dopo il salvataggio di C6, Allenamento di oggi passa automaticamente a D6.
+- La selezione manuale non resta più bloccata dopo la riapertura dell'app.
+- La scelta automatica segue l'ultimo allenamento realmente salvato: A, B, C, D, E, F.
+- Food viene aperto con versione v53 esplicita e le pagine HTML usano sempre la versione più recente disponibile.
+- Il telefono ricarica automaticamente l'app quando entra in funzione una nuova cache.
+- Il nuovo semaforo con i tre colori e la diagnosi è visibile già nella Dashboard.
+- Il questionario alimentazione si apre dal grande pulsante Apri questionario.
+- I vecchi record foto che contengono solo front/side/back testuali non vengono mostrati.
