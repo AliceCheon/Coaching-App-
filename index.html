@@ -4134,7 +4134,7 @@
       training: {
         date: todayInput(),
         phaseFilter: "Intensificazione",
-        sessionName: "A6",
+        sessionName: "auto",
         feeling: "medio",
         selected: "Lento_avanti_machine",
         openExercise: "",
@@ -4217,7 +4217,7 @@
 
     let state = loadState();
     state.training.date = todayInput();
-    if (["auto", "E5", "D5"].includes(state.training.sessionName)) state.training.sessionName = "A6";
+    state.training.sessionName = "auto";
     state.training.exercises = buildExerciseIndex(state.training.program, state.training.sessions);
     if (state.profile.coachPin === "2507") state.profile.coachPin = "ettorino1";
     const initialHash = String(location.hash || "").replace("#", "");
@@ -4261,7 +4261,7 @@
 
     function saveState(options = {}) {
       if (options.touch !== false) {
-        state.meta = { ...(state.meta || {}), updatedAt: new Date().toISOString(), version: 52 };
+        state.meta = { ...(state.meta || {}), updatedAt: new Date().toISOString(), version: 53 };
       }
       localStorage.setItem(STORE_KEY, JSON.stringify(state));
       if (options.cloud !== false) scheduleCloudSave();
@@ -4660,18 +4660,31 @@
       return clamp(Math.floor(diffDays / 7) + 1, 1, state.profile.phaseLength || 6);
     }
 
+    function latestAppWorkout(phase = state.training.phaseFilter || "Intensificazione") {
+      return state.training.sessions
+        .filter((session) => (session.source === "App" || Number(session.id) > 1000000000) && (!session.phase || session.phase === phase))
+        .slice()
+        .sort((a, b) => String(b.dateInput || "").localeCompare(String(a.dateInput || "")) || Number(b.id || 0) - Number(a.id || 0))[0] || null;
+    }
+
+    function nextProgramCode(code, phase = state.training.phaseFilter || "Intensificazione") {
+      const match = String(code || "").match(/^([A-F])(\d+)$/i);
+      if (!match) return "";
+      const letters = ["A", "B", "C", "D", "E", "F"];
+      const letterIndex = letters.indexOf(match[1].toUpperCase());
+      const week = Number(match[2]);
+      const candidate = letterIndex < letters.length - 1 ? `${letters[letterIndex + 1]}${week}` : `A${week + 1}`;
+      return state.training.program.some((session) => session.code === candidate && session.phase === phase) ? candidate : "";
+    }
+
     function autoSessionCodeForDate(value) {
+      const phase = state.training.phaseFilter || "Intensificazione";
+      const latest = latestAppWorkout(phase);
+      const afterLatest = nextProgramCode(latest?.sessionCode, phase);
+      if (afterLatest) return afterLatest;
       const week = weekFromDate(value);
-      const day = parseInputDate(value).getDay();
-      const byDay = {
-        1: `A${week}`,
-        2: `B${week}`,
-        3: `C${week}`,
-        4: `D${week}`,
-        5: `E${week}`,
-        6: `F${week}`
-      };
-      return byDay[day] || "";
+      const startCode = `A${week}`;
+      return state.training.program.some((session) => session.code === startCode && session.phase === phase) ? startCode : "";
     }
 
     function programByCode(code) {
@@ -4703,7 +4716,7 @@
         session,
         phase,
         phaseSessions,
-        isRestDay: phase === "Intensificazione" && !autoCode
+        isRestDay: false
       };
     }
 
@@ -5397,7 +5410,7 @@
             </label>
             <label>Scheda
               <select id="trainingSession">
-                ${phaseSessions.map((item) => `<option value="${item.code}" ${session.code === item.code && state.training.sessionName !== "auto" ? "selected" : ""}>${item.code} - ${item.focus}</option>`).join("")}
+                ${phaseSessions.map((item) => `<option value="${item.code}" ${session.code === item.code ? "selected" : ""}>${item.code} - ${item.focus}</option>`).join("")}
               </select>
             </label>
           </div>
@@ -5564,7 +5577,7 @@
             <h3>Dashboard alimentazione</h3>
             <a class="ghost-button" href="./nutrizione/index.html" target="_blank" rel="noopener">Apri completa</a>
           </div>
-          <iframe class="nutrition-frame" src="./nutrizione/index.html" title="Dashboard nutrizione"></iframe>
+          <iframe class="nutrition-frame" src="./nutrizione/index.html?v=53" title="Dashboard nutrizione"></iframe>
         </section>
       `;
     }
@@ -6915,6 +6928,7 @@
         if (state.training.noteDraft) delete state.training.noteDraft[draftNoteKey(context, exercise)];
       });
       state.training.exercises = buildExerciseIndex(state.training.program, state.training.sessions);
+      state.training.sessionName = "auto";
       state.training.lastSavedMessage = `${context.session.name} salvata sul dispositivo il ${shortDate(context.date)}. Sincronizzazione in corso...`;
       saveState({ cloud: false });
       renderTrainingOnly();
@@ -7393,7 +7407,14 @@
     });
 
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-      navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (sessionStorage.getItem("atlas-v53-reload")) return;
+        sessionStorage.setItem("atlas-v53-reload", "1");
+        location.reload();
+      });
+      navigator.serviceWorker.register("./service-worker.js?v=53", { updateViaCache: "none" })
+        .then((registration) => registration.update())
+        .catch(() => {});
     }
 
     window.addEventListener("message", (event) => {
