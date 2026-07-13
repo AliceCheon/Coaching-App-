@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v51";
+const CACHE_NAME = "atlas-app-v52";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -8,7 +8,8 @@ const APP_SHELL = [
   "./app-icon.png",
   "./app-icon-192.png",
   "./app-icon-512.png",
-  "./apple-touch-icon.png"
+  "./apple-touch-icon.png",
+  "./atlas-nunito-sans.ttf"
 ];
 
 self.addEventListener("install", (event) => {
