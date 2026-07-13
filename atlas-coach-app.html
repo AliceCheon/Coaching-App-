@@ -12,6 +12,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <title>Barbell diva</title>
   <style>
+    @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
     :root {
       color-scheme: dark;
       --bg: #050308;
@@ -32,7 +33,7 @@
       --orange: #ff9b49;
       --violet: #a174ff;
       --shadow: 0 28px 90px rgba(0,0,0,.55);
-      font-family: "Segoe UI Variable Display", "Aptos", ui-rounded, "Trebuchet MS", system-ui, sans-serif;
+      font-family: "Atlas Nunito", "Nunito Sans", ui-rounded, system-ui, sans-serif;
     }
 
     body[data-theme="light"] {
@@ -1068,6 +1069,18 @@
       padding-top: 8px;
       font-size: .78rem;
     }
+
+    .workout-archive { display:grid; gap:10px; margin-top:12px; }
+    .workout-entry { border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.025); overflow:hidden; }
+    .workout-entry summary { cursor:pointer; list-style:none; padding:14px; display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; }
+    .workout-entry summary::-webkit-details-marker { display:none; }
+    .workout-code { min-width:46px; text-align:center; border-radius:12px; padding:8px; color:#1c1020; background:linear-gradient(135deg,var(--gold-2),var(--pink)); font-weight:950; }
+    .workout-title strong,.workout-title small { display:block; }
+    .workout-title small { color:var(--muted); margin-top:3px; }
+    .sync-badge { color:#baffdf; background:rgba(54,211,153,.13); border:1px solid rgba(54,211,153,.35); border-radius:999px; padding:6px 9px; font-size:.7rem; font-weight:900; }
+    .workout-entry-body { border-top:1px solid var(--line-soft); padding:4px 14px 14px; }
+    .workout-exercise-row { display:grid; grid-template-columns:1fr auto; gap:12px; padding:9px 0; border-bottom:1px solid var(--line-soft); font-size:.78rem; }
+    @media(max-width:560px){.workout-entry summary{grid-template-columns:auto 1fr}.sync-badge{grid-column:2;justify-self:start}.workout-exercise-row{grid-template-columns:1fr}}
 
     .account-card {
       overflow: hidden;
@@ -4248,7 +4261,7 @@
 
     function saveState(options = {}) {
       if (options.touch !== false) {
-        state.meta = { ...(state.meta || {}), updatedAt: new Date().toISOString(), version: 51 };
+        state.meta = { ...(state.meta || {}), updatedAt: new Date().toISOString(), version: 52 };
       }
       localStorage.setItem(STORE_KEY, JSON.stringify(state));
       if (options.cloud !== false) scheduleCloudSave();
@@ -4274,13 +4287,14 @@
           measures.set(key, { ...(measures.get(key) || {}), ...row });
         });
       merged.measures = Array.from(measures.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
-      merged.photos = mergeRowsByKey(current.photos, incoming.photos, (photo) => [
-        photo.date || "",
-        photo.front || "",
-        photo.side || "",
-        photo.back || "",
-        photo.notes || ""
-      ].join("|"));
+      const photoRows = new Map();
+      [...(Array.isArray(current.photos) ? current.photos : []), ...(Array.isArray(incoming.photos) ? incoming.photos : [])]
+        .filter((photo) => photo && (photo.front || photo.side || photo.back))
+        .forEach((photo) => {
+          const key = photo.id || `${photo.date || ""}|${photo.notes || ""}`;
+          photoRows.set(key, { ...(photoRows.get(key) || {}), ...photo });
+        });
+      merged.photos = Array.from(photoRows.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
       return merged;
     }
 
@@ -4306,7 +4320,8 @@
     }
 
     function nutritionPhotoId(photo = {}) {
-      const text = [photo.date || "", photo.front || "", photo.side || "", photo.back || "", photo.notes || ""].join("|");
+      if (photo.id) return String(photo.id).replace(/-(front|side|back)$/, "");
+      const text = [photo.date || "", photo.notes || ""].join("|");
       let hash = 0;
       for (let index = 0; index < text.length; index += 1) {
         hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
@@ -4314,20 +4329,9 @@
       return `photo-${Math.abs(hash).toString(36)}-${String(photo.date || "no-date").replace(/[^a-z0-9-]/gi, "-")}`;
     }
 
-    function nutritionPhotoMeta(photo = {}) {
-      return {
-        id: nutritionPhotoId(photo),
-        date: photo.date || "",
-        notes: photo.notes || "",
-        hasFront: !!photo.front,
-        hasSide: !!photo.side,
-        hasBack: !!photo.back
-      };
-    }
-
     function splitNutritionPhotosForCloud(payload) {
       const photos = Array.isArray(payload.nutrition?.dashboard?.photos) ? payload.nutrition.dashboard.photos : [];
-      if (payload.nutrition?.dashboard) payload.nutrition.dashboard.photos = photos.map(nutritionPhotoMeta);
+      if (payload.nutrition?.dashboard) payload.nutrition.dashboard.photos = [];
       return photos;
     }
 
@@ -4340,11 +4344,12 @@
       const collection = nutritionPhotosCollection();
       if (!collection) return;
       const validPhotos = photos.filter((photo) => photo && (photo.front || photo.side || photo.back));
-      const activeIds = new Set(validPhotos.map(nutritionPhotoId));
-      const writes = validPhotos.map((photo) => {
-        const id = nutritionPhotoId(photo);
-        return collection.doc(id).set({ ...photo, id, updatedAt: new Date().toISOString() }, { merge: true });
-      });
+      const pieces = validPhotos.flatMap((photo) => ["front", "side", "back"].filter((slot) => photo[slot]).map((slot) => ({
+        id: `${nutritionPhotoId(photo)}-${slot}`,
+        baseId: nutritionPhotoId(photo), date: photo.date || "", notes: photo.notes || "", slot, image: photo[slot]
+      })));
+      const activeIds = new Set(pieces.map((piece) => piece.id));
+      const writes = pieces.map((piece) => collection.doc(piece.id).set({ ...piece, updatedAt: new Date().toISOString() }));
       const snapshot = await collection.get();
       snapshot.forEach((item) => {
         if (!activeIds.has(item.id)) writes.push(collection.doc(item.id).delete().catch(() => null));
@@ -4356,12 +4361,19 @@
       const collection = nutritionPhotosCollection();
       if (!collection) return [];
       const snapshot = await withTimeout(collection.get(), 5000);
-      const photos = [];
+      const grouped = new Map();
       snapshot.forEach((item) => {
         const photo = item.data();
-        if (photo && (photo.front || photo.side || photo.back)) photos.push(photo);
+        if (!photo) return;
+        if (photo.slot && photo.image) {
+          const id = photo.baseId || String(item.id).replace(/-(front|side|back)$/, "");
+          grouped.set(id, { ...(grouped.get(id) || {}), id, date: photo.date || "", notes: photo.notes || "", [photo.slot]: photo.image });
+        } else if (photo.front || photo.side || photo.back) {
+          const id = nutritionPhotoId(photo);
+          grouped.set(id, { ...(grouped.get(id) || {}), ...photo, id });
+        }
       });
-      return photos.sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+      return Array.from(grouped.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
     }
 
     function nutritionPayloadHasUserData(payload = {}) {
@@ -4378,7 +4390,13 @@
       if (!state.nutrition) state.nutrition = {};
       const before = JSON.stringify(state.nutrition.dashboard || {});
       state.nutrition.dashboard = mergeNutritionDashboard(state.nutrition.dashboard || {}, payload);
-      if (JSON.stringify(state.nutrition.dashboard || {}) !== before) saveState();
+      if (JSON.stringify(state.nutrition.dashboard || {}) !== before) {
+        saveState({ cloud: false });
+        if (cloudUser && dbService && state.profile.account?.syncReady) {
+          clearTimeout(cloudSaveTimer);
+          saveCloudState();
+        } else scheduleCloudSave();
+      }
     }
 
     function pushNutritionDashboardToFrame() {
@@ -4462,7 +4480,7 @@
 
     async function saveCloudState() {
       const doc = cloudDocument();
-      if (!doc) return;
+      if (!doc) return false;
       const payload = clone(state);
       const nutritionPhotos = splitNutritionPhotosForCloud(payload);
       try {
@@ -4476,9 +4494,11 @@
         await saveNutritionPhotosToCloud(nutritionPhotos);
         state.profile.account.cloudStatus = "sync";
         localStorage.setItem(STORE_KEY, JSON.stringify(state));
+        return true;
       } catch (error) {
         state.profile.account.cloudStatus = "errore sync";
         localStorage.setItem(STORE_KEY, JSON.stringify(state));
+        return false;
       }
     }
 
@@ -5401,7 +5421,7 @@
             <span class="chip">${displayLabel(session.phase)}</span>
             <span class="chip">${session.code}</span>
           </div>
-          <p class="micro-copy">Salva Sessione registra i carichi in questo browser. Lo storico importato sotto arriva dal tuo Excel.</p>
+          <p class="micro-copy">Salva Sessione registra subito i carichi sul dispositivo e, quando hai effettuato l'accesso, li sincronizza su PC e telefono.</p>
         </section>
         ${session.exercises.map((item, index) => exerciseHtml(item, index, session)).join("")}
         <button class="gold-button" style="width:100%;margin-top:4px" id="saveWorkout">Salva Sessione</button>
@@ -6180,12 +6200,15 @@
 
     function workoutHistoryHtml() {
       const savedHere = state.training.sessions.filter((session) => session.source === "App" || Number(session.id) > 1000000000);
-      const recent = savedHere.slice(-8).reverse();
+      const recent = savedHere.slice().sort((a, b) => String(b.dateInput || "").localeCompare(String(a.dateInput || "")) || Number(b.id || 0) - Number(a.id || 0));
+      const selectedCode = currentTrainingContext().session.code;
+      const selectedCount = savedHere.filter((session) => session.sessionCode === selectedCode).length;
       return `
         <section class="card" id="workoutHistory">
-          <div class="row"><h3>Storico allenamenti salvati</h3><span class="chip">${savedHere.length} salvati nell'app</span></div>
-          <div class="history">
-            ${recent.length ? recent.map((session) => `<div class="history-row"><span>✓ ${escapeHtml(session.sessionName || session.sessionCode)} - Week ${escapeHtml(session.week || "")}</span><strong>${escapeHtml(session.date)} - ${session.exercises.length} ${session.exercises.length === 1 ? "esercizio" : "esercizi"}</strong></div>`).join("") : `<div class="history-row"><span>Il prossimo allenamento salvato comparirà qui.</span><strong>--</strong></div>`}
+          <div class="row"><div><h3>Archivio allenamenti</h3><p class="micro-copy">Il tuo logbook completo: apri una voce per vedere carichi e note.</p></div><span class="chip">${savedHere.length} salvati</span></div>
+          <div class="save-success">${selectedCount ? `✓ ${escapeHtml(selectedCode)} compare ${selectedCount} ${selectedCount === 1 ? "volta" : "volte"} nello storico.` : `Attenzione: ${escapeHtml(selectedCode)} non risulta ancora nello storico.`}</div>
+          <div class="workout-archive">
+            ${recent.length ? recent.map((session) => `<details class="workout-entry"><summary><span class="workout-code">${escapeHtml(session.sessionCode || "--")}</span><span class="workout-title"><strong>${escapeHtml(session.sessionName || session.sessionCode || "Allenamento")}</strong><small>${escapeHtml(session.date || session.dateInput || "")} · Week ${escapeHtml(session.week || "--")} · ${session.exercises?.length || 0} ${(session.exercises?.length || 0) === 1 ? "esercizio" : "esercizi"}</small></span><span class="sync-badge">${session.cloudSyncedAt ? "Cloud ✓" : "Salvato ✓"}</span></summary><div class="workout-entry-body">${(session.exercises || []).map((exercise) => `<div class="workout-exercise-row"><span><strong>${escapeHtml(exercise.name)}</strong>${exercise.userNote ? `<br><small>${escapeHtml(exercise.userNote)}</small>` : ""}</span><strong>${escapeHtml(exercise.value || (exercise.kg ? `${exercise.kg} kg` : "nota"))}</strong></div>`).join("") || `<p class="micro-copy">Nessun dettaglio esercizio disponibile.</p>`}</div></details>`).join("") : `<div class="history-row"><span>Nessun allenamento salvato nell'app.</span><strong>--</strong></div>`}
           </div>
         </section>
       `;
@@ -6892,10 +6915,27 @@
         if (state.training.noteDraft) delete state.training.noteDraft[draftNoteKey(context, exercise)];
       });
       state.training.exercises = buildExerciseIndex(state.training.program, state.training.sessions);
-      state.training.lastSavedMessage = `${context.session.name} salvata il ${shortDate(context.date)} con ${exercises.length} ${exercises.length === 1 ? "esercizio" : "esercizi"}. La trovi nello storico qui sotto.`;
-      saveState();
+      state.training.lastSavedMessage = `${context.session.name} salvata sul dispositivo il ${shortDate(context.date)}. Sincronizzazione in corso...`;
+      saveState({ cloud: false });
       renderTrainingOnly();
-      showToast(existingIndex >= 0 ? "Allenamento aggiornato e salvato." : "Allenamento salvato subito.");
+      showToast("Allenamento salvato sul dispositivo. Sincronizzo...");
+      let cloudSaved = false;
+      if (cloudUser && dbService && state.profile.account?.syncReady) {
+        clearTimeout(cloudSaveTimer);
+        savedSession.cloudSyncedAt = new Date().toISOString();
+        cloudSaved = await saveCloudState();
+      }
+      if (cloudSaved) {
+        state.training.lastSavedMessage = `${context.session.name} salvata e sincronizzata su PC e telefono il ${shortDate(context.date)}.`;
+        saveState({ cloud: false });
+        showToast(existingIndex >= 0 ? "Allenamento aggiornato e sincronizzato ✓" : "Allenamento salvato e sincronizzato ✓");
+      } else {
+        delete savedSession.cloudSyncedAt;
+        state.training.lastSavedMessage = `${context.session.name} salvata sul dispositivo il ${shortDate(context.date)}. Il cloud verrà ritentato automaticamente.`;
+        saveState();
+        showToast("Salvato sul dispositivo; cloud in attesa.");
+      }
+      renderTrainingOnly();
       setTimeout(() => document.getElementById("workoutSaveConfirmation")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
     }
 
