@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v54";
+﻿const CACHE_NAME = "atlas-app-v82";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -9,6 +9,9 @@ const APP_SHELL = [
   "./app-icon-192.png",
   "./app-icon-512.png",
   "./apple-touch-icon.png",
+  "./coach-mascot.svg",
+  "./dashboard-alimentazione-backup-2026-07-15.json",
+  "./food-backup.js",
   "./atlas-nunito-sans.ttf"
 ];
 
@@ -51,3 +54,8 @@ self.addEventListener("fetch", (event) => {
     }))
   );
 });
+
+
+
+
+

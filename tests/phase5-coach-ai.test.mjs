@@ -1,0 +1,52 @@
+import fs from "node:fs/promises";
+import vm from "node:vm";
+
+const html = await fs.readFile(new URL("../index.html", import.meta.url), "utf8");
+const start = html.lastIndexOf("<script>") + "<script>".length;
+const end = html.lastIndexOf("</script>");
+const script = html.slice(start, end).replace(/\s+initFirebase\(\);\s+render\(\);\s*$/, "");
+const storage = new Map();
+const localStorage = { getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, String(value)), removeItem: (key) => storage.delete(key) };
+const element = { addEventListener() {}, querySelector() { return null; }, querySelectorAll() { return []; }, classList: { add() {}, remove() {}, toggle() {} }, style: {}, dataset: {} };
+const document = { getElementById() { return element; }, querySelector() { return null; }, querySelectorAll() { return []; }, createElement() { return { ...element }; }, body: element, documentElement: element, addEventListener() {} };
+const context = { console, structuredClone, Date, Math, JSON, Intl, Map, Set, WeakMap, Array, Object, String, Number, Boolean, RegExp, Promise, parseInt, parseFloat, isNaN, localStorage, sessionStorage: localStorage, document, navigator: {}, location: { protocol: "file:", origin: "null", hash: "" }, URL: { createObjectURL() { return "blob:test"; }, revokeObjectURL() {} }, Blob: class {}, FileReader: class {}, setTimeout() { return 1; }, clearTimeout() {}, requestAnimationFrame() { return 1; }, addEventListener() {}, removeEventListener() {}, postMessage() {}, window: null, globalThis: null };
+context.window = context; context.globalThis = context;
+vm.createContext(context);
+new vm.Script(script, { filename: "atlas-phase5.js" }).runInContext(context);
+
+const result = vm.runInContext(`(() => {
+  state = clone(baseState); state.programs = []; state.training.sessions = []; state.training.history = [{ id: "workout-untouched" }]; state.profile.mode = "coach";
+  coachProgramUi.programId = ""; coachProgramUi.sheetId = ""; coachProgramUi.drafts.clear(); coachProgramUi.histories.clear(); coachProgramUi.aiExpanded.clear();
+  const assertions = []; const check = (name, condition) => { assertions.push({ name, passed: !!condition }); if (!condition) throw new Error("Test fallito: " + name); };
+  const program = programRepository.createProgram({ id: "p5", name: "Coach AI test", phase: "Upper", durationWeeks: 8, sheets: [] }, { save: false }).value;
+  const sheet = programRepository.createSheet(program.id, { id: "s5", code: "A", name: "Upper A", focus: "Spalle" }, { save: false }).value;
+  coachProgramUi.programId = program.id; coachProgramUi.sheetId = sheet.id;
+  const add = (id, name, muscle, pattern) => programRepository.createExercise(program.id, sheet.id, { id, name, muscle, prescription: { sets: 3, reps: "8-12", rir: "1-2", rest: { seconds: 90 } }, metadata: { pattern, equipment: "" } }, { save: false });
+  add("x1", "Military press", "Spalle", "press"); add("x2", "Military press", "Spalle", "press");
+  let suggestions = coachAiSuggestions();
+  check("regole centralizzate", Array.isArray(COACH_AI_RULES) && COACH_AI_RULES.length >= 4);
+  check("duplicati rilevati", suggestions.some((item) => item.id === "duplicate-exercise"));
+  check("suggerimento concreto", suggestions.every((item) => item.title && item.problem && item.reason && item.dataUsed && item.confidence));
+  check("alternative reali", suggestions.find((item) => item.id === "duplicate-exercise")?.alternatives.length <= 5);
+  check("progressione presente", suggestions.some((item) => item.id === "missing-progression" && item.progression.includes("Doppia progressione")));
+  const panel = coachAiPanelHtml();
+  check("pannello Coach AI", panel.includes("Applica suggerimento") && panel.includes("Mostra alternative") && panel.includes("Confidenza"));
+  check("filtri", ["critical","improvements","exercise","progression","order","missing"].every((filter) => panel.includes('data-ai-filter="' + filter + '"')));
+  check("toggle OFF", (coachAiState().enabled = false, coachAiPanelHtml().includes("disattivati")));
+  coachAiState().enabled = true;
+  const before = programRepository.getExercises(program.id, sheet.id).length;
+  const addSuggestion = { id: "manual-add", title: "Aggiungi al test", problem: "Distretto poco rappresentato", actionLabel: "Aggiungi esercizio", exercise: "Alzate laterali", prescription: { sets: 3, reps: "12-20", rir: "1-2", rest: 75 }, sheetId: sheet.id, action: { type: "addExercise", muscle: "Spalle", pattern: "isolation" } };
+  coachProgramUi.modal = "coach-ai-confirm"; coachProgramUi.modalData = { suggestion: addSuggestion }; saveCoachUiModal();
+  check("applicazione aggiunta", programRepository.getExercises(program.id, sheet.id).length === before + 1);
+  check("applicata tracciata", coachAiState().applied.includes("manual-add"));
+  const appliedId = programRepository.getExercises(program.id, sheet.id).find((item) => item.name === "Alzate laterali")?.id;
+  const replaceSuggestion = { id: "manual-replace", title: "Sostituisci", problem: "Ridondanza", actionLabel: "Sostituisci", exercise: "Leg curl", sheetId: sheet.id, action: { type: "replaceExercise", exerciseId: appliedId, replacement: "Alzate laterali cavo basso", muscle: "Spalle" } };
+  coachProgramUi.modal = "coach-ai-confirm"; coachProgramUi.modalData = { suggestion: replaceSuggestion }; saveCoachUiModal();
+  check("applicazione sostituzione", programRepository.getExerciseById(program.id, sheet.id, appliedId).name === "Alzate laterali cavo basso");
+  check("log workout intatto", state.training.history[0].id === "workout-untouched");
+  check("palette introdotta", ${JSON.stringify(html.includes("--bg-main: #17101F") && html.includes("--surface-raised: #352145") && html.includes("--pink-hot: #FF2D95"))});
+  check("modello valido", programRepository.validate().valid);
+  return { ok: true, assertions, rules: COACH_AI_RULES.map((rule) => rule.id) };
+})()`, context);
+
+console.log(JSON.stringify(result, null, 2));

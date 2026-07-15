@@ -1,0 +1,26 @@
+import fs from "node:fs/promises";
+import vm from "node:vm";
+const html = await fs.readFile(new URL("../index.html", import.meta.url), "utf8");
+const script = html.slice(html.lastIndexOf("<script>") + 8, html.lastIndexOf("</script>")).replace(/\s+initFirebase\(\);\s+render\(\);\s*$/, "");
+const store = new Map();
+const localStorage = { getItem:k=>store.get(k)??null, setItem:(k,v)=>store.set(k,String(v)), removeItem:k=>store.delete(k) };
+const element = { addEventListener(){}, querySelector(){return null}, querySelectorAll(){return[]}, classList:{add(){},remove(){},toggle(){}}, style:{}, dataset:{} };
+const document = { getElementById(){return element}, querySelector(){return null}, querySelectorAll(){return[]}, createElement(){return {...element}}, body:element, documentElement:element, addEventListener(){} };
+const context = { console, structuredClone, Date, Math, JSON, Intl, Map, Set, WeakMap, Array, Object, String, Number, Boolean, RegExp, Promise, parseInt, parseFloat, isNaN, localStorage, sessionStorage:localStorage, document, navigator:{}, location:{protocol:"file:",origin:"null",hash:""}, URL:{createObjectURL(){return "blob:test"},revokeObjectURL(){}}, Blob:class{}, FileReader:class{}, setTimeout(){return 1}, clearTimeout(){}, requestAnimationFrame(){return 1}, addEventListener(){}, removeEventListener(){}, window:null, globalThis:null };
+context.window=context; context.globalThis=context; context.sourceHtml=html; vm.createContext(context); new vm.Script(script).runInContext(context);
+const result = vm.runInContext(`(() => {
+  const p = programRepository.createProgram({id:"phase10",name:"Phase 10",phase:"Phase 10",durationWeeks:8,sheets:[]},{save:false}).value;
+  const s = programRepository.createSheet(p.id,{id:"phase10-sheet",code:"A",name:"Scheda A"},{save:false}).value;
+  const e = programRepository.createExercise(p.id,s.id,{id:"phase10-exercise",name:"Hip_Thrust",muscle:"Glutei",tempo:"2-1-2",prescription:{sets:3,reps:"10",rest:{seconds:90}},progression:{weeks:Array.from({length:8},(_,i)=>({weekNumber:i+1,sets:3,reps:"10"}))}},{save:false}).value;
+  const grid = coachBuilderWeeksGridHtml([{id:e.id,exercise:e.name,group:e.muscle,note:e.note,weeks:[]}],8,p,s);
+  if (!grid.includes("Note 2") || !grid.includes('data-week-grid-base="note2"')) throw new Error("Note 2 non presente nella griglia");
+  const note2 = normalizeExerciseModel(e).metadata.note2;
+  if (note2 !== "2-1-2") throw new Error("migrazione tempo -> note2 non riuscita");
+  const saved = programRepository.updateExercise(p.id, s.id, e.id, { metadata: { ...e.metadata, note2: "nota aggiornata" } }, { immediate: true, forceLocked: true });
+  if (!saved.ok || programRepository.getExerciseById(p.id, s.id, e.id).metadata.note2 !== "nota aggiornata") throw new Error("salvataggio Note 2 non riuscito");
+  const advanced = advancedVolumeFrequencyRows();
+  if (!advanced.some((row)=>row.muscle === "Glutei" && row.frequency === 1 && row.average > 0)) throw new Error("volume/frequenza non calcolati");
+  if (!sourceHtml.includes("coach-ai-floating") || !sourceHtml.includes("position:fixed")) throw new Error("floating Coach AI assente");
+  return {ok:true,note2,advancedRows:advanced.length};
+})()`, context);
+console.log(JSON.stringify(result,null,2));
