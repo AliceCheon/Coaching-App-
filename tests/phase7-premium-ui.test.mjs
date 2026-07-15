@@ -1,0 +1,12 @@
+import fs from "node:fs/promises";
+import vm from "node:vm";
+const html = await fs.readFile(new URL("../index.html", import.meta.url), "utf8");
+const start = html.lastIndexOf("<script>") + 8, end = html.lastIndexOf("</script>");
+const script = html.slice(start, end).replace(/\s+initFirebase\(\);\s+render\(\);\s*$/, "");
+const storage = new Map(); const localStorage = { getItem:k=>storage.get(k)??null, setItem:(k,v)=>storage.set(k,String(v)), removeItem:k=>storage.delete(k) };
+const element={addEventListener(){},querySelector(){return null;},querySelectorAll(){return[];},classList:{add(){},remove(){},toggle(){}},style:{},dataset:{}};
+const document={getElementById(){return element;},querySelector(){return null;},querySelectorAll(){return[];},createElement(){return {...element};},body:element,documentElement:element,addEventListener(){}};
+const context={console,structuredClone,Date,Math,JSON,Intl,Map,Set,WeakMap,Array,Object,String,Number,Boolean,RegExp,Promise,parseInt,parseFloat,isNaN,localStorage,sessionStorage:localStorage,document,navigator:{},location:{protocol:"file:",origin:"null",hash:""},URL:{createObjectURL(){return "blob:test";},revokeObjectURL(){}},Blob:class{},FileReader:class{},setTimeout(){return 1;},clearTimeout(){},requestAnimationFrame(){return 1;},addEventListener(){},removeEventListener(){},postMessage(){},window:null,globalThis:null};
+context.window=context; context.globalThis=context; vm.createContext(context); new vm.Script(script).runInContext(context);
+const result=vm.runInContext(`(() => { state=clone(baseState); state.programs=[]; state.training.sessions=[]; const p=programRepository.createProgram({id:"p7",name:"Premium",durationWeeks:8,sheets:[]},{save:false}).value; const s=programRepository.createSheet(p.id,{id:"s7",code:"A",name:"Lower"},{save:false}).value; programRepository.createExercise(p.id,s.id,{id:"e7",name:"Hip Thrust",muscle:"Glutei",prescription:{sets:4,reps:"8-12",rir:"1-2",rest:{seconds:120}}},{save:false}); coachProgramUi.programId=p.id; coachProgramUi.sheetId=s.id; const out=coachWorkbenchHtml(); return {ok:true,checks:{layout:out.includes("premium-coach-layout"),sidebar:out.includes("coach-ai-sidebar"),avatar:out.includes("Coach AI"),popup:out.includes("coach-ai-popover"),design:${JSON.stringify(html.includes("--pink-hot") && html.includes("premiumRise"))}}}; })()`,context);
+console.log(JSON.stringify(result,null,2));

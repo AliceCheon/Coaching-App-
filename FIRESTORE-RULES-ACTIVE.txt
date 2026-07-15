@@ -1,0 +1,19 @@
+REGOLE FIRESTORE ATTIVE - BARBELL DIVA
+Aggiornate il 13/07/2026 per autorizzare la sincronizzazione delle foto nutrizione.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /barbellDivaAccounts/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      match /nutritionPhotos/{photoId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}
+
+La raccolta nutritionPhotos resta privata: può leggerla e modificarla soltanto
+l'utente Google proprietario del documento barbellDivaAccounts corrispondente.

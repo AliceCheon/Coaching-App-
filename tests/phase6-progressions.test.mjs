@@ -1,0 +1,35 @@
+import fs from "node:fs/promises";
+import vm from "node:vm";
+
+const html = await fs.readFile(new URL("../index.html", import.meta.url), "utf8");
+const start = html.lastIndexOf("<script>") + 8, end = html.lastIndexOf("</script>");
+const script = html.slice(start, end).replace(/\s+initFirebase\(\);\s+render\(\);\s*$/, "");
+const storage = new Map();
+const localStorage = { getItem: (k) => storage.get(k) ?? null, setItem: (k,v) => storage.set(k,String(v)), removeItem: (k) => storage.delete(k) };
+const element = { addEventListener(){}, querySelector(){return null;}, querySelectorAll(){return [];}, classList:{add(){},remove(){},toggle(){}}, style:{}, dataset:{} };
+const document = { getElementById(){return element;}, querySelector(){return null;}, querySelectorAll(){return [];}, createElement(){return {...element};}, body:element, documentElement:element, addEventListener(){} };
+const context = { console, structuredClone, Date, Math, JSON, Intl, Map, Set, WeakMap, Array, Object, String, Number, Boolean, RegExp, Promise, parseInt, parseFloat, isNaN, localStorage, sessionStorage:localStorage, document, navigator:{}, location:{protocol:"file:",origin:"null",hash:""}, URL:{createObjectURL(){return "blob:test";},revokeObjectURL(){}}, Blob:class{}, FileReader:class{}, setTimeout(){return 1;}, clearTimeout(){}, requestAnimationFrame(){return 1;}, addEventListener(){}, removeEventListener(){}, postMessage(){}, window:null, globalThis:null };
+context.window=context; context.globalThis=context; vm.createContext(context); new vm.Script(script).runInContext(context);
+const result = vm.runInContext(`(() => {
+  state = clone(baseState); state.programs=[]; state.training.sessions=[]; state.training.history=[{id:"untouched"}]; state.coach.progressionTemplates=[];
+  const out=[]; const check=(name,ok)=>{out.push({name,passed:!!ok}); if(!ok) throw new Error("Test fallito: "+name);};
+  const p=programRepository.createProgram({id:"p6",name:"Progressioni",durationWeeks:4,sheets:[]},{save:false}).value;
+  const s=programRepository.createSheet(p.id,{id:"s6",code:"A",name:"Forza"},{save:false}).value;
+  const e=programRepository.createExercise(p.id,s.id,{id:"e6",name:"Military",muscle:"Spalle",prescription:{sets:3,reps:"8-12",rir:"2",rest:{seconds:120},prescribedLoad:{value:null,unit:"kg"}}},{save:false}).value;
+  check("template library completa", progressionTemplates().length >= 15 && progressionTemplateById("double-progression"));
+  check("4 settimane dinamiche", generateProgressionWeeks(e,"maintenance",4).length===4);
+  check("8 settimane dinamiche", generateProgressionWeeks(e,"double-progression",8).length===8);
+  const dbl=generateProgressionWeeks(e,"double-progression",8,{repMin:8,repMax:10}); check("doppia progressione", dbl[0].reps.min===8 && dbl[2].reps.min===10 && dbl[3].reps.min===8 && dbl.every(w=>w.prescribedLoad.value===null));
+  check("lineare senza carico inventato", generateProgressionWeeks(e,"linear-load",16).every(w=>w.prescribedLoad.value===null));
+  check("RIR progressivo", generateProgressionWeeks(e,"rir-progression",4)[0].rir.min > generateProgressionWeeks(e,"rir-progression",4)[3].rir.min);
+  check("top set e backoff", generateProgressionWeeks(e,"top-set-backoff",4)[0].segments.length===2);
+  check("deload tipizzato", generateProgressionWeeks(e,"deload",4).every(w=>w.type==="deload"));
+  programRepository.updateProgram(p.id,{durationWeeks:8},{save:false}); coachProgramUi.programId=p.id; coachProgramUi.sheetId=s.id; coachProgramUi.modal="progression-editor"; coachProgramUi.modalData={exerciseId:e.id,weeks:dbl,templateId:"double-progression"}; saveCoachUiModal();
+  const saved=programRepository.getExerciseById(p.id,s.id,e.id); check("salvataggio repository", saved.progression.weeks.length===8 && saved.progression.templateId==="double-progression");
+  const before=saved.progression.weeks[0].sets; saved.progression.weeks[0].sets=4; saved.progression.weeks[0].source="manual"; coachProgramUi.modalData={exerciseId:e.id,weeks:saved.progression.weeks,templateId:"double-progression"}; coachProgramUi.modal="progression-editor"; saveCoachUiModal();
+  check("modifica manuale protetta", programRepository.getExerciseById(p.id,s.id,e.id).progression.weeks[0].sets===4 && programRepository.getExerciseById(p.id,s.id,e.id).progression.manualWeeks.includes(1));
+  const reopened=JSON.parse(JSON.stringify(state.programs)); state.programs=[]; programRepository.importData(reopened,{save:false,replace:true}); check("riapertura e persistenza", programRepository.getExerciseById(p.id,s.id,e.id).progression.weeks.length===8);
+  check("workout history intatto", state.training.history[0].id==="untouched"); check("modello valido", programRepository.validate().valid);
+  return {ok:true,assertions:out,templates:progressionTemplates().length};
+})()`, context);
+console.log(JSON.stringify(result,null,2));
