@@ -3397,7 +3397,7 @@
         bottom: calc(10px + env(safe-area-inset-bottom));
         width: auto;
         min-height: 64px;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         grid-auto-rows: 1fr;
         padding: 6px;
         border-radius: 22px;
@@ -3433,7 +3433,7 @@
         bottom: calc(8px + env(safe-area-inset-bottom));
         width: auto;
         min-height: 62px;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         grid-auto-rows: 1fr;
         border-radius: 20px;
         padding: 5px;
@@ -3446,7 +3446,11 @@
 
       .nav-button {
         min-height: 52px;
-        font-size: .58rem;
+        font-size: .46rem;
+        line-height: 1.05;
+        letter-spacing: -.015em;
+        white-space: nowrap;
+        overflow: hidden;
         border-radius: 16px;
       }
 
@@ -4231,6 +4235,61 @@
     body[data-theme="light"] .coach-weeks-grid .week-even { background:rgba(225,211,246,.54); }
     body[data-theme="light"] .coach-week-cell { color:#382346; background:rgba(244,226,249,.72); }
 
+    body[data-theme="light"] .premium-coach-layout,
+    body[data-theme="light"] .coach-main-column,
+    body[data-theme="light"] .builder-v24-shell,
+    body[data-theme="light"] .builder-v24-head,
+    body[data-theme="light"] .builder-v24-toolbar,
+    body[data-theme="light"] .builder-v24-scroll,
+    body[data-theme="light"] .program-picker-row,
+    body[data-theme="light"] .program-summary-row,
+    body[data-theme="light"] .sheet-navigation {
+      color:#281738;
+      background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(250,238,250,.92));
+      border-color:rgba(105,55,145,.16);
+    }
+    body[data-theme="light"] .builder-v24-table th {
+      color:#6822aa;
+      background:#ead7f1;
+      border-color:rgba(105,55,145,.16);
+    }
+    body[data-theme="light"] .builder-v24-table td {
+      color:#382346;
+      background:rgba(255,255,255,.84);
+      border-color:rgba(105,55,145,.11);
+    }
+    body[data-theme="light"] .builder-v24-table tbody tr:nth-child(even) td { background:#f7edf9; }
+    body[data-theme="light"] .builder-v24-table tbody tr:hover td { background:#ffe5f3; }
+    body[data-theme="light"] .builder-v24-table input,
+    body[data-theme="light"] .builder-v24-table select,
+    body[data-theme="light"] .builder-v24-table textarea,
+    body[data-theme="light"] .builder-v24-head input,
+    body[data-theme="light"] .builder-v24-head select {
+      color:#281738;
+      background:#fffafd;
+      border-color:rgba(105,55,145,.20);
+    }
+    body[data-theme="light"] .coach-ai-sidebar {
+      color:#281738;
+      background:linear-gradient(155deg,#fffafd,#f4e5fa 64%,#ffe8f4);
+      border-color:rgba(155,54,162,.20);
+      box-shadow:0 20px 46px rgba(81,36,112,.15);
+    }
+    body[data-theme="light"] .coach-ai-sidebar .coach-ai-card {
+      color:#382346;
+      background:rgba(255,255,255,.88);
+      border-color:rgba(105,55,145,.15);
+      box-shadow:0 8px 22px rgba(81,36,112,.08);
+    }
+    body[data-theme="light"] .coach-ai-sidebar .coach-ai-card h4 { color:#8b2678; }
+    body[data-theme="light"] .coach-ai-sidebar .coach-ai-card .chip { color:#7628c8; background:#f0e2f7; }
+    body[data-theme="light"] .coach-ai-sidebar .coach-ai-actions button,
+    body[data-theme="light"] .mini-button {
+      color:#5d2b75;
+      background:rgba(255,255,255,.86);
+      border-color:rgba(105,55,145,.17);
+    }
+
     body[data-theme="light"] .advanced-volume-card {
       color:#281738;
       background:linear-gradient(145deg,rgba(255,255,255,.94),rgba(249,237,250,.88));
@@ -4431,15 +4490,19 @@
         <nav class="bottom-nav" aria-label="Navigazione app">
           <button class="nav-button active" data-bottom="home">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
-            Home
+            Dashboard
           </button>
           <button class="nav-button" data-bottom="workout">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 6v12M18 6v12M3 10v4M21 10v4M6 12h12"/></svg>
-            Workout
+            Allenamento
           </button>
           <button class="nav-button" data-bottom="progress">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 3 5-7"/></svg>
-            Trend
+            Analisi
+          </button>
+          <button class="nav-button" data-bottom="logbook">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M5 4h14v16H5z"/><path d="M8 2v4M16 2v4M8 10h8M8 14h5"/></svg>
+            Logbook
           </button>
           <button class="nav-button coach-nav" data-bottom="coach">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M7 16h10"/><path d="M9 3h6"/></svg>
@@ -4447,11 +4510,11 @@
           </button>
           <button class="nav-button" data-bottom="nutrition">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19c5-9 9-14 16-14"/><path d="M5 5c5 2 8 6 9 12"/><path d="M4 19c7 1 13-2 16-14"/></svg>
-            Food
+            Nutrizione
           </button>
           <button class="nav-button" data-bottom="quiz">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            Check
+            Check-in
           </button>
         </nav>
       </div>
@@ -5647,14 +5710,19 @@
     state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
     if (state.profile.coachPin === "2507") state.profile.coachPin = "ettorino1";
     const initialHash = String(location.hash || "").replace("#", "");
-    const initialScreens = new Set(["dashboard", "training", "progress", "nutrition", "quiz", "coach"]);
+    const initialScreens = new Set(["dashboard", "training", "progress", "logbook", "nutrition", "quiz", "coach"]);
     let activeScreen = initialScreens.has(initialHash) ? initialHash : "dashboard";
     let activeBottom = activeScreen === "training" ? "workout" : activeScreen === "dashboard" ? "home" : activeScreen;
+    let lastRenderedScreen = "";
     let timerHandle = null;
     let authService = null;
     let dbService = null;
     let cloudUser = null;
     let cloudSaveTimer = null;
+    let cloudStateUnsubscribe = null;
+    let lastCloudWriteAt = "";
+    let lastCloudSnapshotAt = "";
+    let lastCloudError = "";
     let localSaveTimer = null;
     let pendingSaveOptions = null;
     let lastPersistenceError = null;
@@ -7085,8 +7153,14 @@
         const validation = validateSheetModel(updated);
         if (!validation.valid) return repositoryResult(false, updated, validation.errors, validation.warnings);
         const sheets = program.sheets.map((sheet) => sheet.id === sheetId ? updated : sheet);
-        const updatedProgram = normalizeProgramModel({ ...clone(program), sheets, updatedAt: updated.updatedAt });
-        commitProgramCollection(state.programs.map((item) => item.id === programId ? updatedProgram : item), options);
+        // Percorso rapido dell'editor: la scheda appena normalizzata e validata
+        // può essere inserita direttamente nel suo programma. Evita di clonare
+        // e rinormalizzare tutti i programmi (oltre 2 MB) ad ogni singola cella.
+        program.sheets = sheets;
+        program.updatedAt = updated.updatedAt;
+        attachSheetCompatibility(updated, program);
+        state.meta = { ...(state.meta || {}), validationIssues: [] };
+        if (options.save !== false) saveState({ immediate: !!options.immediate, cloud: options.cloud !== false, touch: options.touch !== false });
         return repositoryResult(true, this.getSheetById(programId, sheetId, { includeDeleted: true }));
       },
       deleteSheet(programId, sheetId, options = {}) {
@@ -7505,6 +7579,7 @@
       if (!firebaseConfigured()) return "Login Google pronto, ma Firebase non e ancora configurato.";
       if (!window.firebase) return "Firebase non caricato: serve connessione internet.";
       if (!cloudUser) return "Dati salvati su questo dispositivo. Accedi per prepararli al cloud.";
+      if (state.profile.account?.cloudStatus?.startsWith("errore") && lastCloudError) return lastCloudError;
       return state.profile.account?.cloudStatus === "sync"
         ? "Accesso Google attivo. Sync automatico acceso."
         : "Accesso Google attivo. Sincronizzazione in preparazione.";
@@ -7547,12 +7622,16 @@
         saveState({ cloud: false });
         render();
         if (user && state.profile.account.syncReady) {
-          loadCloudState({ silent: true }).then(() => {
+          loadCloudState({ silent: true }).then((loaded) => {
             saveState({ cloud: false });
             render();
-            startNutritionPhotosRealtime();
+            if (loaded) {
+              startCloudStateRealtime();
+              startNutritionPhotosRealtime();
+            }
           });
         } else {
+          stopCloudStateRealtime();
           stopNutritionPhotosRealtime();
         }
       });
@@ -7564,6 +7643,89 @@
       return dbService.collection(CLOUD_COLLECTION).doc(cloudUser.uid);
     }
 
+    function cloudProgramsCollection() {
+      const doc = cloudDocument();
+      // Riusa la sottoraccolta privata già autorizzata dalle regole Firebase.
+      // I documenti programma hanno un prefisso dedicato e vengono ignorati
+      // dal lettore delle foto.
+      return doc ? doc.collection("nutritionPhotos") : null;
+    }
+
+    function cloudProgramDocumentId(programId) {
+      return `program-v1-${encodeURIComponent(String(programId || "program")).replaceAll(".", "%2E")}`;
+    }
+
+    async function saveCloudPrograms(programs = [], updatedAt = new Date().toISOString()) {
+      const collection = cloudProgramsCollection();
+      if (!collection) throw new Error("cloud programs unavailable");
+      await Promise.all((programs || []).map((program) => collection.doc(cloudProgramDocumentId(program.id)).set({
+        programId: program.id,
+        updatedAt,
+        program: clone(program)
+      })));
+      return true;
+    }
+
+    async function loadCloudPrograms(rootData = {}) {
+      if (rootData.programStorage !== "subcollection-v1") return clone(rootData.state?.programs || []);
+      const collection = cloudProgramsCollection();
+      if (!collection) throw new Error("cloud programs unavailable");
+      const snapshot = await withTimeout(collection.get(), 15000);
+      const allowed = new Set((rootData.programIds || []).map(String));
+      const programs = [];
+      snapshot.forEach((item) => {
+        const value = item.data?.() || {};
+        if (value.program && (!allowed.size || allowed.has(String(value.programId || value.program.id)))) programs.push(value.program);
+      });
+      if (Number(rootData.programCount || 0) > 0 && !programs.length) throw new Error("cloud programs missing");
+      return programs;
+    }
+
+    function cloudErrorText(error, action = "sincronizzazione") {
+      const code = String(error?.code || "").toLowerCase();
+      if (code.includes("permission-denied")) return "Cloud non autorizzato: controlla le regole Firestore per il tuo account Google.";
+      if (code.includes("unauthenticated")) return "Sessione Google scaduta: accedi di nuovo per sincronizzare.";
+      if (code.includes("resource-exhausted")) return "Il backup cloud è troppo grande: esporta un backup e riprova.";
+      if (code.includes("unavailable") || code.includes("deadline") || String(error?.message || "").includes("timeout")) return `Cloud temporaneamente non raggiungibile durante ${action}. Riprova con una connessione stabile.`;
+      return `Cloud non disponibile durante ${action}${code ? ` (${code.replace("firestore/", "")})` : ""}.`;
+    }
+
+    function stopCloudStateRealtime() {
+      if (typeof cloudStateUnsubscribe === "function") cloudStateUnsubscribe();
+      cloudStateUnsubscribe = null;
+    }
+
+    function startCloudStateRealtime() {
+      stopCloudStateRealtime();
+      const doc = cloudDocument();
+      if (!doc || !state.profile.account?.syncReady) return false;
+      cloudStateUnsubscribe = doc.onSnapshot(async (snapshot) => {
+        const data = snapshot.data?.();
+        const stamp = String(data?.updatedAt || "");
+        if (!snapshot.exists || !data?.state || !stamp || stamp === lastCloudWriteAt || stamp === lastCloudSnapshotAt) return;
+        lastCloudSnapshotAt = stamp;
+        if (cloudLoading || coachProgramUi.dirtySheets.size) return;
+        const account = state.profile.account || {};
+        const remoteState = clone(data.state);
+        try { remoteState.programs = await loadCloudPrograms(data); }
+        catch (error) {
+          lastCloudError = cloudErrorText(error, "download programmi");
+          return;
+        }
+        state = mergeCloudAndLocalState(state, remoteState);
+        state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
+        lastCloudError = "";
+        writeLocalStateSnapshot(state, { touch: false, cloud: false });
+        render();
+        setTimeout(pushNutritionDashboardToFrame, 0);
+      }, (error) => {
+        lastCloudError = cloudErrorText(error, "aggiornamento automatico");
+        state.profile.account.cloudStatus = "errore cloud";
+        writeLocalStateSnapshot(state, { touch: false, cloud: false });
+      });
+      return true;
+    }
+
     function scheduleCloudSave() {
       if (!cloudUser || !dbService || cloudLoading || !state.profile.account?.syncReady) return;
       clearTimeout(cloudSaveTimer);
@@ -7572,22 +7734,42 @@
 
     async function saveCloudState() {
       const doc = cloudDocument();
-      if (!doc) return false;
+      if (!doc) {
+        lastCloudError = cloudUser ? "Firestore non disponibile: ricarica la pagina e riprova." : "Accedi con Google prima di sincronizzare.";
+        return false;
+      }
       const payload = clone(state);
       const nutritionPhotos = splitNutritionPhotosForCloud(payload);
+      const cloudPrograms = clone(payload.programs || []);
+      payload.programs = [];
       try {
+        const cloudUpdatedAt = new Date().toISOString();
+        lastCloudWriteAt = cloudUpdatedAt;
         payload.profile.account.cloudStatus = "sync";
         payload.profile.account.syncReady = true;
+        await saveCloudPrograms(cloudPrograms, cloudUpdatedAt);
         await doc.set({
-          updatedAt: new Date().toISOString(),
+          updatedAt: cloudUpdatedAt,
           app: APP_NAME,
+          programStorage: "subcollection-v1",
+          programCount: cloudPrograms.length,
+          programIds: cloudPrograms.map((program) => program.id),
           state: payload
         }, { merge: true });
-        await saveNutritionPhotosToCloud(nutritionPhotos);
+        try {
+          await saveNutritionPhotosToCloud(nutritionPhotos);
+        } catch (photoError) {
+          // Le foto hanno una raccolta separata: un problema lì non deve
+          // impedire la sincronizzazione di schede, logbook e check-in.
+          lastCloudError = "Schede sincronizzate; alcune foto Food attendono un nuovo tentativo.";
+        }
+        lastCloudSnapshotAt = cloudUpdatedAt;
+        if (!lastCloudError?.startsWith("Schede sincronizzate")) lastCloudError = "";
         state.profile.account.cloudStatus = "sync";
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
         return true;
       } catch (error) {
+        lastCloudError = cloudErrorText(error, "caricamento");
         state.profile.account.cloudStatus = "errore sync";
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
         return false;
@@ -7596,36 +7778,49 @@
 
     async function loadCloudState(options = {}) {
       const doc = cloudDocument();
-      if (!doc) return;
+      if (!doc) {
+        lastCloudError = cloudUser ? "Firestore non disponibile: ricarica la pagina e riprova." : "Accedi con Google prima di sincronizzare.";
+        if (!options.silent) showToast(lastCloudError);
+        return false;
+      }
       cloudLoading = true;
       try {
-        const snapshot = await withTimeout(doc.get(), 5000);
+        const snapshot = await withTimeout(doc.get(), 15000);
         if (snapshot.exists && snapshot.data()?.state) {
           const account = state.profile.account;
-          state = mergeCloudAndLocalState(state, snapshot.data().state);
+          const rootData = snapshot.data();
+          const remoteState = clone(rootData.state);
+          remoteState.programs = await loadCloudPrograms(rootData);
+          state = mergeCloudAndLocalState(state, remoteState);
           const nutritionPhotos = await loadNutritionPhotosFromCloud().catch(() => []);
           if (!state.nutrition) state.nutrition = {};
           state.nutrition.dashboard = mergeNutritionDashboard(state.nutrition.dashboard || {}, { photos: nutritionPhotos });
           state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
+          lastCloudSnapshotAt = String(snapshot.data()?.updatedAt || lastCloudSnapshotAt);
+          lastCloudError = "";
           writeLocalStateSnapshot(state, { touch: false, cloud: false });
           setTimeout(pushNutritionDashboardToFrame, 0);
           if (!options.silent) showToast("Dati cloud caricati.");
         } else {
           state.profile.account.cloudStatus = "sync";
           state.profile.account.syncReady = true;
-          await saveCloudState();
+          const created = await saveCloudState();
+          if (!created) return false;
           if (!options.silent) showToast("Account Google collegato.");
         }
+        return true;
       } catch (error) {
+        lastCloudError = cloudErrorText(error, "download");
         state.profile.account.cloudStatus = "errore cloud";
-        if (!options.silent) showToast("Login ok, cloud non raggiungibile.");
+        if (!options.silent) showToast(lastCloudError);
+        return false;
       } finally {
         cloudLoading = false;
       }
     }
 
     function refreshCloudIfSynced() {
-      if (!cloudUser || !dbService || !state.profile.account?.syncReady || cloudLoading) return;
+      if (!cloudUser || !dbService || !state.profile.account?.syncReady || cloudLoading || cloudStateUnsubscribe) return;
       loadCloudState({ silent: true }).then(() => {
         saveState({ cloud: false });
         render();
@@ -7672,13 +7867,23 @@
         showToast("Accedi prima con Google.");
         return;
       }
+      const wasReady = !!state.profile.account.syncReady;
       state.profile.account.syncReady = true;
       state.profile.account.cloudStatus = "sync";
-      await saveCloudState();
+      const saved = await saveCloudState();
+      if (!saved) {
+        state.profile.account.syncReady = wasReady;
+        writeLocalStateSnapshot(state, { touch: false, cloud: false });
+        showToast(lastCloudError || "Caricamento cloud non riuscito.");
+        render();
+        return false;
+      }
+      startCloudStateRealtime();
       startNutritionPhotosRealtime();
       writeLocalStateSnapshot(state, { touch: false, cloud: false });
       showToast("Questo dispositivo e stato caricato nel cloud.");
       render();
+      return true;
     }
 
     async function downloadCloudToThisDevice() {
@@ -7686,16 +7891,21 @@
         showToast("Accedi prima con Google.");
         return;
       }
-      await loadCloudState();
+      const loaded = await loadCloudState();
+      if (!loaded) { render(); return false; }
       state.profile.account.syncReady = true;
       state.profile.account.cloudStatus = "sync";
       saveState({ cloud: false, immediate: true });
+      startCloudStateRealtime();
       startNutritionPhotosRealtime();
       render();
+      return true;
     }
 
     async function signOutGoogle() {
       if (!authService) return;
+      stopCloudStateRealtime();
+      stopNutritionPhotosRealtime();
       await authService.signOut();
       showToast("Account scollegato. I dati locali restano qui.");
     }
@@ -8376,7 +8586,7 @@
         saveState();
       }
       activeScreen = screen;
-      const bottomMap = { dashboard: "home", training: "workout", progress: "progress", logbook: "progress", nutrition: "nutrition", volume: "volume", quiz: "quiz", coach: "coach" };
+      const bottomMap = { dashboard: "home", training: "workout", progress: "progress", logbook: "logbook", nutrition: "nutrition", volume: "volume", quiz: "quiz", coach: "coach" };
       activeBottom = bottomMap[screen] || "home";
       render();
     }
@@ -8386,6 +8596,7 @@
       if (bottom === "home") activeScreen = "dashboard";
       if (bottom === "workout") activeScreen = "training";
       if (bottom === "progress") activeScreen = "progress";
+      if (bottom === "logbook") activeScreen = "logbook";
       if (bottom === "nutrition") activeScreen = "nutrition";
       if (bottom === "volume") {
         state.profile.mode = "coach";
@@ -8423,7 +8634,33 @@
         : '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/></svg>';
     }
 
+    function captureCoachViewport() {
+      if (activeScreen !== "coach" || lastRenderedScreen !== "coach") return null;
+      const screen = document.getElementById("screen");
+      const builder = document.querySelector(".builder-v24-scroll");
+      const weeks = document.querySelector(".coach-weeks-scroll");
+      return {
+        screenTop: screen?.scrollTop || 0,
+        screenLeft: screen?.scrollLeft || 0,
+        builderTop: builder?.scrollTop || 0,
+        builderLeft: builder?.scrollLeft || 0,
+        weeksTop: weeks?.scrollTop || 0,
+        weeksLeft: weeks?.scrollLeft || 0
+      };
+    }
+
+    function restoreCoachViewport(viewport) {
+      if (!viewport || activeScreen !== "coach") return;
+      const screen = document.getElementById("screen");
+      const builder = document.querySelector(".builder-v24-scroll");
+      const weeks = document.querySelector(".coach-weeks-scroll");
+      if (screen) { screen.scrollTop = viewport.screenTop; screen.scrollLeft = viewport.screenLeft; }
+      if (builder) { builder.scrollTop = viewport.builderTop; builder.scrollLeft = viewport.builderLeft; }
+      if (weeks) { weeks.scrollTop = viewport.weeksTop; weeks.scrollLeft = viewport.weeksLeft; }
+    }
+
     function render() {
+      const coachViewport = captureCoachViewport();
       if ((activeScreen === "coach" || activeScreen === "volume") && !coachDesktopAllowed()) {
         activeScreen = "dashboard";
         activeBottom = "home";
@@ -8439,6 +8676,7 @@
         document.getElementById("modeButton").textContent = "C";
         screen.innerHTML = loginGateHtml();
         bindScreen();
+        lastRenderedScreen = activeScreen;
         return;
       }
       const titleMap = {
@@ -8466,6 +8704,8 @@
       bindScreen();
       renderEngine();
       drawCharts();
+      lastRenderedScreen = activeScreen;
+      restoreCoachViewport(coachViewport);
     }
 
     function renderTrainingOnly() {
@@ -10811,7 +11051,7 @@
           }
           markCoachDraftDirty(undefined, row.id);
           commitActiveCoachDraft({ immediate: false, quiet: true });
-          render();
+          updateCoachSaveIndicator(coachProgramUi.saveStatus);
         });
       });
       document.querySelectorAll("[data-builder-week]").forEach((field) => {
@@ -10825,7 +11065,7 @@
         });
         field.addEventListener("change", () => {
           commitActiveCoachDraft({ immediate: false, quiet: true });
-          render();
+          updateCoachSaveIndicator(coachProgramUi.saveStatus);
         });
       });
       document.querySelectorAll("[data-builder-add-row]").forEach((button) => {
@@ -10946,15 +11186,15 @@
         if (field === "technique") week.technique = parseTechnique(input.value);
         week.weekNumber = weekNumber; weeks.sort((a,b) => Number(a.weekNumber || 0) - Number(b.weekNumber || 0));
         programRepository.updateExercise(program.id, sheet.id, exerciseId, { progression: { ...(current.progression || {}), weeks } }, { immediate: true, forceLocked: true });
-        coachProgramUi.saveStatus = "saved"; render();
+        updateCoachSaveIndicator("saved");
       }));
       document.querySelectorAll("[data-week-grid-base='note']").forEach((input) => input.addEventListener("change", () => {
         const { program, sheet } = ensureCoachProgramSelection(); const exerciseId = input.dataset.weekGridExercise; const current = programRepository.getExerciseById(program?.id, sheet?.id, exerciseId); if (!current) return;
-        programRepository.updateExercise(program.id, sheet.id, exerciseId, { note: input.value }, { immediate: true, forceLocked: true }); render();
+        programRepository.updateExercise(program.id, sheet.id, exerciseId, { note: input.value }, { immediate: true, forceLocked: true }); updateCoachSaveIndicator("saved");
       }));
       document.querySelectorAll("[data-week-grid-base='note2']").forEach((input) => input.addEventListener("change", () => {
         const { program, sheet } = ensureCoachProgramSelection(); const exerciseId = input.dataset.weekGridExercise; const current = programRepository.getExerciseById(program?.id, sheet?.id, exerciseId); if (!current) return;
-        programRepository.updateExercise(program.id, sheet.id, exerciseId, { metadata: { ...(current.metadata || {}), note2: input.value } }, { immediate: true, forceLocked: true }); render();
+        programRepository.updateExercise(program.id, sheet.id, exerciseId, { metadata: { ...(current.metadata || {}), note2: input.value } }, { immediate: true, forceLocked: true }); updateCoachSaveIndicator("saved");
       }));
       document.querySelectorAll("[data-progression-generate]").forEach((button) => button.addEventListener("click", () => {
         const { program, sheet } = ensureCoachProgramSelection();
@@ -11268,7 +11508,7 @@
         });
         field.addEventListener("change", () => {
           commitActiveCoachDraft({ immediate: true });
-          render();
+          updateCoachSaveIndicator(coachProgramUi.saveStatus);
         });
       });
       if (coachEditorPhase) {
@@ -11544,22 +11784,25 @@
       });
     }
 
+    function updateCoachSaveIndicator(status = coachProgramUi.saveStatus) {
+      coachProgramUi.saveStatus = status;
+      const indicator = document.querySelector(".save-indicator");
+      if (!indicator) return;
+      indicator.className = `save-indicator ${status}`;
+      indicator.textContent = status === "dirty" ? "Modifiche da salvare" : status === "saving" ? "Salvataggio…" : status === "error" ? "Errore salvataggio" : "Salvato";
+    }
+
     function markCoachDraftDirty(sheetId = coachProgramUi.sheetId, rowId = "") {
       if (sheetId) coachProgramUi.dirtySheets.add(sheetId);
       const draft = activeCoachBuilder();
       if (rowId && draft) draft.dirtyRows.add(rowId);
       if (draft) persistCoachDraftRecovery(draft);
-      coachProgramUi.saveStatus = "dirty";
+      updateCoachSaveIndicator("dirty");
       clearTimeout(coachProgramUi.autoSaveTimer);
       coachProgramUi.autoSaveTimer = setTimeout(() => {
-        coachProgramUi.saveStatus = "saving";
+        updateCoachSaveIndicator("saving");
         const ok = commitActiveCoachDraft({ immediate: false, quiet: true });
-        coachProgramUi.saveStatus = ok ? "saved" : "error";
-        const indicator = document.querySelector(".save-indicator");
-        if (indicator) {
-          indicator.className = `save-indicator ${coachProgramUi.saveStatus}`;
-          indicator.textContent = ok ? "Salvato" : "Errore salvataggio";
-        }
+        updateCoachSaveIndicator(ok ? "saved" : "error");
       }, 650);
     }
 
@@ -11610,6 +11853,7 @@
         if (!exercisePatch.progression) delete exercisePatch.progression;
         const result = programRepository.updateExercise(program.id, sheet.id, row.id, exercisePatch, { save: false, forceLocked: true });
         if (!result.ok) {
+          updateCoachSaveIndicator("error");
           if (!options.quiet) showToast("Controlla i dati dell’esercizio prima di cambiare scheda.");
           return false;
         }
@@ -11624,6 +11868,7 @@
         source: sheet.source === "imported" ? "customized" : sheet.source
       }, { immediate: options.immediate !== false });
       if (!result.ok) {
+        updateCoachSaveIndicator("error");
         if (!options.quiet) showToast(result.errors.some((error) => error.code === "duplicate") ? "Questo codice è già usato nello stesso programma." : "Scheda non salvata: controlla nome e codice.");
         return false;
       }
@@ -11635,7 +11880,7 @@
         coachProgramUi.dirtySheets.delete(sheet.id);
         clearCoachDraftRecovery(program.id, sheet.id);
       }
-      coachProgramUi.saveStatus = "saved";
+      updateCoachSaveIndicator("saved");
       if (!options.quiet) showToast("Scheda salvata.");
       state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
       return true;
@@ -12381,11 +12626,11 @@
 
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (sessionStorage.getItem("atlas-v91-reload")) return;
-        sessionStorage.setItem("atlas-v91-reload", "1");
+        if (sessionStorage.getItem("atlas-v92-reload")) return;
+        sessionStorage.setItem("atlas-v92-reload", "1");
         location.reload();
       });
-      navigator.serviceWorker.register("./service-worker.js?v=68", { updateViaCache: "none" })
+      navigator.serviceWorker.register("./service-worker.js?v=69", { updateViaCache: "none" })
         .then((registration) => registration.update())
         .catch(() => {});
     }

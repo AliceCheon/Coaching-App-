@@ -2,7 +2,7 @@
   "name": "Barbell diva",
   "short_name": "Diva",
   "description": "Allenamento, logbook, progressioni e coaching di Alice.",
-  "start_url": "./index.html?v=65",
+  "start_url": "./index.html?v=66",
   "id": "./index.html",
   "scope": "./",
   "display": "standalone",
