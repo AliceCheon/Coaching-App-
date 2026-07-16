@@ -2,13 +2,13 @@
   "name": "Barbell diva",
   "short_name": "Diva",
   "description": "Allenamento, logbook, progressioni e coaching di Alice.",
-  "start_url": "./index.html?v=57",
+  "start_url": "./index.html?v=65",
   "id": "./index.html",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "fullscreen"],
-  "background_color": "#050308",
-  "theme_color": "#08050d",
+  "background_color": "#080817",
+  "theme_color": "#090918",
   "orientation": "portrait",
   "categories": ["health", "fitness", "productivity"],
   "prefer_related_applications": false,
@@ -31,7 +31,7 @@
       "name": "Workout",
       "short_name": "Workout",
       "description": "Apri subito il logbook allenamento.",
-      "url": "./index.html?v=57#training",
+      "url": "./index.html?v=60#training",
       "icons": [
         {
           "src": "./app-icon-192.png",
@@ -44,7 +44,7 @@
       "name": "Coach",
       "short_name": "Coach",
       "description": "Apri la zona coach.",
-      "url": "./index.html?v=57#coach",
+      "url": "./index.html?v=60#coach",
       "icons": [
         {
           "src": "./app-icon-192.png",
