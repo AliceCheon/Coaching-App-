@@ -39,10 +39,10 @@ const result = await vm.runInContext(`(async()=>{
   state.training.sessionName="auto";
   const workout=currentTrainingContext();
   if(workout.session.code!=="F") throw new Error("Dopo E non viene proposta la scheda F");
-  if(workout.week!==7||workout.session.week!==7) throw new Error("La seduta mostra ancora Week 1");
+  if(workout.week!==6||workout.session.week!==6) throw new Error("La scheda F non mantiene la settimana 6 dello storico E6");
   const first=workout.session.exercises[0];
   const active=first.activeWeekPrescription;
-  if(!active||Number(active.week)!==7) throw new Error("La scheda non usa la prescrizione della settimana 7");
+  if(!active||Number(active.week)!==6) throw new Error("La scheda non usa la prescrizione della settimana 6");
 
   __storage.set(PRE_V55_BACKUP_KEY,"x".repeat(1600000));
   __storage.set(PRE_WEEK_CONSOLIDATION_BACKUP_KEY,"y".repeat(1600000));
@@ -53,7 +53,9 @@ const result = await vm.runInContext(`(async()=>{
   if(!saved) throw new Error("Salvataggio F fallito dopo recupero spazio");
   if(__storage.has(PRE_V55_BACKUP_KEY)||__storage.has(PRE_WEEK_CONSOLIDATION_BACKUP_KEY)) throw new Error("Backup obsoleti non liberati al superamento quota");
   const session=state.training.sessions.find(item=>item.dateInput==="2026-07-16"&&item.sessionCode==="F");
-  if(!session||session.week!==7) throw new Error("Sessione F7 non persistita");
+  if(!session||session.week!==6) throw new Error("Sessione F6 non persistita");
+  session.week=7;
+  if(repairSequentialWorkoutWeeks(state)<1||session.week!==6) throw new Error("Una vecchia F7 non viene riparata in F6");
   const journal=JSON.parse(__storage.get(WORKOUT_JOURNAL_KEY)||"[]");
   if(!journal.some(item=>item.dateInput==="2026-07-16"&&item.sessionCode==="F")) throw new Error("Registro di emergenza F non scritto");
   state.training.sessions=state.training.sessions.filter(item=>item.id!==session.id);
@@ -88,10 +90,15 @@ const result = await vm.runInContext(`(async()=>{
 if (!html.includes("Settimana ${context.week}")) throw new Error("Etichetta settimana dinamica mancante");
 if (!html.includes("releaseObsoleteLocalBackups")) throw new Error("Recupero quota locale mancante");
 if (!html.includes("changedPrograms.length")) throw new Error("Cloud programmi non incrementale");
-if (!html.includes("atlas-v95-reload")) throw new Error("Cache v95 non impostata");
+if (!html.includes("atlas-v97-reload")) throw new Error("Cache v97 non impostata");
 if (!html.includes("newlyMarkedSessions")) throw new Error("Le sessioni locali non vengono marcate dopo il cloud");
 if (!html.includes('id="cloudOperationStatus"') || !html.includes('setCloudOperation("working"')) throw new Error("Indicatore sincronizzazione visibile mancante");
 if (!html.includes('<details class="card danger-zone">') || !html.includes("requestClearAllData(clearData)")) throw new Error("Svuota dati non protetto");
+if (!html.includes('WORKOUT_DB_NAME = "barbell-diva-workout-rescue"') || !html.includes("persistWorkoutSessionDurably")) throw new Error("Protezione IndexedDB del workout mancante");
+if (!html.includes("weekFromLatestWorkout(date)")) throw new Error("Settimana automatica non derivata dallo storico reale");
+if (!html.includes('APP_BUILD = "v97"') || !html.includes("repairSequentialWorkoutWeeks")) throw new Error("Build v97 o riparazione F7 mancante");
+const cloudSaveBlock = html.match(/async function saveCloudState\(\)[\s\S]*?\n    }\n\n    async function loadCloudState/)?.[0] || "";
+if (cloudSaveBlock.indexOf("await withTimeout(doc.set") > cloudSaveBlock.indexOf("saveCloudPrograms(clone(changedPrograms)")) throw new Error("Il cloud salva ancora le schede prima del logbook");
 const downloadBlock = html.match(/async function downloadCloudToThisDevice\(\)[\s\S]*?\n    }/)?.[0] || "";
 if (!downloadBlock.includes("await saveCloudState()")) throw new Error("Il download non rispedisce al cloud i dati locali uniti");
 console.log(JSON.stringify(result, null, 2));
