@@ -1,0 +1,85 @@
+import fs from "node:fs/promises";
+import vm from "node:vm";
+
+const html = await fs.readFile(new URL("../atlas-coach-app.html", import.meta.url), "utf8");
+const script = html.slice(html.lastIndexOf("<script>") + 8, html.lastIndexOf("</script>"))
+  .replace(/\s+initFirebase\(\);\s+render\(\);\s+importBundledNutritionBackup\(\);\s*$/, "");
+
+const storage = new Map();
+let quota = Infinity;
+const localStorage = {
+  getItem: (key) => storage.get(key) ?? null,
+  removeItem: (key) => storage.delete(key),
+  setItem(key, value) {
+    const text = String(value);
+    const used = [...storage.entries()].reduce((sum, [itemKey, itemValue]) => sum + (itemKey === key ? 0 : String(itemValue).length), 0);
+    if (used + text.length > quota) {
+      const error = new Error("QuotaExceededError: local storage quota exceeded");
+      error.name = "QuotaExceededError";
+      error.code = 22;
+      throw error;
+    }
+    storage.set(key, text);
+  }
+};
+const element = { addEventListener(){}, querySelector(){return null}, querySelectorAll(){return[]}, closest(){return null}, classList:{add(){},remove(){},toggle(){}}, style:{}, dataset:{}, setAttribute(){}, getAttribute(){return null}, getBoundingClientRect(){return {width:320,height:180}}, innerHTML:"", textContent:"", disabled:false, scrollIntoView(){} };
+const document = { getElementById(){return {...element}}, querySelector(){return null}, querySelectorAll(){return[]}, createElement(){return {...element}}, body:{...element}, documentElement:{...element}, addEventListener(){} };
+const context = { console, structuredClone, Date, Math, JSON, Intl, Map, Set, WeakMap, Array, Object, String, Number, Boolean, RegExp, Promise, parseInt, parseFloat, isNaN, encodeURIComponent, localStorage, sessionStorage:localStorage, document, navigator:{}, location:{protocol:"https:",origin:"https://example.test",hash:"",reload(){}}, URL:{createObjectURL(){return "blob:test"},revokeObjectURL(){}}, Blob:class{}, FileReader:class{}, setTimeout(fn,ms){return globalThis.setTimeout(fn,Math.min(Number(ms)||0,10))}, clearTimeout(id){globalThis.clearTimeout(id)}, requestAnimationFrame(fn){if(typeof fn==="function")fn();return 1}, addEventListener(){}, removeEventListener(){}, matchMedia(){return {matches:true}}, window:null, globalThis:null };
+context.__storage = storage;
+context.__setQuota = (value) => { quota = value; };
+context.window = context;
+context.globalThis = context;
+vm.createContext(context);
+new vm.Script(script).runInContext(context);
+
+const result = await vm.runInContext(`(async()=>{
+  renderTrainingOnly=()=>{}; showToast=()=>{};
+  state.training.date="2026-07-16";
+  state.training.contextMode="auto";
+  state.training.sessionName="auto";
+  const workout=currentTrainingContext();
+  if(workout.session.code!=="F") throw new Error("Dopo E non viene proposta la scheda F");
+  if(workout.week!==7||workout.session.week!==7) throw new Error("La seduta mostra ancora Week 1");
+  const first=workout.session.exercises[0];
+  const active=first.activeWeekPrescription;
+  if(!active||Number(active.week)!==7) throw new Error("La scheda non usa la prescrizione della settimana 7");
+
+  __storage.set(PRE_V55_BACKUP_KEY,"x".repeat(1600000));
+  __storage.set(PRE_WEEK_CONSOLIDATION_BACKUP_KEY,"y".repeat(1600000));
+  __setQuota(JSON.stringify(state).length+500000);
+  const exercise=workout.session.exercises[0];
+  state.training.draft[draftKey(workout,exercise)]=["42"];
+  const saved=await saveWorkoutSession();
+  if(!saved) throw new Error("Salvataggio F fallito dopo recupero spazio");
+  if(__storage.has(PRE_V55_BACKUP_KEY)||__storage.has(PRE_WEEK_CONSOLIDATION_BACKUP_KEY)) throw new Error("Backup obsoleti non liberati al superamento quota");
+  const session=state.training.sessions.find(item=>item.dateInput==="2026-07-16"&&item.sessionCode==="F");
+  if(!session||session.week!==7) throw new Error("Sessione F7 non persistita");
+
+  __setQuota(Infinity);
+  const programWrites=[]; let rootWrites=0;
+  const records=new Map();
+  const collection={
+    doc(id){return {set:async(value)=>{programWrites.push(id);records.set(id,value)}}},
+    get:async()=>({forEach(fn){for(const [id,value] of records)fn({id,data:()=>value})}}),
+    onSnapshot(){return()=>{}}
+  };
+  const doc={set:async()=>{rootWrites+=1},get:async()=>({exists:false,data:()=>null}),collection:()=>collection,onSnapshot(){return()=>{}}};
+  cloudUser={uid:"alice"}; dbService={collection:()=>({doc:()=>doc})}; state.profile.account={uid:"alice",syncReady:true,cloudStatus:"sync"};
+  await saveCloudState();
+  const initialProgramWrites=programWrites.length;
+  state.training.feeling="alto";
+  saveState({cloud:false,immediate:true});
+  await saveCloudState();
+  if(programWrites.length!==initialProgramWrites) throw new Error("Un allenamento riscrive ancora tutti i programmi cloud");
+  const program=programRepository.getPrograms()[0]; const sheet=programRepository.getSheets(program.id)[0];
+  programRepository.updateSheet(program.id,sheet.id,{note:"test sync mirato"},{cloud:false,immediate:true});
+  await saveCloudState();
+  if(programWrites.length!==initialProgramWrites+1) throw new Error("La modifica Coach non sincronizza solo il programma cambiato");
+  return {week:workout.week,session:session.sessionCode,initialProgramWrites,programWrites:programWrites.length,rootWrites};
+})()`, context);
+
+if (!html.includes("Settimana ${context.week}")) throw new Error("Etichetta settimana dinamica mancante");
+if (!html.includes("releaseObsoleteLocalBackups")) throw new Error("Recupero quota locale mancante");
+if (!html.includes("changedPrograms.length")) throw new Error("Cloud programmi non incrementale");
+if (!html.includes("atlas-v93-reload")) throw new Error("Cache v93 non impostata");
+console.log(JSON.stringify(result, null, 2));
