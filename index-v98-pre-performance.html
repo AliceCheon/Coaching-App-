@@ -3166,63 +3166,9 @@
     .coach-main-column { min-width:0; }
     .coach-ai-sidebar { position:sticky; top:18px; border:1px solid rgba(255,184,220,.30); border-radius:22px; padding:12px; background:linear-gradient(160deg,rgba(38,22,58,.98),rgba(18,11,31,.98)); box-shadow:0 22px 50px rgba(10,4,22,.42); overflow:hidden; max-height:calc(100dvh - 36px); display:flex; flex-direction:column; }
     .coach-ai-sidebar-head { display:flex; align-items:center; gap:10px; padding:4px 4px 12px; border-bottom:1px solid rgba(201,167,255,.18); }
-    .coach-avatar { --bot-shell:#f8f4ff; --bot-shell-shadow:#b9a8cd; --bot-accent:var(--pink-hot); --bot-secondary:var(--purple-primary); --bot-screen:#160f1d; --bot-heart:#ff5eb1; position:relative; width:42px; height:42px; padding:0; display:grid; place-items:center; background:transparent; box-shadow:none; flex:none; isolation:isolate; }
-    .diva-bot { width:100%; height:100%; overflow:visible; transform-origin:50% 72%; animation:divaBotFloat 4.4s ease-in-out infinite; }
-    .diva-bot-shell { fill:var(--bot-shell); stroke:var(--bot-shell-shadow); stroke-width:3; }
-    .diva-bot-joint { fill:#5a486d; stroke:#cbbddd; stroke-width:2; }
-    .diva-bot-screen { fill:var(--bot-screen); stroke:var(--bot-secondary); stroke-width:4; }
-    .diva-bot-screen-glint { fill:rgba(255,255,255,.14); }
-    .diva-bot-face-stroke { fill:none; stroke:#ff72c2; stroke-width:8; stroke-linecap:round; stroke-linejoin:round; }
-    .diva-bot-face-fill { fill:#ff72c2; }
-    .diva-bot-body { transform-origin:120px 176px; animation:divaBotBreathe 3.8s ease-in-out infinite; }
-    .diva-bot-antenna { transform-origin:120px 48px; animation:divaBotAntenna 4.8s ease-in-out infinite; }
-    .diva-bot-heart-shape { fill:var(--bot-heart); filter:none; transform-origin:center; animation:divaBotHeart 2.7s ease-in-out infinite; }
-    .diva-bot-arm { transform-box:fill-box; transform-origin:center top; transition:transform .28s ease; }
-    .diva-bot-face > g { display:none; }
-    .coach-avatar[data-coach-state="idle"] .diva-bot-face-idle,
-    .coach-avatar[data-coach-state="encouraging"] .diva-bot-face-encouraging { display:block; }
-    .coach-avatar[data-coach-state="happy"] .diva-bot-face-happy,
-    .coach-avatar[data-coach-state="celebrate"] .diva-bot-face-happy { display:block; }
-    .coach-avatar[data-coach-state="thinking"] .diva-bot-face-thinking { display:block; }
-    .coach-avatar[data-coach-state="warning"] .diva-bot-face-warning { display:block; }
-    .coach-avatar[data-coach-state="rest"] .diva-bot-face-rest { display:block; }
-    .coach-avatar[data-coach-state="celebrate"] .diva-bot { animation:divaBotCelebrate .72s ease-in-out 2; }
-    .coach-avatar[data-coach-state="celebrate"] .diva-bot-arm-left { transform:rotate(145deg) translate(2px,-4px); }
-    .coach-avatar[data-coach-state="celebrate"] .diva-bot-arm-right { transform:rotate(-145deg) translate(-2px,-4px); }
-    .coach-avatar[data-coach-state="happy"] .diva-bot-arm-left { animation:divaBotWave .65s ease-in-out 2; }
-    .coach-avatar[data-coach-state="thinking"] .diva-bot-arm-right { transform:rotate(-70deg) translate(-3px,-2px); }
-    .coach-avatar[data-coach-state="encouraging"] .diva-bot-arm-right { transform:rotate(-96deg) translate(-3px,-4px); }
-    .coach-avatar[data-coach-state="warning"] { --bot-heart:#ffad55; }
-    .coach-avatar[data-coach-state="warning"] .diva-bot { animation-duration:5.2s; }
-    .coach-avatar[data-coach-state="rest"] .diva-bot { animation-duration:6.4s; }
-    .coach-avatar[data-coach-state="rest"] .diva-bot-heart-shape { opacity:.62; animation-duration:4.5s; }
-    .diva-bot-barbell { opacity:0; transform-box:fill-box; transform-origin:center; pointer-events:none; }
-    .coach-avatar[data-coach-state="lifting"] .diva-bot-face-encouraging { display:block; }
-    .coach-avatar[data-coach-state="lifting"] .diva-bot { animation:divaBotLiftStance .82s ease-in-out 2; }
-    .coach-avatar[data-coach-state="lifting"] .diva-bot-barbell { opacity:1; animation:divaBotBarbellLift .82s ease-in-out 2; }
-    .coach-avatar[data-coach-state="lifting"] .diva-bot-arm-left { transform:rotate(58deg) translate(5px,-11px); }
-    .coach-avatar[data-coach-state="lifting"] .diva-bot-arm-right { transform:rotate(-58deg) translate(-5px,-11px); }
-    .coach-avatar.compact[data-coach-state="lifting"] .diva-bot { width:100%; height:100%; transform:none; }
-    .coach-avatar.compact[data-coach-state="lifting"] .diva-bot-body,
-    .coach-avatar.compact[data-coach-state="lifting"] .diva-bot-arm { opacity:1; }
-    .coach-avatar .diva-bot-eyes.is-blinking { transform-box:fill-box; transform-origin:center; transform:scaleY(.08); }
-    .coach-avatar.compact { overflow:hidden; }
-    .coach-avatar.compact .diva-bot { width:128%; height:128%; transform:translateY(13%); animation-name:divaBotCompactFloat; }
-    .coach-avatar.compact .diva-bot-body,
-    .coach-avatar.compact .diva-bot-arm { opacity:0; }
-    .diva-bot-particles { position:absolute; inset:-14px; pointer-events:none; z-index:4; }
-    .diva-bot-particle { position:absolute; left:50%; top:50%; color:#ff76c6; font-size:.72rem; animation:divaBotSpark .9s ease-out forwards; }
-    @keyframes divaBotFloat { 0%,100%{transform:translateY(1px) rotate(-.7deg)} 50%{transform:translateY(-3px) rotate(.7deg)} }
-    @keyframes divaBotCompactFloat { 0%,100%{transform:translateY(13%) rotate(-.5deg)} 50%{transform:translateY(9%) rotate(.5deg)} }
-    @keyframes divaBotBreathe { 0%,100%{transform:scale(1)} 50%{transform:scale(1.018,.985)} }
-    @keyframes divaBotAntenna { 0%,100%{transform:rotate(-2deg)} 50%{transform:rotate(3deg)} }
-    @keyframes divaBotHeart { 0%,100%{transform:scale(.94);opacity:.76} 48%{transform:scale(1.12);opacity:1} }
-    @keyframes divaBotWave { 0%,100%{transform:rotate(0)} 50%{transform:rotate(22deg)} }
-    @keyframes divaBotCelebrate { 0%,100%{transform:translateY(0) scale(1)} 45%{transform:translateY(-10px) scale(1.03)} }
-    @keyframes divaBotLiftStance { 0%,100%{transform:translateY(1px) scale(1)} 45%{transform:translateY(-4px) scale(1.025)} }
-    @keyframes divaBotBarbellLift { 0%,100%{transform:translateY(0)} 45%{transform:translateY(-42px)} }
-    @keyframes divaBotSpark { 0%{opacity:0;transform:translate(-50%,-20%) scale(.5)} 18%{opacity:1} 100%{opacity:0;transform:translate(var(--spark-x),var(--spark-y)) rotate(var(--spark-r)) scale(1.15)} }
-    .coach-mascot-button { position:relative; min-width:44px; min-height:44px; padding:0; border:0; background:transparent; flex:none; cursor:pointer; }
+    .coach-avatar { width:42px; height:42px; border-radius:14px; padding:4px; background:linear-gradient(135deg,var(--pink-hot),var(--purple-primary)); box-shadow:0 8px 20px rgba(255,45,149,.26); flex:none; }
+    .coach-avatar img { width:100%; height:100%; object-fit:cover; border-radius:10px; }
+    .coach-mascot-button { position:relative; padding:0; background:transparent; flex:none; }
     .coach-mascot-button:focus-visible { outline:2px solid var(--pink-soft); outline-offset:4px; border-radius:14px; }
     .coach-mascot-badge { position:absolute; top:-5px; right:-6px; min-width:18px; height:18px; padding:0 5px; display:grid; place-items:center; border-radius:999px; background:#ff3d91; color:white; font-size:.62rem; font-weight:900; border:2px solid #24142f; }
     .coach-ai-sidebar-head strong { display:block; font-size:.98rem; }
@@ -3244,10 +3190,10 @@
     .coach-ai-footer { flex:none; padding-top:8px; }
     .coach-ai-drawer-close { display:none; margin-left:auto; border:1px solid rgba(255,184,220,.25); border-radius:9px; background:transparent; color:var(--text-primary); font-size:1.1rem; width:32px; height:32px; }
     .coach-ai-sidebar-head .coach-mascot-button { display:none; }
-    .coach-ai-floating { display:grid; place-items:center; position:fixed; right:24px; bottom:30px; width:116px; height:132px; padding:0; border:0; background:transparent; filter:drop-shadow(0 14px 18px rgba(12,3,26,.52)); z-index:70; }
-    .coach-ai-floating .coach-avatar { width:112px; height:128px; padding:0; }
+    .coach-ai-floating { display:grid; place-items:center; position:fixed; right:28px; bottom:28px; width:92px; height:92px; padding:5px; border-radius:28px; border:1px solid rgba(255,184,220,.52); background:linear-gradient(135deg,#ff3d91,#8d3dff); box-shadow:0 16px 34px rgba(12,3,26,.52); z-index:70; }
+    .coach-ai-floating .coach-avatar { width:82px; height:82px; padding:4px; }
     .coach-ai-floating .coach-mascot-badge { position:absolute; top:-6px; right:-6px; min-width:24px; height:24px; padding:0 6px; display:grid; place-items:center; border-radius:999px; background:#ff3d91; color:#fff; font-size:.72rem; font-weight:800; box-shadow:0 4px 12px rgba(12,3,26,.45); }
-    .coach-ai-floating::after { content:"Coach AI"; position:absolute; right:8px; bottom:-16px; padding:3px 7px; border-radius:8px; background:rgba(27,14,42,.94); color:#ffd7ee; font-size:.65rem; white-space:nowrap; opacity:.86; }
+    .coach-ai-floating::after { content:"Coach AI"; position:absolute; right:0; bottom:-24px; padding:3px 7px; border-radius:8px; background:rgba(27,14,42,.94); color:#ffd7ee; font-size:.65rem; white-space:nowrap; opacity:.86; }
     .advanced-volume-card { margin:12px 0 16px; padding:12px; border:1px solid rgba(201,167,255,.22); border-radius:14px; background:rgba(24,13,39,.55); }
     .advanced-volume-card h4 { margin:0; color:var(--pink-soft); }
     .advanced-volume-table-wrap { overflow:auto; margin-top:10px; }
@@ -3331,79 +3277,11 @@
     .coach-ai-quality-body li button { border:1px solid rgba(255,197,96,.3); border-radius:7px; padding:4px 7px; background:rgba(255,197,96,.1); color:#ffe4a8; font-size:.68rem; }
     .progression-table tr.coach-week-selected { background:rgba(255,61,145,.16); outline:2px solid rgba(255,184,220,.65); outline-offset:-2px; }
     .coach-mascot-button .coach-avatar { width:60px; height:60px; }
-    .coach-ai-popover .coach-avatar { width:112px; height:126px; }
+    .coach-ai-popover .coach-avatar { width:96px; height:96px; }
     .coach-ai-detail-modal .coach-avatar { width:62px; height:62px; }
-    .dashboard-coach-card { display:grid; grid-template-columns:178px minmax(0,1fr); align-items:center; gap:18px; padding:18px; border-color:rgba(255,116,194,.32); background:linear-gradient(135deg,rgba(72,31,92,.92),rgba(34,18,54,.96)); overflow:visible; }
-    .dashboard-coach-button { position:relative; width:176px; height:190px; min-width:44px; min-height:44px; padding:0; border:0; background:transparent; filter:drop-shadow(0 14px 18px rgba(18,5,34,.38)); cursor:pointer; }
-    .dashboard-coach-button .coach-avatar { width:170px; height:186px; background:transparent; box-shadow:none; }
-    .dashboard-coach-button:focus-visible { outline:3px solid var(--pink-soft); outline-offset:3px; }
-    .coach-speech { position:relative; padding:14px 16px; border:1px solid rgba(255,184,220,.32); border-radius:18px; background:rgba(255,255,255,.065); }
-    .coach-speech::before { content:""; position:absolute; left:-9px; top:35px; width:16px; height:16px; border-left:1px solid rgba(255,184,220,.32); border-bottom:1px solid rgba(255,184,220,.32); background:#3a214a; transform:rotate(45deg); }
-    .coach-speech h3 { margin:3px 0 6px; color:var(--pink-soft); }
-    .coach-speech p { margin:0; color:var(--text-secondary); line-height:1.5; }
-    .coach-speech .micro-copy { margin-top:8px; }
-    .coach-mobile-modal-backdrop { position:fixed; inset:0; z-index:120; display:grid; place-items:center; padding:18px; background:rgba(10,4,20,.72); backdrop-filter:blur(5px); animation:premiumFadeIn .18s ease both; }
-    .coach-mobile-modal { width:min(520px,100%); max-height:86dvh; overflow:auto; padding:20px; border:1px solid rgba(255,184,220,.38); border-radius:24px; background:linear-gradient(145deg,#3d2450,#21142f); box-shadow:0 25px 80px rgba(8,2,18,.58); }
-    .coach-mobile-modal-head { display:flex; align-items:center; gap:14px; }
-    .coach-mobile-modal-head .coach-avatar { width:76px; height:76px; border-radius:22px; }
-    .coach-mobile-modal h3 { margin:0 0 5px; color:var(--pink-soft); }
-    .coach-mobile-modal p { color:var(--text-secondary); line-height:1.55; }
-    .coach-ai-list-modal { width:min(900px,calc(100vw - 32px)); max-height:88dvh; overflow:auto; }
-    .coach-ai-list-head { display:flex; align-items:center; gap:16px; padding-bottom:12px; border-bottom:1px solid rgba(201,167,255,.2); }
-    .coach-ai-list-head .coach-avatar { width:94px; height:108px; }
-    .coach-ai-list-content { display:grid; gap:10px; margin-top:14px; }
-    .coach-ai-list-content .coach-ai-card { margin:0; }
-    .coach-mascot-reaction { position:fixed; right:18px; bottom:88px; z-index:110; display:flex; align-items:center; gap:10px; max-width:min(330px,calc(100vw - 28px)); padding:10px 13px 10px 8px; border:1px solid rgba(255,184,220,.4); border-radius:18px; background:linear-gradient(145deg,rgba(61,36,80,.98),rgba(31,18,47,.98)); box-shadow:0 16px 46px rgba(8,2,18,.48); animation:premiumRise .22s ease both; }
-    .coach-mascot-reaction .coach-avatar { width:58px; height:58px; border-radius:17px; }
-    .coach-mascot-reaction p { margin:0; color:#ffe9f7; font-size:.78rem; line-height:1.35; }
-    .training-screen-wrap { position:relative; min-height:100%; }
-    .workout-mascot-layer { position:sticky; top:8px; z-index:35; width:100%; height:0; pointer-events:none; overflow:visible; }
-    .workout-mascot-anchor { --workout-mascot-x:0px; --workout-mascot-y:0px; position:absolute; top:0; right:0; width:124px; height:138px; pointer-events:none; transform:translate3d(var(--workout-mascot-x),var(--workout-mascot-y),0); transition:transform 320ms cubic-bezier(.2,.8,.2,1),opacity 180ms ease; filter:drop-shadow(0 14px 18px rgba(12,3,26,.44)) drop-shadow(0 0 14px rgba(255,82,180,.18)); }
-    .workout-mascot-anchor.is-dragging { transition:none; }
-    .workout-mascot-button { width:100%; height:100%; display:grid; place-items:center; padding:0; border:0; background:transparent; color:inherit; pointer-events:auto; cursor:grab; touch-action:none; }
-    .workout-mascot-button:active { cursor:grabbing; }
-    .workout-mascot-button:focus-visible { outline:2px solid var(--pink-soft); outline-offset:2px; border-radius:22px; }
-    .workout-mascot-button .coach-avatar { width:118px; height:132px; }
-    .workout-mascot-bubble { position:absolute; right:calc(100% - 8px); top:15px; width:max-content; max-width:min(250px,42vw); padding:9px 11px; border:1px solid rgba(255,184,220,.42); border-radius:14px 14px 4px 14px; background:linear-gradient(145deg,rgba(61,36,80,.98),rgba(31,18,47,.98)); color:#ffe9f7; box-shadow:0 12px 34px rgba(8,2,18,.38); font-size:.76rem; line-height:1.35; pointer-events:none; animation:premiumRise .18s ease both; }
-    .workout-mascot-anchor[data-position="bottom-left"] .workout-mascot-bubble { right:auto; left:calc(100% - 8px); border-radius:14px 14px 14px 4px; }
-    .workout-mascot-menu { position:absolute; right:8px; top:108px; width:230px; padding:10px; border:1px solid rgba(255,184,220,.4); border-radius:14px; background:linear-gradient(145deg,rgba(61,36,80,.99),rgba(31,18,47,.99)); box-shadow:0 16px 42px rgba(8,2,18,.5); pointer-events:auto; }
-    .workout-mascot-menu label { display:flex; gap:8px; align-items:flex-start; color:#ffe9f7; font-size:.72rem; line-height:1.3; }
-    .workout-mascot-menu button { width:100%; margin-top:8px; padding:7px 9px; border-radius:9px; background:rgba(255,255,255,.07); color:#ffd8ee; border:1px solid rgba(255,184,220,.22); }
-    .workout-mascot-restore { margin:0 0 10px auto; display:block; padding:6px 9px; border-radius:999px; background:transparent; color:var(--pink-soft); border:1px solid rgba(255,184,220,.25); font-size:.7rem; }
-    body[data-theme="light"] .workout-mascot-bubble,body[data-theme="light"] .workout-mascot-menu { background:linear-gradient(145deg,#fff8fd,#efe2f8); color:#493453; }
-    @media(min-width:601px) and (max-width:980px){
-      .workout-mascot-anchor { width:104px; height:116px; }
-      .workout-mascot-button .coach-avatar { width:100px; height:112px; }
-    }
-    body[data-theme="light"] .dashboard-coach-card { background:linear-gradient(135deg,#fff7fc,#f2e5fb); }
-    body[data-theme="light"] .coach-speech { background:rgba(255,255,255,.88); }
-    body[data-theme="light"] .coach-speech::before { background:#faf0fc; }
-    body[data-theme="light"] .coach-mobile-modal { background:linear-gradient(145deg,#fff8fd,#efe2f8); }
-    body[data-theme="light"] .coach-mobile-modal h3 { color:#7f267d; }
-    body[data-theme="light"] .coach-mascot-reaction { background:linear-gradient(145deg,#fff8fd,#efe2f8); }
-    body[data-theme="light"] .coach-mascot-reaction p { color:#493453; }
-    @media(max-width:600px){
-      .dashboard-coach-card { grid-template-columns:112px minmax(0,1fr); gap:10px; padding:12px; }
-      .dashboard-coach-button { width:110px; height:132px; padding:0; }
-      .dashboard-coach-button .coach-avatar { width:110px; height:128px; }
-      .coach-speech { padding:11px 12px; border-radius:15px; }
-      .coach-speech::before { top:28px; }
-      .coach-speech h3 { font-size:.98rem; }
-      .coach-speech p { font-size:.78rem; }
-      .coach-mobile-modal { padding:17px; }
-      .coach-ai-list-modal { width:calc(100vw - 22px); padding:14px; }
-      .coach-ai-list-head .coach-avatar { width:74px; height:86px; }
-      .workout-mascot-anchor { width:78px; height:88px; }
-      .workout-mascot-button .coach-avatar { width:76px; height:84px; }
-      .workout-mascot-bubble { max-width:min(210px,60vw); top:4px; font-size:.7rem; }
-      .workout-mascot-menu { top:76px; width:min(220px,72vw); }
-    }
-    @media(prefers-reduced-motion:reduce){
-      .diva-bot,.diva-bot-body,.diva-bot-antenna,.diva-bot-heart-shape,.diva-bot-barbell,.coach-avatar[data-coach-state="happy"] .diva-bot-arm-left,.coach-avatar[data-coach-state="celebrate"] .diva-bot,.workout-mascot-bubble { animation:none !important; }
-      .diva-bot-arm { transition:none; }
-      .diva-bot-particles { display:none; }
-      .workout-mascot-anchor { transition:none; }
-    }
+    .coach-mascot-inline-fallback { width:100%; height:100%; display:none; }
+    .coach-avatar.mascot-failed .coach-mascot-inline-fallback { display:block; }
+    .coach-avatar.mascot-failed img { display:none; }
     .coach-ai-sidebar .coach-ai-panel > .row { align-items:flex-start; }
     .coach-ai-sidebar .coach-ai-panel > .row .coach-ai-toolbar { display:none; }
     .coach-ai-sidebar .coach-section-title { font-size:.88rem; letter-spacing:.08em; }
@@ -3720,8 +3598,8 @@
       .coach-ai-sidebar { position:fixed; inset:0 0 0 auto; top:0; width:min(94vw,420px); max-height:none; border-radius:22px 0 0 22px; transform:translateX(110%); transition:transform .24s ease; z-index:80; order:2; }
       .coach-ai-sidebar.open { transform:translateX(0); }
       .coach-ai-sidebar .coach-ai-drawer-close { display:block; }
-      .coach-ai-floating { right:10px; bottom:72px; width:94px; height:110px; }
-      .coach-ai-floating .coach-avatar { width:92px; height:106px; padding:0; }
+      .coach-ai-floating { right:16px; bottom:18px; width:68px; height:68px; border-radius:20px; }
+      .coach-ai-floating .coach-avatar { width:60px; height:60px; padding:3px; }
       .coach-ai-floating::after { display:none; }
       body.ai-drawer-open { overflow:hidden; }
       .coach-detail-grid { grid-template-columns:1fr; }
@@ -3835,16 +3713,12 @@
     .compact-set-list{display:grid;gap:8px}
     .compact-set-row {
       display:grid;
-      grid-template-columns:30px minmax(78px,1fr) 30px 14px minmax(86px,1fr) 32px;
+      grid-template-columns:30px minmax(78px,1fr) 14px minmax(86px,1fr) 32px;
       align-items:center;
       gap:7px;
     }
     .compact-set-number{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:#ead8f5;color:#62355e;font-size:.75rem;font-weight:950}
     .compact-set-input{min-height:40px!important;margin:0!important;padding:8px 10px!important;border:0!important;background:rgba(255,255,255,.72)!important;color:#261421!important;text-align:center;box-shadow:inset 0 0 0 1px rgba(146,69,121,.08)}
-    .compact-copy-kg{width:28px;height:28px;display:grid;place-items:center;padding:0;border:1px solid rgba(123,42,200,.2);border-radius:9px;color:#8b32cf;background:rgba(255,255,255,.62);cursor:pointer;transition:transform .16s ease,background .16s ease,color .16s ease}
-    .compact-copy-kg:hover{transform:translateY(-1px);color:#d72476;background:#fff}
-    .compact-copy-kg:focus-visible{outline:3px solid rgba(168,85,247,.28);outline-offset:2px}
-    .compact-copy-spacer{width:28px;height:28px}
     .compact-rep-pill{min-height:40px;display:flex;align-items:center;justify-content:center;padding:7px 9px;border-radius:12px;color:#982552;background:rgba(255,202,222,.75);font-size:.75rem;font-weight:900;text-align:center}
     .compact-set-done{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;border:2px solid #ac9ab8;color:#a390ae;font-weight:950}
     .compact-set-done.done{color:#fff;border-color:#ff3d88;background:#ff3d88;box-shadow:0 5px 14px rgba(255,61,136,.24)}
@@ -3864,7 +3738,7 @@
       .workout-entry.workout-tabs-compact .workout-toggle-badges{grid-column:2;gap:5px}
       .workout-entry.workout-tabs-compact .workout-mini-badge{font-size:.64rem;padding:0 8px}
       .workout-compact-panel{padding:12px 10px}
-      .compact-set-row{grid-template-columns:27px minmax(62px,1fr) 28px 10px minmax(70px,1fr) 28px;gap:5px}
+      .compact-set-row{grid-template-columns:27px minmax(68px,1fr) 10px minmax(78px,1fr) 28px;gap:5px}
       .compact-set-input,.compact-rep-pill{min-height:38px!important;font-size:.72rem}
       .workout-compact-tab{font-size:.7rem}
     }
@@ -4702,7 +4576,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v102";
+    const APP_BUILD = "v98";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -5879,9 +5753,6 @@
     state.training.date = todayInput();
     state.training.sessionName = "auto";
     hydrateStateModel(state);
-    state.ui = state.ui || {};
-    state.ui.workoutMascotVisible = state.ui.workoutMascotVisible !== false;
-    if (!["top-right", "middle-right", "bottom-right", "bottom-left"].includes(state.ui.workoutMascotPosition)) state.ui.workoutMascotPosition = "bottom-right";
     state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
     if (state.profile.coachPin === "2507") state.profile.coachPin = "ettorino1";
     const initialHash = String(location.hash || "").replace("#", "");
@@ -5901,10 +5772,6 @@
     let localSaveTimer = null;
     let pendingSaveOptions = null;
     let lastPersistenceError = null;
-    let technicalLibraryRevision = 0;
-    let technicalLibraryCache = { stateRef:null, revision:-1, profiles:null, counts:null };
-    let exerciseLabFilterCache = { stateRef:null, revision:-1, key:"", profiles:null };
-    let exerciseLabCardCache = new Map();
     let cloudLoading = false;
     let cloudOperationState = { status: "idle", message: "", progress: 0 };
     let clearDataArmedUntil = 0;
@@ -5935,10 +5802,8 @@
       labFilters: { muscle:"", equipment:"", type:"", level:"", resistance:"", stimulus:"", stability:"", fatigue:"", progression:"", origin:"" },
       labPage: 1,
       selectedLabId: ""
-      ,logbookSearchTimer: null
       ,aiExpanded: new Set()
       ,aiNoticeDismissed: new Set()
-      ,dashboardCoachOpen: false
     };
 
     function clone(obj) {
@@ -6485,7 +6350,6 @@
     }
 
     function technicalExerciseLibrary() {
-      if (technicalLibraryCache.stateRef === state && technicalLibraryCache.revision === technicalLibraryRevision && technicalLibraryCache.profiles) return technicalLibraryCache.profiles;
       const entries = new Map();
       const put = (entry) => {
         const profile = technicalExerciseProfile(entry, { origin:entry.origin });
@@ -6496,25 +6360,12 @@
       Object.entries(COACH_EXERCISE_LIBRARY || {}).forEach(([group, rows]) => (rows || []).forEach((row, index) => put({ ...row, id:stableId("technical-system", group, row.name, index), name:row.name, muscle:row.som || group, origin:"system", isCustom:false, stimulusProfile:{ lengthened:/allungamento/i.test(row.stimulus || "") ? 5 : 0, midRange:/intermedio/i.test(row.stimulus || "") ? 5 : 0, shortened:/accorciamento/i.test(row.stimulus || "") ? 5 : 0 } })));
       programRepository.getPrograms().forEach((program) => programRepository.getSheets(program.id, { includeArchived:true }).forEach((sheet) => (sheet.exercises || []).filter((exercise) => !exercise.deletedAt).forEach((exercise) => put({ ...exercise, origin:exercise.metadata?.custom ? "custom" : "program", isCustom:!!exercise.metadata?.custom }))));
       (state.coach.exerciseLibrary || []).forEach((entry) => put(entry));
-      const profiles = Array.from(entries.values()).sort((a,b) => Number(b.isCustom) - Number(a.isCustom) || a.name.localeCompare(b.name, "it"));
-      technicalLibraryCache = { stateRef:state, revision:technicalLibraryRevision, profiles, counts:null };
-      return profiles;
+      return Array.from(entries.values()).sort((a,b) => Number(b.isCustom) - Number(a.isCustom) || a.name.localeCompare(b.name, "it"));
     }
 
     function technicalProfileCounts() {
-      if (technicalLibraryCache.stateRef === state && technicalLibraryCache.revision === technicalLibraryRevision && technicalLibraryCache.counts) return technicalLibraryCache.counts;
       const profiles = technicalExerciseLibrary();
-      const counts = { total:profiles.length, complete:0, partial:0, basic:0 };
-      profiles.forEach((item) => { counts[technicalProfileCompleteness(item)] += 1; });
-      technicalLibraryCache.counts = counts;
-      return counts;
-    }
-
-    function invalidateTechnicalLibraryCache() {
-      technicalLibraryRevision += 1;
-      technicalLibraryCache = { stateRef:state, revision:-1, profiles:null, counts:null };
-      exerciseLabFilterCache = { stateRef:state, revision:-1, key:"", profiles:null };
-      exerciseLabCardCache.clear();
+      return { total:profiles.length, complete:profiles.filter((item) => technicalProfileCompleteness(item) === "complete").length, partial:profiles.filter((item) => technicalProfileCompleteness(item) === "partial").length, basic:profiles.filter((item) => technicalProfileCompleteness(item) === "basic").length };
     }
 
     function upsertTechnicalExercise(entry) {
@@ -6523,7 +6374,6 @@
       const index = list.findIndex((item) => item.id === profile.id);
       if (index >= 0) list[index] = profile; else list.push(profile);
       state.coach.exerciseLibrary = list;
-      invalidateTechnicalLibraryCache();
       programRepository.getPrograms().forEach((program) => programRepository.getSheets(program.id, { includeArchived:true }).forEach((sheet) => programRepository.getExercises(program.id, sheet.id, { includeDeleted:true }).filter((exercise) => exercise.metadata?.technicalProfileId === profile.id).forEach((exercise) => {
         programRepository.updateExercise(program.id, sheet.id, exercise.id, { metadata:{ ...(exercise.metadata || {}), technicalProfile:clone(profile), cues:profile.cues, secondaryMuscles:profile.secondaryMuscles, equipment:profile.equipment, pattern:profile.movementPattern } }, { save:false, forceLocked:true });
       })));
@@ -7355,7 +7205,6 @@
       const normalized = (programs || []).map(normalizeProgramModel);
       const validation = validateProgramCollection(normalized);
       state.programs = normalized;
-      invalidateTechnicalLibraryCache();
       state.meta = {
         ...(state.meta || {}),
         validationIssues: validation.errors.slice(0, 200),
@@ -7784,7 +7633,7 @@
       const serialized = JSON.stringify(snapshot);
       try {
         if (options.touch !== false) {
-          snapshot.meta = { ...(snapshot.meta || {}), updatedAt: new Date().toISOString(), version: 73, schemaVersion: DATA_SCHEMA_VERSION };
+          snapshot.meta = { ...(snapshot.meta || {}), updatedAt: new Date().toISOString(), version: 72, schemaVersion: DATA_SCHEMA_VERSION };
           localStorage.setItem(STORE_KEY, JSON.stringify(snapshot));
         } else {
           localStorage.setItem(STORE_KEY, serialized);
@@ -7821,7 +7670,7 @@
       pendingSaveOptions = pendingSaveOptions ? { touch: pendingSaveOptions.touch || request.touch, cloud: pendingSaveOptions.cloud || request.cloud } : request;
       if (options.immediate) return flushStateSave();
       clearTimeout(localSaveTimer);
-      localSaveTimer = setTimeout(flushStateSave, 320);
+      localSaveTimer = setTimeout(flushStateSave, 180);
       return true;
     }
 
@@ -9241,7 +9090,6 @@
 
     function render() {
       const coachViewport = captureCoachViewport();
-      const enteringWorkout = activeScreen === "training" && lastRenderedScreen !== "training";
       if ((activeScreen === "coach" || activeScreen === "volume") && !coachDesktopAllowed()) {
         activeScreen = "dashboard";
         activeBottom = "home";
@@ -9283,13 +9131,6 @@
       if (activeScreen === "coach") screen.innerHTML = coachHtml();
       ensureCoachMascotFallbacks();
       bindScreen();
-      if (activeScreen === "training") {
-        bindWorkoutMascot();
-        if (enteringWorkout) {
-          setCoachMascotState("idle");
-          requestAnimationFrame(() => moveWorkoutMascot(state.ui.workoutMascotPosition || "bottom-right"));
-        }
-      }
       renderEngine();
       drawCharts();
       lastRenderedScreen = activeScreen;
@@ -9301,7 +9142,6 @@
       const screen = document.getElementById("screen");
       screen.innerHTML = trainingHtml();
       bindScreen();
-      bindWorkoutMascot();
     }
 
     function updateNav() {
@@ -9406,19 +9246,10 @@
       return `<section class="training-context-card card"><div class="row"><div><span class="section-eyebrow">Contesto allenamento</span><strong>${context.isManual ? "Selezione manuale" : "Automatico dalla data"}</strong></div>${context.contextWarning ? `<span class="status-badge warning">${escapeHtml(context.contextWarning)}</span>` : ""}</div><div class="training-context-grid"><label>Modalità<select data-training-context="mode"><option value="auto" ${!context.isManual ? "selected" : ""}>Automatica</option><option value="manual" ${context.isManual ? "selected" : ""}>Manuale</option></select></label><label>Fase<select data-training-context="phase">${phases.map((item) => `<option value="${escapeHtml(item)}" ${item === phase ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}</select></label><label>Settimana<select data-training-context="week" ${!context.isManual ? "disabled" : ""}>${Array.from({length:maxWeek},(_,i)=>`<option value="${i+1}" ${Number(context.week) === i+1 ? "selected" : ""}>Settimana ${i+1}</option>`).join("")}</select></label><label>Scheda<select data-training-context="session" ${!context.isManual ? "disabled" : ""}><option value="">Tutte le schede</option>${phaseSheets.map((item) => `<option value="${escapeHtml(item.code)}" ${item.code === context.session?.code ? "selected" : ""}>${escapeHtml(item.code)} · ${escapeHtml(item.name)}</option>`).join("")}</select></label></div><p class="micro-copy">${context.isManual ? `Stai usando ${escapeHtml(context.session?.code || "nessuna scheda")} · settimana ${context.week}.` : `La data ${escapeHtml(context.date)} determina automaticamente scheda e settimana.`}</p></section>`;
     }
 
-    function dashboardCoachHtml() {
-      const signal = dashboardCoachSignal();
-      const actionScreen = signal.state === "warning" ? "quiz" : "training";
-      const actionLabel = signal.state === "warning" ? "Apri il check-in" : signal.state === "rest" ? "Guarda il programma" : "Vai all’allenamento";
-      const modal = coachProgramUi.dashboardCoachOpen ? `<div class="coach-mobile-modal-backdrop" data-dashboard-coach-close><section class="coach-mobile-modal" role="dialog" aria-modal="true" aria-labelledby="dashboardCoachTitle" onclick="event.stopPropagation()"><div class="coach-mobile-modal-head">${coachMascotHtml("compact")}<div><span class="section-eyebrow">Suggerimento Coach AI</span><h3 id="dashboardCoachTitle">${escapeHtml(signal.title)}</h3></div></div><p>${escapeHtml(signal.message)}</p><div class="coach-modal-actions"><button type="button" class="ghost-button" data-dashboard-coach-close>Chiudi</button><button type="button" class="gold-button" data-screen-target="${actionScreen}">${escapeHtml(actionLabel)}</button></div></section></div>` : "";
-      return `<section class="dashboard-coach-card card"><button type="button" class="dashboard-coach-button" data-dashboard-coach-open aria-label="Apri il suggerimento del Coach AI: ${escapeHtml(signal.title)}">${coachMascotHtml()}</button><div class="coach-speech"><span class="section-eyebrow">Coach AI</span><h3>${escapeHtml(signal.title)}</h3><p data-coach-message aria-live="polite">${escapeHtml(signal.message)}</p><p class="micro-copy">Tocca Diva Bot per aprire subito il consiglio.</p></div></section>${modal}`;
-    }
-
     function dashboardHtml() {
       const ready = readinessScore(); const last = latestSession(); const context = currentTrainingContext(); const decision = decisionPriority(); const stats = dashboardWorkoutStats();
       return `<div class="phase11-dashboard">
         <section class="phase11-hero card"><div><span class="section-eyebrow">${escapeHtml(displayLabel(context.phase))} · Settimana ${context.week}</span><h2>${greetingName()} <span class="daily-face" aria-label="faccina del giorno">${dailyFace()}</span></h2><p>Oggi: <strong>${escapeHtml(context.session.code)} — ${escapeHtml(displayLabel(context.session.focus || context.session.phase))}</strong></p><p class="micro-copy">Recupero: <strong style="color:${decision.color}">${escapeHtml(checkinStatusMeta().status)}</strong></p></div><button class="gold-button" data-screen-target="training">${iconSvg("start", "Inizia allenamento")} Inizia allenamento</button></section>
-        ${dashboardCoachHtml()}
         ${trainingContextControlsHtml(context)}
         <section class="phase11-summary-grid">
           ${dashboardSummaryCard(iconSvg("workout", "Allenamenti"), "Allenamenti", stats.sessions.length, "questa settimana", colors.green)}
@@ -9492,15 +9323,6 @@
       `;
     }
 
-    function workoutCoachProgressMessage(completion) {
-      if (completion >= 100) return "Scheda completata! Sei stata fortissima.";
-      if (completion >= 75) return "Ultimo tratto, Diva!";
-      if (completion >= 50) return "Sei a metà: resta concentrata.";
-      if (completion >= 25) return "Ottimo ritmo, continua così!";
-      if (completion > 0) return "Partiamo con calma e tecnica pulita.";
-      return "Pronta a spaccare questa scheda? 💪";
-    }
-
     function trainingHtml() {
       const context = currentTrainingContext();
       const session = context.session;
@@ -9508,19 +9330,15 @@
       const phaseSessions = context.phaseSessions;
       const completedExercises = (session.exercises || []).filter((item) => draftSetsFor(context, item).some((value) => String(value || "").trim())).length;
       const completion = session.exercises?.length ? Math.round(completedExercises / session.exercises.length * 100) : 0;
-      const workoutMascotVisible = state.ui?.workoutMascotVisible !== false;
-      const workoutMascotPosition = WORKOUT_MASCOT_POSITIONS.has(state.ui?.workoutMascotPosition) ? state.ui.workoutMascotPosition : "bottom-right";
-      const workoutMascotLayer = workoutMascotVisible ? `<div id="workoutMascotLayer" class="workout-mascot-layer" role="group" aria-label="Diva Bot durante l'allenamento"><div class="workout-mascot-anchor" data-position="${workoutMascotPosition}"><button type="button" id="workoutMascotButton" class="workout-mascot-button" aria-label="Sposta Diva Bot" aria-haspopup="menu">${coachMascotHtml("workout-floating")}</button><div id="workoutMascotBubble" class="workout-mascot-bubble" role="status" aria-live="polite" hidden></div><div id="workoutMascotMenu" class="workout-mascot-menu" role="menu" hidden><label><input type="checkbox" data-workout-mascot-visible checked> Mostra Diva Bot durante l'allenamento</label><button type="button" data-workout-mascot-hide>Nascondi Diva Bot</button></div></div></div>` : `<button type="button" class="workout-mascot-restore" data-workout-mascot-show>Mostra Diva Bot durante l'allenamento</button>`;
       const sessionNote = String(displayLabel(session.note || ""))
         .replace(/settimana\s+\d+/gi, `settimana ${context.week}`)
         .replace(/week\s+\d+/gi, `settimana ${context.week}`);
-      return `<div class="training-screen-wrap">
+      return `
         ${trainingContextControlsHtml(context)}
         <div class="hero-title">
           <h2>Allenamento <span>${session.code}</span></h2>
           <p>${formatDateLabel(context.date)} - ${session.phase}, settimana ${context.week}.</p>
         </div>
-        ${workoutMascotLayer}
         <section class="card session-panel">
           <div class="row">
             <div>
@@ -9571,7 +9389,7 @@
         <button class="gold-button" style="width:100%;margin-top:4px" id="saveWorkout">Salva Sessione</button>
         ${state.training.lastSavedMessage ? `<div class="save-success" id="workoutSaveConfirmation">&#10003; ${escapeHtml(state.training.lastSavedMessage)}</div>` : ""}
         ${workoutHistoryHtml()}
-      </div>`;
+      `;
     }
 
     function workoutExerciseKey(session, item) {
@@ -9671,7 +9489,6 @@
                       <div class="compact-set-row">
                         <span class="compact-set-number">${setIndex + 1}</span>
                         <input class="compact-set-input" type="text" inputmode="decimal" aria-label="Kg serie ${setIndex + 1}" placeholder="kg" value="${escapeHtml(value)}" data-set-kg="${index}" data-set-index="${setIndex}">
-                        ${setIndex < values.length - 1 ? `<button class="compact-copy-kg" type="button" data-copy-kg="${index}" data-copy-index="${setIndex}" aria-label="Copia i kg nella serie ${setIndex + 2}" title="Copia nella serie successiva">⧉</button>` : `<span class="compact-copy-spacer" aria-hidden="true"></span>`}
                         <span aria-hidden="true">×</span>
                         <span class="compact-rep-pill">${escapeHtml(displayLabel(reps[setIndex] || item.reps || "--"))} rip</span>
                         <button class="compact-set-done ${done ? "done" : ""}" type="button" data-set-done="${index}" data-set-index="${setIndex}" aria-pressed="${done ? "true" : "false"}" aria-label="${done ? "Togli spunta serie" : "Segna serie completata"}">${done ? "✓" : ""}</button>
@@ -10151,337 +9968,24 @@
       `;
     }
 
-    const COACH_MASCOT_STATES = new Set(["idle", "happy", "celebrate", "thinking", "encouraging", "lifting", "warning", "rest"]);
-    const WORKOUT_MASCOT_POSITIONS = new Set(["top-right", "middle-right", "bottom-right", "bottom-left"]);
-    const coachMascotController = { state:"idle", message:"", temporaryTimer:null, blinkTimer:null, blinkResetTimer:null, reactionTimer:null, weightTimer:null, lastWeightReactionAt:0 };
-    const workoutMascotUi = { drag:null, scrollTimer:null, resizeTimer:null, longPressTimer:null, suppressClick:false, globalBound:false };
-
-    function workoutMascotVisible() {
-      return state.ui?.workoutMascotVisible !== false;
-    }
-
-    function workoutMascotCoordinates(positionName) {
-      const layer = document.getElementById("workoutMascotLayer");
-      const anchor = layer?.querySelector(".workout-mascot-anchor");
-      const screen = document.getElementById("screen");
-      if (!layer || !anchor || !screen) return null;
-      const position = WORKOUT_MASCOT_POSITIONS.has(positionName) ? positionName : "bottom-right";
-      const anchorWidth = anchor.offsetWidth || 124;
-      const anchorHeight = anchor.offsetHeight || 138;
-      const mobile = window.matchMedia?.("(max-width:980px)").matches;
-      const bottomClearance = mobile ? 112 : 24;
-      const bottomY = Math.max(8, screen.clientHeight - anchorHeight - bottomClearance - 18);
-      const middleY = Math.max(8, Math.min(bottomY, Math.round((screen.clientHeight - anchorHeight) / 2)));
-      return {
-        x: position === "bottom-left" ? -Math.max(0, layer.clientWidth - anchorWidth) : 0,
-        y: position === "top-right" ? 8 : position === "middle-right" ? middleY : bottomY
-      };
-    }
-
-    function moveWorkoutMascot(positionName, options = {}) {
-      const position = WORKOUT_MASCOT_POSITIONS.has(positionName) ? positionName : "bottom-right";
-      const layer = document.getElementById("workoutMascotLayer");
-      const anchor = layer?.querySelector(".workout-mascot-anchor");
-      const coords = workoutMascotCoordinates(position);
-      if (!anchor || !coords) return false;
-      anchor.dataset.position = position;
-      anchor.style.setProperty("--workout-mascot-x", `${coords.x}px`);
-      anchor.style.setProperty("--workout-mascot-y", `${coords.y}px`);
-      if (options.persist) {
-        state.ui = state.ui || {};
-        state.ui.workoutMascotPosition = position;
-        saveState();
-      }
-      return true;
-    }
-
-    function workoutMascotRectsOverlap(first, second, padding = 8) {
-      return !!first && !!second && first.left < second.right + padding && first.right > second.left - padding && first.top < second.bottom + padding && first.bottom > second.top - padding;
-    }
-
-    function avoidWorkoutMascotOverlap(target) {
-      const layer = document.getElementById("workoutMascotLayer");
-      const anchor = layer?.querySelector(".workout-mascot-anchor");
-      if (!layer || !anchor || !target?.getBoundingClientRect) return;
-      const targetRect = target.getBoundingClientRect();
-      if (!workoutMascotRectsOverlap(anchor.getBoundingClientRect(), targetRect, 12)) return;
-      const layerRect = layer.getBoundingClientRect();
-      const positions = ["bottom-left", "top-right", "middle-right", "bottom-right"];
-      const candidate = positions.find((position) => {
-        if (position === anchor.dataset.position) return false;
-        const coords = workoutMascotCoordinates(position);
-        if (!coords) return false;
-        const left = layerRect.right - anchor.offsetWidth + coords.x;
-        const rect = { left, right:left + anchor.offsetWidth, top:layerRect.top + coords.y, bottom:layerRect.top + coords.y + anchor.offsetHeight };
-        return !workoutMascotRectsOverlap(rect, targetRect, 12);
-      });
-      if (candidate) moveWorkoutMascot(candidate);
-    }
-
-    function scheduleWorkoutMascotSafety(target = null) {
-      if (!workoutMascotVisible() || activeScreen !== "training") return;
-      requestAnimationFrame(() => {
-        const focusTarget = target || (document.activeElement?.matches?.("[data-set-kg],[data-set-done],[data-workout-tab],#saveWorkout") ? document.activeElement : null);
-        moveWorkoutMascot(document.querySelector(".workout-mascot-anchor")?.dataset.position || state.ui.workoutMascotPosition);
-        if (focusTarget) avoidWorkoutMascotOverlap(focusTarget);
-      });
-    }
-
-    function showWorkoutMascotMenu() {
-      const menu = document.getElementById("workoutMascotMenu");
-      if (menu) menu.hidden = false;
-    }
-
-    function setWorkoutMascotVisibility(visible) {
-      state.ui = state.ui || {};
-      state.ui.workoutMascotVisible = !!visible;
-      saveState();
-      renderTrainingOnly();
-      showToast(visible ? "Diva Bot è tornata nel Workout." : "Diva Bot nascosta durante l'allenamento.");
-    }
-
-    function nearestWorkoutMascotPosition(x, y) {
-      let nearest = "bottom-right";
-      let distance = Infinity;
-      WORKOUT_MASCOT_POSITIONS.forEach((position) => {
-        const coords = workoutMascotCoordinates(position);
-        if (!coords) return;
-        const nextDistance = Math.hypot(coords.x - x, coords.y - y);
-        if (nextDistance < distance) { distance = nextDistance; nearest = position; }
-      });
-      return nearest;
-    }
-
-    function workoutMascotDragMove(event) {
-      const drag = workoutMascotUi.drag;
-      if (!drag || event.pointerId !== drag.pointerId) return;
-      const coords = workoutMascotCoordinates("bottom-left");
-      const bottom = workoutMascotCoordinates("bottom-right");
-      if (!coords || !bottom) return;
-      const x = Math.max(coords.x, Math.min(0, drag.originX + event.clientX - drag.startX));
-      const y = Math.max(8, Math.min(bottom.y, drag.originY + event.clientY - drag.startY));
-      drag.x = x; drag.y = y;
-      if (Math.abs(event.clientX - drag.startX) > 4 || Math.abs(event.clientY - drag.startY) > 4) drag.moved = true;
-      drag.anchor.style.setProperty("--workout-mascot-x", `${x}px`);
-      drag.anchor.style.setProperty("--workout-mascot-y", `${y}px`);
-    }
-
-    function workoutMascotDragEnd(event) {
-      const drag = workoutMascotUi.drag;
-      if (!drag || event.pointerId !== drag.pointerId) return;
-      document.removeEventListener("pointermove", workoutMascotDragMove);
-      document.removeEventListener("pointerup", workoutMascotDragEnd);
-      document.removeEventListener("pointercancel", workoutMascotDragEnd);
-      drag.anchor.classList.remove("is-dragging");
-      workoutMascotUi.drag = null;
-      workoutMascotUi.suppressClick = drag.moved;
-      moveWorkoutMascot(nearestWorkoutMascotPosition(drag.x, drag.y), { persist:true });
-    }
-
-    function bindWorkoutMascot() {
-      if (activeScreen !== "training") return;
-      const screen = document.getElementById("screen");
-      const button = document.getElementById("workoutMascotButton");
-      if (!screen.dataset.workoutMascotSafetyBound) {
-        screen.dataset.workoutMascotSafetyBound = "true";
-        screen.addEventListener("focusin", (event) => {
-          if (event.target?.matches?.("[data-set-kg],[data-set-done],[data-workout-tab],#saveWorkout")) scheduleWorkoutMascotSafety(event.target);
-        });
-        screen.addEventListener("scroll", () => {
-          clearTimeout(workoutMascotUi.scrollTimer);
-          workoutMascotUi.scrollTimer = setTimeout(() => scheduleWorkoutMascotSafety(), 140);
-        }, { passive:true });
-      }
-      if (!workoutMascotUi.globalBound) {
-        workoutMascotUi.globalBound = true;
-        window.addEventListener("resize", () => {
-          clearTimeout(workoutMascotUi.resizeTimer);
-          workoutMascotUi.resizeTimer = setTimeout(() => scheduleWorkoutMascotSafety(), 140);
-        }, { passive:true });
-      }
-      document.querySelector("[data-workout-mascot-show]")?.addEventListener("click", () => setWorkoutMascotVisibility(true));
-      if (!button) return;
-      requestAnimationFrame(() => moveWorkoutMascot(state.ui.workoutMascotPosition || "bottom-right"));
-      button.addEventListener("contextmenu", (event) => { event.preventDefault(); showWorkoutMascotMenu(); });
-      button.addEventListener("pointerdown", (event) => {
-        if (event.button != null && event.button !== 0) return;
-        clearTimeout(workoutMascotUi.longPressTimer);
-        if (window.matchMedia?.("(max-width:600px)").matches) {
-          workoutMascotUi.longPressTimer = setTimeout(() => { workoutMascotUi.suppressClick = true; showWorkoutMascotMenu(); }, 620);
-          return;
-        }
-        const anchor = button.closest(".workout-mascot-anchor");
-        const current = workoutMascotCoordinates(anchor.dataset.position) || { x:0, y:8 };
-        workoutMascotUi.drag = { pointerId:event.pointerId, startX:event.clientX, startY:event.clientY, originX:current.x, originY:current.y, x:current.x, y:current.y, moved:false, anchor };
-        anchor.classList.add("is-dragging");
-        document.addEventListener("pointermove", workoutMascotDragMove);
-        document.addEventListener("pointerup", workoutMascotDragEnd);
-        document.addEventListener("pointercancel", workoutMascotDragEnd);
-      });
-      button.addEventListener("pointerup", () => clearTimeout(workoutMascotUi.longPressTimer));
-      button.addEventListener("pointercancel", () => clearTimeout(workoutMascotUi.longPressTimer));
-      button.addEventListener("click", () => {
-        if (workoutMascotUi.suppressClick) { workoutMascotUi.suppressClick = false; return; }
-        if (!window.matchMedia?.("(max-width:600px)").matches) return;
-        const cycle = ["bottom-right", "bottom-left", "top-right"];
-        const current = button.closest(".workout-mascot-anchor")?.dataset.position || "bottom-right";
-        moveWorkoutMascot(cycle[(cycle.indexOf(current) + 1) % cycle.length], { persist:true });
-      });
-      document.querySelector("[data-workout-mascot-hide]")?.addEventListener("click", () => setWorkoutMascotVisibility(false));
-      document.querySelector("[data-workout-mascot-visible]")?.addEventListener("change", (event) => setWorkoutMascotVisibility(event.target.checked));
-    }
-
-    function dashboardCoachSignal() {
-      const ready = readinessScore();
-      const decision = decisionPriority();
-      const context = currentTrainingContext();
-      if (!context?.session?.exercises?.length) return { state:"rest", title:"Oggi recuperiamo", message:"La giornata è libera: riposo, passi e recupero sono parte del programma." };
-      if (ready < 50 || decision.level <= 1) return { state:"warning", title:"Un consiglio per oggi", message:decision.text };
-      if (ready >= 76) return { state:"happy", title:"Sei pronta, Alice!", message:"I segnali sono buoni: puoi progredire con calma e tecnica pulita." };
-      return { state:"encouraging", title:"Coach AI è con te", message:decision.text };
-    }
-
-    function effectiveCoachMascotState() {
-      return coachMascotController.state;
-    }
-
     function coachMascotHtml(className = "") {
-      const mascotState = effectiveCoachMascotState();
-      return `<div class="coach-avatar ${className}" data-coach-state="${mascotState}">
-        <svg class="diva-bot" viewBox="0 0 240 260" aria-hidden="true" focusable="false">
-          <g class="diva-bot-antenna"><path d="M120 49V31" fill="none" stroke="#c7b8d8" stroke-width="7" stroke-linecap="round"/><path d="M120 29c-13-15-30 4 0 23 30-19 13-38 0-23Z" fill="#ff72c2" stroke="#ffe1f4" stroke-width="3"/></g>
-          <g class="diva-bot-arm diva-bot-arm-left"><circle class="diva-bot-joint" cx="68" cy="177" r="13"/><path class="diva-bot-shell" d="M64 171c-17 1-27 13-28 29-1 12 7 20 17 17 9-3 13-15 16-30Z"/><circle class="diva-bot-joint" cx="47" cy="211" r="10"/></g>
-          <g class="diva-bot-arm diva-bot-arm-right"><circle class="diva-bot-joint" cx="172" cy="177" r="13"/><path class="diva-bot-shell" d="M176 171c17 1 27 13 28 29 1 12-7 20-17 17-9-3-13-15-16-30Z"/><circle class="diva-bot-joint" cx="193" cy="211" r="10"/><path d="M196 204v-13m-6 4 6-8 6 8" fill="none" stroke="#ff72c2" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g>
-          <g class="diva-bot-body"><path class="diva-bot-shell" d="M76 164c10-14 78-14 88 0l-7 68c-13 16-61 16-74 0Z"/><path d="M86 176h68l-5 42c-13 11-45 11-58 0Z" fill="#ded5e9" stroke="#9f87bb" stroke-width="3"/><path class="diva-bot-heart-shape" d="M120 189c-10-12-24 3 0 20 24-17 10-32 0-20Z"/><path class="diva-bot-shell" d="M90 230l-8 18h34l4-16m30-2 8 18h-34l-4-16"/></g>
-          <g class="diva-bot-barbell"><rect x="35" y="203" width="170" height="8" rx="4" fill="#f5eaff" stroke="#9f87bb" stroke-width="3"/><rect x="22" y="184" width="16" height="46" rx="6" fill="#ff72c2" stroke="#6f4c86" stroke-width="4"/><rect x="9" y="191" width="15" height="32" rx="5" fill="#c96cff" stroke="#6f4c86" stroke-width="4"/><rect x="202" y="184" width="16" height="46" rx="6" fill="#ff72c2" stroke="#6f4c86" stroke-width="4"/><rect x="216" y="191" width="15" height="32" rx="5" fill="#c96cff" stroke="#6f4c86" stroke-width="4"/></g>
-          <g class="diva-bot-head"><path class="diva-bot-shell" d="M45 73c15-27 135-27 150 0 12 20 12 72-3 91-21 27-123 27-144 0-15-19-15-71-3-91Z"/><path d="M41 96c-16 5-18 44-1 51m159-51c16 5 18 44 1 51" fill="#bba9cf" stroke="#ff72c2" stroke-width="7" stroke-linecap="round"/><rect class="diva-bot-screen" x="57" y="83" width="126" height="77" rx="31"/><path class="diva-bot-screen-glint" d="M75 92c20-8 67-10 91 0-37 1-68 8-92 22-5-8-4-16 1-22Z"/></g>
-          <g class="diva-bot-face">
-            <g class="diva-bot-face-idle"><g class="diva-bot-eyes"><circle class="diva-bot-face-fill" cx="93" cy="117" r="8"/><circle class="diva-bot-face-fill" cx="147" cy="117" r="8"/></g><path class="diva-bot-face-stroke" d="M103 137q17 15 34 0"/></g>
-            <g class="diva-bot-face-happy"><g class="diva-bot-eyes"><path class="diva-bot-face-stroke" d="M80 119q13-21 26 0M134 119q13-21 26 0"/></g><path class="diva-bot-face-fill" d="M101 135q19 24 38 0c-4 28-34 28-38 0Z"/></g>
-            <g class="diva-bot-face-thinking"><g class="diva-bot-eyes"><circle class="diva-bot-face-fill" cx="92" cy="117" r="8"/><path class="diva-bot-face-stroke" d="M137 117q11-12 22 0"/></g><path class="diva-bot-face-stroke" d="M109 139q11 5 22 0"/><circle class="diva-bot-face-fill" cx="177" cy="70" r="4"/><circle class="diva-bot-face-fill" cx="190" cy="60" r="3"/></g>
-            <g class="diva-bot-face-encouraging"><g class="diva-bot-eyes"><circle class="diva-bot-face-fill" cx="93" cy="117" r="8"/><path class="diva-bot-face-stroke" d="M135 117q12-13 24 0"/></g><path class="diva-bot-face-stroke" d="M102 136q18 17 36 0"/></g>
-            <g class="diva-bot-face-warning"><g class="diva-bot-eyes"><path class="diva-bot-face-stroke" d="M80 111l25 4M135 115l25-4"/></g><path class="diva-bot-face-stroke" d="M106 140q14-7 28 0"/></g>
-            <g class="diva-bot-face-rest"><g class="diva-bot-eyes"><path class="diva-bot-face-stroke" d="M80 119h26M134 119h26"/></g><path class="diva-bot-face-stroke" d="M109 139h22"/><text x="171" y="86" fill="#ff72c2" font-size="20" font-weight="800">Z</text></g>
-          </g>
-        </svg>
-      </div>`;
+      return `<div class="coach-avatar ${className}"><img src="coach-mascot.svg" alt="Coach AI" onerror="this.parentElement.classList.add('mascot-failed')"><svg class="coach-mascot-inline-fallback" viewBox="0 0 160 160" aria-hidden="true"><rect x="27" y="42" width="106" height="82" rx="28" fill="#f6a8d0"/><rect x="38" y="55" width="84" height="57" rx="18" fill="#24142f"/><circle cx="65" cy="82" r="7" fill="#ff3d91"/><circle cx="95" cy="82" r="7" fill="#ff3d91"/><path d="M68 97q12 10 24 0" fill="none" stroke="#ff3d91" stroke-width="5" stroke-linecap="round"/></svg></div>`;
     }
-
-    function syncCoachMascotState() {
-      const mascotState = effectiveCoachMascotState();
-      document.querySelectorAll(".coach-avatar").forEach((avatar) => { avatar.dataset.coachState = mascotState; });
-      document.querySelectorAll("[data-coach-message]").forEach((node) => {
-        if (coachMascotController.message) node.textContent = coachMascotController.message;
-        else if (node.dataset.coachDefaultMessage) node.textContent = node.dataset.coachDefaultMessage;
-      });
-    }
-
-    function scheduleCoachMascotBlink() {
-      clearTimeout(coachMascotController.blinkTimer);
-      clearTimeout(coachMascotController.blinkResetTimer);
-      if (document.hidden || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-      coachMascotController.blinkTimer = setTimeout(() => {
-        const eyes = document.querySelectorAll(".diva-bot-eyes");
-        eyes.forEach((eye) => eye.classList.add("is-blinking"));
-        coachMascotController.blinkResetTimer = setTimeout(() => eyes.forEach((eye) => eye.classList.remove("is-blinking")), 150);
-        scheduleCoachMascotBlink();
-      }, 3800 + Math.round(Math.random() * 4200));
-    }
-
-    function addCoachMascotParticles() {
-      if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-      document.querySelectorAll(".coach-avatar").forEach((avatar) => {
-        avatar.querySelector(".diva-bot-particles")?.remove();
-        const layer = document.createElement("span");
-        layer.className = "diva-bot-particles";
-        Array.from({ length:8 }, (_, index) => {
-          const particle = document.createElement("i");
-          particle.className = "diva-bot-particle";
-          particle.textContent = index % 2 ? "✦" : "♥";
-          particle.style.setProperty("--spark-x", `${Math.round((Math.random() - .5) * 90)}px`);
-          particle.style.setProperty("--spark-y", `${Math.round(-35 - Math.random() * 65)}px`);
-          particle.style.setProperty("--spark-r", `${Math.round((Math.random() - .5) * 90)}deg`);
-          particle.style.animationDelay = `${index * 35}ms`;
-          layer.appendChild(particle);
-        });
-        avatar.appendChild(layer);
-        setTimeout(() => layer.remove(), 1200);
-      });
-    }
-
-    function showGlobalCoachMascotReaction(message) {
-      if (!document.body?.appendChild || !document.createElement) return;
-      document.getElementById("coachMascotReaction")?.remove?.();
-      const reaction = document.createElement("aside");
-      reaction.id = "coachMascotReaction";
-      reaction.className = "coach-mascot-reaction";
-      reaction.setAttribute("role", "status");
-      reaction.setAttribute("aria-live", "polite");
-      reaction.innerHTML = `${coachMascotHtml("compact")}<p>${escapeHtml(message)}</p>`;
-      document.body.appendChild(reaction);
-      syncCoachMascotState();
-    }
-
-    function showWorkoutMascotBubble(message) {
-      const bubble = document.getElementById("workoutMascotBubble");
-      if (!bubble) return false;
-      bubble.textContent = String(message || "");
-      bubble.hidden = false;
-      clearTimeout(coachMascotController.reactionTimer);
-      coachMascotController.reactionTimer = setTimeout(() => { bubble.hidden = true; }, 2200);
-      return true;
-    }
-
-    function showCoachMascotReaction(message) {
-      if (activeScreen === "training") {
-        if (workoutMascotVisible() && showWorkoutMascotBubble(message)) return;
-        showToast(message);
-        return;
-      }
-      showGlobalCoachMascotReaction(message);
-    }
-
-    function setCoachMascotState(stateName, options = {}) {
-      const nextState = COACH_MASCOT_STATES.has(stateName) ? stateName : "idle";
-      clearTimeout(coachMascotController.temporaryTimer);
-      clearTimeout(coachMascotController.reactionTimer);
-      coachMascotController.state = nextState;
-      coachMascotController.message = String(options.message || "");
-      syncCoachMascotState();
-      if (options.announce && options.message) showCoachMascotReaction(options.message);
-      if (nextState === "happy" || nextState === "celebrate") addCoachMascotParticles();
-      const duration = Number(options.duration) || 0;
-      if (duration > 0) {
-        coachMascotController.temporaryTimer = setTimeout(() => {
-          const returnState = COACH_MASCOT_STATES.has(options.returnState) ? options.returnState : "idle";
-          coachMascotController.state = returnState;
-          coachMascotController.message = "";
-          document.getElementById("coachMascotReaction")?.remove?.();
-          const workoutBubble = document.getElementById("workoutMascotBubble");
-          if (workoutBubble) workoutBubble.hidden = true;
-          syncCoachMascotState();
-          if (returnState !== "idle") {
-            coachMascotController.temporaryTimer = setTimeout(() => {
-              coachMascotController.state = "idle";
-              syncCoachMascotState();
-            }, 1200);
-          }
-        }, duration);
-      }
-      scheduleCoachMascotBlink();
-    }
-
     function ensureCoachMascotFallbacks() {
-      syncCoachMascotState();
-      scheduleCoachMascotBlink();
+      document.querySelectorAll('.coach-avatar img[src="coach-mascot.svg"]').forEach((img) => {
+        if (img.dataset.mascotFallbackBound) return;
+        img.dataset.mascotFallbackBound = "1";
+        img.addEventListener("error", () => {
+          img.parentElement.classList.add("mascot-failed");
+          if (!img.parentElement.querySelector(".coach-mascot-inline-fallback")) img.parentElement.insertAdjacentHTML("beforeend", coachMascotHtml().match(/<svg class="coach-mascot-inline-fallback"[\s\S]*?<\/svg>/)?.[0] || "");
+        });
+      });
     }
 
     function exerciseLabFilteredProfiles() {
       const filters = coachProgramUi.labFilters || {};
       const query = normalizeExerciseName(coachProgramUi.labQuery || "");
-      const cacheKey = JSON.stringify([query, filters]);
-      if (exerciseLabFilterCache.stateRef === state && exerciseLabFilterCache.revision === technicalLibraryRevision && exerciseLabFilterCache.key === cacheKey && exerciseLabFilterCache.profiles) return exerciseLabFilterCache.profiles;
-      const profiles = technicalExerciseLibrary().filter((item) => {
+      return technicalExerciseLibrary().filter((item) => {
         const muscleText = normalizeExerciseName([...(item.primaryMuscles || []), ...(item.secondaryMuscles || [])].join(" "));
         const stimulus = item.stimulusProfile.lengthened >= item.stimulusProfile.midRange && item.stimulusProfile.lengthened >= item.stimulusProfile.shortened ? "lengthened" : item.stimulusProfile.shortened >= item.stimulusProfile.midRange ? "shortened" : "mid";
         const level = item.ratings.technicalDifficulty >= 4 ? "advanced" : item.ratings.technicalDifficulty >= 2 ? "intermediate" : "beginner";
@@ -10497,8 +10001,6 @@
           && (!filters.progression || item.ratings.progressionEase >= Number(filters.progression))
           && (!filters.origin || (filters.origin === "custom" ? item.isCustom : !item.isCustom));
       });
-      exerciseLabFilterCache = { stateRef:state, revision:technicalLibraryRevision, key:cacheKey, profiles };
-      return profiles;
     }
 
     function exerciseLabHtml() {
@@ -10644,13 +10146,9 @@
         const count = (coachProgramUi.modalData.exerciseIds || []).length;
         return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>Eliminare ${count} ${count === 1 ? "esercizio" : "esercizi"}?</h3><p class="micro-copy">Gli elementi bloccati richiedono questa conferma esplicita. L’operazione può essere annullata con “Annulla”.</p><div class="coach-modal-actions">${close}<button class="danger-button" data-coach-modal-save>Elimina</button></div></section></div>`;
       }
-      if (type === "coach-ai-list") {
-        const suggestions = coachAiSuggestions();
-        return `<div class="coach-modal-backdrop"><section class="coach-modal coach-ai-list-modal" role="dialog" aria-modal="true" aria-labelledby="coachAiListTitle"><div class="coach-ai-list-head">${coachMascotHtml()}<div><span class="section-eyebrow">Coach AI</span><h3 id="coachAiListTitle">I tuoi suggerimenti</h3><p class="micro-copy">${suggestions.length ? `${suggestions.length} consigl${suggestions.length === 1 ? "io" : "i"} pront${suggestions.length === 1 ? "o" : "i"} da leggere.` : "La scheda è coerente: al momento non ci sono nuovi suggerimenti."}</p></div></div><div class="coach-ai-list-content">${suggestions.length ? suggestions.map(coachAiSuggestionHtml).join("") : `<div class="coach-ai-empty">Nessun suggerimento da mostrare in questo momento.</div>`}</div><div class="coach-modal-actions">${close}</div></section></div>`;
-      }
       if (type === "coach-ai-confirm") {
         const suggestion = coachProgramUi.modalData.suggestion || {};
-        return `<div class="coach-modal-backdrop"><section class="coach-modal coach-ai-detail-modal"><div class="coach-detail-heading">${coachMascotHtml("compact")}<div><span class="chip">${escapeHtml(suggestion.severity || "media")} · ${escapeHtml(suggestion.confidence || "dati")}</span><h3>${escapeHtml(suggestion.title || "Suggerimento")}</h3></div></div><p class="coach-detail-lead">${escapeHtml(suggestion.problem || "")}</p><div class="coach-detail-grid"><div class="reference-row"><strong>Motivazione tecnica</strong><p>${escapeHtml(suggestion.reason || "Analisi basata sui dati presenti nella scheda.")}</p><strong>Dati utilizzati</strong><p>${(suggestion.dataUsed || []).map(escapeHtml).join(" · ") || "Nessun dato aggiuntivo"}</p></div><div class="reference-row"><strong>Intervento suggerito</strong><p>${escapeHtml(suggestion.actionLabel || "Applica modifica al repository")}</p>${suggestion.exercise ? `<p><b>Esercizio:</b> ${escapeHtml(suggestion.exercise)}</p>` : ""}${suggestion.prescription ? `<p>${suggestion.prescription.sets} serie × ${escapeHtml(suggestion.prescription.reps)} · RIR ${escapeHtml(suggestion.prescription.rir)} · ${suggestion.prescription.rest}s recupero</p>` : ""}${suggestion.progression ? `<strong>Progressione</strong><p>${escapeHtml(suggestion.progression)}</p>` : ""}</div></div>${suggestion.alternatives?.length ? `<div class="coach-alternative-grid"><strong>Alternative disponibili</strong>${suggestion.alternatives.slice(0,5).map((item) => `<button type="button" data-ai-alternative="${escapeHtml(item.name)}" data-ai-suggestion="${escapeHtml(suggestion.id)}"><img src="app-icon-192.png" alt=""><span><b>${escapeHtml(item.name)}</b><small>${escapeHtml(item.group || "Gruppo non indicato")} · ${escapeHtml(item.equipment || "Attrezzatura libera")}</small></span><em>Seleziona</em></button>`).join("")}</div>` : ""}<p class="micro-copy">L’azione entrerà nello storico undo/redo e potrà essere annullata.</p><div class="coach-modal-actions">${close}<button class="ghost-button" data-coach-ai-later>Più tardi</button><button class="gold-button" data-coach-modal-save>Applica suggerimento</button></div></section></div>`;
+        return `<div class="coach-modal-backdrop"><section class="coach-modal coach-ai-detail-modal"><div class="coach-detail-heading"><div class="coach-avatar"><img src="coach-mascot.svg" alt="Coach AI"></div><div><span class="chip">${escapeHtml(suggestion.severity || "media")} · ${escapeHtml(suggestion.confidence || "dati")}</span><h3>${escapeHtml(suggestion.title || "Suggerimento")}</h3></div></div><p class="coach-detail-lead">${escapeHtml(suggestion.problem || "")}</p><div class="coach-detail-grid"><div class="reference-row"><strong>Motivazione tecnica</strong><p>${escapeHtml(suggestion.reason || "Analisi basata sui dati presenti nella scheda.")}</p><strong>Dati utilizzati</strong><p>${(suggestion.dataUsed || []).map(escapeHtml).join(" · ") || "Nessun dato aggiuntivo"}</p></div><div class="reference-row"><strong>Intervento suggerito</strong><p>${escapeHtml(suggestion.actionLabel || "Applica modifica al repository")}</p>${suggestion.exercise ? `<p><b>Esercizio:</b> ${escapeHtml(suggestion.exercise)}</p>` : ""}${suggestion.prescription ? `<p>${suggestion.prescription.sets} serie × ${escapeHtml(suggestion.prescription.reps)} · RIR ${escapeHtml(suggestion.prescription.rir)} · ${suggestion.prescription.rest}s recupero</p>` : ""}${suggestion.progression ? `<strong>Progressione</strong><p>${escapeHtml(suggestion.progression)}</p>` : ""}</div></div>${suggestion.alternatives?.length ? `<div class="coach-alternative-grid"><strong>Alternative disponibili</strong>${suggestion.alternatives.slice(0,5).map((item) => `<button type="button" data-ai-alternative="${escapeHtml(item.name)}" data-ai-suggestion="${escapeHtml(suggestion.id)}"><img src="app-icon-192.png" alt=""><span><b>${escapeHtml(item.name)}</b><small>${escapeHtml(item.group || "Gruppo non indicato")} · ${escapeHtml(item.equipment || "Attrezzatura libera")}</small></span><em>Seleziona</em></button>`).join("")}</div>` : ""}<p class="micro-copy">L’azione entrerà nello storico undo/redo e potrà essere annullata.</p><div class="coach-modal-actions">${close}<button class="ghost-button" data-coach-ai-later>Più tardi</button><button class="gold-button" data-coach-modal-save>Applica suggerimento</button></div></section></div>`;
       }
       return "";
     }
@@ -11039,14 +10537,14 @@
       const statusTab = coachProgramUi.aiStatusTab || "suggestions";
       const visible = statusTab === "applied" ? Object.values(ai.appliedRecords || {}).filter((item) => applied.has(item.id)).map((item) => ({ ...item, severity: item.severity || "info", confidence: item.confidence || "applicato", alternatives: item.alternatives || [], dataUsed: item.dataUsed || [], involvedExercises: item.involvedExercises || [] })) : statusTab === "ignored" ? Object.values(ai.ignoredRecords || {}).filter((item) => ignored.has(item.id)).map((item) => ({ ...item, severity: item.severity || "info", confidence: item.confidence || "salvato", problem: item.problem || "Puoi ripristinare questo controllo quando vuoi.", alternatives: item.alternatives || [], dataUsed: item.dataUsed || [], progression: item.progression || "", involvedExercises: item.involvedExercises || [] })) : filteredSuggestions.filter((item) => !applied.has(item.id));
       const quality = coachAiQualityIssues(); const qualityBlock = quality.length ? `<section class="coach-ai-quality"><button type="button" data-ai-quality-toggle aria-expanded="${!!coachProgramUi.qualityExpanded}"><span>Qualità dati</span><b>${quality.length}</b><em>${coachProgramUi.qualityExpanded ? "-" : "+"}</em></button>${coachProgramUi.qualityExpanded ? `<div class="coach-ai-quality-body"><p>Completa i dati di questi esercizi per rendere i consigli più precisi.</p><ul>${quality.map((row) => `<li><span>${escapeHtml(row.exercise)}</span><button type="button" data-exercise-action="details" data-exercise-id="${escapeHtml(row.id)}">Completa dati</button></li>`).join("")}</ul></div>` : ""}</section>` : "";
-      return `<section class="coach-ai-panel"><div class="row"><div><h3 class="coach-section-title">COACH AI <span class="coach-ai-count">${suggestions.length}</span></h3><p class="micro-copy">Consigli brevi: apri solo quello che vuoi approfondire.</p></div><label class="coach-ai-toolbar"><input type="checkbox" data-ai-toggle ${ai.enabled ? "checked" : ""}> Consigli automatici ON/OFF</label></div><div class="coach-ai-status-tabs"><button class="${statusTab === "suggestions" ? "active" : ""}" data-ai-status-tab="suggestions">Suggerimenti ${suggestions.length}</button><button class="${statusTab === "applied" ? "active" : ""}" data-ai-status-tab="applied">Applicati ${ai.applied?.length || 0}</button><button class="${statusTab === "ignored" ? "active" : ""}" data-ai-status-tab="ignored">Ignorati ${ai.ignored?.length || 0}</button></div><div class="coach-ai-filters">${filters.map(([value,label]) => `<button class="coach-ai-filter ${filter === value ? "active" : ""}" data-ai-filter="${value}">${label}</button>`).join("")}</div><div class="coach-ai-scroll-area">${!ai.enabled ? `<div class="coach-ai-empty">Consigli automatici disattivati. Lo storico resta disponibile.</div>` : visible.length ? visible.map(coachAiSuggestionHtml).join("") : `<div class="coach-ai-empty">La scheda è coerente. Non ho modifiche importanti da suggerire.</div>`}${qualityBlock}</div><footer class="coach-ai-footer"><button class="coach-ai-all-button" data-ai-open-list>Vedi tutti i suggerimenti</button></footer></section>`;
+      return `<section class="coach-ai-panel"><div class="row"><div><h3 class="coach-section-title">COACH AI <span class="coach-ai-count">${suggestions.length}</span></h3><p class="micro-copy">Consigli brevi: apri solo quello che vuoi approfondire.</p></div><label class="coach-ai-toolbar"><input type="checkbox" data-ai-toggle ${ai.enabled ? "checked" : ""}> Consigli automatici ON/OFF</label></div><div class="coach-ai-status-tabs"><button class="${statusTab === "suggestions" ? "active" : ""}" data-ai-status-tab="suggestions">Suggerimenti ${suggestions.length}</button><button class="${statusTab === "applied" ? "active" : ""}" data-ai-status-tab="applied">Applicati ${ai.applied?.length || 0}</button><button class="${statusTab === "ignored" ? "active" : ""}" data-ai-status-tab="ignored">Ignorati ${ai.ignored?.length || 0}</button></div><div class="coach-ai-filters">${filters.map(([value,label]) => `<button class="coach-ai-filter ${filter === value ? "active" : ""}" data-ai-filter="${value}">${label}</button>`).join("")}</div><div class="coach-ai-scroll-area">${!ai.enabled ? `<div class="coach-ai-empty">Consigli automatici disattivati. Lo storico resta disponibile.</div>` : visible.length ? visible.map(coachAiSuggestionHtml).join("") : `<div class="coach-ai-empty">La scheda è coerente. Non ho modifiche importanti da suggerire.</div>`}${qualityBlock}</div><footer class="coach-ai-footer"><button class="coach-ai-all-button" data-ai-status-tab="suggestions">Vedi tutti i suggerimenti</button></footer></section>`;
     }
 
     function coachAiPopupHtml() {
       const suggestion = coachAiSuggestions().find((item) => item.severity === "critical" || item.severity === "improve");
       if (!suggestion || coachProgramUi.aiNoticeDismissed.has(suggestion.id)) return "";
       const total = coachAiSuggestions().length;
-      return `<aside class="coach-ai-popover" role="status" aria-live="polite">${coachMascotHtml()}<div><strong>Ciao Alice!</strong><p>Ho analizzato la tua scheda e ho trovato <b>${total} suggerimenti</b> per migliorarla.</p><div><button class="gold-button" data-ai-open-list>Vedi suggerimenti</button><button class="ghost-button" data-coach-ai-dismiss="${escapeHtml(suggestion.id)}">Più tardi</button><button class="coach-ai-close" data-coach-ai-dismiss="${escapeHtml(suggestion.id)}" aria-label="Chiudi popup">×</button></div></div></aside>`;
+      return `<aside class="coach-ai-popover" role="status" aria-live="polite">${coachMascotHtml()}<div><strong>Ciao Alice!</strong><p>Ho analizzato la tua scheda e ho trovato <b>${total} suggerimenti</b> per migliorarla.</p><div><button class="gold-button" data-ai-status-tab="suggestions">Vedi suggerimenti</button><button class="ghost-button" data-coach-ai-dismiss="${escapeHtml(suggestion.id)}">Più tardi</button><button class="coach-ai-close" data-coach-ai-dismiss="${escapeHtml(suggestion.id)}" aria-label="Chiudi popup">×</button></div></div></aside>`;
     }
 
     function coachGroupForTechnicalProfile(profile = {}, fallback = "Custom") {
@@ -11751,17 +11249,6 @@
       document.querySelectorAll("[data-screen-target]").forEach((button) => {
         button.addEventListener("click", () => setScreen(button.dataset.screenTarget));
       });
-      document.querySelectorAll("[data-dashboard-coach-open]").forEach((button) => button.addEventListener("click", () => {
-        coachProgramUi.dashboardCoachOpen = true;
-        const signal = dashboardCoachSignal();
-        setCoachMascotState(signal.state, { message:signal.message });
-        render();
-      }));
-      document.querySelectorAll("[data-dashboard-coach-close]").forEach((button) => button.addEventListener("click", () => {
-        coachProgramUi.dashboardCoachOpen = false;
-        setCoachMascotState("idle");
-        render();
-      }));
       document.querySelectorAll("[data-training-context]").forEach((input) => input.addEventListener("change", () => {
         const field = input.dataset.trainingContext;
         state.training = state.training || {};
@@ -11776,8 +11263,7 @@
       const logbookSearch = document.getElementById("phase11LogbookSearch");
       if (logbookSearch) logbookSearch.addEventListener("input", () => {
         state.ui = { ...(state.ui || {}), logbookSearch: logbookSearch.value };
-        clearTimeout(coachProgramUi.logbookSearchTimer);
-        coachProgramUi.logbookSearchTimer = setTimeout(render, 220);
+        render();
       });
       const logbookStatus = document.getElementById("phase11LogbookStatus");
       if (logbookStatus) logbookStatus.addEventListener("change", () => {
@@ -11830,23 +11316,16 @@
           setCheckinValue(input.dataset.checkinInput, input.value);
           saveState();
           render();
-          const signal = dashboardCoachSignal();
-          if (signal.state === "warning") setCoachMascotState("warning", { message:signal.message, announce:true, duration:2200 });
         });
       });
       document.querySelectorAll("[data-workout-toggle]").forEach((button) => {
         button.addEventListener("click", () => {
-          const opening = state.training.openExercise !== button.dataset.workoutToggle;
-          state.training.openExercise = opening ? button.dataset.workoutToggle : "";
+          state.training.openExercise = state.training.openExercise === button.dataset.workoutToggle ? "" : button.dataset.workoutToggle;
           renderTrainingOnly();
-          if (opening) {
-            setCoachMascotState("encouraging", { message:"Ci siamo: controllo, respiro e tecnica pulita!", announce:true, duration:1650 });
-            scheduleWorkoutMascotSafety(document.querySelector("[data-set-kg]"));
-          }
         });
       });
       document.querySelectorAll("[data-workout-tab]").forEach((button) => {
-        button.addEventListener("click", () => { activateWorkoutTabButton(button); scheduleWorkoutMascotSafety(); });
+        button.addEventListener("click", () => activateWorkoutTabButton(button));
         button.addEventListener("keydown", (event) => handleWorkoutTabKeydown(event, button));
       });
       document.querySelectorAll("[data-set-kg]").forEach((input) => {
@@ -11856,29 +11335,10 @@
           if (!exercise) return;
           const key = draftKey(context, exercise);
           const values = draftSetsFor(context, exercise);
-          const setIndex = Number(input.dataset.setIndex);
-          const previousLoad = String(values[setIndex] || "").trim();
-          const nextLoad = String(input.value || "").trim();
-          values[setIndex] = input.value;
+          values[Number(input.dataset.setIndex)] = input.value;
           state.training.draft[key] = values;
-          if (!nextLoad) state.training.setDone[setDoneKey(context, exercise, setIndex)] = false;
+          if (!String(input.value || "").trim()) state.training.setDone[setDoneKey(context, exercise, Number(input.dataset.setIndex))] = false;
           saveState();
-          clearTimeout(coachMascotController.weightTimer);
-          if (nextLoad === previousLoad || !nextLoad || !(Number(nextLoad.replace(",", ".")) > 0)) return;
-          coachMascotController.weightTimer = setTimeout(() => {
-            const load = String(input.value || "").trim();
-            if (!load || !(Number(load.replace(",", ".")) > 0)) return;
-            const cheers = [
-              `Brava, vai! ${load.replace(".", ",")} kg segnati: spingi forte con tecnica pulita!`,
-              `Carico registrato: ${load.replace(".", ",")} kg. Sei fortissima, Alice!`,
-              `Vai Diva! ${load.replace(".", ",")} kg pronti: controllo e potenza!`
-            ];
-            const message = cheers[Math.floor(Math.random() * cheers.length)];
-            const now = Date.now();
-            const announce = now - coachMascotController.lastWeightReactionAt >= 25000;
-            if (announce) coachMascotController.lastWeightReactionAt = now;
-            setCoachMascotState("lifting", { message, announce, duration:1750 });
-          }, 550);
         });
       });
       document.querySelectorAll("[data-set-done]").forEach((button) => {
@@ -11889,18 +11349,9 @@
           if (!exercise) return;
           const values = draftSetsFor(context, exercise);
           const key = setDoneKey(context, exercise, setIndex);
-          const completedNow = !setIsDone(context, exercise, setIndex, values[setIndex]);
-          state.training.setDone[key] = completedNow;
+          state.training.setDone[key] = !setIsDone(context, exercise, setIndex, values[setIndex]);
           saveState();
           renderTrainingOnly();
-          if (completedNow) {
-            const totalExercises = context.session.exercises?.length || 0;
-            const completedExercises = (context.session.exercises || []).filter((item) => draftSetsFor(context, item).some((value) => String(value || "").trim())).length;
-            const completion = totalExercises ? Math.round(completedExercises / totalExercises * 100) : 0;
-            const mascotState = completion >= 75 ? "celebrate" : completion >= 50 ? "encouraging" : "happy";
-            const message = completion >= 50 ? workoutCoachProgressMessage(completion) : "Serie fatta! Continua così 💪";
-            setCoachMascotState(mascotState, { message, announce:true, duration:1850 });
-          }
         });
       });
       document.querySelectorAll("[data-copy-kg]").forEach((button) => {
@@ -11916,8 +11367,7 @@
           values[index + 1] = current;
           state.training.draft[key] = values;
           saveState();
-          const nextInput = document.querySelector(`[data-set-kg="${button.dataset.copyKg}"][data-set-index="${index + 1}"]`);
-          if (nextInput) nextInput.value = current;
+          renderTrainingOnly();
           showToast("Kg copiati nella serie successiva.");
         });
       });
@@ -12470,36 +11920,15 @@
       const modalSave = document.querySelector("[data-coach-modal-save]");
       if (modalSave) modalSave.addEventListener("click", () => { saveCoachUiModal(); render(); });
       const aiToggle = document.querySelector("[data-ai-toggle]");
-      if (aiToggle) aiToggle.addEventListener("change", () => { setCoachMascotState("thinking", { message:"Aggiorno l’analisi…", duration:650, returnState:"happy" }); coachAiState().enabled = aiToggle.checked; render(); });
-      document.querySelectorAll("[data-ai-filter]").forEach((button) => button.addEventListener("click", () => { setCoachMascotState("thinking", { message:"Controllo i suggerimenti…", duration:650, returnState:"happy" }); coachAiState().filter = button.dataset.aiFilter || "all"; render(); }));
+      if (aiToggle) aiToggle.addEventListener("change", () => { coachAiState().enabled = aiToggle.checked; render(); });
+      document.querySelectorAll("[data-ai-filter]").forEach((button) => button.addEventListener("click", () => { coachAiState().filter = button.dataset.aiFilter || "all"; render(); }));
       document.querySelectorAll("[data-ai-ignore]").forEach((button) => button.addEventListener("click", () => { const ai = coachAiState(); const suggestion = coachAiSuggestions().find((item) => item.id === button.dataset.aiIgnore); ai.ignored = [...new Set([...(ai.ignored || []), button.dataset.aiIgnore])]; ai.ignoredRecords = { ...(ai.ignoredRecords || {}), [button.dataset.aiIgnore]: suggestion ? clone(suggestion) : { id: button.dataset.aiIgnore, title: "Suggerimento ignorato" } }; state.coach.coachAi = ai; render(); showToast("Suggerimento ignorato."); }));
       document.querySelectorAll("[data-ai-alternatives-toggle]").forEach((button) => button.addEventListener("click", () => { const id = button.dataset.aiAlternativesToggle; if (coachProgramUi.aiExpanded.has(id)) coachProgramUi.aiExpanded.delete(id); else coachProgramUi.aiExpanded.add(id); render(); }));
       document.querySelectorAll("[data-ai-apply]").forEach((button) => button.addEventListener("click", () => { const suggestion = coachAiSuggestions().find((item) => item.id === button.dataset.aiApply); if (!suggestion) return; openCoachModal("coach-ai-confirm", { suggestion }); render(); }));
       document.querySelectorAll("[data-coach-ai-dismiss]").forEach((button) => button.addEventListener("click", () => { coachProgramUi.aiNoticeDismissed.add(button.dataset.coachAiDismiss); render(); }));
       document.querySelectorAll("[data-ai-alternative]").forEach((button) => button.addEventListener("click", () => { const suggestion = coachAiSuggestions().find((item) => item.id === button.dataset.aiSuggestion); const alternative = suggestion?.alternatives.find((item) => item.name === button.dataset.aiAlternative); if (!suggestion || !alternative) return; const next = clone(suggestion); next.exercise = alternative.name; next.action = { ...(next.action || {}), replacement: alternative.name, muscle: alternative.group, type: next.action?.type === "addExercise" ? "addExercise" : "replaceExercise" }; openCoachModal("coach-ai-confirm", { suggestion: next }); render(); }));
       document.querySelectorAll("[data-ai-expand]").forEach((button) => button.addEventListener("click", () => { const id = button.dataset.aiExpand; if (coachProgramUi.aiExpanded.has(id)) coachProgramUi.aiExpanded.delete(id); else coachProgramUi.aiExpanded.add(id); render(); }));
-      document.querySelectorAll("[data-ai-open-list]").forEach((button) => button.addEventListener("click", () => {
-        const first = coachAiSuggestions()[0];
-        if (first) coachProgramUi.aiNoticeDismissed.add(first.id);
-        setCoachMascotState("thinking", { message:"Apro tutti i suggerimenti…", duration:650, returnState:"happy" });
-        openCoachModal("coach-ai-list");
-        render();
-      }));
-      document.querySelectorAll("[data-ai-status-tab]").forEach((button) => button.addEventListener("click", () => {
-        coachProgramUi.aiStatusTab = button.dataset.aiStatusTab;
-        const directMascot = button.closest(".coach-mascot-button") || button.closest(".coach-ai-floating");
-        const first = coachAiSuggestions()[0];
-        if (directMascot && first) {
-          coachProgramUi.aiNoticeDismissed.add(first.id);
-          setCoachMascotState("happy", { message:`Ecco il consiglio: ${first.title}`, duration:1800 });
-          openCoachModal("coach-ai-confirm", { suggestion:first });
-          render();
-          return;
-        }
-        const opensDrawer = button.closest(".coach-ai-popover") || directMascot;
-        if (opensDrawer) { coachProgramUi.aiDrawerOpen = true; document.body.classList.add("ai-drawer-open"); if (first) coachProgramUi.aiNoticeDismissed.add(first.id); }
-        render();
-      }));
+      document.querySelectorAll("[data-ai-status-tab]").forEach((button) => button.addEventListener("click", () => { coachProgramUi.aiStatusTab = button.dataset.aiStatusTab; const opensDrawer = button.closest(".coach-ai-popover") || button.closest(".coach-mascot-button") || button.closest(".coach-ai-floating"); if (opensDrawer) { coachProgramUi.aiDrawerOpen = true; document.body.classList.add("ai-drawer-open"); const first = coachAiSuggestions()[0]; if (first) coachProgramUi.aiNoticeDismissed.add(first.id); } render(); }));
       document.querySelectorAll("[data-ai-drawer-close]").forEach((button) => button.addEventListener("click", () => { coachProgramUi.aiDrawerOpen = false; document.body.classList.remove("ai-drawer-open"); render(); }));
       document.querySelectorAll("[data-ai-quality-toggle]").forEach((button) => button.addEventListener("click", () => { coachProgramUi.qualityExpanded = !coachProgramUi.qualityExpanded; render(); }));
       document.querySelectorAll("[data-ai-restore]").forEach((button) => button.addEventListener("click", () => { const ai = coachAiState(); ai.ignored = (ai.ignored || []).filter((id) => id !== button.dataset.aiRestore); if (ai.ignoredRecords) delete ai.ignoredRecords[button.dataset.aiRestore]; state.coach.coachAi = ai; coachProgramUi.aiStatusTab = "suggestions"; render(); showToast("Suggerimento ripristinato."); }));
@@ -12646,20 +12075,6 @@
       saveState();
     }
 
-    function workoutHasNewPersonalRecord(exercises, ignoredSessionId = null) {
-      return exercises.some((exercise) => {
-        const currentMax = Number(exercise.maxKg || 0);
-        if (!(currentMax > 0)) return false;
-        const key = normalizeExerciseName(exercise.name || "");
-        const previousMax = state.training.sessions
-          .filter((session) => String(session.id) !== String(ignoredSessionId ?? ""))
-          .flatMap((session) => session.exercises || [])
-          .filter((item) => normalizeExerciseName(item.name || item.exerciseName || "") === key)
-          .reduce((max, item) => Math.max(max, Number(item.maxKg || item.kg || 0)), 0);
-        return previousMax > 0 && currentMax > previousMax;
-      });
-    }
-
     async function saveWorkoutSession() {
       const saveButton = document.getElementById("saveWorkout");
       if (saveButton) {
@@ -12715,7 +12130,6 @@
         (session.source === "App" || Number(session.id) > 1000000000) &&
         session.dateInput === context.date && session.sessionCode === context.session.code
       );
-      const achievedPr = workoutHasNewPersonalRecord(exercises, existingIndex >= 0 ? state.training.sessions[existingIndex].id : null);
       const savedSession = {
         id: existingIndex >= 0 ? state.training.sessions[existingIndex].id : Date.now(),
         source: "App",
@@ -12782,7 +12196,6 @@
         showToast("Salvato sul dispositivo; cloud in attesa.");
       }
       renderTrainingOnly();
-      setCoachMascotState("celebrate", { message:achievedPr ? "Nuovo PR! Sei stata fortissima!" : "Workout completato! Ottimo lavoro, Alice!", announce:true, duration:2800 });
       setTimeout(() => document.getElementById("workoutSaveConfirmation")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
       return true;
     }
@@ -13106,7 +12519,6 @@
           programRepository.updateExercise(owner.id, sheet.id, exercise.id, { metadata:{ ...(exercise.metadata || {}), technicalProfile:clone(exercise.metadata?.technicalProfile || profile || {}) } }, { save:false, forceLocked:true });
         })));
         state.coach.exerciseLibrary = (state.coach.exerciseLibrary || []).filter((item) => item.id !== profileId);
-        invalidateTechnicalLibraryCache();
         saveState({ immediate:true });
         closeCoachModal();
         showToast("Esercizio eliminato dalla Libreria. Le schede esistenti restano intatte.");
@@ -13723,12 +13135,11 @@
 
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        const reloadKey = `atlas-${APP_BUILD}-reload`;
-        if (sessionStorage.getItem(reloadKey)) return;
-        sessionStorage.setItem(reloadKey, "1");
+        if (sessionStorage.getItem("atlas-v98-reload")) return;
+        sessionStorage.setItem("atlas-v98-reload", "1");
         location.reload();
       });
-      navigator.serviceWorker.register(`./service-worker.js?v=${APP_BUILD}`, { updateViaCache: "none" })
+      navigator.serviceWorker.register("./service-worker.js?v=75", { updateViaCache: "none" })
         .then((registration) => registration.update())
         .catch(() => {});
     }
@@ -13739,29 +13150,11 @@
       const message = event.data || {};
       if (message.type === "barbell-diva:nutrition-save") receiveNutritionDashboard(message.state);
     });
-    let chartResizeFrame = null;
-    function scheduleChartRedraw() {
-      if (chartResizeFrame || document.hidden) return;
-      chartResizeFrame = requestAnimationFrame(() => {
-        chartResizeFrame = null;
-        drawCharts();
-      });
-    }
-    window.addEventListener("resize", scheduleChartRedraw, { passive:true });
+    window.addEventListener("resize", drawCharts);
     window.addEventListener("focus", refreshCloudIfSynced);
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        clearTimeout(coachMascotController.blinkTimer);
-        clearTimeout(coachMascotController.blinkResetTimer);
-        document.querySelectorAll(".diva-bot-eyes.is-blinking").forEach((eye) => eye.classList.remove("is-blinking"));
-        if (localSaveTimer) flushStateSave();
-        return;
-      }
-      scheduleCoachMascotBlink();
-      refreshCloudIfSynced();
-      scheduleChartRedraw();
+      if (!document.hidden) refreshCloudIfSynced();
     });
-    window.addEventListener("pagehide", () => { if (localSaveTimer) flushStateSave(); }, { passive:true });
     recoverDurableWorkoutJournal();
     initFirebase();
     render();
