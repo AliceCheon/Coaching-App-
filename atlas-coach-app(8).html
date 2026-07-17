@@ -1177,6 +1177,48 @@
       z-index: 1;
     }
 
+    .cloud-operation-status {
+      margin-top: 10px;
+      padding: 11px 12px;
+      border: 1px solid color-mix(in srgb, var(--pink) 34%, var(--line));
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--surface-2) 90%, var(--pink) 10%);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+    }
+
+    .cloud-operation-status[hidden] { display: none; }
+    .cloud-operation-status.success { border-color: color-mix(in srgb, var(--green) 55%, var(--line)); }
+    .cloud-operation-status.error { border-color: color-mix(in srgb, var(--red) 55%, var(--line)); }
+    .cloud-operation-status > div { min-width: 0; flex: 1; }
+    .cloud-operation-status strong, .cloud-operation-status span { display: block; }
+    .cloud-operation-status span { margin-top: 2px; color: var(--muted); font-size: .78rem; }
+    .cloud-operation-status i {
+      display: block;
+      height: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--pink) var(--cloud-progress), color-mix(in srgb, var(--line) 75%, transparent) var(--cloud-progress));
+    }
+
+    .cloud-spinner, .cloud-operation-mark {
+      width: 24px;
+      height: 24px;
+      flex: 0 0 24px;
+      display: grid !important;
+      place-items: center;
+      margin: 0 !important;
+      border-radius: 999px;
+      color: var(--pink) !important;
+      font-weight: 950;
+    }
+
+    .cloud-spinner { border: 3px solid color-mix(in srgb, var(--pink) 22%, transparent); border-top-color: var(--pink); animation: cloudSpin .8s linear infinite; }
+    @keyframes cloudSpin { to { transform: rotate(360deg); } }
+
     .google-button {
       min-height: 42px;
       border: 0;
@@ -4531,6 +4573,7 @@
   <script>
     const STORE_KEY = "alice-method-app.v8";
     const COACH_DRAFT_RECOVERY_PREFIX = `${STORE_KEY}.coachDraft.`;
+    const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -5727,6 +5770,8 @@
     let pendingSaveOptions = null;
     let lastPersistenceError = null;
     let cloudLoading = false;
+    let cloudOperationState = { status: "idle", message: "", progress: 0 };
+    let clearDataArmedUntil = 0;
     let nutritionPhotosUnsubscribe = null;
     let authReady = false;
     let localLoginBypass = localStorage.getItem(`${STORE_KEY}.loginBypass`) === "1";
@@ -7319,6 +7364,7 @@
         const incoming = migration?.state || null;
         const loaded = incoming ? mergeState(clone(baseState), incoming) : clone(baseState);
         hydrateStateModel(loaded);
+        recoverWorkoutJournal(loaded);
         // Audit reale anche per backup già marcati v4: il flag non garantisce
         // che la progressione sia stata materialmente importata.
         const repaired = repairImportedProgressions({ state: loaded });
@@ -7331,6 +7377,44 @@
       } catch (error) {
         return clone(baseState);
       }
+    }
+
+    function workoutSessionKey(session = {}) {
+      return String(session.id || `${session.dateInput || session.date || ""}|${session.sessionCode || session.code || ""}|${session.source || "App"}`);
+    }
+
+    function readWorkoutJournal() {
+      try {
+        const rows = JSON.parse(localStorage.getItem(WORKOUT_JOURNAL_KEY) || "[]");
+        return Array.isArray(rows) ? rows.filter(Boolean) : [];
+      } catch (error) { return []; }
+    }
+
+    function persistWorkoutJournalSession(session) {
+      if (!session) return false;
+      const key = workoutSessionKey(session);
+      const next = readWorkoutJournal().filter((row) => workoutSessionKey(row) !== key);
+      next.push(clone(session));
+      const bounded = next.slice(-120);
+      try {
+        localStorage.setItem(WORKOUT_JOURNAL_KEY, JSON.stringify(bounded));
+        return true;
+      } catch (error) {
+        if (isStorageQuotaError(error) && releaseObsoleteLocalBackups()) {
+          try { localStorage.setItem(WORKOUT_JOURNAL_KEY, JSON.stringify(bounded)); return true; } catch (retryError) {}
+        }
+        return false;
+      }
+    }
+
+    function recoverWorkoutJournal(targetState) {
+      const journal = readWorkoutJournal();
+      if (!journal.length) return 0;
+      if (!targetState.training) targetState.training = {};
+      const before = Array.isArray(targetState.training.sessions) ? targetState.training.sessions.length : 0;
+      targetState.training.sessions = mergeRowsByKey(targetState.training.sessions || [], journal, workoutSessionKey)
+        .sort((a, b) => String(a.dateInput || a.date || "").localeCompare(String(b.dateInput || b.date || "")) || Number(a.id || 0) - Number(b.id || 0));
+      return targetState.training.sessions.length - before;
     }
 
     function mergeState(base, saved) {
@@ -7366,7 +7450,7 @@
       const serialized = JSON.stringify(snapshot);
       try {
         if (options.touch !== false) {
-          snapshot.meta = { ...(snapshot.meta || {}), updatedAt: new Date().toISOString(), version: 68, schemaVersion: DATA_SCHEMA_VERSION };
+          snapshot.meta = { ...(snapshot.meta || {}), updatedAt: new Date().toISOString(), version: 69, schemaVersion: DATA_SCHEMA_VERSION };
           localStorage.setItem(STORE_KEY, JSON.stringify(snapshot));
         } else {
           localStorage.setItem(STORE_KEY, serialized);
@@ -7766,6 +7850,7 @@
           return;
         }
         state = mergeCloudAndLocalState(state, remoteState);
+        recoverWorkoutJournal(state);
         state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
         lastCloudError = "";
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
@@ -7861,6 +7946,7 @@
           const remoteState = clone(rootData.state);
           remoteState.programs = await loadCloudPrograms(rootData);
           state = mergeCloudAndLocalState(state, remoteState);
+          recoverWorkoutJournal(state);
           const nutritionPhotos = await loadNutritionPhotosFromCloud().catch(() => []);
           if (!state.nutrition) state.nutrition = {};
           state.nutrition.dashboard = mergeNutritionDashboard(state.nutrition.dashboard || {}, { photos: nutritionPhotos });
@@ -7941,6 +8027,7 @@
         uploadButton.disabled = true;
         uploadButton.textContent = "Caricamento in corso...";
       }
+      setCloudOperation("working", "Preparo i dati di questo dispositivo...", 12);
       showToast("Caricamento cloud in corso...");
       const wasReady = !!state.profile.account.syncReady;
       state.profile.account.syncReady = true;
@@ -7950,6 +8037,7 @@
         state.profile.account.syncReady = wasReady;
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
         showToast(lastCloudError || "Caricamento cloud non riuscito.");
+        setCloudOperation("error", lastCloudError || "Caricamento cloud non riuscito.", 0);
         render();
         return false;
       }
@@ -7957,17 +8045,30 @@
       startNutritionPhotosRealtime();
       writeLocalStateSnapshot(state, { touch: false, cloud: false });
       showToast("Questo dispositivo e stato caricato nel cloud.");
+      setCloudOperation("success", `Sincronizzazione completata alle ${new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}.`, 100);
       render();
       return true;
     }
 
     async function downloadCloudToThisDevice() {
+      const downloadButton = document.getElementById("downloadCloudLocal");
       if (!cloudUser) {
         showToast("Accedi prima con Google.");
         return;
       }
+      if (downloadButton) {
+        downloadButton.disabled = true;
+        downloadButton.textContent = "Download in corso...";
+      }
+      setCloudOperation("working", "Scarico e confronto i dati cloud...", 18);
       const loaded = await loadCloudState();
-      if (!loaded) { render(); return false; }
+      if (!loaded) {
+        setCloudOperation("error", lastCloudError || "Download cloud non riuscito.", 0);
+        render();
+        return false;
+      }
+      recoverWorkoutJournal(state);
+      setCloudOperation("working", "Unisco logbook e schede senza sovrascrivere...", 62);
       state.profile.account.syncReady = true;
       state.profile.account.cloudStatus = "sync";
       saveState({ cloud: false, immediate: true });
@@ -7975,8 +8076,24 @@
       startCloudStateRealtime();
       startNutritionPhotosRealtime();
       render();
+      setCloudOperation(reconciled ? "success" : "error", reconciled ? `Sincronizzazione completata alle ${new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}.` : (lastCloudError || "Dati scaricati; upload locale in attesa."), reconciled ? 100 : 0);
       showToast(reconciled ? "Dati uniti e sincronizzati su PC e telefono." : (lastCloudError || "Dati scaricati; caricamento delle modifiche locali in attesa."));
       return true;
+    }
+
+    function setCloudOperation(status, message, progress = 0) {
+      cloudOperationState = { status, message, progress };
+      const box = document.getElementById("cloudOperationStatus");
+      if (!box) return;
+      box.hidden = status === "idle";
+      box.className = `cloud-operation-status ${status}`;
+      box.innerHTML = cloudOperationContent(status, message, progress);
+    }
+
+    function cloudOperationContent(status, message, progress = 0) {
+      const title = status === "working" ? "Sincronizzazione in corso" : status === "success" ? "Cloud aggiornato" : "Sincronizzazione non completata";
+      const mark = status === "working" ? '<span class="cloud-spinner" aria-hidden="true"></span>' : `<span class="cloud-operation-mark" aria-hidden="true">${status === "success" ? "✓" : "!"}</span>`;
+      return `${mark}<div><strong>${title}</strong><span>${escapeHtml(message)}</span><i style="--cloud-progress:${Math.max(0, Math.min(100, Number(progress) || 0))}%"></i></div>`;
     }
 
     async function signOutGoogle() {
@@ -8988,6 +9105,7 @@
               <button class="google-button" id="uploadLocalCloud">${syncReady ? "Forza upload" : "Carica questo dispositivo"}</button>
               <button class="ghost-button" id="downloadCloudLocal">${syncReady ? "Aggiorna da cloud" : "Scarica cloud"}</button>
             </div>
+            <div id="cloudOperationStatus" class="cloud-operation-status ${escapeHtml(cloudOperationState.status)}" ${cloudOperationState.status === "idle" ? "hidden" : ""} aria-live="polite">${cloudOperationState.status === "idle" ? "" : cloudOperationContent(cloudOperationState.status, cloudOperationState.message, cloudOperationState.progress)}</div>
             <button class="ghost-button" style="width:100%;margin-top:8px" id="googleLogoutButton">Esci</button>
           ` : `
             <div class="account-actions">
@@ -9196,14 +9314,23 @@
       const status = state.ui?.logbookStatus || "all";
       const sourceFilter = state.ui?.logbookSource || "all";
       return (state.training.sessions || []).filter((session) => {
-        const completed = session.status === "completed" || session.completedAt || session.savedAt;
-        if (status === "completed" && !completed) return false;
-        if (status === "draft" && completed) return false;
+        const completion = sessionCompletionState(session);
+        if (status === "completed" && !completion.completed) return false;
+        if (status === "draft" && !completion.draft) return false;
         if (sourceFilter !== "all" && String(session.source || "App") !== sourceFilter) return false;
         if (!query) return true;
         return [session.sessionCode, session.sessionName, session.name, session.phase, session.dateInput, session.date, ...(session.exercises || []).map((item) => item.name || item.exerciseName)]
           .filter(Boolean).join(" ").toLowerCase().includes(query);
       }).slice().sort((a, b) => sessionTimestamp(b) - sessionTimestamp(a));
+    }
+
+    function sessionCompletionState(session = {}) {
+      const exercises = Array.isArray(session.exercises) ? session.exercises : [];
+      const explicitDraft = session.status === "draft";
+      const completed = !explicitDraft && (session.status === "completed" || !!session.completedAt || !!session.savedAt || exercises.length > 0);
+      const draft = explicitDraft || (!completed && exercises.length === 0);
+      const label = explicitDraft ? "Bozza" : session.source === "App" && completed ? "Completato" : completed ? "Registrato" : "Bozza";
+      return { completed, draft, label };
     }
 
     function logbookSessionVolume(session) {
@@ -9228,11 +9355,11 @@
         <section class="phase11-logbook-grid">${sessions.length ? sessions.map((session) => {
           const date = formatDateLabel(session.dateInput || session.date || "");
           const exercises = session.exercises || [];
-          const completed = session.status === "completed" || session.completedAt || session.savedAt;
+          const completion = sessionCompletionState(session);
           const volume = logbookSessionVolume(session);
           const setCount = exercises.reduce((n, item) => n + sessionExerciseSetCount(item, session), 0);
           const volumeInfo = sessionVolumeInfo(session);
-          return `<article class="phase11-log-card card"><div class="row"><div><span class="section-eyebrow">${escapeHtml(date)}</span><h3>${escapeHtml(session.sessionName || session.name || session.sessionCode || "Allenamento")}</h3></div><span class="status-badge">${completed ? "Completato" : "Bozza"}</span></div><div class="phase11-log-meta"><span>${escapeHtml(session.sessionCode || "Seduta")}</span><span>•</span><span>${escapeHtml(session.phase || "Programma")}</span><span>•</span><span>Fonte: ${escapeHtml(session.source || "App")}</span><span>•</span><span>${exercises.length} esercizi</span></div><div class="phase11-log-stats"><div><strong>${volume == null ? "—" : `${Math.round(volume)} kg`}</strong><span>${volume == null ? "Dati insufficienti" : (volumeInfo.estimated ? "volume stimato dalla scheda" : "volume kg × reps")}</span></div><div><strong>${setCount || "—"}</strong><span>serie registrate</span></div><div><strong>${escapeHtml(session.week ? `S${session.week}` : "—")}</strong><span>settimana</span></div></div><details class="phase11-log-exercises"><summary>Dettagli seduta</summary><ul>${exercises.length ? exercises.map((item) => { const sets = item.completedSets || item.sets || []; const values = Array.isArray(sets) ? sets.map((set) => `${set.kg ?? set.load ?? "—"} kg${set.reps ? ` × ${set.reps}` : ""}`).join(" · ") : (item.value || ""); return `<li><strong>${escapeHtml(displayExerciseName(item.name || item.exerciseName || "Esercizio"))}</strong> · ${escapeHtml(values || "valori non disponibili")}${item.averageKg ? ` · media ${escapeHtml(item.averageKg)}` : ""}${item.userNote ? `<br><small>${escapeHtml(item.userNote)}</small>` : ""}</li>`; }).join("") : "<li>Nessun esercizio registrato</li>"}</ul>${volume == null ? `<p class="micro-copy">Servono almeno carico e ripetizioni della scheda per stimare il volume.</p>` : ""}</details></article>`;
+          return `<article class="phase11-log-card card"><div class="row"><div><span class="section-eyebrow">${escapeHtml(date)}</span><h3>${escapeHtml(session.sessionName || session.name || session.sessionCode || "Allenamento")}</h3></div><span class="status-badge">${escapeHtml(completion.label)}</span></div><div class="phase11-log-meta"><span>${escapeHtml(session.sessionCode || "Seduta")}</span><span>•</span><span>${escapeHtml(session.phase || "Programma")}</span><span>•</span><span>Fonte: ${escapeHtml(session.source || "App")}</span><span>•</span><span>${exercises.length} esercizi</span></div><div class="phase11-log-stats"><div><strong>${volume == null ? "—" : `${Math.round(volume)} kg`}</strong><span>${volume == null ? "Dati insufficienti" : (volumeInfo.estimated ? "volume stimato dalla scheda" : "volume kg × reps")}</span></div><div><strong>${setCount || "—"}</strong><span>serie registrate</span></div><div><strong>${escapeHtml(session.week ? `S${session.week}` : "—")}</strong><span>settimana</span></div></div><details class="phase11-log-exercises"><summary>Dettagli seduta</summary><ul>${exercises.length ? exercises.map((item) => { const sets = item.completedSets || item.sets || []; const values = Array.isArray(sets) ? sets.map((set) => `${set.kg ?? set.load ?? "—"} kg${set.reps ? ` × ${set.reps}` : ""}`).join(" · ") : (item.value || ""); return `<li><strong>${escapeHtml(displayExerciseName(item.name || item.exerciseName || "Esercizio"))}</strong> · ${escapeHtml(values || "valori non disponibili")}${item.averageKg ? ` · media ${escapeHtml(item.averageKg)}` : ""}${item.userNote ? `<br><small>${escapeHtml(item.userNote)}</small>` : ""}</li>`; }).join("") : "<li>Nessun esercizio registrato</li>"}</ul>${volume == null ? `<p class="micro-copy">Servono almeno carico e ripetizioni della scheda per stimare il volume.</p>` : ""}</details></article>`;
         }).join("") : `<div class="phase11-log-empty card">Nessuna seduta corrisponde ai filtri. Completa un workout per iniziare lo storico.</div>`}</section>
       </div>`;
     }
@@ -10851,8 +10978,12 @@
         </div>
         <section class="card">
           <button class="ghost-button" style="width:100%" id="exportData">Esporta backup locale</button>
-          <button class="danger-button" style="width:100%;margin-top:8px" id="clearData">Svuota dati</button>
         </section>
+        <details class="card danger-zone">
+          <summary>Operazioni di emergenza</summary>
+          <p class="micro-copy">Qui si trovano le azioni che eliminano i dati. La sezione resta chiusa per evitare tocchi accidentali.</p>
+          <button class="danger-button" style="width:100%;margin-top:8px" id="clearData">Richiedi eliminazione di tutti i dati</button>
+        </details>
       `;
     }
 
@@ -11687,7 +11818,7 @@
         });
       }
       const clearData = document.getElementById("clearData");
-      if (clearData) clearData.addEventListener("click", clearAllData);
+      if (clearData) clearData.addEventListener("click", () => requestClearAllData(clearData));
       const googleLoginButton = document.getElementById("googleLoginButton");
       if (googleLoginButton) {
         googleLoginButton.addEventListener("click", () => {
@@ -11802,6 +11933,7 @@
         weight: state.metrics.weight,
         exercises
       };
+      const journalSaved = persistWorkoutJournalSession(savedSession);
       if (existingIndex >= 0) state.training.sessions[existingIndex] = savedSession;
       else state.training.sessions.push(savedSession);
       trainingHistoryIndexCache = null;
@@ -11809,11 +11941,15 @@
       state.training.sessionName = "auto";
       state.training.lastSavedMessage = `${context.session.name} salvata sul dispositivo il ${shortDate(context.date)}. Sincronizzazione in corso...`;
       const localSaved = saveState({ cloud: false, immediate: true });
-      if (!localSaved) {
+      if (!localSaved && !journalSaved) {
         state.training.lastSavedMessage = "Salvataggio locale non riuscito: i dati sono ancora aperti, non chiudere la pagina.";
         showToast("Non sono riuscito a salvare sul dispositivo. I dati restano aperti: esporta il backup o riprova.");
         renderTrainingOnly();
         return false;
+      }
+      if (!localSaved && journalSaved) {
+        recoverWorkoutJournal(state);
+        showToast("Seduta protetta nel registro di emergenza. Libera spazio prima di chiudere l'app.");
       }
       context.session.exercises.forEach((exercise) => {
         delete state.training.draft[draftKey(context, exercise)];
@@ -11833,11 +11969,13 @@
         cloudSaved = await saveCloudState();
       }
       if (cloudSaved) {
+        persistWorkoutJournalSession(savedSession);
         state.training.lastSavedMessage = `${context.session.name} salvata e sincronizzata su PC e telefono il ${shortDate(context.date)}.`;
         saveState({ cloud: false, immediate: true });
         showToast(existingIndex >= 0 ? "Allenamento aggiornato e sincronizzato ?" : "Allenamento salvato e sincronizzato ?");
       } else {
         delete savedSession.cloudSyncedAt;
+        persistWorkoutJournalSession(savedSession);
         state.training.lastSavedMessage = `${context.session.name} salvata sul dispositivo il ${shortDate(context.date)}. Il cloud verrà ritentato automaticamente.`;
         saveState();
         showToast("Salvato sul dispositivo; cloud in attesa.");
@@ -12695,7 +12833,21 @@
       ctx.closePath();
     }
 
+    function requestClearAllData(button) {
+      const now = Date.now();
+      if (now > clearDataArmedUntil) {
+        clearDataArmedUntil = now + 8000;
+        button.textContent = "Premi ancora entro 8 secondi per eliminare tutto";
+        showToast("Protezione attiva: serve un secondo clic per eliminare i dati.");
+        return false;
+      }
+      clearDataArmedUntil = 0;
+      clearAllData();
+      return true;
+    }
+
     function clearAllData() {
+      localStorage.removeItem(WORKOUT_JOURNAL_KEY);
       state = clone(baseState);
       saveState({ immediate: true });
       activeScreen = "dashboard";
@@ -12753,11 +12905,11 @@
 
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (sessionStorage.getItem("atlas-v94-reload")) return;
-        sessionStorage.setItem("atlas-v94-reload", "1");
+        if (sessionStorage.getItem("atlas-v95-reload")) return;
+        sessionStorage.setItem("atlas-v95-reload", "1");
         location.reload();
       });
-      navigator.serviceWorker.register("./service-worker.js?v=71", { updateViaCache: "none" })
+      navigator.serviceWorker.register("./service-worker.js?v=72", { updateViaCache: "none" })
         .then((registration) => registration.update())
         .catch(() => {});
     }

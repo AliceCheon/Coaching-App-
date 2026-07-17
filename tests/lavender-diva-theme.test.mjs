@@ -26,7 +26,7 @@ required.forEach((token) => {
 });
 if (!html.includes('meta name="theme-color" content="#c9a7ef"')) throw new Error("theme-color HTML non aggiornato");
 if (manifest.theme_color !== "#090918" || manifest.background_color !== "#080817") throw new Error("manifest non coordinato");
-if (!sw.includes('CACHE_NAME = "atlas-app-v94"')) throw new Error("cache PWA non aggiornata");
+if (!sw.includes('CACHE_NAME = "atlas-app-v95"')) throw new Error("cache PWA non aggiornata");
 if (html.includes('<div class="battery"')) throw new Error("batteria finta ancora presente");
 if (!html.includes('state.profile.theme = state.profile.theme === "light" ? "dark" : "light"')) throw new Error("pulsante tema non collegato");
 if (!html.includes('themeMeta.setAttribute("content", theme === "light" ? "#c9a7ef" : "#090918")')) throw new Error("barra browser non sincronizzata al tema");

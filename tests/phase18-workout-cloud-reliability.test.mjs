@@ -54,6 +54,13 @@ const result = await vm.runInContext(`(async()=>{
   if(__storage.has(PRE_V55_BACKUP_KEY)||__storage.has(PRE_WEEK_CONSOLIDATION_BACKUP_KEY)) throw new Error("Backup obsoleti non liberati al superamento quota");
   const session=state.training.sessions.find(item=>item.dateInput==="2026-07-16"&&item.sessionCode==="F");
   if(!session||session.week!==7) throw new Error("Sessione F7 non persistita");
+  const journal=JSON.parse(__storage.get(WORKOUT_JOURNAL_KEY)||"[]");
+  if(!journal.some(item=>item.dateInput==="2026-07-16"&&item.sessionCode==="F")) throw new Error("Registro di emergenza F non scritto");
+  state.training.sessions=state.training.sessions.filter(item=>item.id!==session.id);
+  recoverWorkoutJournal(state);
+  if(!state.training.sessions.some(item=>item.id===session.id)) throw new Error("F non recuperata dal registro di emergenza");
+  const importedStatus=sessionCompletionState({source:"Backup Alice 14/07/2026",exercises:[{name:"Squat"}]});
+  if(importedStatus.label!=="Registrato"||!importedStatus.completed) throw new Error("Seduta importata ancora classificata Bozza");
 
   __setQuota(Infinity);
   const programWrites=[]; let rootWrites=0;
@@ -81,8 +88,10 @@ const result = await vm.runInContext(`(async()=>{
 if (!html.includes("Settimana ${context.week}")) throw new Error("Etichetta settimana dinamica mancante");
 if (!html.includes("releaseObsoleteLocalBackups")) throw new Error("Recupero quota locale mancante");
 if (!html.includes("changedPrograms.length")) throw new Error("Cloud programmi non incrementale");
-if (!html.includes("atlas-v94-reload")) throw new Error("Cache v94 non impostata");
+if (!html.includes("atlas-v95-reload")) throw new Error("Cache v95 non impostata");
 if (!html.includes("newlyMarkedSessions")) throw new Error("Le sessioni locali non vengono marcate dopo il cloud");
+if (!html.includes('id="cloudOperationStatus"') || !html.includes('setCloudOperation("working"')) throw new Error("Indicatore sincronizzazione visibile mancante");
+if (!html.includes('<details class="card danger-zone">') || !html.includes("requestClearAllData(clearData)")) throw new Error("Svuota dati non protetto");
 const downloadBlock = html.match(/async function downloadCloudToThisDevice\(\)[\s\S]*?\n    }/)?.[0] || "";
 if (!downloadBlock.includes("await saveCloudState()")) throw new Error("Il download non rispedisce al cloud i dati locali uniti");
 console.log(JSON.stringify(result, null, 2));
