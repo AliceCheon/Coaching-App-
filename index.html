@@ -7366,7 +7366,7 @@
       const serialized = JSON.stringify(snapshot);
       try {
         if (options.touch !== false) {
-          snapshot.meta = { ...(snapshot.meta || {}), updatedAt: new Date().toISOString(), version: 67, schemaVersion: DATA_SCHEMA_VERSION };
+          snapshot.meta = { ...(snapshot.meta || {}), updatedAt: new Date().toISOString(), version: 68, schemaVersion: DATA_SCHEMA_VERSION };
           localStorage.setItem(STORE_KEY, JSON.stringify(snapshot));
         } else {
           localStorage.setItem(STORE_KEY, serialized);
@@ -7618,7 +7618,9 @@
       if (!cloudUser) return "Dati salvati su questo dispositivo. Accedi per prepararli al cloud.";
       if (state.profile.account?.cloudStatus?.startsWith("errore") && lastCloudError) return lastCloudError;
       return state.profile.account?.cloudStatus === "sync"
-        ? "Accesso Google attivo. Sync automatico acceso."
+        ? state.profile.account?.lastCloudSyncAt
+          ? `Sincronizzazione completata alle ${new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit" }).format(new Date(state.profile.account.lastCloudSyncAt))}.`
+          : "Accesso Google attivo. Sync automatico acceso."
         : "Accesso Google attivo. Sincronizzazione in preparazione.";
     }
 
@@ -7789,6 +7791,14 @@
         lastCloudError = cloudUser ? "Firestore non disponibile: ricarica la pagina e riprova." : "Accedi con Google prima di sincronizzare.";
         return false;
       }
+      const sessionCloudStamp = new Date().toISOString();
+      const newlyMarkedSessions = [];
+      (state.training?.sessions || []).forEach((session) => {
+        if (session.source === "App" && !session.cloudSyncedAt) {
+          session.cloudSyncedAt = sessionCloudStamp;
+          newlyMarkedSessions.push(session);
+        }
+      });
       const { programs: currentPrograms = [], ...stateWithoutPrograms } = state;
       const payload = clone(stateWithoutPrograms);
       const nutritionPhotos = splitNutritionPhotosForCloud(payload);
@@ -7823,9 +7833,11 @@
         if (!lastCloudError?.startsWith("Schede sincronizzate")) lastCloudError = "";
         state.meta = { ...(state.meta || {}), programsUpdatedAt: programRevision, cloudProgramsUpdatedAt: programRevision, cloudProgramRevisions: revisions };
         state.profile.account.cloudStatus = "sync";
+        state.profile.account.lastCloudSyncAt = cloudUpdatedAt;
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
         return true;
       } catch (error) {
+        newlyMarkedSessions.forEach((session) => delete session.cloudSyncedAt);
         lastCloudError = cloudErrorText(error, "caricamento");
         state.profile.account.cloudStatus = "errore sync";
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
@@ -7920,10 +7932,16 @@
     }
 
     async function uploadThisDeviceToCloud() {
+      const uploadButton = document.getElementById("uploadLocalCloud");
       if (!cloudUser) {
         showToast("Accedi prima con Google.");
         return;
       }
+      if (uploadButton) {
+        uploadButton.disabled = true;
+        uploadButton.textContent = "Caricamento in corso...";
+      }
+      showToast("Caricamento cloud in corso...");
       const wasReady = !!state.profile.account.syncReady;
       state.profile.account.syncReady = true;
       state.profile.account.cloudStatus = "sync";
@@ -7953,9 +7971,11 @@
       state.profile.account.syncReady = true;
       state.profile.account.cloudStatus = "sync";
       saveState({ cloud: false, immediate: true });
+      const reconciled = await saveCloudState();
       startCloudStateRealtime();
       startNutritionPhotosRealtime();
       render();
+      showToast(reconciled ? "Dati uniti e sincronizzati su PC e telefono." : (lastCloudError || "Dati scaricati; caricamento delle modifiche locali in attesa."));
       return true;
     }
 
@@ -12733,11 +12753,11 @@
 
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (sessionStorage.getItem("atlas-v93-reload")) return;
-        sessionStorage.setItem("atlas-v93-reload", "1");
+        if (sessionStorage.getItem("atlas-v94-reload")) return;
+        sessionStorage.setItem("atlas-v94-reload", "1");
         location.reload();
       });
-      navigator.serviceWorker.register("./service-worker.js?v=70", { updateViaCache: "none" })
+      navigator.serviceWorker.register("./service-worker.js?v=71", { updateViaCache: "none" })
         .then((registration) => registration.update())
         .catch(() => {});
     }
