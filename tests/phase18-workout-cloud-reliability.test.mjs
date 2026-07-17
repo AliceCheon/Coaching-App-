@@ -90,13 +90,13 @@ const result = await vm.runInContext(`(async()=>{
 if (!html.includes("Settimana ${context.week}")) throw new Error("Etichetta settimana dinamica mancante");
 if (!html.includes("releaseObsoleteLocalBackups")) throw new Error("Recupero quota locale mancante");
 if (!html.includes("changedPrograms.length")) throw new Error("Cloud programmi non incrementale");
-if (!html.includes("atlas-v97-reload")) throw new Error("Cache v97 non impostata");
+if (!html.includes('const reloadKey = `atlas-${APP_BUILD}-reload`')) throw new Error("Chiave cache dinamica non impostata");
 if (!html.includes("newlyMarkedSessions")) throw new Error("Le sessioni locali non vengono marcate dopo il cloud");
 if (!html.includes('id="cloudOperationStatus"') || !html.includes('setCloudOperation("working"')) throw new Error("Indicatore sincronizzazione visibile mancante");
 if (!html.includes('<details class="card danger-zone">') || !html.includes("requestClearAllData(clearData)")) throw new Error("Svuota dati non protetto");
 if (!html.includes('WORKOUT_DB_NAME = "barbell-diva-workout-rescue"') || !html.includes("persistWorkoutSessionDurably")) throw new Error("Protezione IndexedDB del workout mancante");
 if (!html.includes("weekFromLatestWorkout(date)")) throw new Error("Settimana automatica non derivata dallo storico reale");
-if (!html.includes('APP_BUILD = "v97"') || !html.includes("repairSequentialWorkoutWeeks")) throw new Error("Build v97 o riparazione F7 mancante");
+if (!html.includes('APP_BUILD = "v102"') || !html.includes("repairSequentialWorkoutWeeks")) throw new Error("Build v102 o riparazione F7 mancante");
 const cloudSaveBlock = html.match(/async function saveCloudState\(\)[\s\S]*?\n    }\n\n    async function loadCloudState/)?.[0] || "";
 if (cloudSaveBlock.indexOf("await withTimeout(doc.set") > cloudSaveBlock.indexOf("saveCloudPrograms(clone(changedPrograms)")) throw new Error("Il cloud salva ancora le schede prima del logbook");
 const downloadBlock = html.match(/async function downloadCloudToThisDevice\(\)[\s\S]*?\n    }/)?.[0] || "";

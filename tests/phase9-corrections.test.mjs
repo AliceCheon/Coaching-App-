@@ -19,8 +19,8 @@ const result = vm.runInContext(`(() => {
   const profile=coachAiExerciseProfile({exercise:"Pendulum Squat",group:"Quadricipiti",metadata:{}}); check("Pendulum riconosciuto",profile.equipment==="macchina"&&profile.pattern==="squat-knee-dominant");
   check("metadati esclusi dai suggerimenti",!coachAiSuggestions().some(x=>x.id==="missing-metadata"));
   const panel=coachAiPanelHtml(); check("scroll interno e qualità dati",panel.includes("coach-ai-scroll-area")&&panel.includes("Qualità dati"));
-  check("mascotte locale",sourceHtml.includes("coach-mascot.svg")&&sourceHtml.includes("coach-mascot-inline-fallback")&&sourceHtml.includes("coach-ai-floating"));
-  check("floating apre drawer",sourceHtml.includes('button.closest(".coach-ai-floating")'));
+  check("mascotte SVG inline",sourceHtml.includes('class="diva-bot"')&&sourceHtml.includes("diva-bot-antenna")&&sourceHtml.includes("coach-ai-floating"));
+  check("floating apre suggerimento",sourceHtml.includes('button.closest(".coach-ai-floating")')&&sourceHtml.includes('openCoachModal("coach-ai-confirm", { suggestion:first })'));
   check("settimana trasmessa",sourceHtml.includes("data-progression-week-number")&&sourceHtml.includes("weekNumber }"));
   check("filtri normalizzati una sola volta",!sourceHtml.includes("const suggestions = coachAiSuggestions().filter"));
   check("griglia a due livelli e celle inline",sourceHtml.includes('colspan="3"')&&sourceHtml.includes("data-week-grid-field")&&sourceHtml.includes("week-fixed-exercise"));
