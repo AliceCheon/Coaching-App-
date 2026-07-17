@@ -4574,6 +4574,9 @@
     const STORE_KEY = "alice-method-app.v8";
     const COACH_DRAFT_RECOVERY_PREFIX = `${STORE_KEY}.coachDraft.`;
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
+    const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
+    const WORKOUT_DB_STORE = "sessions";
+    const APP_BUILD = "v97";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -7365,6 +7368,7 @@
         const loaded = incoming ? mergeState(clone(baseState), incoming) : clone(baseState);
         hydrateStateModel(loaded);
         recoverWorkoutJournal(loaded);
+        repairSequentialWorkoutWeeks(loaded);
         // Audit reale anche per backup già marcati v4: il flag non garantisce
         // che la progressione sia stata materialmente importata.
         const repaired = repairImportedProgressions({ state: loaded });
@@ -7398,13 +7402,83 @@
       const bounded = next.slice(-120);
       try {
         localStorage.setItem(WORKOUT_JOURNAL_KEY, JSON.stringify(bounded));
-        return true;
+        return readWorkoutJournal().some((row) => workoutSessionKey(row) === key);
       } catch (error) {
         if (isStorageQuotaError(error) && releaseObsoleteLocalBackups()) {
           try { localStorage.setItem(WORKOUT_JOURNAL_KEY, JSON.stringify(bounded)); return true; } catch (retryError) {}
         }
         return false;
       }
+    }
+
+    function openWorkoutJournalDb() {
+      return new Promise((resolve, reject) => {
+        if (typeof indexedDB === "undefined") { resolve(null); return; }
+        const request = indexedDB.open(WORKOUT_DB_NAME, 1);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains(WORKOUT_DB_STORE)) db.createObjectStore(WORKOUT_DB_STORE, { keyPath: "journalId" });
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("IndexedDB non disponibile"));
+      });
+    }
+
+    async function persistWorkoutJournalIndexedDb(session) {
+      try {
+        const db = await openWorkoutJournalDb();
+        if (!db) return false;
+        const row = { ...clone(session), journalId: workoutSessionKey(session), journalSavedAt: new Date().toISOString() };
+        await new Promise((resolve, reject) => {
+          const transaction = db.transaction(WORKOUT_DB_STORE, "readwrite");
+          transaction.objectStore(WORKOUT_DB_STORE).put(row);
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error || new Error("Scrittura di emergenza non riuscita"));
+          transaction.onabort = () => reject(transaction.error || new Error("Scrittura di emergenza interrotta"));
+        });
+        const verified = await new Promise((resolve, reject) => {
+          const request = db.transaction(WORKOUT_DB_STORE, "readonly").objectStore(WORKOUT_DB_STORE).get(row.journalId);
+          request.onsuccess = () => resolve(!!request.result);
+          request.onerror = () => reject(request.error || new Error("Verifica di emergenza non riuscita"));
+        });
+        db.close();
+        return verified;
+      } catch (error) { return false; }
+    }
+
+    async function readWorkoutJournalIndexedDb() {
+      try {
+        const db = await openWorkoutJournalDb();
+        if (!db) return [];
+        const rows = await new Promise((resolve, reject) => {
+          const request = db.transaction(WORKOUT_DB_STORE, "readonly").objectStore(WORKOUT_DB_STORE).getAll();
+          request.onsuccess = () => resolve(Array.isArray(request.result) ? request.result : []);
+          request.onerror = () => reject(request.error || new Error("Lettura di emergenza non riuscita"));
+        });
+        db.close();
+        return rows;
+      } catch (error) { return []; }
+    }
+
+    async function persistWorkoutSessionDurably(session) {
+      const localSaved = persistWorkoutJournalSession(session);
+      const indexedSaved = await persistWorkoutJournalIndexedDb(session);
+      return localSaved || indexedSaved;
+    }
+
+    async function recoverDurableWorkoutJournal() {
+      const indexedRows = await readWorkoutJournalIndexedDb();
+      indexedRows.forEach((row) => persistWorkoutJournalSession(row));
+      const recovered = recoverWorkoutJournal(state);
+      repairSequentialWorkoutWeeks(state);
+      if (recovered > 0) {
+        hydrateStateModel(state);
+        state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
+        writeLocalStateSnapshot(state, { touch: false, cloud: false });
+        render();
+        showToast(`${recovered} allenamento${recovered === 1 ? "" : "i"} ripristinato dal registro di emergenza.`);
+      }
+      return recovered;
     }
 
     function recoverWorkoutJournal(targetState) {
@@ -7415,6 +7489,30 @@
       targetState.training.sessions = mergeRowsByKey(targetState.training.sessions || [], journal, workoutSessionKey)
         .sort((a, b) => String(a.dateInput || a.date || "").localeCompare(String(b.dateInput || b.date || "")) || Number(a.id || 0) - Number(b.id || 0));
       return targetState.training.sessions.length - before;
+    }
+
+    function logicalWorkoutCode(value = "") {
+      return String(value || "").trim().replace(/\d+$/, "").toUpperCase();
+    }
+
+    function repairSequentialWorkoutWeeks(targetState) {
+      const sessions = [...(targetState.training?.sessions || [])].sort((a, b) => sessionTimestamp(a) - sessionTimestamp(b));
+      let repaired = 0;
+      sessions.forEach((session, index) => {
+        if (session.source !== "App" || !Number(session.week)) return;
+        const phase = session.phase || targetState.training?.phaseFilter || "Intensificazione";
+        const sheets = allProgramSheets(targetState).filter((sheet) => sheet.phase === phase).slice().sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+        const currentIndex = sheets.findIndex((sheet) => logicalWorkoutCode(sheet.code) === logicalWorkoutCode(session.sessionCode));
+        if (currentIndex <= 0) return;
+        const previous = sessions.slice(0, index).reverse().find((row) => (row.phase || phase) === phase && logicalWorkoutCode(row.sessionCode) === logicalWorkoutCode(sheets[currentIndex - 1].code) && Number(row.week));
+        if (!previous) return;
+        const gapDays = Math.abs(sessionTimestamp(session) - sessionTimestamp(previous)) / 86400000;
+        if (gapDays <= 7 && Number(session.week) !== Number(previous.week)) {
+          session.week = Number(previous.week);
+          repaired += 1;
+        }
+      });
+      return repaired;
     }
 
     function mergeState(base, saved) {
@@ -7450,7 +7548,7 @@
       const serialized = JSON.stringify(snapshot);
       try {
         if (options.touch !== false) {
-          snapshot.meta = { ...(snapshot.meta || {}), updatedAt: new Date().toISOString(), version: 69, schemaVersion: DATA_SCHEMA_VERSION };
+          snapshot.meta = { ...(snapshot.meta || {}), updatedAt: new Date().toISOString(), version: 71, schemaVersion: DATA_SCHEMA_VERSION };
           localStorage.setItem(STORE_KEY, JSON.stringify(snapshot));
         } else {
           localStorage.setItem(STORE_KEY, serialized);
@@ -7543,6 +7641,7 @@
         newer.nutrition?.dashboard || {}
       );
       hydrateStateModel(merged);
+      repairSequentialWorkoutWeeks(merged);
       merged.training.exercises = buildExerciseIndex(allProgramSheets(merged), merged.training.sessions);
       return merged;
     }
@@ -7887,6 +7986,7 @@
       const { programs: currentPrograms = [], ...stateWithoutPrograms } = state;
       const payload = clone(stateWithoutPrograms);
       const nutritionPhotos = splitNutritionPhotosForCloud(payload);
+      let rootStateSaved = false;
       try {
         const cloudUpdatedAt = new Date().toISOString();
         const programRevision = programsRevision();
@@ -7896,17 +7996,24 @@
         lastCloudWriteAt = cloudUpdatedAt;
         payload.profile.account.cloudStatus = "sync";
         payload.profile.account.syncReady = true;
-        payload.meta = { ...(payload.meta || {}), programsUpdatedAt: programRevision, cloudProgramsUpdatedAt: programRevision, cloudProgramRevisions: revisions };
-        if (changedPrograms.length) await withTimeout(saveCloudPrograms(clone(changedPrograms), cloudUpdatedAt), 30000);
+        payload.meta = { ...(payload.meta || {}), cloudProgramRevisions: cloudRevisions };
         await withTimeout(doc.set({
           updatedAt: cloudUpdatedAt,
           app: APP_NAME,
           programStorage: "subcollection-v1",
           programCount: currentPrograms.length,
           programIds: currentPrograms.map((program) => program.id),
-          programsUpdatedAt: programRevision,
+          programsUpdatedAt: state.meta?.cloudProgramsUpdatedAt || "",
           state: payload
         }, { merge: true }), 15000);
+        rootStateSaved = true;
+        if (changedPrograms.length) await withTimeout(saveCloudPrograms(clone(changedPrograms), cloudUpdatedAt), 30000);
+        if (changedPrograms.length) {
+          await withTimeout(doc.set({
+            programsUpdatedAt: programRevision,
+            state: { meta: { ...(payload.meta || {}), programsUpdatedAt: programRevision, cloudProgramsUpdatedAt: programRevision, cloudProgramRevisions: revisions } }
+          }, { merge: true }), 15000);
+        }
         try {
           await saveNutritionPhotosToCloud(nutritionPhotos);
         } catch (photoError) {
@@ -7922,11 +8029,12 @@
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
         return true;
       } catch (error) {
-        newlyMarkedSessions.forEach((session) => delete session.cloudSyncedAt);
+        if (!rootStateSaved) newlyMarkedSessions.forEach((session) => delete session.cloudSyncedAt);
         lastCloudError = cloudErrorText(error, "caricamento");
-        state.profile.account.cloudStatus = "errore sync";
+        if (rootStateSaved) lastCloudError = "Allenamento e logbook sincronizzati; aggiornamento schede in attesa.";
+        state.profile.account.cloudStatus = rootStateSaved ? "sync parziale" : "errore sync";
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
-        return false;
+        return rootStateSaved;
       }
     }
 
@@ -8155,6 +8263,18 @@
       return clamp(Math.floor(diffDays / 7) + 1, 1, state.profile.phaseLength || 6);
     }
 
+    function weekFromLatestWorkout(value, phase = state.training.phaseFilter || "Intensificazione") {
+      const fallback = weekFromDate(value);
+      const latest = latestAppWorkout(phase);
+      if (!latest) return fallback;
+      const sheets = allProgramSheets().filter((sheet) => sheet.phase === phase).slice().sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+      const latestIndex = sheets.findIndex((sheet) => logicalWorkoutCode(sheet.code) === logicalWorkoutCode(latest.sessionCode));
+      if (latestIndex < 0 || latestIndex >= sheets.length - 1) return fallback;
+      const codeWeek = Number(String(latest.sessionCode || "").match(/(\d+)$/)?.[1]);
+      const historicalWeek = Number(latest.week) || codeWeek;
+      return Number.isFinite(historicalWeek) && historicalWeek > 0 ? historicalWeek : fallback;
+    }
+
     function latestAppWorkout(phase = state.training.phaseFilter || "Intensificazione") {
       return state.training.sessions
         .filter((session) => (session.source === "App" || Number(session.id) > 1000000000) && (!session.phase || session.phase === phase))
@@ -8253,7 +8373,7 @@
 
     function currentTrainingContext() {
       const date = state.training.date || todayInput();
-      const autoWeek = weekFromDate(date);
+      const autoWeek = weekFromLatestWorkout(date);
       const autoCode = autoSessionCodeForDate(date);
       const isManual = state.training.contextMode === "manual";
       const phase = isManual ? (state.training.manualPhase || state.training.phaseFilter || "Intensificazione") : (state.training.phaseFilter || "Intensificazione");
@@ -9091,7 +9211,7 @@
         <section class="card account-card">
           <div class="row">
             <h3>Account Google</h3>
-            <span class="chip">${connected ? syncReady ? "auto sync" : "cloud" : "locale"}</span>
+            <span class="chip">${connected ? syncReady ? "auto sync" : "cloud" : "locale"} · ${APP_BUILD}</span>
           </div>
           <div class="account-status">
             <div class="account-avatar">${account.photo ? `<img src="${escapeHtml(account.photo)}" alt="">` : initial}</div>
@@ -11933,17 +12053,17 @@
         weight: state.metrics.weight,
         exercises
       };
-      const journalSaved = persistWorkoutJournalSession(savedSession);
+      const journalSaved = await persistWorkoutSessionDurably(savedSession);
       if (existingIndex >= 0) state.training.sessions[existingIndex] = savedSession;
       else state.training.sessions.push(savedSession);
       trainingHistoryIndexCache = null;
       state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
       state.training.sessionName = "auto";
-      state.training.lastSavedMessage = `${context.session.name} salvata sul dispositivo il ${shortDate(context.date)}. Sincronizzazione in corso...`;
+      state.training.lastSavedMessage = `${context.session.name} protetta sul dispositivo il ${shortDate(context.date)}. Sincronizzazione in corso...`;
       const localSaved = saveState({ cloud: false, immediate: true });
-      if (!localSaved && !journalSaved) {
-        state.training.lastSavedMessage = "Salvataggio locale non riuscito: i dati sono ancora aperti, non chiudere la pagina.";
-        showToast("Non sono riuscito a salvare sul dispositivo. I dati restano aperti: esporta il backup o riprova.");
+      if (!journalSaved) {
+        state.training.lastSavedMessage = "Salvataggio non verificato: i dati sono ancora aperti, non chiudere la pagina.";
+        showToast("Non ho verificato una copia sicura della seduta. Non chiudere l'app ed esporta il backup.");
         renderTrainingOnly();
         return false;
       }
@@ -11961,7 +12081,7 @@
       });
       saveState({ cloud: false, immediate: true });
       renderTrainingOnly();
-      showToast("Allenamento salvato sul dispositivo. Sincronizzo...");
+      showToast("Allenamento verificato sul dispositivo. Sincronizzo...");
       let cloudSaved = false;
       if (cloudUser && dbService && state.profile.account?.syncReady) {
         clearTimeout(cloudSaveTimer);
@@ -11972,7 +12092,7 @@
         persistWorkoutJournalSession(savedSession);
         state.training.lastSavedMessage = `${context.session.name} salvata e sincronizzata su PC e telefono il ${shortDate(context.date)}.`;
         saveState({ cloud: false, immediate: true });
-        showToast(existingIndex >= 0 ? "Allenamento aggiornato e sincronizzato ?" : "Allenamento salvato e sincronizzato ?");
+        showToast(existingIndex >= 0 ? "Allenamento aggiornato e sincronizzato." : "Allenamento salvato e sincronizzato.");
       } else {
         delete savedSession.cloudSyncedAt;
         persistWorkoutJournalSession(savedSession);
@@ -12848,6 +12968,7 @@
 
     function clearAllData() {
       localStorage.removeItem(WORKOUT_JOURNAL_KEY);
+      if (typeof indexedDB !== "undefined") indexedDB.deleteDatabase(WORKOUT_DB_NAME);
       state = clone(baseState);
       saveState({ immediate: true });
       activeScreen = "dashboard";
@@ -12905,11 +13026,11 @@
 
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (sessionStorage.getItem("atlas-v95-reload")) return;
-        sessionStorage.setItem("atlas-v95-reload", "1");
+        if (sessionStorage.getItem("atlas-v97-reload")) return;
+        sessionStorage.setItem("atlas-v97-reload", "1");
         location.reload();
       });
-      navigator.serviceWorker.register("./service-worker.js?v=72", { updateViaCache: "none" })
+      navigator.serviceWorker.register("./service-worker.js?v=74", { updateViaCache: "none" })
         .then((registration) => registration.update())
         .catch(() => {});
     }
@@ -12925,6 +13046,7 @@
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) refreshCloudIfSynced();
     });
+    recoverDurableWorkoutJournal();
     initFirebase();
     render();
     importBundledNutritionBackup();

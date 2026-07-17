@@ -22,7 +22,7 @@ const result = await vm.runInContext(`(async()=>{
     doc(id){return {set:async(value)=>{collections[name].set(id,value);return true}}}
   });
   const doc={
-    set:async(value)=>{cloudPayload=value;return true},
+    set:async(value)=>{cloudPayload={...(cloudPayload||{}),...value,state:{...(cloudPayload?.state||{}),...(value.state||{}),meta:{...(cloudPayload?.state?.meta||{}),...(value.state?.meta||{})}}};return true},
     get:async()=>({exists:false,data:()=>null}),
     collection:(name)=>collectionFor(name),
     onSnapshot:(next)=>{listener=next;return()=>{listener=null}}
