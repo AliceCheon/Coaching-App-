@@ -26,6 +26,6 @@ const workbench = html.slice(workbenchStart, workbenchEnd);
 if (workbench.includes("muscle-map-premium.png")) throw new Error("la vecchia immagine anatomica compare ancora nel Coach");
 if (!workbench.includes("coachMascotHtml()")) throw new Error("robottino Coach non riutilizzato nel pannello");
 if (!html.includes('body[data-theme="dark"] .coach-mascot-tip')) throw new Error("stile scuro del robottino non preservato");
-if (!html.includes('sessionStorage.getItem("atlas-v92-reload")')) throw new Error("ricarica PWA v92 mancante");
+if (!html.includes('sessionStorage.getItem("atlas-v93-reload")')) throw new Error("ricarica PWA v93 mancante");
 
 console.log(JSON.stringify({ ok:true, coachContrast:true, checkinContrast:true, mascot:true, cache:"v92" }));

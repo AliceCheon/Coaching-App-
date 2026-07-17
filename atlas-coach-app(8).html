@@ -7072,7 +7072,11 @@
       const normalized = (programs || []).map(normalizeProgramModel);
       const validation = validateProgramCollection(normalized);
       state.programs = normalized;
-      state.meta = { ...(state.meta || {}), validationIssues: validation.errors.slice(0, 200) };
+      state.meta = {
+        ...(state.meta || {}),
+        validationIssues: validation.errors.slice(0, 200),
+        programsUpdatedAt: options.touch === false ? state.meta?.programsUpdatedAt : new Date().toISOString()
+      };
       if (options.save !== false) saveState({ immediate: !!options.immediate, cloud: options.cloud !== false, touch: options.touch !== false });
       return repositoryResult(validation.valid, normalized, validation.errors, validation.warnings);
     }
@@ -7340,14 +7344,47 @@
       return base;
     }
 
+    function releaseObsoleteLocalBackups() {
+      let released = false;
+      [PRE_V55_BACKUP_KEY, PRE_WEEK_CONSOLIDATION_BACKUP_KEY].forEach((key) => {
+        try {
+          if (localStorage.getItem(key) != null) {
+            localStorage.removeItem(key);
+            released = true;
+          }
+        } catch (error) {}
+      });
+      return released;
+    }
+
+    function isStorageQuotaError(error) {
+      const text = `${error?.name || ""} ${error?.message || error || ""}`.toLowerCase();
+      return text.includes("quota") || text.includes("storage") || Number(error?.code) === 22 || Number(error?.code) === 1014;
+    }
+
     function writeLocalStateSnapshot(snapshot, options = {}) {
+      const serialized = JSON.stringify(snapshot);
       try {
-        if (options.touch !== false) snapshot.meta = { ...(snapshot.meta || {}), updatedAt: new Date().toISOString(), version: 66, schemaVersion: DATA_SCHEMA_VERSION };
-        localStorage.setItem(STORE_KEY, JSON.stringify(snapshot));
+        if (options.touch !== false) {
+          snapshot.meta = { ...(snapshot.meta || {}), updatedAt: new Date().toISOString(), version: 67, schemaVersion: DATA_SCHEMA_VERSION };
+          localStorage.setItem(STORE_KEY, JSON.stringify(snapshot));
+        } else {
+          localStorage.setItem(STORE_KEY, serialized);
+        }
         lastPersistenceError = null;
         if (options.cloud !== false && snapshot === state) scheduleCloudSave();
         return true;
       } catch (error) {
+        if (isStorageQuotaError(error) && releaseObsoleteLocalBackups()) {
+          try {
+            localStorage.setItem(STORE_KEY, JSON.stringify(snapshot));
+            lastPersistenceError = null;
+            if (options.cloud !== false && snapshot === state) scheduleCloudSave();
+            return true;
+          } catch (retryError) {
+            error = retryError;
+          }
+        }
         lastPersistenceError = { at: new Date().toISOString(), message: String(error?.message || error), scope: "localStorage" };
         return false;
       }
@@ -7655,6 +7692,20 @@
       return `program-v1-${encodeURIComponent(String(programId || "program")).replaceAll(".", "%2E")}`;
     }
 
+    function programsRevision() {
+      const explicit = String(state.meta?.programsUpdatedAt || "");
+      if (explicit) return explicit;
+      const entityRevision = (state.programs || []).flatMap((program) => [program.updatedAt, ...(program.sheets || []).map((sheet) => sheet.updatedAt)])
+        .filter(Boolean).sort().at(-1);
+      const revision = String(entityRevision || state.meta?.updatedAt || "1970-01-01T00:00:00.000Z");
+      state.meta = { ...(state.meta || {}), programsUpdatedAt: revision };
+      return revision;
+    }
+
+    function programRevisionMap(programs = state.programs || []) {
+      return Object.fromEntries((programs || []).map((program) => [String(program.id), String(program.updatedAt || state.meta?.programsUpdatedAt || "")]));
+    }
+
     async function saveCloudPrograms(programs = [], updatedAt = new Date().toISOString()) {
       const collection = cloudProgramsCollection();
       if (!collection) throw new Error("cloud programs unavailable");
@@ -7738,24 +7789,29 @@
         lastCloudError = cloudUser ? "Firestore non disponibile: ricarica la pagina e riprova." : "Accedi con Google prima di sincronizzare.";
         return false;
       }
-      const payload = clone(state);
+      const { programs: currentPrograms = [], ...stateWithoutPrograms } = state;
+      const payload = clone(stateWithoutPrograms);
       const nutritionPhotos = splitNutritionPhotosForCloud(payload);
-      const cloudPrograms = clone(payload.programs || []);
-      payload.programs = [];
       try {
         const cloudUpdatedAt = new Date().toISOString();
+        const programRevision = programsRevision();
+        const revisions = programRevisionMap(currentPrograms);
+        const cloudRevisions = state.meta?.cloudProgramRevisions || {};
+        const changedPrograms = currentPrograms.filter((program) => String(cloudRevisions[program.id] || "") !== String(revisions[program.id] || ""));
         lastCloudWriteAt = cloudUpdatedAt;
         payload.profile.account.cloudStatus = "sync";
         payload.profile.account.syncReady = true;
-        await saveCloudPrograms(cloudPrograms, cloudUpdatedAt);
-        await doc.set({
+        payload.meta = { ...(payload.meta || {}), programsUpdatedAt: programRevision, cloudProgramsUpdatedAt: programRevision, cloudProgramRevisions: revisions };
+        if (changedPrograms.length) await withTimeout(saveCloudPrograms(clone(changedPrograms), cloudUpdatedAt), 30000);
+        await withTimeout(doc.set({
           updatedAt: cloudUpdatedAt,
           app: APP_NAME,
           programStorage: "subcollection-v1",
-          programCount: cloudPrograms.length,
-          programIds: cloudPrograms.map((program) => program.id),
+          programCount: currentPrograms.length,
+          programIds: currentPrograms.map((program) => program.id),
+          programsUpdatedAt: programRevision,
           state: payload
-        }, { merge: true });
+        }, { merge: true }), 15000);
         try {
           await saveNutritionPhotosToCloud(nutritionPhotos);
         } catch (photoError) {
@@ -7765,6 +7821,7 @@
         }
         lastCloudSnapshotAt = cloudUpdatedAt;
         if (!lastCloudError?.startsWith("Schede sincronizzate")) lastCloudError = "";
+        state.meta = { ...(state.meta || {}), programsUpdatedAt: programRevision, cloudProgramsUpdatedAt: programRevision, cloudProgramRevisions: revisions };
         state.profile.account.cloudStatus = "sync";
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
         return true;
@@ -8036,6 +8093,27 @@
       });
     }
 
+    function exercisePrescriptionForTrainingWeek(exercise = {}, weekNumber = 1) {
+      const weeks = Array.isArray(exercise.progression?.weeks) ? exercise.progression.weeks : [];
+      const raw = weeks.find((item) => Number(item?.weekNumber || item?.week) === Number(weekNumber)) || weeks[Number(weekNumber) - 1];
+      if (!raw) return exercise;
+      const week = parseWeekPrescription(raw, Number(weekNumber), exercise.prescription || exercise);
+      const reps = formatReps(week.reps);
+      const rir = formatRir(week.rir);
+      const rest = formatRest(week.rest) || (week.restSeconds ? `${week.restSeconds}s` : "");
+      const tempo = formatTempo(week.tempo);
+      return {
+        ...exercise,
+        sets: week.sets != null ? String(week.sets) : exercise.sets,
+        reps: reps || exercise.reps,
+        rir: rir || exercise.rir,
+        rest: rest || exercise.rest,
+        tempo: tempo || exercise.tempo,
+        activeWeek: Number(weekNumber),
+        activeWeekPrescription: week
+      };
+    }
+
     function currentTrainingContext() {
       const date = state.training.date || todayInput();
       const autoWeek = weekFromDate(date);
@@ -8049,12 +8127,21 @@
       if (!session && !isManual) session = phaseSessions.find((item) => item.code === autoCode) || phaseSessions[0] || programByCode(autoCode || "");
       if (!session) session = phaseSessions[0] || programByCode(autoCode || "");
       const week = isManual && Number(state.training.manualWeek) > 0 ? Number(state.training.manualWeek) : autoWeek;
+      const canonicalSession = session;
+      if (canonicalSession) {
+        session = {
+          ...canonicalSession,
+          week,
+          exercises: (canonicalSession.exercises || []).map((exercise) => exercisePrescriptionForTrainingWeek(exercise, week))
+        };
+      }
       return {
         date,
         week,
         autoWeek,
         autoCode,
         session,
+        canonicalSession,
         phase,
         phaseSessions,
         contextMode: state.training.contextMode || "auto",
@@ -8900,11 +8987,14 @@
       const phaseSessions = context.phaseSessions;
       const completedExercises = (session.exercises || []).filter((item) => draftSetsFor(context, item).some((value) => String(value || "").trim())).length;
       const completion = session.exercises?.length ? Math.round(completedExercises / session.exercises.length * 100) : 0;
+      const sessionNote = String(displayLabel(session.note || ""))
+        .replace(/settimana\s+\d+/gi, `settimana ${context.week}`)
+        .replace(/week\s+\d+/gi, `settimana ${context.week}`);
       return `
         ${trainingContextControlsHtml(context)}
         <div class="hero-title">
           <h2>Allenamento <span>${session.code}</span></h2>
-          <p>${formatDateLabel(context.date)} - ${session.phase}, settimana ${session.week || context.week}.</p>
+          <p>${formatDateLabel(context.date)} - ${session.phase}, settimana ${context.week}.</p>
         </div>
         <section class="card session-panel">
           <div class="row">
@@ -8912,7 +9002,7 @@
               <h3>${session.name}</h3>
               <p>${session.focus}</p>
             </div>
-            <span class="chip">Week ${session.week || context.week}</span>
+            <span class="chip">Settimana ${context.week}</span>
           </div>
           <div class="workout-progress-head"><strong>${completedExercises} di ${session.exercises?.length || 0} esercizi completati</strong><span>${completion}%</span></div><div class="workout-progress"><span style="width:${completion}%"></span></div>
           <div class="form-grid">
@@ -8930,7 +9020,7 @@
               </select>
             </label>
           </div>
-          <div class="session-note">${context.isRestDay ? "Giorno senza scheda automatica: resta su recupero/check oppure scegli una scheda manualmente." : escapeHtml(displayLabel(session.note))} ${context.phase === "Intensita" ? "Fase futura: importata, ma non ancora attiva nel percorso." : ""}</div>
+          <div class="session-note">${context.isRestDay ? "Giorno senza scheda automatica: resta su recupero/check oppure scegli una scheda manualmente." : escapeHtml(sessionNote)} ${context.phase === "Intensita" ? "Fase futura: importata, ma non ancora attiva nel percorso." : ""}</div>
           <div class="quick-feeling">
             <span>Come ti senti oggi?</span>
             <div class="choice-row" data-choice-group="feeling">
@@ -10539,7 +10629,7 @@
           <div class="row"><div><h3>Archivio allenamenti</h3><p class="micro-copy">Il tuo logbook completo: apri una voce per vedere carichi e note.</p></div><span class="chip">${savedHere.length} salvati</span></div>
           <div class="save-success">${selectedCount ? `&#10003; ${escapeHtml(selectedCode)} compare ${selectedCount} ${selectedCount === 1 ? "volta" : "volte"} nello storico.` : `Attenzione: ${escapeHtml(selectedCode)} non risulta ancora nello storico.`}</div>
           <div class="workout-archive">
-            ${recent.length ? recent.map((session) => `<details class="workout-entry"><summary><span class="workout-code">${escapeHtml(session.sessionCode || "--")}</span><span class="workout-title"><strong>${escapeHtml(session.sessionName || session.sessionCode || "Allenamento")}</strong><small>${escapeHtml(session.date || session.dateInput || "")} · Week ${escapeHtml(session.week || "--")} · ${session.exercises?.length || 0} ${(session.exercises?.length || 0) === 1 ? "esercizio" : "esercizi"}</small></span><span class="sync-badge">${session.cloudSyncedAt ? "Cloud ?" : "Salvato ?"}</span></summary><div class="workout-entry-body">${(session.exercises || []).map((exercise) => `<div class="workout-exercise-row"><span><strong>${escapeHtml(exercise.name)}</strong>${exercise.userNote ? `<br><small>${escapeHtml(exercise.userNote)}</small>` : ""}</span><strong>${escapeHtml(exercise.value || (exercise.kg ? `${exercise.kg} kg` : "nota"))}</strong></div>`).join("") || `<p class="micro-copy">Nessun dettaglio esercizio disponibile.</p>`}</div></details>`).join("") : `<div class="history-row"><span>Nessun allenamento salvato nell'app.</span><strong>--</strong></div>`}
+            ${recent.length ? recent.map((session) => `<details class="workout-entry"><summary><span class="workout-code">${escapeHtml(session.sessionCode || "--")}</span><span class="workout-title"><strong>${escapeHtml(session.sessionName || session.sessionCode || "Allenamento")}</strong><small>${escapeHtml(session.date || session.dateInput || "")} · Settimana ${escapeHtml(session.week || "--")} · ${session.exercises?.length || 0} ${(session.exercises?.length || 0) === 1 ? "esercizio" : "esercizi"}</small></span><span class="sync-badge">${session.cloudSyncedAt ? "Cloud" : "Salvato"}</span></summary><div class="workout-entry-body">${(session.exercises || []).map((exercise) => `<div class="workout-exercise-row"><span><strong>${escapeHtml(exercise.name)}</strong>${exercise.userNote ? `<br><small>${escapeHtml(exercise.userNote)}</small>` : ""}</span><strong>${escapeHtml(exercise.value || (exercise.kg ? `${exercise.kg} kg` : "nota"))}</strong></div>`).join("") || `<p class="micro-copy">Nessun dettaglio esercizio disponibile.</p>`}</div></details>`).join("") : `<div class="history-row"><span>Nessun allenamento salvato nell'app.</span><strong>--</strong></div>`}
           </div>
         </section>
       `;
@@ -11642,7 +11732,12 @@
             maxKg: numericValues.length ? Math.max(...numericValues) : 0,
             value: numericValues.length ? `${setValues.filter(Boolean).join(" / ")} kg` : "",
             setValues,
-            completedSets: numericValues.map((kg) => ({ kg, reps: null, rir: null, rpe: null })),
+            completedSets: numericValues.map((kg, setIndex) => ({
+              kg,
+              reps: numericParts(repTargetsFor(exercise)[setIndex] || exercise.reps)[0] ?? null,
+              rir: numericParts(exercise.rir)[0] ?? null,
+              rpe: null
+            })),
             userNote,
             date: shortDate(context.date),
             sets: exercise.sets,
@@ -11690,13 +11785,24 @@
       if (existingIndex >= 0) state.training.sessions[existingIndex] = savedSession;
       else state.training.sessions.push(savedSession);
       trainingHistoryIndexCache = null;
-      context.session.exercises.forEach((exercise) => {
-        delete state.training.draft[draftKey(context, exercise)];
-        if (state.training.noteDraft) delete state.training.noteDraft[draftNoteKey(context, exercise)];
-      });
       state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
       state.training.sessionName = "auto";
       state.training.lastSavedMessage = `${context.session.name} salvata sul dispositivo il ${shortDate(context.date)}. Sincronizzazione in corso...`;
+      const localSaved = saveState({ cloud: false, immediate: true });
+      if (!localSaved) {
+        state.training.lastSavedMessage = "Salvataggio locale non riuscito: i dati sono ancora aperti, non chiudere la pagina.";
+        showToast("Non sono riuscito a salvare sul dispositivo. I dati restano aperti: esporta il backup o riprova.");
+        renderTrainingOnly();
+        return false;
+      }
+      context.session.exercises.forEach((exercise) => {
+        delete state.training.draft[draftKey(context, exercise)];
+        if (state.training.noteDraft) delete state.training.noteDraft[draftNoteKey(context, exercise)];
+        if (state.training.setDone) {
+          Array.from({ length: setCountFor(exercise) }, (_, setIndex) => setDoneKey(context, exercise, setIndex))
+            .forEach((key) => delete state.training.setDone[key]);
+        }
+      });
       saveState({ cloud: false, immediate: true });
       renderTrainingOnly();
       showToast("Allenamento salvato sul dispositivo. Sincronizzo...");
@@ -11718,6 +11824,7 @@
       }
       renderTrainingOnly();
       setTimeout(() => document.getElementById("workoutSaveConfirmation")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+      return true;
     }
 
     function shortDate(value = todayInput()) {
@@ -12626,11 +12733,11 @@
 
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (sessionStorage.getItem("atlas-v92-reload")) return;
-        sessionStorage.setItem("atlas-v92-reload", "1");
+        if (sessionStorage.getItem("atlas-v93-reload")) return;
+        sessionStorage.setItem("atlas-v93-reload", "1");
         location.reload();
       });
-      navigator.serviceWorker.register("./service-worker.js?v=69", { updateViaCache: "none" })
+      navigator.serviceWorker.register("./service-worker.js?v=70", { updateViaCache: "none" })
         .then((registration) => registration.update())
         .catch(() => {});
     }
