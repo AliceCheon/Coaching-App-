@@ -81,5 +81,8 @@ const result = await vm.runInContext(`(async()=>{
 if (!html.includes("Settimana ${context.week}")) throw new Error("Etichetta settimana dinamica mancante");
 if (!html.includes("releaseObsoleteLocalBackups")) throw new Error("Recupero quota locale mancante");
 if (!html.includes("changedPrograms.length")) throw new Error("Cloud programmi non incrementale");
-if (!html.includes("atlas-v93-reload")) throw new Error("Cache v93 non impostata");
+if (!html.includes("atlas-v94-reload")) throw new Error("Cache v94 non impostata");
+if (!html.includes("newlyMarkedSessions")) throw new Error("Le sessioni locali non vengono marcate dopo il cloud");
+const downloadBlock = html.match(/async function downloadCloudToThisDevice\(\)[\s\S]*?\n    }/)?.[0] || "";
+if (!downloadBlock.includes("await saveCloudState()")) throw new Error("Il download non rispedisce al cloud i dati locali uniti");
 console.log(JSON.stringify(result, null, 2));
