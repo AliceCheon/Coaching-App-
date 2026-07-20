@@ -10,8 +10,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="workout-pro.css?v=v112-phase19.10">
-  <script defer src="workout-pro.js?v=v112-phase19.10"></script>
+  <link rel="stylesheet" href="workout-pro.css?v=v114-phase19.2">
+  <script defer src="workout-pro.js?v=v114-phase19.2"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4806,7 +4806,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v112-phase19";
+    const APP_BUILD = "v114-phase19.2";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -7895,13 +7895,15 @@
       const indexedRows = await readWorkoutJournalIndexedDb();
       indexedRows.forEach((row) => persistWorkoutJournalSession(row));
       const recovered = recoverWorkoutJournal(state);
+      const correctedWorkoutFDates = correctAliceWorkoutF16Jul2026(state);
+      state.migrations.aliceWorkoutF16Jul2026Corrected = Number(state.migrations.aliceWorkoutF16Jul2026Corrected || 0) + correctedWorkoutFDates;
       repairSequentialWorkoutWeeks(state);
-      if (recovered > 0) {
+      if (recovered > 0 || correctedWorkoutFDates > 0) {
         hydrateStateModel(state);
         state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
         render();
-        showToast(`${recovered} allenamento${recovered === 1 ? "" : "i"} ripristinato dal registro di emergenza.`);
+        if (recovered > 0) showToast(`${recovered} allenamento${recovered === 1 ? "" : "i"} ripristinato dal registro di emergenza.`);
       }
       return recovered;
     }
@@ -8181,14 +8183,22 @@
       const selected = Object.entries(selections).filter(([, value]) => value).map(([key]) => key);
       const restoreAll = !selected.length;
       const next = restoreAll ? mergeState(clone(baseState), incoming) : clone(state);
+      if (restoreAll) {
+        next.training = next.training || {};
+        next.training.sessions = mergeUniqueSessions(
+          state.training?.sessions || [],
+          incoming.training?.sessions || [],
+          next.training.sessions || []
+        );
+      }
       if (!restoreAll) {
-        if (selections.logbook) next.training = { ...next.training, sessions:clone(incoming.training?.sessions || []) };
+        if (selections.logbook) next.training = { ...next.training, sessions:mergeUniqueSessions(next.training?.sessions || [], incoming.training?.sessions || []) };
         if (selections.programs) next.programs = clone(incoming.programs || []);
         if (selections.progressions && !selections.programs) next.programs = restoreProgramProgressions(next.programs || [], incoming.programs || []);
         if (selections.checkins) next.quiz = clone(incoming.quiz || next.quiz || {});
         if (selections.settings) { next.profile = mergeState(next.profile || {}, incoming.profile || {}); next.metrics = clone(incoming.metrics || {}); next.nutrition = clone(incoming.nutrition || {}); next.body = clone(incoming.body || {}); }
         if (selections.coachAi) next.coach = { ...next.coach, coachAi:clone(incoming.coach?.coachAi || {}) };
-        if (selections.divaBot) next.ui = { ...next.ui, ...Object.fromEntries(["workoutMascotVisible","workoutMascotPosition","divaBotPersonality","divaBotBubbles","divaBotCelebrations","divaBotSounds"].map((key) => [key, incoming.ui?.[key]]).filter(([, value]) => value !== undefined)) };
+        if (selections.divaBot) next.ui = { ...next.ui, ...Object.fromEntries(["workoutMascotVisible","workoutMascotPosition","workoutProMascotPosition","divaBotPersonality","divaBotBubbles","divaBotCelebrations","divaBotSounds"].map((key) => [key, incoming.ui?.[key]]).filter(([, value]) => value !== undefined)) };
         if (selections.exerciseLab) next.coach = { ...next.coach, exerciseLibrary:clone(incoming.coach?.exerciseLibrary || []) };
       }
       dataSafetyRestoring = true;
@@ -8204,7 +8214,10 @@
 
     function initializeDataSafety() {
       const lastBuild = localStorage.getItem(BACKUP_BUILD_KEY);
-      if (lastBuild !== APP_BUILD) { storeBackupEnvelope(createBackupEnvelope("pre-update")); localStorage.setItem(BACKUP_BUILD_KEY, APP_BUILD); }
+      if (lastBuild !== APP_BUILD) {
+        const stored = storeBackupEnvelope(createBackupEnvelope("pre-update"));
+        if (stored.ok) localStorage.setItem(BACKUP_BUILD_KEY, APP_BUILD);
+      }
     }
 
     function mergeRowsByKey(current = [], incoming = [], keyFn = (row) => JSON.stringify(row || {})) {
@@ -9907,7 +9920,7 @@
 
     function workoutProSettingsHtml() {
       const preferences = state.training?.workoutProPreferences || {};
-      return `<section class="card" aria-labelledby="workoutProSettingsTitle"><div class="row"><div><span class="section-eyebrow">Allenamento</span><h3 id="workoutProSettingsTitle">Workout Pro</h3></div><span class="chip">v112</span></div><div class="training-context-grid"><label><input type="checkbox" data-workout-pro-setting="wakeLockEnabled" ${preferences.wakeLockEnabled ? "checked" : ""}> Mantieni schermo attivo durante la sessione</label><label><input type="checkbox" data-workout-pro-setting="notificationsEnabled" ${preferences.notificationsEnabled ? "checked" : ""}> Notifiche al termine del timer</label><label><input type="checkbox" data-workout-pro-setting="voiceEnabled" ${preferences.voiceEnabled ? "checked" : ""}> Controllo vocale sperimentale</label><label><input type="checkbox" data-workout-pro-setting="soundEnabled" ${preferences.soundEnabled ? "checked" : ""}> Suono timer</label></div><p class="micro-copy">Schermo, microfono e notifiche vengono attivati soltanto dopo una tua azione esplicita e solo se il browser li supporta.</p></section>`;
+      return `<section class="card" aria-labelledby="workoutProSettingsTitle"><div class="row"><div><span class="section-eyebrow">Allenamento</span><h3 id="workoutProSettingsTitle">Workout Pro</h3></div><span class="chip">v114</span></div><div class="training-context-grid"><label><input type="checkbox" data-workout-pro-setting="wakeLockEnabled" ${preferences.wakeLockEnabled ? "checked" : ""}> Mantieni schermo attivo durante la sessione</label><label><input type="checkbox" data-workout-pro-setting="notificationsEnabled" ${preferences.notificationsEnabled ? "checked" : ""}> Notifiche al termine del timer</label><label><input type="checkbox" data-workout-pro-setting="voiceEnabled" ${preferences.voiceEnabled ? "checked" : ""}> Controllo vocale sperimentale</label><label><input type="checkbox" data-workout-pro-setting="soundEnabled" ${preferences.soundEnabled ? "checked" : ""}> Suono timer</label></div><p class="micro-copy">Schermo, microfono e notifiche vengono attivati soltanto dopo una tua azione esplicita e solo se il browser li supporta.</p></section>`;
     }
 
     function settingsHtml() {
@@ -12581,8 +12594,10 @@
       document.querySelector("[data-onboarding-next]")?.addEventListener("click", () => { if (onboardingUi.step >= 3) { onboardingUi.force = false; state.ui.onboardingComplete = true; saveState(); closeModal("onboarding"); } else onboardingUi.step += 1; render(); });
       document.querySelector("[data-backup-export]")?.addEventListener("click", () => {
         const envelope = createBackupEnvelope("manual"); const saved = storeBackupEnvelope(envelope);
-        if (!saved.ok) { showToast(saved.error); return; }
-        downloadBackupEnvelope(envelope); render(); showToast("Backup completo esportato e verificato.");
+        const downloaded = downloadBackupEnvelope(envelope);
+        if (!downloaded) return;
+        render();
+        showToast(saved.ok ? "Backup completo esportato e verificato." : "Backup scaricato e verificato; lo spazio locale non consente di conservarne una seconda copia nell'app.");
       });
       document.querySelector("[data-backup-history-toggle]")?.addEventListener("click", () => { dataSafetyUi.historyOpen = !dataSafetyUi.historyOpen; render(); });
       document.querySelectorAll("[data-backup-import]").forEach((input) => input.addEventListener("change", async () => {
@@ -14346,9 +14361,9 @@
     function exportBackup() {
       const envelope = createBackupEnvelope("manual");
       const stored = storeBackupEnvelope(envelope);
-      if (!stored.ok) return showToast(stored.error);
-      downloadBackupEnvelope(envelope);
-      showToast("Backup verificato esportato.");
+      const downloaded = downloadBackupEnvelope(envelope);
+      if (!downloaded) return;
+      showToast(stored.ok ? "Backup verificato esportato." : "Backup verificato scaricato; copia locale interna non creata per mancanza di spazio.");
     }
 
     function toShortDateFromIso(value) {
