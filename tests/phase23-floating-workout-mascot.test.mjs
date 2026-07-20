@@ -23,7 +23,8 @@ assert.match(html, /state\.ui\.workoutMascotVisible/);
 assert.match(html, /Mostra Diva Bot durante l'allenamento/);
 assert.match(html, /function showWorkoutMascotBubble/);
 assert.match(html, /if \(activeScreen === "training"\)/);
-assert.match(html, /lastWeightReactionAt >= 25000/);
+assert.match(html, /load_increased:\{ priority:"low", cooldown:30000/);
+assert.match(html, /function triggerDivaBotReaction\(eventName, context = \{\}\)/);
 assert.match(html, /prefers-reduced-motion:reduce/);
 
 console.log(JSON.stringify({ ok:true, floating:true, drag:true, mobileCycle:true, hide:true, singleRobot:true }));

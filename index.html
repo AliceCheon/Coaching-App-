@@ -52,6 +52,19 @@
       --info: #a990ff;
       --violet: var(--purple-primary);
       --shadow: 0 22px 70px rgba(45, 18, 67, .36);
+      --motion-fast: 140ms;
+      --motion-normal: 260ms;
+      --motion-slow: 520ms;
+      --ease-premium: cubic-bezier(.2,.8,.2,1);
+      --radius-small: 12px;
+      --radius-medium: 18px;
+      --radius-large: 28px;
+      --shadow-card: 0 14px 38px rgba(18,8,30,.22);
+      --shadow-raised: 0 22px 64px rgba(18,8,30,.34);
+      --shadow-glow: 0 0 0 1px rgba(255,79,163,.25), 0 12px 38px rgba(168,85,247,.18);
+      --surface-glass: rgba(53,33,69,.78);
+      --focus-ring: 0 0 0 3px rgba(255,184,220,.55);
+      --control-min: 44px;
       font-family: "Atlas Nunito", "Nunito Sans", ui-rounded, system-ui, sans-serif;
     }
 
@@ -68,6 +81,38 @@
       --dim: #9c8394;
       --shadow: 0 22px 70px rgba(203, 67, 138, .16);
     }
+
+    button, input, select, textarea, .card, .top-tab, .nav-button { transition: transform var(--motion-fast) var(--ease-premium), box-shadow var(--motion-normal) var(--ease-premium), background-color var(--motion-normal) var(--ease-premium), border-color var(--motion-normal) var(--ease-premium), opacity var(--motion-normal) var(--ease-premium); }
+    button:not(:disabled):active, .card[role="button"]:active { transform:scale(.975); }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:none; box-shadow:var(--focus-ring); }
+    button:disabled { opacity:.48; cursor:not-allowed; filter:saturate(.55); }
+    .screen.screen-enter { animation:premiumScreenIn var(--motion-normal) var(--ease-premium) both; }
+    @keyframes premiumScreenIn { from { opacity:0; transform:translateY(9px); } to { opacity:1; transform:none; } }
+    .premium-splash { position:fixed; inset:0; z-index:9999; display:grid; place-items:center; overflow:hidden; background:radial-gradient(circle at 25% 20%,rgba(255,79,163,.28),transparent 36%),radial-gradient(circle at 80% 75%,rgba(168,85,247,.34),transparent 40%),#120c1a; color:#fff7fc; transition:opacity var(--motion-slow) var(--ease-premium), visibility var(--motion-slow); }
+    .premium-splash.is-hidden { opacity:0; visibility:hidden; pointer-events:none; }
+    .premium-splash-card { text-align:center; padding:42px; min-width:min(86vw,350px); border:1px solid rgba(255,255,255,.18); border-radius:var(--radius-large); background:rgba(32,18,47,.62); box-shadow:var(--shadow-raised); backdrop-filter:blur(18px); }
+    .premium-monogram { width:68px; height:68px; margin:0 auto 18px; display:grid; place-items:center; border-radius:23px; background:linear-gradient(135deg,#ff4fa3,#a855f7); box-shadow:0 12px 35px rgba(255,79,163,.34); font-weight:1000; font-size:1.35rem; animation:premiumFloat 2.4s var(--ease-premium) infinite alternate; }
+    .premium-splash h2 { margin:0; letter-spacing:.12em; font-size:1.25rem; } .premium-splash p { color:#decdea; margin:9px 0 20px; } .premium-loader { height:4px; border-radius:99px; overflow:hidden; background:rgba(255,255,255,.13); } .premium-loader::after { content:""; display:block; height:100%; width:42%; border-radius:inherit; background:linear-gradient(90deg,#ffb8dc,#a855f7); animation:premiumShimmer 1.1s var(--ease-premium) infinite; }
+    @keyframes premiumFloat { to { transform:translateY(-5px) rotate(2deg); } } @keyframes premiumShimmer { from { transform:translateX(-115%); } to { transform:translateX(255%); } }
+    .premium-pr-badge { position:fixed; z-index:80; left:50%; top:18%; transform:translateX(-50%); padding:12px 18px; border-radius:999px; background:linear-gradient(135deg,#ff4fa3,#a855f7); color:#fff; font-weight:1000; box-shadow:var(--shadow-glow); animation:premiumPrIn 2.6s var(--ease-premium) both; pointer-events:none; }
+    @keyframes premiumPrIn { 0%{opacity:0;transform:translate(-50%,12px) scale(.9)} 14%,75%{opacity:1;transform:translate(-50%,0) scale(1)} 100%{opacity:0;transform:translate(-50%,-8px) scale(.98)} }
+    .compact-set-done.done { animation:premiumCheck .42s var(--ease-premium); box-shadow:0 0 0 4px rgba(105,230,176,.16),0 0 18px rgba(105,230,176,.42); }
+    @keyframes premiumCheck { 0%{transform:scale(.8)} 60%{transform:scale(1.14)} 100%{transform:scale(1)} }
+    .workout-entry.exercise-just-completed { box-shadow:var(--shadow-glow); }
+    body[data-animation-mode="full"] { --motion-fast:140ms; --motion-normal:260ms; --motion-slow:520ms; }
+    body[data-animation-mode="reduced"] { --motion-fast:90ms; --motion-normal:120ms; --motion-slow:160ms; }
+    body[data-animation-mode="reduced"] *, body[data-animation-mode="reduced"] *::before, body[data-animation-mode="reduced"] *::after { animation-iteration-count:1 !important; }
+    body[data-animation-mode="reduced"] .premium-monogram, body[data-animation-mode="reduced"] .premium-loader::after { animation:none !important; }
+    body[data-animation-mode="reduced"] .premium-pr-badge { animation:premiumFadeIn 1.6s ease both; }
+    body[data-animation-mode="reduced"] .compact-set-done.done { animation:none; }
+    body[data-animation-mode="reduced"] .screen.screen-enter { animation:premiumFadeIn 120ms ease both; }
+    body[data-animation-mode="off"] *, body[data-animation-mode="off"] *::before, body[data-animation-mode="off"] *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; transition-delay:0ms !important; }
+    body[data-animation-mode="off"] .premium-monogram, body[data-animation-mode="off"] .premium-loader::after { animation:none !important; }
+    body.reduced-glow .premium-pr-badge, body.reduced-glow .workout-entry.exercise-just-completed, body.reduced-glow .compact-set-done.done { box-shadow:0 0 0 1px var(--border-soft) !important; }
+    body.reduced-glow .premium-monogram, body.reduced-glow .premium-splash-card, body.reduced-glow .workout-mascot-button, body.reduced-glow .nav-button.active { box-shadow:var(--shadow-card) !important; filter:none !important; }
+    body.reduced-glow .diva-bot-particles { display:none !important; }
+    @keyframes premiumFadeIn { from { opacity:0; } to { opacity:1; } }
+    @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; transition-delay:0ms !important; scroll-behavior:auto !important; } .premium-splash { transition:none; } }
 
     body[data-theme="light"] .coach-command,
     body[data-theme="light"] .coach-program-panel,
@@ -3078,24 +3123,73 @@
       position: fixed;
       left: 50%;
       bottom: 22px;
-      transform: translate(-50%, 18px);
-      border-radius: 999px;
+      transform: translateX(-50%);
+      width: min(420px, calc(100vw - 28px));
+      display: grid;
+      gap: 9px;
+      pointer-events: none;
+      z-index: 80;
+    }
+
+    .toast-message {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      border-radius: 16px;
       background: #171511;
       border: 1px solid var(--line);
       color: var(--text);
-      padding: 10px 14px;
+      padding: 11px 12px;
       font-size: .84rem;
+      line-height: 1.35;
       opacity: 0;
-      pointer-events: none;
-      transition: .2s ease;
-      z-index: 40;
+      pointer-events: auto;
+      transform: translateY(14px);
+      transition: opacity var(--motion-fast) var(--ease-premium), transform var(--motion-fast) var(--ease-premium);
       box-shadow: var(--shadow);
     }
 
-    .toast.show {
+    .toast-message.show {
       opacity: 1;
-      transform: translate(-50%, 0);
+      transform: translateY(0);
     }
+
+    .toast-message[data-type="success"] { border-color: rgba(103, 220, 165, .56); }
+    .toast-message[data-type="warning"] { border-color: rgba(255, 195, 92, .65); }
+    .toast-message[data-type="error"] { border-color: rgba(255, 108, 132, .76); box-shadow: 0 12px 34px rgba(255, 78, 112, .16); }
+    .toast-message[data-type="pr"] { border-color: rgba(255, 111, 203, .9); background: linear-gradient(135deg, #271329, #171511); box-shadow: 0 12px 34px rgba(255, 111, 203, .22); }
+    .toast-icon { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: rgba(255,255,255,.08); font-size: .9rem; }
+    .toast-close { width: 34px; min-width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--text); cursor: pointer; font-size: 1.1rem; }
+    .toast-close:focus-visible, .toast-message:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+    body.modal-open { overflow: hidden; }
+    .coach-modal-backdrop { z-index: 90; }
+
+    .premium-skeleton { display:grid; gap:10px; min-height:112px; padding:16px; overflow:hidden; }
+    .skeleton-line, .skeleton-block { display:block; border-radius:10px; background:linear-gradient(100deg, rgba(255,255,255,.08) 20%, rgba(255,111,203,.18) 42%, rgba(255,255,255,.08) 64%); background-size:220% 100%; animation:premiumSkeletonShimmer 1.15s linear infinite; }
+    .skeleton-line { height:12px; width:78%; }
+    .skeleton-line.short { width:42%; }
+    .skeleton-block { min-height:52px; width:100%; }
+    @keyframes premiumSkeletonShimmer { to { background-position:-220% 0; } }
+    .premium-empty-state, .premium-error-state { display:grid; justify-items:start; gap:9px; padding:20px; border:1px dashed var(--line-soft); border-radius:16px; background:rgba(255,255,255,.025); }
+    .premium-empty-state .state-icon, .premium-error-state .state-icon { width:38px; height:38px; display:grid; place-items:center; border-radius:12px; background:rgba(255,111,203,.12); color:var(--pink); font-size:1.15rem; }
+    .premium-error-state { border-color:rgba(255,108,132,.55); background:rgba(255,108,132,.055); }
+    .premium-error-state .state-icon { background:rgba(255,108,132,.13); color:#ff8fa3; }
+    .premium-empty-state h3, .premium-error-state h3, .premium-empty-state p, .premium-error-state p { margin:0; }
+    .premium-save-status { display:flex; align-items:center; gap:8px; margin-top:12px; min-height:28px; color:var(--muted); font-size:.78rem; }
+    .premium-save-status .save-dot { width:9px; height:9px; border-radius:50%; background:var(--muted); }
+    .premium-save-status[data-status="local"] .save-dot, .premium-save-status[data-status="synced"] .save-dot { background:#67dca5; }
+    .premium-save-status[data-status="saving"] .save-dot, .premium-save-status[data-status="syncing"] .save-dot { background:var(--gold-2); }
+    .premium-save-status[data-status="waiting"] .save-dot { background:#ffbf5c; }
+    .premium-save-status[data-status="error"] .save-dot { background:#ff6c84; }
+
+    @media (max-width: 620px) {
+      .toast { bottom: 84px; }
+      .toast-message { min-height: 50px; }
+    }
+
+    body[data-animation-mode="reduced"] .skeleton-line, body[data-animation-mode="reduced"] .skeleton-block { animation:none; background:rgba(255,255,255,.09); }
+    body[data-animation-mode="off"] .skeleton-line, body[data-animation-mode="off"] .skeleton-block { animation:none; background:rgba(255,255,255,.09); }
 
     .phase4-exercise-table { min-width: 1780px; }
     .phase4-exercise-table th { white-space: nowrap; }
@@ -3365,9 +3459,14 @@
     .workout-mascot-button:focus-visible { outline:2px solid var(--pink-soft); outline-offset:2px; border-radius:22px; }
     .workout-mascot-button .coach-avatar { width:118px; height:132px; }
     .workout-mascot-bubble { position:absolute; right:calc(100% - 8px); top:15px; width:max-content; max-width:min(250px,42vw); padding:9px 11px; border:1px solid rgba(255,184,220,.42); border-radius:14px 14px 4px 14px; background:linear-gradient(145deg,rgba(61,36,80,.98),rgba(31,18,47,.98)); color:#ffe9f7; box-shadow:0 12px 34px rgba(8,2,18,.38); font-size:.76rem; line-height:1.35; pointer-events:none; animation:premiumRise .18s ease both; }
+    .workout-mascot-bubble span { padding-right:13px; }
+    .workout-mascot-bubble-close { position:absolute; top:3px; right:5px; width:18px; height:18px; padding:0; border:0; border-radius:50%; background:transparent; color:currentColor; font-size:1rem; line-height:1; pointer-events:auto; }
     .workout-mascot-anchor[data-position="bottom-left"] .workout-mascot-bubble { right:auto; left:calc(100% - 8px); border-radius:14px 14px 14px 4px; }
     .workout-mascot-menu { position:absolute; right:8px; top:108px; width:230px; padding:10px; border:1px solid rgba(255,184,220,.4); border-radius:14px; background:linear-gradient(145deg,rgba(61,36,80,.99),rgba(31,18,47,.99)); box-shadow:0 16px 42px rgba(8,2,18,.5); pointer-events:auto; }
+    .workout-mascot-menu > strong { display:block; margin:1px 0 8px; color:var(--pink-soft); font-size:.78rem; }
     .workout-mascot-menu label { display:flex; gap:8px; align-items:flex-start; color:#ffe9f7; font-size:.72rem; line-height:1.3; }
+    .workout-mascot-menu label + label { margin-top:7px; }
+    .workout-mascot-menu select { min-width:0; flex:1; padding:4px 5px; border-radius:7px; color:inherit; background:rgba(255,255,255,.08); border:1px solid rgba(255,184,220,.24); }
     .workout-mascot-menu button { width:100%; margin-top:8px; padding:7px 9px; border-radius:9px; background:rgba(255,255,255,.07); color:#ffd8ee; border:1px solid rgba(255,184,220,.22); }
     .workout-mascot-restore { margin:0 0 10px auto; display:block; padding:6px 9px; border-radius:999px; background:transparent; color:var(--pink-soft); border:1px solid rgba(255,184,220,.25); font-size:.7rem; }
     body[data-theme="light"] .workout-mascot-bubble,body[data-theme="light"] .workout-mascot-menu { background:linear-gradient(145deg,#fff8fd,#efe2f8); color:#493453; }
@@ -4598,6 +4697,7 @@
   </style>
 </head>
 <body>
+  <div id="premiumSplash" class="premium-splash" role="status" aria-live="polite"><div class="premium-splash-card"><div class="premium-monogram" aria-hidden="true">BD</div><h2>BARBELL DIVA</h2><p>Lift. Slay. Repeat.</p><small>Loading your empire…</small><div class="premium-loader" aria-hidden="true"></div></div></div>
   <div class="stage">
     <aside class="desktop-rail" aria-label="Colonnina desktop">
       <div class="rail-logo">A</div>
@@ -4702,7 +4802,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v102";
+    const APP_BUILD = "v111";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -5729,6 +5829,10 @@
 
 
     const DATA_SCHEMA_VERSION = 4;
+    const BACKUP_SCHEMA_VERSION = 1;
+    const BACKUP_HISTORY_KEY = "alice-method-app.v8.backup-history.v1";
+    const BACKUP_BUILD_KEY = "alice-method-app.v8.backup-build.v1";
+    const MAX_AUTOMATIC_BACKUPS = 20;
     const PRE_V55_BACKUP_KEY = "alice-method-app.pre-v55-backup";
     const PRE_WEEK_CONSOLIDATION_BACKUP_KEY = "barbell-diva.pre-week-consolidation-backup";
     const PROGRAM_STATUSES = new Set(["draft", "available", "active", "archived", "deleted"]);
@@ -5875,6 +5979,8 @@
       }
     };
 
+    let recoveryBootError = null;
+    let recoveryBootPayload = "";
     let state = loadState();
     state.training.date = todayInput();
     state.training.sessionName = "auto";
@@ -5882,6 +5988,14 @@
     state.ui = state.ui || {};
     state.ui.workoutMascotVisible = state.ui.workoutMascotVisible !== false;
     if (!["top-right", "middle-right", "bottom-right", "bottom-left"].includes(state.ui.workoutMascotPosition)) state.ui.workoutMascotPosition = "bottom-right";
+    if (!["silent", "balanced", "diva"].includes(state.ui.divaBotPersonality)) state.ui.divaBotPersonality = "balanced";
+    state.ui.divaBotBubbles = state.ui.divaBotBubbles !== false;
+    state.ui.divaBotCelebrations = state.ui.divaBotCelebrations !== false;
+    state.ui.divaBotSounds = state.ui.divaBotSounds === true;
+    if (!["full","reduced","off"].includes(state.ui.animationMode)) state.ui.animationMode = "full";
+    state.ui.splashEnabled = state.ui.splashEnabled !== false;
+    state.ui.hapticFeedback = state.ui.hapticFeedback === true;
+    state.ui.reduceGlow = state.ui.reduceGlow === true;
     state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
     if (state.profile.coachPin === "2507") state.profile.coachPin = "ettorino1";
     const initialHash = String(location.hash || "").replace("#", "");
@@ -5899,6 +6013,10 @@
     let lastCloudSnapshotAt = "";
     let lastCloudError = "";
     let localSaveTimer = null;
+    let automaticBackupTimer = null;
+    let dataSafetyRestoring = false;
+    const dataSafetyUi = { restorePreview:null, historyOpen:false, error:"" };
+    const onboardingUi = { step:0, force:false };
     let pendingSaveOptions = null;
     let lastPersistenceError = null;
     let technicalLibraryRevision = 0;
@@ -5907,9 +6025,14 @@
     let exerciseLabCardCache = new Map();
     let cloudLoading = false;
     let cloudOperationState = { status: "idle", message: "", progress: 0 };
+    const premiumAsyncUi = { visibleLoads:new Set(), timers:new Map(), metricFrames:new Map(), metricValues:new Map(), save:{ status:"local", message:"Salvato sul dispositivo" } };
     let clearDataArmedUntil = 0;
     let nutritionPhotosUnsubscribe = null;
     let authReady = false;
+    let premiumBootReady = false;
+    let premiumBootStartedAt = Date.now();
+    let premiumBootSafetyTimer = null;
+    let hasUserInteraction = false;
     let localLoginBypass = localStorage.getItem(`${STORE_KEY}.loginBypass`) === "1";
     const coachProgramUi = {
       programId: "",
@@ -7594,8 +7717,9 @@
     };
 
     function loadState() {
+      let saved = "";
       try {
-        const saved = localStorage.getItem(STORE_KEY);
+        saved = localStorage.getItem(STORE_KEY) || "";
         const parsed = saved ? JSON.parse(saved) : null;
         if (saved && stateSchemaVersion(parsed) < DATA_SCHEMA_VERSION) ensurePreV55Backup(saved);
         const migration = parsed ? runSchemaMigrations(parsed) : null;
@@ -7615,6 +7739,8 @@
         if (loaded.training) loaded.training.openExercise = "";
         return loaded;
       } catch (error) {
+        recoveryBootError = String(error?.message || error || "Dati locali non leggibili.");
+        recoveryBootPayload = saved;
         return clone(baseState);
       }
     }
@@ -7790,6 +7916,8 @@
           localStorage.setItem(STORE_KEY, serialized);
         }
         lastPersistenceError = null;
+        setPremiumSaveStatus(options.cloud !== false && cloudUser && state.profile.account?.syncReady ? "syncing" : "local", options.cloud !== false && cloudUser && state.profile.account?.syncReady ? "Sincronizzazione…" : "Salvato sul dispositivo");
+        if (options.cloud !== false && snapshot === state && options.autoBackup !== false) scheduleAutomaticBackup();
         if (options.cloud !== false && snapshot === state) scheduleCloudSave();
         return true;
       } catch (error) {
@@ -7797,6 +7925,7 @@
           try {
             localStorage.setItem(STORE_KEY, JSON.stringify(snapshot));
             lastPersistenceError = null;
+            if (options.cloud !== false && snapshot === state && options.autoBackup !== false) scheduleAutomaticBackup();
             if (options.cloud !== false && snapshot === state) scheduleCloudSave();
             return true;
           } catch (retryError) {
@@ -7804,6 +7933,7 @@
           }
         }
         lastPersistenceError = { at: new Date().toISOString(), message: String(error?.message || error), scope: "localStorage" };
+        setPremiumSaveStatus("error", "Errore di salvataggio");
         return false;
       }
     }
@@ -7818,11 +7948,181 @@
 
     function saveState(options = {}) {
       const request = { touch: options.touch !== false, cloud: options.cloud !== false };
+      setPremiumSaveStatus("saving", "Salvataggio…");
       pendingSaveOptions = pendingSaveOptions ? { touch: pendingSaveOptions.touch || request.touch, cloud: pendingSaveOptions.cloud || request.cloud } : request;
       if (options.immediate) return flushStateSave();
       clearTimeout(localSaveTimer);
       localSaveTimer = setTimeout(flushStateSave, 320);
       return true;
+    }
+
+    function dataSafetySnapshot(source = state) {
+      const snapshot = clone(source || {});
+      if (snapshot.training) {
+        delete snapshot.training.draft;
+        delete snapshot.training.noteDraft;
+        delete snapshot.training.setDone;
+        delete snapshot.training.openExercise;
+        delete snapshot.training.timerRemaining;
+      }
+      return snapshot;
+    }
+
+    function backupChecksum(value) {
+      const text = typeof value === "string" ? value : JSON.stringify(value);
+      let hash = 2166136261;
+      for (let index = 0; index < text.length; index += 1) { hash ^= text.charCodeAt(index); hash = Math.imul(hash, 16777619); }
+      return `fnv1a-${(hash >>> 0).toString(16).padStart(8, "0")}`;
+    }
+
+    function backupPersonalRecordCount(snapshot = state) {
+      const bestByExercise = new Map(); let count = 0;
+      (snapshot.training?.sessions || []).slice().sort((a,b) => String(a.dateInput || a.date || "").localeCompare(String(b.dateInput || b.date || ""))).forEach((session) => (session.exercises || []).forEach((exercise) => {
+        const name = normalizeExerciseName(exercise.name); const sets = comparableHistorySets(exercise);
+        sets.forEach((set) => { const key = `${name}|${set.reps}`; const best = Number(bestByExercise.get(key) || 0); if (best > 0 && set.kg > best) count += 1; if (set.kg > best) bestByExercise.set(key, set.kg); });
+      }));
+      return count;
+    }
+
+    function backupSummary(snapshot = state) {
+      const checkinHistory = Array.isArray(snapshot.quiz?.history) ? snapshot.quiz.history.length : Array.isArray(snapshot.quiz?.checkinHistory) ? snapshot.quiz.checkinHistory.length : 0;
+      return {
+        workouts:(snapshot.training?.sessions || []).length,
+        programs:(snapshot.programs || []).length,
+        checkins:checkinHistory || (snapshot.quiz ? 1 : 0),
+        checkinsLabel:checkinHistory ? `${checkinHistory} check-in` : snapshot.quiz ? "1 check-in corrente" : "nessun check-in",
+        customExercises:(snapshot.coach?.exerciseLibrary || []).filter((item) => item?.isCustom || item?.origin === "custom").length,
+        personalRecords:backupPersonalRecordCount(snapshot)
+      };
+    }
+
+    function createBackupEnvelope(type = "manual", source = state) {
+      const createdAt = new Date().toISOString();
+      const payload = dataSafetySnapshot(source);
+      const metadata = { id:`backup-${Date.now()}-${Math.random().toString(36).slice(2,8)}`, type, createdAt, appBuild:APP_BUILD, dataSchemaVersion:DATA_SCHEMA_VERSION, backupSchemaVersion:BACKUP_SCHEMA_VERSION, summary:backupSummary(payload) };
+      const checksum = backupChecksum({ metadata:{ ...metadata, checksum:undefined }, payload });
+      return { format:"barbell-diva-backup", metadata:{ ...metadata, checksum }, payload };
+    }
+
+    function verifyBackupEnvelope(envelope) {
+      if (!envelope || envelope.format !== "barbell-diva-backup" || !envelope.metadata || !envelope.payload) return { ok:false, error:"Formato backup non riconosciuto." };
+      if (Number(envelope.metadata.backupSchemaVersion) > BACKUP_SCHEMA_VERSION) return { ok:false, error:"Questo backup richiede una versione più recente dell'app." };
+      const expected = backupChecksum({ metadata:{ ...envelope.metadata, checksum:undefined }, payload:envelope.payload });
+      if (expected !== envelope.metadata.checksum) return { ok:false, error:"Checksum non valido: il backup potrebbe essere corrotto." };
+      const migration = runSchemaMigrations(clone(envelope.payload));
+      if (!migration.ok) return { ok:false, error:"Migrazione dati non riuscita." };
+      return { ok:true, envelope:{ ...envelope, payload:migration.state }, migration };
+    }
+
+    function readBackupHistory() {
+      try { const records = JSON.parse(localStorage.getItem(BACKUP_HISTORY_KEY) || "[]"); return Array.isArray(records) ? records.filter((record) => verifyBackupEnvelope(record).ok) : []; } catch (error) { return []; }
+    }
+
+    function writeBackupHistory(records) {
+      const serialized = JSON.stringify(records);
+      try { localStorage.setItem(BACKUP_HISTORY_KEY, serialized); return true; } catch (error) { return false; }
+    }
+
+    function storeBackupEnvelope(envelope) {
+      const verified = verifyBackupEnvelope(envelope);
+      if (!verified.ok) return verified;
+      const history = readBackupHistory().filter((item) => item.metadata?.id !== envelope.metadata.id);
+      history.unshift(envelope);
+      const limits = { automatic:MAX_AUTOMATIC_BACKUPS, "pre-update":3, "pre-restore":5 };
+      const allowed = new Map(Object.entries(limits).map(([type, limit]) => [type, new Set(history.filter((item) => item.metadata?.type === type).slice(0, limit).map((item) => item.metadata.id))]));
+      let bounded = history.filter((item) => !allowed.has(item.metadata?.type) || allowed.get(item.metadata.type).has(item.metadata.id));
+      const maxBytes = 4 * 1024 * 1024;
+      while (new Blob([JSON.stringify(bounded)]).size > maxBytes) {
+        const oldestAutomatic = [...bounded].reverse().find((item) => item.metadata?.type === "automatic");
+        if (!oldestAutomatic) break;
+        bounded = bounded.filter((item) => item.metadata?.id !== oldestAutomatic.metadata.id);
+      }
+      if (new Blob([JSON.stringify(bounded)]).size > maxBytes && envelope.metadata?.type === "manual") return { ok:false, error:"Spazio backup quasi esaurito: esporta o elimina prima alcuni backup manuali." };
+      if (!writeBackupHistory(bounded)) return { ok:false, error:"Spazio locale insufficiente per archiviare il backup." };
+      return { ok:true, envelope };
+    }
+
+    function createAutomaticBackup() {
+      automaticBackupTimer = null;
+      if (dataSafetyRestoring) return;
+      const envelope = createBackupEnvelope("automatic");
+      storeBackupEnvelope(envelope);
+    }
+
+    function scheduleAutomaticBackup() {
+      if (dataSafetyRestoring) return;
+      clearTimeout(automaticBackupTimer);
+      automaticBackupTimer = setTimeout(createAutomaticBackup, 5000);
+    }
+
+    function downloadBackupEnvelope(envelope, filename = "") {
+      const verified = verifyBackupEnvelope(envelope);
+      if (!verified.ok) { showToast(verified.error); return false; }
+      const blob = new Blob([JSON.stringify(envelope, null, 2)], { type:"application/json" });
+      const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = filename || `barbell-diva-backup-${String(envelope.metadata.createdAt || todayInput()).slice(0,10)}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      return true;
+    }
+
+    function backupProgramMatch(current = {}, incoming = {}) {
+      if (current.id && incoming.id && String(current.id) === String(incoming.id)) return true;
+      const currentCode = String(current.code || current.name || "").trim().toLowerCase();
+      const incomingCode = String(incoming.code || incoming.name || "").trim().toLowerCase();
+      return !!currentCode && currentCode === incomingCode;
+    }
+
+    function restoreProgramProgressions(currentPrograms = [], incomingPrograms = []) {
+      return currentPrograms.map((program) => {
+        const imported = incomingPrograms.find((item) => backupProgramMatch(program, item));
+        if (!imported) return program;
+        const next = clone(program); const importedSheets = imported.sheets || [];
+        next.sheets = (program.sheets || []).map((sheet) => {
+          const importedSheet = importedSheets.find((item) => String(item.id || item.code || item.name) === String(sheet.id || sheet.code || sheet.name));
+          if (!importedSheet) return sheet;
+          const sheetNext = clone(sheet);
+          sheetNext.exercises = (sheet.exercises || []).map((exercise) => {
+            const importedExercise = (importedSheet.exercises || []).find((item) => String(item.id || normalizeExerciseName(item.name)) === String(exercise.id || normalizeExerciseName(exercise.name)));
+            if (!importedExercise) return exercise;
+            const { progression, progressionTemplateId, progressionTemplates, prescribedLoad, ...ignored } = importedExercise;
+            return { ...exercise, ...(progression !== undefined ? { progression:clone(progression) } : {}), ...(progressionTemplateId !== undefined ? { progressionTemplateId } : {}), ...(prescribedLoad !== undefined ? { prescribedLoad:clone(prescribedLoad) } : {}) };
+          });
+          return sheetNext;
+        });
+        if (Array.isArray(imported.progressionTemplates)) next.progressionTemplates = clone(imported.progressionTemplates);
+        return next;
+      });
+    }
+
+    function restoreBackupEnvelope(envelope, selections = {}) {
+      const verified = verifyBackupEnvelope(envelope);
+      if (!verified.ok) return verified;
+      const incoming = clone(verified.envelope.payload);
+      const selected = Object.entries(selections).filter(([, value]) => value).map(([key]) => key);
+      const restoreAll = !selected.length;
+      const next = restoreAll ? mergeState(clone(baseState), incoming) : clone(state);
+      if (!restoreAll) {
+        if (selections.logbook) next.training = { ...next.training, sessions:clone(incoming.training?.sessions || []) };
+        if (selections.programs) next.programs = clone(incoming.programs || []);
+        if (selections.progressions && !selections.programs) next.programs = restoreProgramProgressions(next.programs || [], incoming.programs || []);
+        if (selections.checkins) next.quiz = clone(incoming.quiz || next.quiz || {});
+        if (selections.settings) { next.profile = mergeState(next.profile || {}, incoming.profile || {}); next.metrics = clone(incoming.metrics || {}); next.nutrition = clone(incoming.nutrition || {}); next.body = clone(incoming.body || {}); }
+        if (selections.coachAi) next.coach = { ...next.coach, coachAi:clone(incoming.coach?.coachAi || {}) };
+        if (selections.divaBot) next.ui = { ...next.ui, ...Object.fromEntries(["workoutMascotVisible","workoutMascotPosition","divaBotPersonality","divaBotBubbles","divaBotCelebrations","divaBotSounds"].map((key) => [key, incoming.ui?.[key]]).filter(([, value]) => value !== undefined)) };
+        if (selections.exerciseLab) next.coach = { ...next.coach, exerciseLibrary:clone(incoming.coach?.exerciseLibrary || []) };
+      }
+      dataSafetyRestoring = true;
+      try {
+        hydrateStateModel(next); repairSequentialWorkoutWeeks(next); next.training.exercises = buildExerciseIndex(allProgramSheets(next), next.training.sessions);
+        const safetyBackup = storeBackupEnvelope(createBackupEnvelope("pre-restore", state));
+        if (!safetyBackup.ok) return safetyBackup;
+        if (!writeLocalStateSnapshot(next, { touch:true, cloud:false })) return { ok:false, error:"Ripristino annullato: impossibile salvare i dati verificati." };
+        state = next; dataSafetyUi.restorePreview = null; recoveryBootError = null; recoveryBootPayload = ""; render();
+        return { ok:true, migration:verified.migration };
+      } finally { dataSafetyRestoring = false; }
+    }
+
+    function initializeDataSafety() {
+      const lastBuild = localStorage.getItem(BACKUP_BUILD_KEY);
+      if (lastBuild !== APP_BUILD) { storeBackupEnvelope(createBackupEnvelope("pre-update")); localStorage.setItem(BACKUP_BUILD_KEY, APP_BUILD); }
     }
 
     function mergeRowsByKey(current = [], incoming = [], keyFn = (row) => JSON.stringify(row || {})) {
@@ -8054,6 +8354,7 @@
       });
       authService.onAuthStateChanged(async (user) => {
         authReady = true;
+        markPremiumBootReady();
         cloudUser = user || null;
         if (user) {
           localLoginBypass = false;
@@ -8209,8 +8510,11 @@
       const doc = cloudDocument();
       if (!doc) {
         lastCloudError = cloudUser ? "Firestore non disponibile: ricarica la pagina e riprova." : "Accedi con Google prima di sincronizzare.";
+        setPremiumSaveStatus("waiting", "Cloud in attesa");
         return false;
       }
+      startPerceivedLoading("cloud");
+      setPremiumSaveStatus("syncing", "Sincronizzazione…");
       const sessionCloudStamp = new Date().toISOString();
       const newlyMarkedSessions = [];
       (state.training?.sessions || []).forEach((session) => {
@@ -8263,6 +8567,7 @@
         state.profile.account.cloudStatus = "sync";
         state.profile.account.lastCloudSyncAt = cloudUpdatedAt;
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
+        setPremiumSaveStatus("synced", "Sincronizzato");
         return true;
       } catch (error) {
         if (!rootStateSaved) newlyMarkedSessions.forEach((session) => delete session.cloudSyncedAt);
@@ -8270,7 +8575,10 @@
         if (rootStateSaved) lastCloudError = "Allenamento e logbook sincronizzati; aggiornamento schede in attesa.";
         state.profile.account.cloudStatus = rootStateSaved ? "sync parziale" : "errore sync";
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
+        setPremiumSaveStatus(rootStateSaved ? "waiting" : "error", rootStateSaved ? "Cloud in attesa" : "Errore di salvataggio");
         return rootStateSaved;
+      } finally {
+        stopPerceivedLoading("cloud");
       }
     }
 
@@ -8282,6 +8590,7 @@
         return false;
       }
       cloudLoading = true;
+      startPerceivedLoading("cloud");
       try {
         const snapshot = await withTimeout(doc.get(), 15000);
         if (snapshot.exists && snapshot.data()?.state) {
@@ -8315,6 +8624,7 @@
         return false;
       } finally {
         cloudLoading = false;
+        stopPerceivedLoading("cloud");
       }
     }
 
@@ -9240,6 +9550,7 @@
     }
 
     function render() {
+      cancelPremiumMetricAnimations();
       const coachViewport = captureCoachViewport();
       const enteringWorkout = activeScreen === "training" && lastRenderedScreen !== "training";
       if ((activeScreen === "coach" || activeScreen === "volume") && !coachDesktopAllowed()) {
@@ -9247,6 +9558,7 @@
         activeBottom = "home";
       }
       document.body.dataset.theme = state.profile.theme || "dark";
+      applyExperiencePreferences();
       syncThemeUi();
       document.body.classList.toggle("coach-mode", state.profile.mode === "coach");
       updateNav();
@@ -9257,6 +9569,7 @@
         document.getElementById("modeButton").textContent = "C";
         screen.innerHTML = loginGateHtml();
         bindScreen();
+        bindModalController();
         lastRenderedScreen = activeScreen;
         return;
       }
@@ -9281,13 +9594,21 @@
       if (activeScreen === "volume") screen.innerHTML = volumeScreenHtml();
       if (activeScreen === "quiz") screen.innerHTML = quizHtml();
       if (activeScreen === "coach") screen.innerHTML = coachHtml();
+      if (lastRenderedScreen && lastRenderedScreen !== activeScreen && premiumMotionEnabled()) { screen.classList.remove("screen-enter"); requestAnimationFrame(() => screen.classList.add("screen-enter")); }
       ensureCoachMascotFallbacks();
       bindScreen();
+      bindModalController();
+      bindPremiumMetrics();
       if (activeScreen === "training") {
         bindWorkoutMascot();
         if (enteringWorkout) {
+          resetDivaBotSession();
           setCoachMascotState("idle");
           requestAnimationFrame(() => moveWorkoutMascot(state.ui.workoutMascotPosition || "bottom-right"));
+          const lowRecovery = readinessScore() < 50 || decisionPriority().level <= 1;
+          if (lowRecovery) triggerDivaBotReaction("recovery_warning");
+          else triggerDivaBotReaction("workout_opened");
+          noteDivaBotWorkoutInteraction();
         }
       }
       renderEngine();
@@ -9301,6 +9622,7 @@
       const screen = document.getElementById("screen");
       screen.innerHTML = trainingHtml();
       bindScreen();
+      bindModalController();
       bindWorkoutMascot();
     }
 
@@ -9327,6 +9649,65 @@
       const volume = volumeValues.reduce((sum, value) => sum + value, 0);
       const weeklyAdherence = clamp(Math.round((sessions.length / 4) * 100), 0, 100);
       return { sessions, volume, volumeAvailable: volumeValues.length > 0, volumeEstimated: volumeInfo.some((item) => item.estimated), adherence: sessions.length ? weeklyAdherence : adherenceScore(), frequency: new Set(sessions.map((session) => session.sessionCode || session.sessionName)).size };
+    }
+
+    function skeletonHtml(kind = "card") {
+      return `<section class="premium-skeleton card" aria-label="Caricamento ${escapeHtml(kind)}" role="status"><span class="skeleton-line short"></span><span class="skeleton-line"></span><span class="skeleton-block"></span></section>`;
+    }
+
+    function emptyStateHtml({ title, description, actionLabel = "Vai alla Dashboard", action = "dashboard", icon = "◦" }) {
+      return `<section class="premium-empty-state"><span class="state-icon" aria-hidden="true">${icon}</span><h3>${escapeHtml(title)}</h3><p class="micro-copy">${escapeHtml(description)}</p><button type="button" class="ghost-button" data-screen-target="${escapeHtml(action)}">${escapeHtml(actionLabel)}</button></section>`;
+    }
+
+    function errorStateHtml({ title, description, actionLabel = "Riprova", action = "retry-cloud", icon = "!" }) {
+      return `<section class="premium-error-state" role="alert"><span class="state-icon" aria-hidden="true">${icon}</span><h3>${escapeHtml(title)}</h3><p class="micro-copy">${escapeHtml(description)}</p><button type="button" class="ghost-button" data-premium-error-action="${escapeHtml(action)}">${escapeHtml(actionLabel)}</button></section>`;
+    }
+
+    function startPerceivedLoading(key) {
+      clearTimeout(premiumAsyncUi.timers.get(key));
+      premiumAsyncUi.timers.set(key, setTimeout(() => { premiumAsyncUi.visibleLoads.add(key); render(); }, 150));
+      premiumAsyncUi.timers.set(`${key}:safety`, setTimeout(() => { stopPerceivedLoading(key); }, 16000));
+    }
+
+    function stopPerceivedLoading(key) {
+      clearTimeout(premiumAsyncUi.timers.get(key)); clearTimeout(premiumAsyncUi.timers.get(`${key}:safety`));
+      premiumAsyncUi.timers.delete(key); premiumAsyncUi.timers.delete(`${key}:safety`);
+      if (premiumAsyncUi.visibleLoads.delete(key)) render();
+    }
+
+    function setPremiumSaveStatus(status, message) {
+      premiumAsyncUi.save = { status, message };
+      const node = document.getElementById("premiumSaveStatus");
+      if (node) { node.dataset.status = status; node.querySelector("span")?.replaceChildren(document.createTextNode(message)); }
+    }
+
+    function premiumSaveStatusHtml() {
+      const save = premiumAsyncUi.save;
+      return `<div class="premium-save-status" id="premiumSaveStatus" data-status="${escapeHtml(save.status)}" aria-live="polite"><i class="save-dot" aria-hidden="true"></i><span>${escapeHtml(save.message)}</span></div>`;
+    }
+
+    function cancelPremiumMetricAnimations() {
+      premiumAsyncUi.metricFrames.forEach((frame) => cancelAnimationFrame(frame));
+      premiumAsyncUi.metricFrames.clear();
+    }
+
+    function animateMetricValue(element, previousValue, nextValue) {
+      const mode = effectiveAnimationMode(); const suffix = element.dataset.metricSuffix || ""; const decimals = Number(element.dataset.metricDecimals || 0);
+      const paint = (value) => { element.textContent = `${Number(value).toLocaleString("it-IT", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${suffix}`; };
+      if (mode === "off" || previousValue == null || !Number.isFinite(previousValue) || previousValue === nextValue) { paint(nextValue); return; }
+      const duration = mode === "reduced" ? 160 : 560; const started = performance.now(); const key = element.dataset.metricKey;
+      const frame = (now) => { const progress = Math.min(1, (now - started) / duration); paint(previousValue + (nextValue - previousValue) * (1 - Math.pow(1 - progress, 3))); if (progress < 1) premiumAsyncUi.metricFrames.set(key, requestAnimationFrame(frame)); else premiumAsyncUi.metricFrames.delete(key); };
+      premiumAsyncUi.metricFrames.set(key, requestAnimationFrame(frame));
+    }
+
+    function bindPremiumMetrics() {
+      if (activeScreen !== "dashboard") return;
+      document.querySelectorAll("[data-metric-key]").forEach((element) => {
+        const key = element.dataset.metricKey; const next = Number(element.dataset.metricValue);
+        const previous = premiumAsyncUi.metricValues.get(key);
+        animateMetricValue(element, previous, next);
+        premiumAsyncUi.metricValues.set(key, next);
+      });
     }
 
     function iconSvg(name, label = "") {
@@ -9421,22 +9802,28 @@
         ${dashboardCoachHtml()}
         ${trainingContextControlsHtml(context)}
         <section class="phase11-summary-grid">
-          ${dashboardSummaryCard(iconSvg("workout", "Allenamenti"), "Allenamenti", stats.sessions.length, "questa settimana", colors.green)}
-          ${dashboardSummaryCard(iconSvg("adherence", "Aderenza"), "Aderenza", `${stats.adherence}%`, "costanza recente", colors.blue)}
-          ${dashboardSummaryCard(iconSvg("frequency", "Frequenza"), "Frequenza", stats.frequency, "schede svolte", colors.pink)}
-          ${dashboardSummaryCard(iconSvg("readiness", "Readiness"), "Readiness", `${Math.round(ready)}%`, "recupero percepito", decision.color)}
+          ${dashboardSummaryCard(iconSvg("workout", "Allenamenti"), "Allenamenti", stats.sessions.length, "questa settimana", colors.green, { key:"sessions", value:stats.sessions.length })}
+          ${dashboardSummaryCard(iconSvg("adherence", "Aderenza"), "Aderenza", `${stats.adherence}%`, "costanza recente", colors.blue, { key:"adherence", value:stats.adherence, suffix:"%" })}
+          ${dashboardSummaryCard(iconSvg("frequency", "Frequenza"), "Frequenza", stats.frequency, "schede svolte", colors.pink, { key:"frequency", value:stats.frequency })}
+          ${dashboardSummaryCard(iconSvg("readiness", "Readiness"), "Readiness", `${Math.round(ready)}%`, "recupero percepito", decision.color, { key:"readiness", value:Math.round(ready), suffix:"%" })}
+          ${dashboardSummaryCard(iconSvg("volume", "Volume"), "Volume", stats.volumeAvailable ? `${Math.round(stats.volume)} kg` : "—", stats.volumeAvailable ? "questa settimana" : "dati insufficienti", colors.violet, stats.volumeAvailable ? { key:"volume", value:Math.round(stats.volume), suffix:" kg" } : null)}
           ${dashboardSummaryCard(iconSvg("latest", "Ultima seduta"), "Ultima seduta", last?.sessionCode || "—", last ? formatDateLabel(last.dateInput || last.date) : "nessun log", colors.gold)}
         </section>
         <section class="phase11-main-grid"><div>
           <section class="phase11-today card"><div class="row"><div><span class="section-eyebrow">La tua seduta</span><h3>${escapeHtml(context.session.name || context.session.code)}</h3><p>${escapeHtml(displayLabel(context.session.focus || "Focus da definire"))}</p></div><span class="status-badge">${context.session.exercises?.length || 0} esercizi</span></div><div class="phase11-progress"><span style="width:${Math.min(100, (context.session.exercises?.length || 0) ? Math.round((stats.sessions.length ? 100 : 0)) : 0)}%"></span></div><div class="quick-actions"><button class="gold-button" data-screen-target="training">${iconSvg("start", "Inizia allenamento")} Avvia</button><button class="ghost-button" data-screen-target="logbook">${iconSvg("logbook", "Apri logbook")} Apri logbook</button></div></section>
           <section class="phase11-chart-card card"><div class="row"><div><span class="section-eyebrow">Progressi recenti</span><h3>Settimana in movimento</h3></div><span class="chip">${stats.sessions.length} sedute</span></div><div class="phase11-bars">${[0,1,2,3,4,5,6].map((day) => { const count = stats.sessions.filter((session) => { const stamp = sessionTimestamp(session); return stamp && new Date(stamp).getDay() === (day + 1) % 7; }).length; return `<div class="phase11-bar-col"><span style="height:${Math.max(8, Math.min(100, count * 34))}%"></span><small>${["L","M","M","G","V","S","D"][day]}</small></div>`; }).join("")}</div><p class="micro-copy">Volume e frequenza vengono aggiornati automaticamente dai tuoi log.</p></section>
         </div><aside class="phase11-side"><section class="card"><div class="row"><h3>Azioni rapide</h3><span class="chip">oggi</span></div><button class="quick-action" data-screen-target="training">${iconSvg("start", "Inizia allenamento")} Inizia allenamento <span>›</span></button><button class="quick-action" data-screen-target="logbook">${iconSvg("logbook", "Apri logbook")} Apri logbook <span>›</span></button><button class="quick-action" data-screen-target="quiz">${iconSvg("checkin", "Registra check-in")} Registra check-in <span>›</span></button></section><section class="card"><div class="row"><h3>Coach note</h3><span class="chip" style="color:${decision.color}">${escapeHtml(decision.label)}</span></div><p class="micro-copy">${escapeHtml(decision.text)}</p></section></aside></section>
+        ${divaBotSettingsHtml()}
+        ${experienceSettingsHtml()}
+        ${dataProtectionHtml()}
         ${accountCardHtml()}
+        ${onboardingHtml()}
       </div>`;
     }
 
-    function dashboardSummaryCard(icon, label, value, detail, color) {
-      return `<article class="phase11-summary-card card" style="--summary-accent:${color}"><span class="summary-icon">${icon}</span><div><span>${label}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div></article>`;
+    function dashboardSummaryCard(icon, label, value, detail, color, metric = null) {
+      const metricAttrs = metric ? ` data-metric-key="${escapeHtml(metric.key)}" data-metric-value="${Number(metric.value)}" data-metric-suffix="${escapeHtml(metric.suffix || "")}"` : "";
+      return `<article class="phase11-summary-card card" style="--summary-accent:${color}"><span class="summary-icon">${icon}</span><div><span>${label}</span><strong${metricAttrs}>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div></article>`;
     }
 
     function loginGateHtml() {
@@ -9461,6 +9848,7 @@
       const connected = !!account.uid;
       const syncReady = !!account.syncReady;
       const initial = escapeHtml((account.name || account.email || "B").slice(0, 1).toUpperCase());
+      const cloudFeedback = premiumAsyncUi.visibleLoads.has("cloud") ? skeletonHtml("dati cloud") : lastCloudError && account.cloudStatus?.startsWith("errore") ? errorStateHtml({ title:"Cloud non disponibile", description:lastCloudError, actionLabel:"Riprova", action:"retry-cloud" }) : "";
       return `
         <section class="card account-card">
           <div class="row">
@@ -9474,6 +9862,8 @@
               <span>${escapeHtml(accountStatusText())}</span>
             </div>
           </div>
+          ${premiumSaveStatusHtml()}
+          ${cloudFeedback}
           ${connected ? `
             <div class="account-actions">
               <button class="google-button" id="uploadLocalCloud">${syncReady ? "Forza upload" : "Carica questo dispositivo"}</button>
@@ -9490,6 +9880,75 @@
           `}
         </section>
       `;
+    }
+
+    function divaBotSettingsHtml() {
+      const preferences = divaBotPreferences();
+      return `<section class="card diva-bot-settings" aria-labelledby="divaBotSettingsTitle"><div class="row"><div><span class="section-eyebrow">Impostazioni</span><h3 id="divaBotSettingsTitle">Diva Bot</h3></div><span class="chip">preferenze salvate</span></div><div class="training-context-grid"><label><input type="checkbox" data-diva-bot-setting="visible" ${workoutMascotVisible() ? "checked" : ""}> Mostra Diva Bot durante l'allenamento</label><label>Personalità<select data-diva-bot-setting="personality"><option value="silent" ${preferences.personality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${preferences.personality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${preferences.personality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-setting="bubbles" ${preferences.bubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-setting="celebrations" ${preferences.celebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-setting="sounds" ${preferences.sounds ? "checked" : ""}> Suoni Diva Bot</label></div><p class="micro-copy">I suoni restano disattivati finché non saranno disponibili asset audio adatti.</p></section>`;
+    }
+
+    function experienceSettingsHtml() {
+      const ui = state.ui || {};
+      return `<section class="card" aria-labelledby="experienceSettingsTitle"><div class="row"><div><span class="section-eyebrow">Impostazioni</span><h3 id="experienceSettingsTitle">Esperienza app</h3></div><span class="chip">premium</span></div><div class="training-context-grid"><label>Animazioni<select data-experience-setting="animationMode"><option value="full" ${ui.animationMode === "full" ? "selected" : ""}>Complete</option><option value="reduced" ${ui.animationMode === "reduced" ? "selected" : ""}>Ridotte</option><option value="off" ${ui.animationMode === "off" ? "selected" : ""}>Disattivate</option></select></label><label><input type="checkbox" data-experience-setting="splashEnabled" ${ui.splashEnabled ? "checked" : ""}> Splash screen</label><label><input type="checkbox" data-experience-setting="hapticFeedback" ${ui.hapticFeedback ? "checked" : ""}> Feedback tattile</label><label><input type="checkbox" data-experience-setting="reduceGlow" ${ui.reduceGlow ? "checked" : ""}> Riduci effetti luminosi</label><button class="ghost-button" type="button" data-review-onboarding>Rivedi onboarding</button></div><p class="micro-copy">I suoni restano separati nelle impostazioni Diva Bot e non vengono aggiunti asset audio finti.</p></section>`;
+    }
+
+    function applyExperiencePreferences() {
+      const systemReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+      const mode = systemReduced ? "reduced" : (state.ui?.animationMode || "full");
+      document.body.dataset.animationMode = mode;
+      document.body.classList.toggle("reduced-glow", !!state.ui?.reduceGlow);
+    }
+
+    function effectiveAnimationMode() {
+      return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "reduced" : (state.ui?.animationMode || "full");
+    }
+
+    function premiumMotionEnabled() { return effectiveAnimationMode() !== "off"; }
+
+    function triggerHaptic(type = "light") {
+      if (!hasUserInteraction || !state.ui?.hapticFeedback || effectiveAnimationMode() !== "full" || !navigator.vibrate || window.matchMedia?.("(pointer:fine)")?.matches) return false;
+      const patterns = { light:10, success:15, warning:[15,30,15], error:[25,40,25], pr:[15,40,20] };
+      try { return navigator.vibrate(patterns[type] || patterns.light); } catch (error) { return false; }
+    }
+
+    function finishPremiumBoot() {
+      if (!premiumBootReady || !state.ui?.splashEnabled) return;
+      const splash = document.getElementById("premiumSplash");
+      if (!splash) return;
+      const remaining = Math.max(0, 600 - (Date.now() - premiumBootStartedAt));
+      clearTimeout(premiumBootSafetyTimer);
+      setTimeout(() => splash.classList.add("is-hidden"), remaining);
+    }
+
+    function markPremiumBootReady() { premiumBootReady = true; finishPremiumBoot(); }
+
+    function onboardingHtml() {
+      if (!onboardingUi.force && (state.ui?.onboardingComplete || (state.training?.sessions || []).length > EXCEL_WORKOUT_HISTORY.length)) return "";
+      const slides = [["Benvenuta in Barbell Diva","Il tuo spazio per allenarti con intenzione, stile e dati chiari."],["Registra gli allenamenti","Segna i carichi e lascia che Logbook tenga traccia dei progressi."],["Segui progressioni e Coach AI","Trova il prossimo passo utile senza perdere il filo."],["Proteggi e sincronizza i dati","Esporta Backup e collega il cloud quando sei pronta."]];
+      const current = slides[onboardingUi.step] || slides[0];
+      return `<div class="coach-modal-backdrop" data-modal-kind="onboarding"><section class="coach-modal" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle"><div class="premium-monogram" aria-hidden="true">BD</div><span class="section-eyebrow">${onboardingUi.step + 1} di ${slides.length}</span><h2 id="onboardingTitle">${escapeHtml(current[0])}</h2><p>${escapeHtml(current[1])}</p><div class="coach-modal-actions"><button class="ghost-button" type="button" data-onboarding-skip>Salta</button>${onboardingUi.step ? '<button class="ghost-button" type="button" data-onboarding-back>Indietro</button>' : ''}<button class="gold-button" type="button" data-onboarding-next>${onboardingUi.step === slides.length - 1 ? "Inizia" : "Avanti"}</button></div></section></div>`;
+    }
+
+    function backupDateLabel(value) {
+      const date = new Date(value || Date.now());
+      return new Intl.DateTimeFormat("it-IT", { day:"2-digit", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit" }).format(date);
+    }
+
+    function backupTypeLabel(type = "automatic") {
+      return ({ manual:"Manuale", automatic:"Automatico", "pre-update":"Pre aggiornamento", "pre-restore":"Pre ripristino", cloud:"Cloud" })[type] || "Automatico";
+    }
+
+    function backupSummaryHtml(summary = {}) {
+      return `<ul class="micro-copy"><li>✓ ${Number(summary.workouts || 0)} allenamenti</li><li>✓ ${Number(summary.programs || 0)} programmi</li><li>✓ ${Number(summary.personalRecords || 0)} PR</li><li>✓ ${escapeHtml(summary.checkinsLabel || `${Number(summary.checkins || 0)} check-in`)}</li><li>✓ ${Number(summary.customExercises || 0)} esercizi personalizzati</li><li>✓ impostazioni e preferenze</li></ul>`;
+    }
+
+    function dataProtectionHtml() {
+      const history = readBackupHistory(); const last = history[0]; const integrity = recoveryBootError ? "attenzione" : "verificata"; const storageBytes = new Blob([JSON.stringify(history)]).size;
+      const preview = dataSafetyUi.restorePreview;
+      const historyRows = dataSafetyUi.historyOpen ? `<div class="history">${history.length ? history.map((item) => `<div class="history-row"><span><strong>${escapeHtml(backupTypeLabel(item.metadata?.type))}</strong><small>${escapeHtml(backupDateLabel(item.metadata?.createdAt))}</small></span><div><button class="mini-button" type="button" data-backup-history-restore="${escapeHtml(item.metadata?.id)}">Ripristina</button><button class="mini-button" type="button" data-backup-history-export="${escapeHtml(item.metadata?.id)}">Esporta</button><button class="mini-button" type="button" data-backup-history-delete="${escapeHtml(item.metadata?.id)}">Elimina</button></div></div>`).join("") : emptyStateHtml({ title:"Nessun backup locale", description:"Crea un backup completo per conservare un punto di sicurezza.", actionLabel:"Chiudi cronologia", action:"dashboard", icon:"□" })}</div>` : "";
+      const restoreModal = preview ? `<div class="coach-modal-backdrop"><section class="coach-modal" role="dialog" aria-modal="true" aria-labelledby="backupRestoreTitle"><div class="row"><div><span class="section-eyebrow">Ripristino sicuro</span><h3 id="backupRestoreTitle">Backup del ${escapeHtml(backupDateLabel(preview.metadata?.createdAt))}</h3></div><button class="round-button" type="button" data-backup-preview-close aria-label="Chiudi">×</button></div>${backupSummaryHtml(preview.metadata?.summary)}<p class="micro-copy">Scegli cosa ripristinare. Se non selezioni nulla, verrà ripristinato tutto il backup dopo aver creato un punto di sicurezza.</p><div class="training-context-grid"><label><input type="checkbox" data-backup-select="logbook"> Logbook</label><label><input type="checkbox" data-backup-select="programs"> Programmi</label><label><input type="checkbox" data-backup-select="progressions"> Progressioni</label><label><input type="checkbox" data-backup-select="checkins"> Check-in</label><label><input type="checkbox" data-backup-select="settings"> Impostazioni</label><label><input type="checkbox" data-backup-select="coachAi"> Coach AI</label><label><input type="checkbox" data-backup-select="divaBot"> Diva Bot</label><label><input type="checkbox" data-backup-select="exerciseLab"> Exercise Lab</label></div><p class="micro-copy">Le statistiche verranno ricalcolate automaticamente dal Logbook.</p><div class="coach-modal-actions"><button class="ghost-button" type="button" data-backup-preview-close>Annulla</button><button class="gold-button" type="button" data-backup-restore-confirm>Conferma ripristino</button></div></section></div>` : "";
+      const recovery = recoveryBootError ? `<section class="card"><span class="section-eyebrow">Recovery Mode</span><h3>Dati locali da controllare</h3><p class="micro-copy">${escapeHtml(recoveryBootError)}</p><div class="quick-actions"><button class="ghost-button" data-backup-recovery="latest">Ripristina ultimo backup</button><button class="ghost-button" data-backup-recovery="previous">Backup precedente</button><label class="ghost-button">Importa backup manuale<input type="file" accept="application/json" data-backup-import hidden></label><button class="ghost-button" data-backup-corrupt-download>Scarica dati corrotti</button><button class="ghost-button" data-backup-recovery="safe">Continua in modalità sicura</button></div></section>` : "";
+      return `<section class="card data-protection-card" aria-labelledby="dataProtectionTitle"><div class="row"><div><span class="section-eyebrow">Protezione dati</span><h3 id="dataProtectionTitle">I tuoi dati sono al sicuro</h3></div><span class="chip">${escapeHtml(integrity)}</span></div><div class="training-context-grid"><div><strong>Ultimo backup</strong><p class="micro-copy">${last ? escapeHtml(backupDateLabel(last.metadata?.createdAt)) : "da creare"}</p></div><div><strong>Backup locale</strong><p class="micro-copy">${history.length} disponibili</p></div><div><strong>Spazio backup utilizzato</strong><p class="micro-copy">${(storageBytes / 1048576).toFixed(1)} MB utilizzati</p></div><div><strong>Cloud</strong><p class="micro-copy">${state.profile.account?.syncReady ? "sincronizzato" : "locale"}</p></div><div><strong>Integrità dati</strong><p class="micro-copy">${escapeHtml(integrity)}</p></div><div><strong>Versione dati</strong><p class="micro-copy">schema ${DATA_SCHEMA_VERSION} · ${APP_BUILD}</p></div></div><div class="quick-actions"><button class="gold-button" type="button" data-backup-export>Esporta Backup</button><label class="ghost-button">Ripristina Backup<input type="file" accept="application/json" data-backup-import hidden></label><button class="ghost-button" type="button" data-backup-history-toggle>Cronologia Backup</button></div>${historyRows}</section>${recovery}${restoreModal}`;
     }
 
     function workoutCoachProgressMessage(completion) {
@@ -9510,7 +9969,11 @@
       const completion = session.exercises?.length ? Math.round(completedExercises / session.exercises.length * 100) : 0;
       const workoutMascotVisible = state.ui?.workoutMascotVisible !== false;
       const workoutMascotPosition = WORKOUT_MASCOT_POSITIONS.has(state.ui?.workoutMascotPosition) ? state.ui.workoutMascotPosition : "bottom-right";
-      const workoutMascotLayer = workoutMascotVisible ? `<div id="workoutMascotLayer" class="workout-mascot-layer" role="group" aria-label="Diva Bot durante l'allenamento"><div class="workout-mascot-anchor" data-position="${workoutMascotPosition}"><button type="button" id="workoutMascotButton" class="workout-mascot-button" aria-label="Sposta Diva Bot" aria-haspopup="menu">${coachMascotHtml("workout-floating")}</button><div id="workoutMascotBubble" class="workout-mascot-bubble" role="status" aria-live="polite" hidden></div><div id="workoutMascotMenu" class="workout-mascot-menu" role="menu" hidden><label><input type="checkbox" data-workout-mascot-visible checked> Mostra Diva Bot durante l'allenamento</label><button type="button" data-workout-mascot-hide>Nascondi Diva Bot</button></div></div></div>` : `<button type="button" class="workout-mascot-restore" data-workout-mascot-show>Mostra Diva Bot durante l'allenamento</button>`;
+      const divaBotPersonality = divaBotPreferences().personality;
+      const divaBotBubbles = divaBotPreferences().bubbles;
+      const divaBotCelebrations = divaBotPreferences().celebrations;
+      const divaBotSounds = divaBotPreferences().sounds;
+      const workoutMascotLayer = workoutMascotVisible ? `<div id="workoutMascotLayer" class="workout-mascot-layer" role="group" aria-label="Diva Bot durante l'allenamento"><div class="workout-mascot-anchor" data-position="${workoutMascotPosition}"><button type="button" id="workoutMascotButton" class="workout-mascot-button" aria-label="Sposta Diva Bot" aria-haspopup="menu">${coachMascotHtml("workout-floating")}</button><div id="workoutMascotBubble" class="workout-mascot-bubble" role="status" aria-live="polite" hidden></div><div id="workoutMascotMenu" class="workout-mascot-menu" role="menu" hidden><strong>Diva Bot</strong><label><input type="checkbox" data-workout-mascot-visible checked> Mostra Diva Bot durante l'allenamento</label><label>Personalità<select data-diva-bot-personality><option value="silent" ${divaBotPersonality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${divaBotPersonality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${divaBotPersonality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-bubbles ${divaBotBubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-celebrations ${divaBotCelebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-sounds ${divaBotSounds ? "checked" : ""}> Suoni Diva Bot</label><button type="button" data-workout-mascot-hide>Nascondi Diva Bot</button></div></div></div>` : `<button type="button" class="workout-mascot-restore" data-workout-mascot-show>Mostra Diva Bot durante l'allenamento</button>`;
       const sessionNote = String(displayLabel(session.note || ""))
         .replace(/settimana\s+\d+/gi, `settimana ${context.week}`)
         .replace(/week\s+\d+/gi, `settimana ${context.week}`);
@@ -9748,7 +10211,7 @@
           const setCount = exercises.reduce((n, item) => n + sessionExerciseSetCount(item, session), 0);
           const volumeInfo = sessionVolumeInfo(session);
           return `<article class="phase11-log-card card"><div class="row"><div><span class="section-eyebrow">${escapeHtml(date)}</span><h3>${escapeHtml(session.sessionName || session.name || session.sessionCode || "Allenamento")}</h3></div><span class="status-badge">${escapeHtml(completion.label)}</span></div><div class="phase11-log-meta"><span>${escapeHtml(session.sessionCode || "Seduta")}</span><span>•</span><span>${escapeHtml(session.phase || "Programma")}</span><span>•</span><span>Fonte: ${escapeHtml(session.source || "App")}</span><span>•</span><span>${exercises.length} esercizi</span></div><div class="phase11-log-stats"><div><strong>${volume == null ? "—" : `${Math.round(volume)} kg`}</strong><span>${volume == null ? "Dati insufficienti" : (volumeInfo.estimated ? "volume stimato dalla scheda" : "volume kg × reps")}</span></div><div><strong>${setCount || "—"}</strong><span>serie registrate</span></div><div><strong>${escapeHtml(session.week ? `S${session.week}` : "—")}</strong><span>settimana</span></div></div><details class="phase11-log-exercises"><summary>Dettagli seduta</summary><ul>${exercises.length ? exercises.map((item) => { const sets = item.completedSets || item.sets || []; const values = Array.isArray(sets) ? sets.map((set) => `${set.kg ?? set.load ?? "—"} kg${set.reps ? ` × ${set.reps}` : ""}`).join(" · ") : (item.value || ""); return `<li><strong>${escapeHtml(displayExerciseName(item.name || item.exerciseName || "Esercizio"))}</strong> · ${escapeHtml(values || "valori non disponibili")}${item.averageKg ? ` · media ${escapeHtml(item.averageKg)}` : ""}${item.userNote ? `<br><small>${escapeHtml(item.userNote)}</small>` : ""}</li>`; }).join("") : "<li>Nessun esercizio registrato</li>"}</ul>${volume == null ? `<p class="micro-copy">Servono almeno carico e ripetizioni della scheda per stimare il volume.</p>` : ""}</details></article>`;
-        }).join("") : `<div class="phase11-log-empty card">Nessuna seduta corrisponde ai filtri. Completa un workout per iniziare lo storico.</div>`}</section>
+        }).join("") : emptyStateHtml({ title:"Nessuna seduta trovata", description:"Modifica i filtri oppure completa un workout per iniziare lo storico.", actionLabel:"Nuovo workout", action:"training", icon:"◦" })}</section>
       </div>`;
     }
 
@@ -9783,7 +10246,7 @@
       const rows = exerciseHistory(meta, 8, meta.jump);
       return `<div class="history">
         <div class="section-eyebrow" style="margin:0">Storico carichi esercizio</div>
-        ${rows.length ? rows.map((row) => `<div class="history-row"><span>${escapeHtml(historyLoadLabel(row))}</span><strong>${escapeHtml(row.date)} - ${escapeHtml(row.sessionCode || "")}</strong></div>`).join("") : `<div class="history-row"><span>Nessuna progressione trovata per questo esercizio</span><strong>--</strong></div>`}
+        ${rows.length ? rows.map((row) => `<div class="history-row"><span>${escapeHtml(historyLoadLabel(row))}</span><strong>${escapeHtml(row.date)} - ${escapeHtml(row.sessionCode || "")}</strong></div>`).join("") : emptyStateHtml({ title:"Nessun dato progressi", description:"Registra una seduta con questo esercizio per vedere il trend.", actionLabel:"Vai all’allenamento", action:"training", icon:"↗" })}
       </div>`;
     }
 
@@ -10153,8 +10616,226 @@
 
     const COACH_MASCOT_STATES = new Set(["idle", "happy", "celebrate", "thinking", "encouraging", "lifting", "warning", "rest"]);
     const WORKOUT_MASCOT_POSITIONS = new Set(["top-right", "middle-right", "bottom-right", "bottom-left"]);
-    const coachMascotController = { state:"idle", message:"", temporaryTimer:null, blinkTimer:null, blinkResetTimer:null, reactionTimer:null, weightTimer:null, lastWeightReactionAt:0 };
+    const coachMascotController = { state:"idle", message:"", temporaryTimer:null, blinkTimer:null, blinkResetTimer:null, reactionTimer:null, weightTimer:null, lastWeightReactionAt:0, recentMessages:[] };
     const workoutMascotUi = { drag:null, scrollTimer:null, resizeTimer:null, longPressTimer:null, suppressClick:false, globalBound:false };
+    const DIVA_BOT_PERSONALITIES = new Set(["silent", "balanced", "diva"]);
+    const DIVA_BOT_PRIORITY = { low:1, medium:2, high:3, critical:4 };
+    const DIVA_BOT_EVENTS = {
+      workout_opened:{ priority:"low", cooldown:0, state:"encouraging", duration:2100, once:true },
+      set_completed:{ priority:"low", cooldown:60000, state:"happy", duration:1850 },
+      exercise_completed:{ priority:"medium", cooldown:0, state:"happy", duration:2100, once:true },
+      half_workout:{ priority:"medium", cooldown:0, state:"encouraging", duration:2300, once:true },
+      almost_finished:{ priority:"high", cooldown:0, state:"happy", duration:2300, once:true },
+      workout_completed:{ priority:"high", cooldown:0, state:"celebrate", duration:2800, once:true },
+      workout_saved_partial:{ priority:"medium", cooldown:20000, state:"happy", duration:1900 },
+      personal_record:{ priority:"critical", cooldown:0, state:"celebrate", duration:3000 },
+      load_increased:{ priority:"low", cooldown:30000, state:"lifting", duration:1750 },
+      load_decreased:{ priority:"medium", cooldown:30000, state:"encouraging", duration:1900 },
+      performance_improved:{ priority:"medium", cooldown:0, state:"happy", duration:2200, once:true },
+      performance_declined:{ priority:"medium", cooldown:0, state:"encouraging", duration:2200, once:true },
+      rir_too_low:{ priority:"high", cooldown:180000, state:"warning", duration:2500 },
+      rir_too_high:{ priority:"high", cooldown:180000, state:"warning", duration:2500 },
+      recovery_warning:{ priority:"high", cooldown:0, state:"warning", duration:2800, once:true },
+      idle_too_long:{ priority:"medium", cooldown:0, state:"thinking", duration:2300, once:true },
+      coach_analysis_started:{ priority:"low", cooldown:10000, state:"thinking", duration:900 },
+      coach_analysis_completed:{ priority:"medium", cooldown:10000, state:"happy", duration:1500 }
+    };
+    const DIVA_BOT_MESSAGES = {
+      workout_opened:{ balanced:[{id:"open-balanced-01",text:"Pronta? Oggi lavoriamo bene e con tecnica pulita."}], diva:[{id:"open-diva-01",text:"Bene Diva, vediamo chi comanda oggi."},{id:"open-diva-02",text:"Look cute. Lift heavy. Iniziamo."}] },
+      set_completed:{ balanced:[{id:"set-balanced-01",text:"Serie fatta. Continua con tecnica pulita."},{id:"set-balanced-02",text:"Ottimo controllo. Mantieni questo ritmo."},{id:"set-balanced-03",text:"Brava, recupera e preparati alla prossima."}], diva:[{id:"set-diva-01",text:"Serie fatta. Nessun dramma, solo progressive overload."},{id:"set-diva-02",text:"Bella la tecnica. Adesso aggiungiamo cattiveria."},{id:"set-diva-03",text:"Un'altra serie archiviata. Molto diva, molto pesante."},{id:"set-diva-04",text:"Brava. Il bilanciere può iniziare a preoccuparsi."}] },
+      exercise_completed:{ balanced:[{id:"exercise-balanced-01",text:"Esercizio completato. Passiamo al prossimo."},{id:"exercise-balanced-02",text:"Ottimo lavoro. Hai chiuso anche questo esercizio."}], diva:[{id:"exercise-diva-01",text:"Esercizio eliminato dalla lista. Iconica e organizzata."},{id:"exercise-diva-02",text:"Finito anche questo. La palestra oggi è proprietà privata."},{id:"exercise-diva-03",text:"Esercizio chiuso. Nessun sopravvissuto."}] },
+      half_workout:{ balanced:[{id:"half-balanced-01",text:"Sei a metà allenamento. Continua con calma e precisione."},{id:"half-balanced-02",text:"Metà scheda completata. Il ritmo è buono."}], diva:[{id:"half-diva-01",text:"Sei a metà. Troppo tardi per fingere di essere delicata."},{id:"half-diva-02",text:"Metà scheda completata. Il glow viene dopo la sofferenza."},{id:"half-diva-03",text:"Sei a metà e sei ancora bellissima. Sospetto."}] },
+      almost_finished:{ balanced:[{id:"almost-balanced-01",text:"Manca poco. Mantieni la qualità fino all'ultima serie."},{id:"almost-balanced-02",text:"Ultimo tratto. Non sacrificare la tecnica."}], diva:[{id:"almost-diva-01",text:"Ultimo tratto, Diva. Non mollare proprio sul finale."},{id:"almost-diva-02",text:"Manca poco. Finisci il lavoro e conquista lo specchio."},{id:"almost-diva-03",text:"Quasi fatta. Il ponytail check può aspettare."}] },
+      workout_completed:{ balanced:[{id:"finish-balanced-01",text:"Allenamento completato. Ottimo lavoro, Alice."},{id:"finish-balanced-02",text:"Scheda terminata. Ora recupera bene."}], diva:[{id:"finish-diva-01",text:"Hai finito. Puoi tornare a essere delicata."},{id:"finish-diva-02",text:"Allenamento completato. Oggi hai vinto tu."},{id:"finish-diva-03",text:"Scheda chiusa. Adesso vai a meritarti il mirror check."},{id:"finish-diva-04",text:"Workout completato. Strong is the new pretty."}] },
+      workout_saved_partial:{ balanced:[{id:"partial-balanced-01",text:"Sessione salvata. Potrai continuare da qui."},{id:"partial-balanced-02",text:"Progressi salvati correttamente."}], diva:[{id:"partial-diva-01",text:"Salvato tutto. La Diva può riprendere quando vuole."},{id:"partial-diva-02",text:"Progressi al sicuro. Il workout non scappa."}] },
+      personal_record:{ balanced:[{id:"pr-balanced-01",text:"Nuovo record personale! Ottimo lavoro."},{id:"pr-balanced-02",text:"PR registrato. La progressione sta funzionando."}], diva:[{id:"pr-diva-01",text:"PR registrato. Umiltà rimandata a domani."},{id:"pr-diva-02",text:"Nuovo record. Il bilanciere ha perso la discussione."},{id:"pr-diva-03",text:"OK, questa me la segno. Sei ufficialmente pericolosa."},{id:"pr-diva-04",text:"PR! Essere iconica è progressive overload."}] },
+      load_increased:{ balanced:[{id:"load-up-balanced-01",text:"Carico aumentato. Mantieni la tecnica pulita."}], diva:[{id:"load-up-diva-01",text:"Più peso? Finalmente parliamo la stessa lingua."},{id:"load-up-diva-02",text:"Hai aggiunto peso. Scelta corretta e molto elegante."},{id:"load-up-diva-03",text:"Questi kg iniziano a sembrare leggeri su di te."}] },
+      load_decreased:{ balanced:[{id:"load-down-balanced-01",text:"Carico ridotto: la tecnica viene prima dell'ego."}], diva:[{id:"load-down-diva-01",text:"Carico ridotto. La tecnica viene prima dell'ego."},{id:"load-down-diva-02",text:"Oggi si regola il carico, non il valore della Diva."},{id:"load-down-diva-03",text:"Scelta intelligente. Controllo prima di tutto."}] },
+      performance_improved:{ balanced:[{id:"improve-balanced-01",text:"Hai migliorato la prestazione rispetto all'ultima seduta."},{id:"improve-balanced-02",text:"Piccolo progresso registrato. È così che si costruiscono i risultati."}], diva:[{id:"improve-diva-01",text:"Progressi registrati. Eleganza sotto carico."}] },
+      performance_declined:{ balanced:[{id:"decline-balanced-01",text:"Oggi tieni il focus sulla qualità: il dato isolato non definisce il percorso."}], diva:[{id:"decline-diva-01",text:"Giornata più leggera: tecnica, controllo e zero drammi."}] },
+      recovery_warning:{ balanced:[{id:"recovery-balanced-01",text:"Oggi i segnali di recupero sono bassi. Punta sulla qualità e valuta di ridurre il carico."}], diva:[{id:"recovery-diva-01",text:"Oggi la vera mossa da Diva è allenarsi con intelligenza."}] },
+      idle_too_long:{ balanced:[{id:"idle-balanced-01",text:"Tutto bene? Quando sei pronta, continuiamo."}], diva:[{id:"idle-diva-01",text:"Pausa contemplativa o stai negoziando col bilanciere?"},{id:"idle-diva-02",text:"Ti sei persa o stai creando suspense?"}] },
+      rir_too_low:{ balanced:[{id:"rir-low-balanced-01",text:"Sei andata più vicina al cedimento del previsto. Valuta il recupero."}], diva:[{id:"rir-low-diva-01",text:"Bellissima la cattiveria, ma il target RIR esiste per un motivo."}] },
+      rir_too_high:{ balanced:[{id:"rir-high-balanced-01",text:"La serie potrebbe essere stata troppo conservativa rispetto al target."}], diva:[{id:"rir-high-diva-01",text:"Avevi ancora parecchio in riserva. Il bilanciere non morde."}] },
+      coach_analysis_started:{ balanced:[{id:"analysis-start-01",text:"Controllo i dati della scheda…"}], diva:[{id:"analysis-start-diva-01",text:"Aspetta, sto facendo i conti da Diva."}] },
+      coach_analysis_completed:{ balanced:[{id:"analysis-done-01",text:"Analisi aggiornata."}], diva:[{id:"analysis-done-diva-01",text:"Analisi pronta. Sempre un passo avanti."}] }
+    };
+    const divaBotSession = { key:"", reactionCount:0, shownEvents:new Set(), celebratedExercises:new Set(), recentMessageIds:[], personalRecordValues:{}, lastEventAt:{}, activePriority:0, activePriorityTimer:null, idleTimer:null, lastInteractionAt:0 };
+
+    function divaBotPreferences() {
+      state.ui = state.ui || {};
+      const personality = DIVA_BOT_PERSONALITIES.has(state.ui.divaBotPersonality) ? state.ui.divaBotPersonality : "balanced";
+      return { personality, bubbles:state.ui.divaBotBubbles !== false, celebrations:state.ui.divaBotCelebrations !== false, sounds:state.ui.divaBotSounds === true };
+    }
+
+    function updateDivaBotPreference(field, value) {
+      state.ui = state.ui || {};
+      if (field === "visible") state.ui.workoutMascotVisible = value === true;
+      if (field === "personality") state.ui.divaBotPersonality = DIVA_BOT_PERSONALITIES.has(value) ? value : "balanced";
+      if (field === "bubbles") state.ui.divaBotBubbles = value === true;
+      if (field === "celebrations") state.ui.divaBotCelebrations = value === true;
+      if (field === "sounds") state.ui.divaBotSounds = value === true;
+      saveState();
+    }
+
+    function divaBotSessionKey(context = currentTrainingContext()) {
+      return `${context?.date || todayInput()}|${context?.session?.code || ""}`;
+    }
+
+    function resetDivaBotSession(context = currentTrainingContext()) {
+      clearTimeout(divaBotSession.idleTimer);
+      clearTimeout(divaBotSession.activePriorityTimer);
+      Object.assign(divaBotSession, { key:divaBotSessionKey(context), reactionCount:0, shownEvents:new Set(), celebratedExercises:new Set(), recentMessageIds:[], personalRecordValues:{}, lastEventAt:{}, activePriority:0, activePriorityTimer:null, idleTimer:null, lastInteractionAt:Date.now() });
+      coachMascotController.recentMessages = [];
+    }
+
+    function ensureDivaBotSession(context = currentTrainingContext()) {
+      if (divaBotSession.key !== divaBotSessionKey(context)) resetDivaBotSession(context);
+      return divaBotSession;
+    }
+
+    function divaBotMessageFor(eventName, personality) {
+      const library = DIVA_BOT_MESSAGES[eventName] || {};
+      const choices = library[personality] || library.balanced || [];
+      const message = choices.find((item) => !divaBotSession.recentMessageIds.includes(item.id));
+      return message || null;
+    }
+
+    function divaBotReactionLimit(personality) {
+      return personality === "silent" ? 3 : personality === "diva" ? 14 : 8;
+    }
+
+    function divaBotEventAllowed(eventName, config, preferences, context = {}) {
+      const priority = DIVA_BOT_PRIORITY[config.priority] || 1;
+      if (preferences.personality === "silent" && priority < DIVA_BOT_PRIORITY.high) return false;
+      if (config.once && divaBotSession.shownEvents.has(eventName)) return false;
+      if (context.onceKey && divaBotSession.shownEvents.has(`${eventName}:${context.onceKey}`)) return false;
+      const elapsed = Date.now() - Number(divaBotSession.lastEventAt[eventName] || 0);
+      if (config.cooldown && elapsed < config.cooldown) return false;
+      if (priority < DIVA_BOT_PRIORITY.high && divaBotSession.reactionCount >= divaBotReactionLimit(preferences.personality)) return false;
+      if (priority < divaBotSession.activePriority) return false;
+      return true;
+    }
+
+    function triggerDivaBotReaction(eventName, context = {}) {
+      const config = DIVA_BOT_EVENTS[eventName];
+      if (!config) return { shown:false, reason:"unknown-event" };
+      ensureDivaBotSession(context.trainingContext || currentTrainingContext());
+      if (eventName === "personal_record" && context.recordKey) {
+        const previousRecordValue = Number(divaBotSession.personalRecordValues[context.recordKey]);
+        if (Number.isFinite(previousRecordValue) && !(Number(context.recordValue) > previousRecordValue)) return { shown:false, reason:"same-personal-record" };
+      }
+      const preferences = divaBotPreferences();
+      if (!divaBotEventAllowed(eventName, config, preferences, context)) return { shown:false, reason:"filtered" };
+      const message = divaBotMessageFor(eventName, preferences.personality);
+      if (!message && config.priority !== "critical") return { shown:false, reason:"recent-message" };
+      const priority = DIVA_BOT_PRIORITY[config.priority] || 1;
+      const canBubble = preferences.bubbles && workoutMascotVisible() && activeScreen === "training";
+      const highOrCritical = priority >= DIVA_BOT_PRIORITY.high;
+      setCoachMascotState(config.state, { duration:config.duration, returnState:"idle" });
+      if (message) {
+        coachMascotController.message = message.text;
+        syncCoachMascotState();
+        if (canBubble) showWorkoutMascotBubble(message.text);
+        else if (highOrCritical) showToast(message.text);
+        divaBotSession.recentMessageIds = [...divaBotSession.recentMessageIds, message.id].slice(-12);
+        coachMascotController.recentMessages = divaBotSession.recentMessageIds;
+      }
+      if (eventName === "personal_record") { showPremiumPrFeedback(context, preferences); triggerHaptic("pr"); }
+      divaBotSession.lastEventAt[eventName] = Date.now();
+      if (config.once) divaBotSession.shownEvents.add(eventName);
+      if (context.onceKey) divaBotSession.shownEvents.add(`${eventName}:${context.onceKey}`);
+      if (eventName === "personal_record" && context.recordKey && Number.isFinite(Number(context.recordValue))) divaBotSession.personalRecordValues[context.recordKey] = Number(context.recordValue);
+      if (priority < DIVA_BOT_PRIORITY.high) divaBotSession.reactionCount++;
+      divaBotSession.activePriority = priority;
+      clearTimeout(divaBotSession.activePriorityTimer);
+      divaBotSession.activePriorityTimer = setTimeout(() => { divaBotSession.activePriority = 0; }, config.duration || 1800);
+      return { shown:true, messageId:message?.id || "", priority:config.priority };
+    }
+
+    function showPremiumPrFeedback(context = {}, preferences = divaBotPreferences()) {
+      document.querySelector(".premium-pr-badge")?.remove();
+      const label = [displayExerciseName(context.exercise?.name || "PR"), Number(context.newValue || context.recordValue) > 0 ? `${context.newValue || context.recordValue} kg` : ""].filter(Boolean).join(" · ");
+      const badge = document.createElement("div"); badge.className = "premium-pr-badge"; badge.setAttribute("role", "status"); badge.setAttribute("aria-live", "polite"); badge.textContent = `PR · ${label}`;
+      if (preferences.celebrations && preferences.personality !== "silent" && premiumMotionEnabled()) document.body.appendChild(badge);
+      else { badge.style.animation = "none"; badge.style.opacity = "1"; document.body.appendChild(badge); }
+      setTimeout(() => badge.remove(), 3000);
+    }
+
+    function noteDivaBotWorkoutInteraction() {
+      if (activeScreen !== "training") return;
+      ensureDivaBotSession();
+      divaBotSession.lastInteractionAt = Date.now();
+      clearTimeout(divaBotSession.idleTimer);
+      const context = currentTrainingContext();
+      const started = (context.session?.exercises || []).some((exercise) => draftSetsFor(context, exercise).some((value) => String(value || "").trim()));
+      if (!started || divaBotSession.shownEvents.has("idle_too_long")) return;
+      divaBotSession.idleTimer = setTimeout(() => {
+        if (activeScreen !== "training" || document.hidden || document.querySelector(".coach-modal-backdrop,.coach-mobile-modal-backdrop") || document.activeElement?.matches?.("input,textarea,select")) return;
+        triggerDivaBotReaction("idle_too_long");
+      }, 300000);
+    }
+
+    function workoutCompletionSnapshot(context = currentTrainingContext()) {
+      const exercises = context?.session?.exercises || [];
+      const totalSets = exercises.reduce((sum, exercise) => sum + setCountFor(exercise), 0);
+      const completedSets = exercises.reduce((sum, exercise) => sum + Array.from({ length:setCountFor(exercise) }, (_, index) => setIsDone(context, exercise, index, draftSetsFor(context, exercise)[index])).filter(Boolean).length, 0);
+      return { totalSets, completedSets, percent:totalSets ? Math.round(completedSets / totalSets * 100) : 0 };
+    }
+
+    function workoutExerciseCompleted(context, exercise) {
+      return Array.from({ length:setCountFor(exercise) }, (_, index) => setIsDone(context, exercise, index, draftSetsFor(context, exercise)[index])).every(Boolean);
+    }
+
+    function comparableHistorySets(row = {}) {
+      const completed = Array.isArray(row.completedSets) ? row.completedSets : [];
+      return completed.map((set) => ({ kg:Number(set?.kg ?? set?.load), reps:Number(set?.reps) })).filter((set) => Number.isFinite(set.kg) && set.kg > 0 && Number.isFinite(set.reps) && set.reps > 0);
+    }
+
+    function compareAgainstAllHistory(exercise, load, reps) {
+      const currentLoad = Number(load);
+      const currentReps = Number(reps);
+      if (!(currentLoad > 0) || !(currentReps > 0)) return { comparable:false };
+      const historicalSets = exerciseHistory(exercise, 999).flatMap(comparableHistorySets);
+      if (!historicalSets.length) return { comparable:false, personalRecord:false };
+      const comparableLoad = historicalSets.filter((set) => set.reps <= currentReps);
+      const bestComparableLoad = comparableLoad.length ? Math.max(...comparableLoad.map((set) => set.kg)) : 0;
+      const bestRepsAtLoad = historicalSets.filter((set) => set.kg === currentLoad).reduce((best, set) => Math.max(best, set.reps), 0);
+      const loadPr = bestComparableLoad > 0 && currentLoad > bestComparableLoad;
+      const repsPr = bestRepsAtLoad > 0 && currentReps > bestRepsAtLoad;
+      const metric = loadPr ? "carico a pari o maggiori ripetizioni" : repsPr ? "ripetizioni a pari carico" : "";
+      return { comparable:true, personalRecord:loadPr || repsPr, previousValue:loadPr ? bestComparableLoad : bestRepsAtLoad, newValue:loadPr ? currentLoad : currentReps, metric };
+    }
+
+    function compareAgainstPreviousSession(exercise, load, reps, code = "") {
+      const currentLoad = Number(load);
+      const currentReps = Number(reps);
+      if (!(currentLoad > 0) || !(currentReps > 0)) return { comparable:false, improvedVsPrevious:false, declinedVsPrevious:false };
+      const previous = exerciseHistory(exercise, 1, code)[0];
+      const previousSets = comparableHistorySets(previous);
+      if (!previous || !previousSets.length) return { comparable:false, improvedVsPrevious:false, declinedVsPrevious:false };
+      const comparable = previousSets.filter((set) => set.reps <= currentReps);
+      const previousBest = comparable.length ? Math.max(...comparable.map((set) => set.kg)) : 0;
+      const sameLoadBestReps = previousSets.filter((set) => set.kg === currentLoad).reduce((best, set) => Math.max(best, set.reps), 0);
+      const previousPeak = Math.max(...previousSets.map((set) => set.kg));
+      return { comparable:true, improvedVsPrevious:(previousBest > 0 && currentLoad > previousBest) || (sameLoadBestReps > 0 && currentReps > sameLoadBestReps), declinedVsPrevious:previousPeak > 0 && currentLoad < previousPeak * .9 };
+    }
+
+    function compareWorkoutPerformance(exercise, load, reps, code = "") {
+      const record = compareAgainstAllHistory(exercise, load, reps);
+      const previous = compareAgainstPreviousSession(exercise, load, reps, code);
+      return { ...record, ...previous, improved:previous.improvedVsPrevious, declined:previous.declinedVsPrevious };
+    }
+
+    function divaBotRirReaction(exercise, setIndex, context = currentTrainingContext()) {
+      const targetRir = /^\s*RPE/i.test(String(exercise?.rir || "")) ? NaN : numericParts(exercise?.rir)[0];
+      const actualRir = Number(state.training?.actualRir?.[setDoneKey(context, exercise, setIndex)]);
+      if (!Number.isFinite(targetRir) || !Number.isFinite(actualRir)) return false;
+      const delta = actualRir - targetRir;
+      if (delta <= -2) return triggerDivaBotReaction("rir_too_low", { exercise, targetRir, actualRir }).shown;
+      if (delta >= 2) return triggerDivaBotReaction("rir_too_high", { exercise, targetRir, actualRir }).shown;
+      return false;
+    }
 
     function workoutMascotVisible() {
       return state.ui?.workoutMascotVisible !== false;
@@ -10329,6 +11010,10 @@
       });
       document.querySelector("[data-workout-mascot-hide]")?.addEventListener("click", () => setWorkoutMascotVisibility(false));
       document.querySelector("[data-workout-mascot-visible]")?.addEventListener("change", (event) => setWorkoutMascotVisibility(event.target.checked));
+      document.querySelector("[data-diva-bot-personality]")?.addEventListener("change", (event) => { updateDivaBotPreference("personality", event.target.value); showToast("Personalità Diva Bot aggiornata."); });
+      document.querySelector("[data-diva-bot-bubbles]")?.addEventListener("change", (event) => { updateDivaBotPreference("bubbles", event.target.checked); document.getElementById("workoutMascotBubble")?.setAttribute("hidden", ""); });
+      document.querySelector("[data-diva-bot-celebrations]")?.addEventListener("change", (event) => { updateDivaBotPreference("celebrations", event.target.checked); });
+      document.querySelector("[data-diva-bot-sounds]")?.addEventListener("change", (event) => { updateDivaBotPreference("sounds", event.target.checked); showToast("Preferenza suoni salvata: nessun audio aggiuntivo installato."); });
     }
 
     function dashboardCoachSignal() {
@@ -10389,7 +11074,7 @@
     }
 
     function addCoachMascotParticles() {
-      if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+      if (effectiveAnimationMode() !== "full") return;
       document.querySelectorAll(".coach-avatar").forEach((avatar) => {
         avatar.querySelector(".diva-bot-particles")?.remove();
         const layer = document.createElement("span");
@@ -10425,7 +11110,8 @@
     function showWorkoutMascotBubble(message) {
       const bubble = document.getElementById("workoutMascotBubble");
       if (!bubble) return false;
-      bubble.textContent = String(message || "");
+      bubble.innerHTML = `<span>${escapeHtml(String(message || ""))}</span><button type="button" class="workout-mascot-bubble-close" aria-label="Chiudi messaggio Diva Bot">×</button>`;
+      bubble.querySelector(".workout-mascot-bubble-close")?.addEventListener("click", () => { bubble.hidden = true; });
       bubble.hidden = false;
       clearTimeout(coachMascotController.reactionTimer);
       coachMascotController.reactionTimer = setTimeout(() => { bubble.hidden = true; }, 2200);
@@ -10449,7 +11135,7 @@
       coachMascotController.message = String(options.message || "");
       syncCoachMascotState();
       if (options.announce && options.message) showCoachMascotReaction(options.message);
-      if (nextState === "happy" || nextState === "celebrate") addCoachMascotParticles();
+      if ((nextState === "happy" || nextState === "celebrate") && divaBotPreferences().celebrations) addCoachMascotParticles();
       const duration = Number(options.duration) || 0;
       if (duration > 0) {
         coachMascotController.temporaryTimer = setTimeout(() => {
@@ -11773,6 +12459,58 @@
         saveState({ immediate: true });
         render();
       }));
+      document.querySelectorAll("[data-diva-bot-setting]").forEach((input) => input.addEventListener("change", () => {
+        const field = input.dataset.divaBotSetting;
+        updateDivaBotPreference(field, field === "personality" ? input.value : input.checked);
+        if (field === "sounds") showToast("Preferenza suoni salvata: nessun audio aggiuntivo installato.");
+      }));
+      document.querySelectorAll("[data-experience-setting]").forEach((input) => input.addEventListener("change", () => {
+        const key = input.dataset.experienceSetting;
+        state.ui[key] = key === "animationMode" ? input.value : input.checked;
+        applyExperiencePreferences(); saveState();
+      }));
+      document.querySelector("[data-review-onboarding]")?.addEventListener("click", (event) => { onboardingUi.step = 0; onboardingUi.force = true; state.ui.onboardingComplete = false; saveState(); openModal("onboarding", { opener: event.currentTarget }); render(); });
+      document.querySelector("[data-onboarding-skip]")?.addEventListener("click", () => { onboardingUi.force = false; state.ui.onboardingComplete = true; saveState(); closeModal("onboarding"); render(); });
+      document.querySelector("[data-onboarding-back]")?.addEventListener("click", () => { onboardingUi.step = Math.max(0, onboardingUi.step - 1); render(); });
+      document.querySelector("[data-onboarding-next]")?.addEventListener("click", () => { if (onboardingUi.step >= 3) { onboardingUi.force = false; state.ui.onboardingComplete = true; saveState(); closeModal("onboarding"); } else onboardingUi.step += 1; render(); });
+      document.querySelector("[data-backup-export]")?.addEventListener("click", () => {
+        const envelope = createBackupEnvelope("manual"); const saved = storeBackupEnvelope(envelope);
+        if (!saved.ok) { showToast(saved.error); return; }
+        downloadBackupEnvelope(envelope); render(); showToast("Backup completo esportato e verificato.");
+      });
+      document.querySelector("[data-backup-history-toggle]")?.addEventListener("click", () => { dataSafetyUi.historyOpen = !dataSafetyUi.historyOpen; render(); });
+      document.querySelectorAll("[data-backup-import]").forEach((input) => input.addEventListener("change", async () => {
+        const file = input.files?.[0]; if (!file) return;
+        try {
+          const parsed = JSON.parse(await file.text()); const verified = verifyBackupEnvelope(convertLegacyBackupToEnvelope(parsed));
+          if (!verified.ok) throw new Error(verified.error);
+          dataSafetyUi.error = ""; dataSafetyUi.restorePreview = verified.envelope; openModal("backup-restore", { opener: input }); render();
+        } catch (error) { dataSafetyUi.error = String(error?.message || error); showToast(`Backup non importato: ${dataSafetyUi.error}`, "error"); }
+      }));
+      document.querySelectorAll("[data-backup-history-restore]").forEach((button) => button.addEventListener("click", () => {
+        const record = readBackupHistory().find((item) => item.metadata?.id === button.dataset.backupHistoryRestore); if (!record) return showToast("Backup non trovato.");
+        dataSafetyUi.restorePreview = record; openModal("backup-restore", { opener: button }); render();
+      }));
+      document.querySelectorAll("[data-backup-history-export]").forEach((button) => button.addEventListener("click", () => {
+        const record = readBackupHistory().find((item) => item.metadata?.id === button.dataset.backupHistoryExport); if (record) downloadBackupEnvelope(record);
+      }));
+      document.querySelectorAll("[data-backup-history-delete]").forEach((button) => button.addEventListener("click", () => {
+        writeBackupHistory(readBackupHistory().filter((item) => item.metadata?.id !== button.dataset.backupHistoryDelete)); render(); showToast("Backup eliminato dalla cronologia locale.");
+      }));
+      document.querySelectorAll("[data-backup-preview-close]").forEach((button) => button.addEventListener("click", () => { dataSafetyUi.restorePreview = null; closeModal("backup-restore"); render(); }));
+      document.querySelector("[data-backup-restore-confirm]")?.addEventListener("click", () => {
+        const selections = Object.fromEntries(Array.from(document.querySelectorAll("[data-backup-select]")).map((input) => [input.dataset.backupSelect, input.checked]));
+        const result = restoreBackupEnvelope(dataSafetyUi.restorePreview, selections); showToast(result.ok ? "Backup ripristinato con verifica di integrità." : result.error || "Ripristino non riuscito.");
+      });
+      document.querySelectorAll("[data-backup-recovery]").forEach((button) => button.addEventListener("click", () => {
+        if (button.dataset.backupRecovery === "safe") { recoveryBootError = null; recoveryBootPayload = ""; render(); return; }
+        const history = readBackupHistory(); const record = button.dataset.backupRecovery === "previous" ? history[1] : history[0];
+        if (!record) return showToast("Nessun backup disponibile per il recupero."); dataSafetyUi.restorePreview = record; render();
+      }));
+      document.querySelector("[data-backup-corrupt-download]")?.addEventListener("click", () => {
+        if (!recoveryBootPayload) return showToast("Nessun dato corrotto disponibile.");
+        const blob = new Blob([recoveryBootPayload], { type:"application/json" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "barbell-diva-dati-da-verificare.json"; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      });
       const logbookSearch = document.getElementById("phase11LogbookSearch");
       if (logbookSearch) logbookSearch.addEventListener("input", () => {
         state.ui = { ...(state.ui || {}), logbookSearch: logbookSearch.value };
@@ -11840,13 +12578,14 @@
           state.training.openExercise = opening ? button.dataset.workoutToggle : "";
           renderTrainingOnly();
           if (opening) {
-            setCoachMascotState("encouraging", { message:"Ci siamo: controllo, respiro e tecnica pulita!", announce:true, duration:1650 });
+            setCoachMascotState("encouraging", { duration:900, returnState:"idle" });
             scheduleWorkoutMascotSafety(document.querySelector("[data-set-kg]"));
+            noteDivaBotWorkoutInteraction();
           }
         });
       });
       document.querySelectorAll("[data-workout-tab]").forEach((button) => {
-        button.addEventListener("click", () => { activateWorkoutTabButton(button); scheduleWorkoutMascotSafety(); });
+        button.addEventListener("click", () => { activateWorkoutTabButton(button); scheduleWorkoutMascotSafety(); noteDivaBotWorkoutInteraction(); });
         button.addEventListener("keydown", (event) => handleWorkoutTabKeydown(event, button));
       });
       document.querySelectorAll("[data-set-kg]").forEach((input) => {
@@ -11863,21 +12602,16 @@
           state.training.draft[key] = values;
           if (!nextLoad) state.training.setDone[setDoneKey(context, exercise, setIndex)] = false;
           saveState();
+          noteDivaBotWorkoutInteraction();
           clearTimeout(coachMascotController.weightTimer);
           if (nextLoad === previousLoad || !nextLoad || !(Number(nextLoad.replace(",", ".")) > 0)) return;
           coachMascotController.weightTimer = setTimeout(() => {
             const load = String(input.value || "").trim();
             if (!load || !(Number(load.replace(",", ".")) > 0)) return;
-            const cheers = [
-              `Brava, vai! ${load.replace(".", ",")} kg segnati: spingi forte con tecnica pulita!`,
-              `Carico registrato: ${load.replace(".", ",")} kg. Sei fortissima, Alice!`,
-              `Vai Diva! ${load.replace(".", ",")} kg pronti: controllo e potenza!`
-            ];
-            const message = cheers[Math.floor(Math.random() * cheers.length)];
-            const now = Date.now();
-            const announce = now - coachMascotController.lastWeightReactionAt >= 25000;
-            if (announce) coachMascotController.lastWeightReactionAt = now;
-            setCoachMascotState("lifting", { message, announce, duration:1750 });
+            const previous = Number(previousLoad.replace(",", "."));
+            const next = Number(load.replace(",", "."));
+            if (Number.isFinite(previous) && previous > 0 && next < previous) triggerDivaBotReaction("load_decreased", { exercise });
+            else if (!Number.isFinite(previous) || next > previous) triggerDivaBotReaction("load_increased", { exercise });
           }, 550);
         });
       });
@@ -11894,12 +12628,29 @@
           saveState();
           renderTrainingOnly();
           if (completedNow) {
-            const totalExercises = context.session.exercises?.length || 0;
-            const completedExercises = (context.session.exercises || []).filter((item) => draftSetsFor(context, item).some((value) => String(value || "").trim())).length;
-            const completion = totalExercises ? Math.round(completedExercises / totalExercises * 100) : 0;
-            const mascotState = completion >= 75 ? "celebrate" : completion >= 50 ? "encouraging" : "happy";
-            const message = completion >= 50 ? workoutCoachProgressMessage(completion) : "Serie fatta! Continua così 💪";
-            setCoachMascotState(mascotState, { message, announce:true, duration:1850 });
+            noteDivaBotWorkoutInteraction();
+            const reps = numericParts(repTargetsFor(exercise)[setIndex] || exercise.reps)[0] ?? null;
+            const load = Number(String(values[setIndex] || "").replace(",", "."));
+            const comparison = compareWorkoutPerformance(exercise, load, reps, context.session.code);
+            if (comparison.personalRecord) {
+              const recordKey = `personal_record:${normalizeExerciseName(exercise.name)}:${comparison.metric}`;
+              triggerDivaBotReaction("personal_record", { exercise, recordKey, recordValue:comparison.newValue, ...comparison });
+            } else if (divaBotRirReaction(exercise, setIndex, context)) {
+              // Gli avvisi RIR hanno precedenza sui messaggi decorativi della serie.
+            } else if (comparison.improvedVsPrevious) triggerDivaBotReaction("performance_improved", { exercise, onceKey:exercise.name, ...comparison });
+            else if (comparison.declinedVsPrevious) triggerDivaBotReaction("performance_declined", { exercise, onceKey:exercise.name, ...comparison });
+            else triggerDivaBotReaction("set_completed");
+            const completion = workoutCompletionSnapshot(context);
+            const exerciseKey = `${context.session.code}|${exercise.name}`;
+            if (workoutExerciseCompleted(context, exercise) && !divaBotSession.celebratedExercises.has(exerciseKey)) {
+              divaBotSession.celebratedExercises.add(exerciseKey);
+              triggerDivaBotReaction("exercise_completed", { exercise, onceKey:exerciseKey });
+              triggerHaptic("success");
+            } else {
+              triggerHaptic("light");
+            }
+            if (completion.percent >= 50) triggerDivaBotReaction("half_workout");
+            if (completion.percent >= 80) triggerDivaBotReaction("almost_finished");
           }
         });
       });
@@ -12470,8 +13221,8 @@
       const modalSave = document.querySelector("[data-coach-modal-save]");
       if (modalSave) modalSave.addEventListener("click", () => { saveCoachUiModal(); render(); });
       const aiToggle = document.querySelector("[data-ai-toggle]");
-      if (aiToggle) aiToggle.addEventListener("change", () => { setCoachMascotState("thinking", { message:"Aggiorno l’analisi…", duration:650, returnState:"happy" }); coachAiState().enabled = aiToggle.checked; render(); });
-      document.querySelectorAll("[data-ai-filter]").forEach((button) => button.addEventListener("click", () => { setCoachMascotState("thinking", { message:"Controllo i suggerimenti…", duration:650, returnState:"happy" }); coachAiState().filter = button.dataset.aiFilter || "all"; render(); }));
+      if (aiToggle) aiToggle.addEventListener("change", () => { triggerDivaBotReaction("coach_analysis_started"); coachAiState().enabled = aiToggle.checked; render(); triggerDivaBotReaction("coach_analysis_completed"); });
+      document.querySelectorAll("[data-ai-filter]").forEach((button) => button.addEventListener("click", () => { triggerDivaBotReaction("coach_analysis_started"); coachAiState().filter = button.dataset.aiFilter || "all"; render(); triggerDivaBotReaction("coach_analysis_completed"); }));
       document.querySelectorAll("[data-ai-ignore]").forEach((button) => button.addEventListener("click", () => { const ai = coachAiState(); const suggestion = coachAiSuggestions().find((item) => item.id === button.dataset.aiIgnore); ai.ignored = [...new Set([...(ai.ignored || []), button.dataset.aiIgnore])]; ai.ignoredRecords = { ...(ai.ignoredRecords || {}), [button.dataset.aiIgnore]: suggestion ? clone(suggestion) : { id: button.dataset.aiIgnore, title: "Suggerimento ignorato" } }; state.coach.coachAi = ai; render(); showToast("Suggerimento ignorato."); }));
       document.querySelectorAll("[data-ai-alternatives-toggle]").forEach((button) => button.addEventListener("click", () => { const id = button.dataset.aiAlternativesToggle; if (coachProgramUi.aiExpanded.has(id)) coachProgramUi.aiExpanded.delete(id); else coachProgramUi.aiExpanded.add(id); render(); }));
       document.querySelectorAll("[data-ai-apply]").forEach((button) => button.addEventListener("click", () => { const suggestion = coachAiSuggestions().find((item) => item.id === button.dataset.aiApply); if (!suggestion) return; openCoachModal("coach-ai-confirm", { suggestion }); render(); }));
@@ -12621,6 +13372,10 @@
       if (uploadLocalCloud) uploadLocalCloud.addEventListener("click", uploadThisDeviceToCloud);
       const downloadCloudLocal = document.getElementById("downloadCloudLocal");
       if (downloadCloudLocal) downloadCloudLocal.addEventListener("click", downloadCloudToThisDevice);
+      document.querySelectorAll("[data-premium-error-action]").forEach((button) => button.addEventListener("click", () => {
+        if (button.dataset.premiumErrorAction === "retry-cloud") { loadCloudState({ silent:false }).then(() => render()); }
+        if (button.dataset.premiumErrorAction === "dashboard") setScreen("dashboard");
+      }));
       const googleLogoutButton = document.getElementById("googleLogoutButton");
       if (googleLogoutButton) googleLogoutButton.addEventListener("click", signOutGoogle);
       const googleInfoButton = document.getElementById("googleInfoButton");
@@ -12657,6 +13412,20 @@
           .filter((item) => normalizeExerciseName(item.name || item.exerciseName || "") === key)
           .reduce((max, item) => Math.max(max, Number(item.maxKg || item.kg || 0)), 0);
         return previousMax > 0 && currentMax > previousMax;
+      });
+    }
+
+    function savedWorkoutPersonalRecordDetails(exercises, context, ignoredSessionId = null) {
+      return exercises.flatMap((savedExercise) => {
+        const sourceExercise = (context.session.exercises || []).find((item) => normalizeExerciseName(item.name) === normalizeExerciseName(savedExercise.name)) || savedExercise;
+        const history = exerciseHistory(sourceExercise, 999).filter((row) => String(row._sessionId || "") !== String(ignoredSessionId || ""));
+        const previousSets = history.flatMap(comparableHistorySets);
+        if (!previousSets.length) return [];
+        return comparableHistorySets(savedExercise).flatMap((set) => {
+          const comparable = previousSets.filter((previous) => previous.reps <= set.reps);
+          const previousBest = comparable.length ? Math.max(...comparable.map((previous) => previous.kg)) : 0;
+          return previousBest > 0 && set.kg > previousBest ? [{ exercise:sourceExercise, previousValue:previousBest, newValue:set.kg, metric:"carico a pari o maggiori ripetizioni", recordKey:`personal_record:${normalizeExerciseName(sourceExercise.name)}:carico a pari o maggiori ripetizioni`, recordValue:set.kg }] : [];
+        });
       });
     }
 
@@ -12715,7 +13484,8 @@
         (session.source === "App" || Number(session.id) > 1000000000) &&
         session.dateInput === context.date && session.sessionCode === context.session.code
       );
-      const achievedPr = workoutHasNewPersonalRecord(exercises, existingIndex >= 0 ? state.training.sessions[existingIndex].id : null);
+      const personalRecords = savedWorkoutPersonalRecordDetails(exercises, context, existingIndex >= 0 ? state.training.sessions[existingIndex].id : null);
+      const achievedPr = personalRecords.length > 0;
       const savedSession = {
         id: existingIndex >= 0 ? state.training.sessions[existingIndex].id : Date.now(),
         source: "App",
@@ -12782,7 +13552,10 @@
         showToast("Salvato sul dispositivo; cloud in attesa.");
       }
       renderTrainingOnly();
-      setCoachMascotState("celebrate", { message:achievedPr ? "Nuovo PR! Sei stata fortissima!" : "Workout completato! Ottimo lavoro, Alice!", announce:true, duration:2800 });
+      const completion = workoutCompletionSnapshot(context);
+      if (achievedPr) triggerDivaBotReaction("personal_record", personalRecords[0]);
+      if (completion.totalSets > 0 && completion.completedSets === completion.totalSets) triggerDivaBotReaction("workout_completed");
+      else triggerDivaBotReaction("workout_saved_partial");
       setTimeout(() => document.getElementById("workoutSaveConfirmation")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
       return true;
     }
@@ -12994,13 +13767,87 @@
       return result.ok;
     }
 
+    const modalController = { active: "", opener: null, openerSelector: "", focusTimer: null };
+
+    function modalFocusableElements(dialog) {
+      return Array.from(dialog?.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])') || []).filter((element) => element.offsetParent !== null);
+    }
+
+    function restoreModalFocus() {
+      const opener = modalController.opener;
+      const openerSelector = modalController.openerSelector;
+      modalController.opener = null;
+      modalController.openerSelector = "";
+      requestAnimationFrame(() => { const target = (openerSelector ? document.querySelector(openerSelector) : null) || opener; if (target?.isConnected) target.focus({ preventScroll: true }); });
+    }
+
+    function openModal(name, options = {}) {
+      modalController.active = name;
+      modalController.opener = options.opener || document.activeElement;
+      const dataAttribute = Array.from(modalController.opener?.attributes || []).find((attribute) => attribute.name.startsWith("data-"));
+      modalController.openerSelector = dataAttribute ? `[${dataAttribute.name}="${String(dataAttribute.value).replaceAll('"', '\\"')}"]` : "";
+      document.body.classList.add("modal-open");
+    }
+
+    function closeModal(name = modalController.active) {
+      if (name && modalController.active && name !== modalController.active) return;
+      modalController.active = "";
+      document.body.classList.remove("modal-open");
+      restoreModalFocus();
+    }
+
+    function trapModalFocus(event) {
+      if (event.key !== "Tab") return;
+      const dialog = document.querySelector(".coach-modal-backdrop .coach-modal");
+      const focusables = modalFocusableElements(dialog);
+      if (!dialog) return;
+      if (!focusables.length) { event.preventDefault(); dialog.focus(); return; }
+      const first = focusables[0], last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }
+
+    function bindModalController() {
+      const backdrop = document.querySelector(".coach-modal-backdrop");
+      const dialog = backdrop?.querySelector(".coach-modal");
+      if (!backdrop || !dialog) { if (!modalController.active) document.body.classList.remove("modal-open"); return; }
+      document.body.classList.add("modal-open");
+      if (!modalController.active) modalController.active = backdrop.dataset.modalKind || (dialog.getAttribute("aria-labelledby") === "backupRestoreTitle" ? "backup-restore" : "coach");
+      dialog.setAttribute("role", "dialog");
+      dialog.setAttribute("aria-modal", "true");
+      if (!dialog.hasAttribute("aria-labelledby") && !dialog.hasAttribute("aria-label")) {
+        const heading = dialog.querySelector("h1, h2, h3");
+        if (heading) { if (!heading.id) heading.id = `modal-title-${Date.now()}`; dialog.setAttribute("aria-labelledby", heading.id); }
+        else dialog.setAttribute("aria-label", "Finestra di dialogo");
+      }
+      dialog.tabIndex = -1;
+      clearTimeout(modalController.focusTimer);
+      modalController.focusTimer = setTimeout(() => (modalFocusableElements(dialog)[0] || dialog).focus({ preventScroll: true }), 0);
+    }
+
+    function handleModalKeydown(event) {
+      if (!modalController.active) return;
+      if (event.key === "Tab") return trapModalFocus(event);
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      if (modalController.active === "onboarding") { state.ui.onboardingComplete = true; saveState(); }
+      if (modalController.active === "backup-restore") dataSafetyUi.restorePreview = null;
+      if (modalController.active === "coach") closeCoachModal();
+      closeModal();
+      render();
+    }
+
+    document.addEventListener("keydown", handleModalKeydown);
+
     function openCoachModal(type, data = {}) {
+      openModal("coach");
       coachProgramUi.modal = type;
       coachProgramUi.modalData = data;
       coachProgramUi.sheetMenuId = "";
     }
 
     function closeCoachModal() {
+      closeModal("coach");
       coachProgramUi.modal = "";
       coachProgramUi.modalData = {};
     }
@@ -13391,17 +14238,11 @@
     }
 
     function exportBackup() {
-      const payload = createBackupPayload();
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `alice-method-backup-${shortDate().replaceAll("/", "-")}.json`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-      showToast("Backup esportato.");
+      const envelope = createBackupEnvelope("manual");
+      const stored = storeBackupEnvelope(envelope);
+      if (!stored.ok) return showToast(stored.error);
+      downloadBackupEnvelope(envelope);
+      showToast("Backup verificato esportato.");
     }
 
     function toShortDateFromIso(value) {
@@ -13469,12 +14310,18 @@
 
     function createBackupPayload() {
       flushStateSave();
-      return {
-        app: APP_NAME,
-        exportedAt: new Date().toISOString(),
-        schemaVersion: DATA_SCHEMA_VERSION,
-        state: { ...clone(state), programs: programRepository.exportData() }
-      };
+      return createBackupEnvelope("manual");
+    }
+
+    function convertLegacyBackupToEnvelope(parsed) {
+      if (parsed?.format === "barbell-diva-backup") return parsed;
+      const normalized = normalizeImportedBackup(parsed);
+      const migration = runSchemaMigrations(clone(normalized));
+      if (!migration.ok) throw new Error("Backup legacy non migrabile.");
+      const envelope = createBackupEnvelope("legacy-import", mergeState(clone(baseState), migration.state));
+      envelope.metadata.legacySource = String(parsed?.app || "backup legacy");
+      envelope.metadata.checksum = backupChecksum({ metadata:{ ...envelope.metadata, checksum:undefined }, payload:envelope.payload });
+      return envelope;
     }
 
     function importBackupSnapshot(parsed) {
@@ -13525,10 +14372,12 @@
       reader.onload = () => {
         try {
           const parsed = JSON.parse(reader.result);
-          const imported = importBackupSnapshot(parsed);
-          if (!imported.ok && !imported.value) throw new Error("Backup non importabile.");
+          const envelope = convertLegacyBackupToEnvelope(parsed);
+          const verified = verifyBackupEnvelope(envelope);
+          if (!verified.ok) throw new Error(verified.error);
+          dataSafetyUi.restorePreview = verified.envelope;
           render();
-          showToast(`Backup importato: ${state.training.sessions.length} sessioni totali.`);
+          showToast("Backup pronto: conferma il ripristino nella schermata sicura.");
         } catch (error) {
           showToast("Backup non valido.");
         }
@@ -13674,13 +14523,59 @@
       showToast("Dati svuotati.");
     }
 
-    function showToast(message) {
-      const toast = document.getElementById("toast");
-      toast.textContent = message;
-      toast.classList.add("show");
-      clearTimeout(showToast.timer);
-      showToast.timer = setTimeout(() => toast.classList.remove("show"), 2300);
+    const toastManager = { queue: [], visible: [], timers: new Map(), nextId: 0 };
+
+    function toastDefinition(type) {
+      return {
+        success: { icon: "✓", duration: 2800 },
+        info: { icon: "i", duration: 3000 },
+        warning: { icon: "!", duration: 4600 },
+        error: { icon: "×", duration: 0 },
+        pr: { icon: "★", duration: 5200 }
+      }[type] || { icon: "i", duration: 3000 };
     }
+
+    function enqueueToast(message, type = "info", options = {}) {
+      const text = String(message || "").trim();
+      if (!text) return null;
+      const last = [...toastManager.visible, ...toastManager.queue].at(-1);
+      if (last?.text === text && last?.type === type) return last.id;
+      const meta = toastDefinition(type);
+      const toast = { id: `toast-${Date.now()}-${++toastManager.nextId}`, text, type, duration: options.duration ?? meta.duration, dismissible: options.dismissible ?? (type === "error" || type === "warning" || type === "pr"), icon: meta.icon };
+      toastManager.queue.push(toast);
+      renderToastQueue();
+      return toast.id;
+    }
+
+    function dismissToast(id) {
+      clearTimeout(toastManager.timers.get(id));
+      toastManager.timers.delete(id);
+      toastManager.visible = toastManager.visible.filter((toast) => toast.id !== id);
+      toastManager.queue = toastManager.queue.filter((toast) => toast.id !== id);
+      renderToastQueue();
+    }
+
+    function renderToastQueue() {
+      while (toastManager.visible.length < 3 && toastManager.queue.length) toastManager.visible.push(toastManager.queue.shift());
+      const viewport = document.getElementById("toast");
+      if (!viewport) return;
+      viewport.innerHTML = toastManager.visible.map((toast) => `<article class="toast-message" data-toast-id="${toast.id}" data-type="${toast.type}" role="${toast.type === "error" ? "alert" : "status"}" aria-live="${toast.type === "error" ? "assertive" : "polite"}"><span class="toast-icon" aria-hidden="true">${toast.icon}</span><span>${escapeHtml(toast.text)}</span>${toast.dismissible ? `<button class="toast-close" type="button" data-toast-dismiss="${toast.id}" aria-label="Chiudi notifica">×</button>` : "<span aria-hidden=\"true\"></span>"}</article>`).join("");
+      requestAnimationFrame(() => viewport.querySelectorAll(".toast-message").forEach((item) => item.classList.add("show")));
+      toastManager.visible.forEach((toast) => {
+        if (!toast.duration || toastManager.timers.has(toast.id)) return;
+        toastManager.timers.set(toast.id, setTimeout(() => dismissToast(toast.id), toast.duration));
+      });
+    }
+
+    function showToast(message, type = "info", options = {}) { return enqueueToast(message, type, options); }
+
+    document.getElementById("toast")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-toast-dismiss]");
+      if (button) dismissToast(button.dataset.toastDismiss);
+    });
+
+    document.addEventListener("pointerdown", () => { hasUserInteraction = true; }, { passive:true, once:true });
+    document.addEventListener("keydown", () => { hasUserInteraction = true; }, { once:true });
 
     document.querySelectorAll(".top-tab").forEach((button) => {
       button.addEventListener("click", () => setScreen(button.dataset.screen));
@@ -13762,9 +14657,16 @@
       scheduleChartRedraw();
     });
     window.addEventListener("pagehide", () => { if (localSaveTimer) flushStateSave(); }, { passive:true });
+    initializeDataSafety();
     recoverDurableWorkoutJournal();
-    initFirebase();
+    const firebaseBootStarted = initFirebase();
     render();
+    const premiumSplash = document.getElementById("premiumSplash");
+    if (state.ui?.splashEnabled === false) premiumSplash?.classList.add("is-hidden");
+    else {
+      premiumBootSafetyTimer = setTimeout(() => { premiumBootReady = true; finishPremiumBoot(); }, 1800);
+      requestAnimationFrame(() => { if (!firebaseBootStarted || authReady) markPremiumBootReady(); });
+    }
     importBundledNutritionBackup();
   </script>
 </body>

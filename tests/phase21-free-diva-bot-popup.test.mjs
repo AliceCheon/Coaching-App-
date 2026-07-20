@@ -12,6 +12,6 @@ assert.match(html, /if \(type === "coach-ai-list"\)/);
 assert.match(html, /openCoachModal\("coach-ai-list"\)/);
 assert.match(html, /class="coach-modal coach-ai-list-modal" role="dialog" aria-modal="true"/);
 assert.match(html, /suggestions\.map\(coachAiSuggestionHtml\)/);
-assert.match(html, /const APP_BUILD = "v102"/);
+assert.match(html, /const APP_BUILD = "v106"/);
 
-console.log(JSON.stringify({ ok:true, freeMascot:true, suggestionsPopup:true, build:"v102" }));
+console.log(JSON.stringify({ ok:true, freeMascot:true, suggestionsPopup:true, build:"v106" }));
