@@ -9,11 +9,58 @@ const workout = fs.readFileSync(path.join(root, "workout-pro.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "workout-pro.css"), "utf8");
 const sw = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
 
-test("build v112 and schema v5 are wired with cache busting", () => {
-  assert.match(html, /APP_BUILD\s*=\s*"v112-phase19"/);
+test("build v114 Fase 19.2 and schema v5 are wired with cache busting", () => {
+  assert.match(html, /APP_BUILD\s*=\s*"v114-phase19\.2"/);
   assert.match(html, /DATA_SCHEMA_VERSION\s*=\s*5/);
-  assert.match(html, /workout-pro\.js\?v=v112-phase19\.10/);
-  assert.match(sw, /atlas-app-v112-phase19\.10/);
+  assert.match(html, /workout-pro\.js\?v=v114-phase19\.2/);
+  assert.match(sw, /atlas-app-v114-phase19\.2/);
+});
+
+test("DOM tests are isolated from Alice's real workout storage", () => {
+  assert.match(workout, /const IS_TEST_MODE = new URLSearchParams\(location\.search\)\.has\("phase191test"\)/);
+  assert.match(workout, /if\(IS_TEST_MODE\)\{if\(session\)/);
+  assert.match(workout, /if\(IS_TEST_MODE\)return;/);
+});
+
+test("backup export downloads even when internal backup history is full", () => {
+  assert.match(html, /const envelope = createBackupEnvelope\("manual"\); const saved = storeBackupEnvelope\(envelope\);[\s\S]{0,180}const downloaded = downloadBackupEnvelope\(envelope\)/);
+  assert.match(html, /Backup scaricato e verificato/);
+});
+
+test("restoring a backup merges workouts instead of replacing the logbook", () => {
+  assert.match(html, /if \(restoreAll\) \{[\s\S]{0,300}mergeUniqueSessions/);
+  assert.match(html, /if \(selections\.logbook\) next\.training = \{ \.\.\.next\.training, sessions:mergeUniqueSessions/);
+});
+
+test("durable journal recovery reapplies the Scheda F date correction", () => {
+  assert.match(html, /const correctedWorkoutFDates = correctAliceWorkoutF16Jul2026\(state\)/);
+  assert.match(html, /recovered > 0 \|\| correctedWorkoutFDates > 0/);
+});
+
+test("Fase 19.1 dispatches four real renderers and preserves view state", () => {
+  for (const token of ["renderWorkoutMode", "renderProMode", "renderCompactMode", "renderQuickMode", "renderFreeMode", "viewMode"])
+    assert.ok(workout.includes(token), `missing ${token}`);
+  for (const marker of ["wp19-pro-mode", "wp19-compact-mode", "wp19-quick-mode", "wp19-free-mode"])
+    assert.ok(workout.includes(marker), `missing DOM marker ${marker}`);
+  assert.match(workout, /view-mode-changed/);
+  assert.match(workout, /next==="free"&&session\.mode!=="free"/);
+});
+
+test("Free mode has real exercise, set, ordering, grouping and empty-session mutations", () => {
+  for (const action of ["free-save-exercise", "free-remove", "free-add-set", "free-remove-set", "free-move", "free-group-next", "free-empty"])
+    assert.ok(workout.includes(`action==="${action}"`), `missing behavior ${action}`);
+  assert.match(workout, /addedDuringSession:true/);
+  assert.match(workout, /plannedOrder:null/);
+});
+
+test("overlay reuses Diva Bot state and keeps a dedicated persisted position", () => {
+  assert.match(workout, /coachMascotHtml\("workout-floating"\)/);
+  assert.match(workout, /triggerDivaBotReaction/);
+  assert.match(workout, /workoutProMascotPosition/);
+  assert.match(workout, /wp19BotPointer/);
+  assert.match(css, /body\.wp19-open #workoutMascotLayer/);
+  assert.match(css, /\.wp19-sheet-open \.wp19-mascot-anchor/);
+  assert.match(css, /\.wp19-keyboard-open \.wp19-mascot-anchor/);
 });
 
 test("active workout is separate, journaled, resumable and finalized only on confirmation", () => {

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="it">
+<meta charset="utf-8">
+<title>Barbell Diva Fase 19.2 - DOM behavior tests</title>
+<style>body{font:16px system-ui;background:#110b19;color:#f8efff;padding:24px}li{margin:8px}.ok{color:#70e7b3}.ko{color:#ff8aac}iframe{position:fixed;left:-200vw;width:390px;height:844px}</style>
+<h1>Fase 19.1 · test comportamentali DOM</h1>
+<ol id="results"></ol>
+<iframe id="app" src="../index.html?phase191test=1"></iframe>
+<script type="module">
+const frame=document.getElementById("app"),results=document.getElementById("results"),desktop=new URLSearchParams(location.search).has("desktop");
+frame.style.width=desktop?"1200px":"390px";frame.style.height=desktop?"800px":"844px";
+const report=(name,pass,detail="")=>{const li=document.createElement("li");li.className=pass?"ok":"ko";li.textContent=`${pass?"PASS":"FAIL"} · ${name}${detail?` — ${detail}`:""}`;results.append(li);if(!pass)throw new Error(name+": "+detail);};
+const assert=(condition,name,detail="")=>report(name,Boolean(condition),detail);
+const wait=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
+frame.addEventListener("load",async()=>{
+  const win=frame.contentWindow,doc=frame.contentDocument;win.confirm=()=>true;
+  for(let i=0;i<60&&!win.__WORKOUT_PRO_TEST_API__;i++)await wait(50);
+  const api=win.__WORKOUT_PRO_TEST_API__;assert(api,"API test caricata");
+  const original=api.start("pro"),sessionId=original.id,setId=original.currentSetId;
+  assert(doc.querySelector("#wp19Main[data-workout-mode='pro'] .wp19-pro-mode"),"Pro mostra una sola serie");
+  assert(doc.documentElement.scrollWidth<=doc.documentElement.clientWidth+1,`${desktop?"Desktop":"Mobile"} senza overflow orizzontale`);
+  const proInput=doc.getElementById("wp19Load");proInput.value="42.5";proInput.dispatchEvent(new win.Event("input",{bubbles:true}));
+  assert(api.switchView("compact"),"Cambio Pro → Compatto consentito");
+  assert(doc.querySelectorAll(".wp19-compact-mode .wp19-mode-set-row").length>1,"Compatto mostra tutte le serie dell'esercizio");
+  assert(api.snapshot().id===sessionId&&api.snapshot().currentSetId===setId&&api.snapshot().exercises.flatMap(e=>e.sets).find(s=>s.id===setId).load===42.5,"Cambio vista conserva sessione e input");
+  assert(api.switchView("quick"),"Cambio Compatto → Rapido consentito");
+  assert(doc.querySelectorAll(".wp19-quick-mode .wp19-quick-exercise").length===api.snapshot().exercises.length,"Rapido mostra tutti gli esercizi");
+  assert(!api.switchView("free"),"Libero bloccato per sessione pianificata");
+  assert(doc.querySelector("#wp19MascotLayer .coach-avatar"),"Diva Bot riusato dentro overlay");
+  assert(!doc.querySelector("#wp19MascotLayer svg+svg"),"Nessun secondo bot indipendente");
+  const bot=doc.getElementById("wp19MascotButton"),anchor=doc.querySelector(".wp19-mascot-anchor"),dragStart=anchor.getBoundingClientRect();
+  bot.dispatchEvent(new win.PointerEvent("pointerdown",{bubbles:true,pointerId:7,clientX:dragStart.left+20,clientY:dragStart.top+20}));
+  doc.dispatchEvent(new win.PointerEvent("pointermove",{bubbles:true,pointerId:7,clientX:dragStart.left-35,clientY:dragStart.top-40}));
+  doc.dispatchEvent(new win.PointerEvent("pointerup",{bubbles:true,pointerId:7,clientX:dragStart.left-35,clientY:dragStart.top-40}));
+  await wait(280);const dragEnd=anchor.getBoundingClientRect();assert(Math.abs(dragEnd.left-dragStart.left)>20,"Diva Bot è trascinabile nell'overlay");
+  const free=api.start("free");assert(doc.querySelector(".wp19-free-mode"),"Libero usa renderer dedicato");
+  const exercise=free.exercises[0],before=exercise.sets.length;
+  const stableStart=doc.querySelector(".wp19-mascot-anchor").getBoundingClientRect();
+  doc.querySelector(`[data-wp19='free-add-set'][data-exercise-id='${exercise.id}']`).click();
+  assert(api.snapshot().exercises[0].sets.length===before+1,"Libero aggiunge una serie nel modello");
+  const deleteButton=doc.querySelector("[data-wp19='free-remove-set']");deleteButton.click();
+  assert(api.snapshot().exercises[0].sets.length===before,"Libero elimina una serie dal modello");
+  const stableEnd=doc.querySelector(".wp19-mascot-anchor").getBoundingClientRect();assert(Math.abs(stableEnd.left-stableStart.left)<1&&Math.abs(stableEnd.top-stableStart.top)<1,"Diva Bot non salta dopo il ridisegno delle serie");
+  doc.querySelector("[data-wp19='free-empty']").click();
+  assert(api.snapshot().exercises.length===0&&doc.querySelector(".wp19-free-empty"),"Libero consente una sessione vuota");
+  report("Suite DOM completata",true,`${results.children.length} controlli`);
+});
+</script>
+</html>
