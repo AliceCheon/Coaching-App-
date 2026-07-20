@@ -10,6 +10,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="workout-pro.css?v=v112-phase19.10">
+  <script defer src="workout-pro.js?v=v112-phase19.10"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -3453,7 +3455,7 @@
     .training-screen-wrap { position:relative; min-height:100%; }
     .workout-mascot-layer { position:sticky; top:8px; z-index:35; width:100%; height:0; pointer-events:none; overflow:visible; }
     .workout-mascot-anchor { --workout-mascot-x:0px; --workout-mascot-y:0px; position:absolute; top:0; right:0; width:124px; height:138px; pointer-events:none; transform:translate3d(var(--workout-mascot-x),var(--workout-mascot-y),0); transition:transform 320ms cubic-bezier(.2,.8,.2,1),opacity 180ms ease; filter:drop-shadow(0 14px 18px rgba(12,3,26,.44)) drop-shadow(0 0 14px rgba(255,82,180,.18)); }
-    .workout-mascot-anchor.is-dragging { transition:none; }
+    .workout-mascot-anchor.is-dragging,.workout-mascot-anchor.is-restoring { transition:none; }
     .workout-mascot-button { width:100%; height:100%; display:grid; place-items:center; padding:0; border:0; background:transparent; color:inherit; pointer-events:auto; cursor:grab; touch-action:none; }
     .workout-mascot-button:active { cursor:grabbing; }
     .workout-mascot-button:focus-visible { outline:2px solid var(--pink-soft); outline-offset:2px; border-radius:22px; }
@@ -4739,6 +4741,7 @@
             <button class="round-button" id="themeButton" title="Passa al tema chiaro" aria-label="Passa al tema chiaro">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 7.5A9 9 0 1 1 12 3Z"/></svg>
             </button>
+            <button class="round-button" id="settingsButton" title="Impostazioni" aria-label="Apri Impostazioni">⚙</button>
             <button class="round-button" id="helpButton" title="Guida" aria-label="Guida">&#9432;</button>
           </div>
         </header>
@@ -4751,6 +4754,7 @@
           <button class="top-tab coach-tab" data-screen="coach">Coach</button>
           <button class="top-tab" data-screen="nutrition">Nutrizione</button>
           <button class="top-tab" data-screen="quiz">Check-in</button>
+          <button class="top-tab" data-screen="settings">Impostazioni</button>
         </div>
 
         <main class="screen" id="screen"></main>
@@ -4802,7 +4806,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v111";
+    const APP_BUILD = "v112-phase19";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -5828,7 +5832,7 @@
 };
 
 
-    const DATA_SCHEMA_VERSION = 4;
+    const DATA_SCHEMA_VERSION = 5;
     const BACKUP_SCHEMA_VERSION = 1;
     const BACKUP_HISTORY_KEY = "alice-method-app.v8.backup-history.v1";
     const BACKUP_BUILD_KEY = "alice-method-app.v8.backup-build.v1";
@@ -5836,7 +5840,7 @@
     const PRE_V55_BACKUP_KEY = "alice-method-app.pre-v55-backup";
     const PRE_WEEK_CONSOLIDATION_BACKUP_KEY = "barbell-diva.pre-week-consolidation-backup";
     const PROGRAM_STATUSES = new Set(["draft", "available", "active", "archived", "deleted"]);
-    const SCHEMA_MIGRATIONS = new Map([[1, migrateV1ToV2], [2, migrateV2ToV3], [3, migrateV3ToV4]]);
+    const SCHEMA_MIGRATIONS = new Map([[1, migrateV1ToV2], [2, migrateV2ToV3], [3, migrateV3ToV4], [4, migrateV4ToV5]]);
 
     const baseState = {
       profile: {
@@ -5898,6 +5902,14 @@
         draft: {},
         noteDraft: {},
         timerRemaining: 0,
+        activeWorkout: null,
+        workoutProPreferences: {
+          loadStepByEquipment: { barbell: 2.5, dumbbell: 1, machine: 5, cable: 2.5, bodyweight: 1, unilateral: 1 },
+          wakeLockEnabled: false,
+          voiceEnabled: false,
+          soundEnabled: false,
+          notificationsEnabled: false
+        },
         contextMode: "auto",
         manualWeek: null,
         manualSessionCode: "",
@@ -5999,7 +6011,7 @@
     state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
     if (state.profile.coachPin === "2507") state.profile.coachPin = "ettorino1";
     const initialHash = String(location.hash || "").replace("#", "");
-    const initialScreens = new Set(["dashboard", "training", "progress", "logbook", "nutrition", "quiz", "coach"]);
+    const initialScreens = new Set(["dashboard", "training", "progress", "logbook", "nutrition", "quiz", "coach", "settings"]);
     let activeScreen = initialScreens.has(initialHash) ? initialHash : "dashboard";
     let activeBottom = activeScreen === "training" ? "workout" : activeScreen === "dashboard" ? "home" : activeScreen;
     let lastRenderedScreen = "";
@@ -7098,8 +7110,27 @@
       const raw = JSON.stringify(input || {});
       if (raw && !localStorage.getItem(PRE_WEEK_CONSOLIDATION_BACKUP_KEY)) localStorage.setItem(PRE_WEEK_CONSOLIDATION_BACKUP_KEY, raw);
       const result = repairImportedProgressions({ state: migrated, force: true });
-      if (!result.ok) throw new Error(result.error || "Riparazione progressioni non riuscita.");
+      if (!result.ok) {
+        migrated.meta = { ...(migrated.meta || {}), schemaVersion:4, weekConsolidationVersion:2, weekConsolidationWarning:result.error || "Alcune progressioni legacy restano parziali.", weekConsolidationAudit:result.audit || null };
+        return migrated;
+      }
       return result.state;
+    }
+
+    function migrateV4ToV5(input = {}) {
+      const migrated = clone(input || {});
+      migrated.training = migrated.training || {};
+      if (!Object.prototype.hasOwnProperty.call(migrated.training, "activeWorkout")) migrated.training.activeWorkout = null;
+      migrated.training.workoutProPreferences = {
+        loadStepByEquipment: { barbell:2.5, dumbbell:1, machine:5, cable:2.5, bodyweight:1, unilateral:1 },
+        wakeLockEnabled:false,
+        voiceEnabled:false,
+        soundEnabled:false,
+        notificationsEnabled:false,
+        ...(migrated.training.workoutProPreferences || {})
+      };
+      migrated.meta = { ...(migrated.meta || {}), schemaVersion:5, workoutProMigrationAt:new Date().toISOString() };
+      return migrated;
     }
 
     function migrateV1ToV2(input = {}) {
@@ -7226,6 +7257,22 @@
       return { sessions:merged, imported, skipped, groups:groups.size };
     }
 
+    function correctAliceWorkoutF16Jul2026(target) {
+      const sessions = Array.isArray(target?.training?.sessions) ? target.training.sessions : [];
+      let corrected = 0;
+      sessions.forEach((session) => {
+        const code = String(session.sessionCode || "").trim().toUpperCase();
+        const isWorkoutF = /^F\d*$/.test(code) || String(session.sessionName || "").trim().toLowerCase() === "scheda f";
+        const recordedDate = legacyDateInput(session.dateInput || session.date);
+        if (!isWorkoutF || recordedDate !== "2026-07-20") return;
+        session.dateInput = "2026-07-16";
+        session.date = "16/07/2026";
+        (session.exercises || []).forEach((exercise) => { exercise.date = "16/07/2026"; });
+        corrected++;
+      });
+      return corrected;
+    }
+
     // Sessioni presenti nel backup del telefono del 14/07/2026 e assenti dal seed precedente.
     // Vengono unite una sola volta allo storico locale; non sostituiscono mai dati già salvati.
     function aliceMethodBackup14JulSessions() { return [
@@ -7268,6 +7315,15 @@
       target.training.workoutView = "tabs-compact";
       target.training.exerciseTabs = target.training.exerciseTabs && typeof target.training.exerciseTabs === "object" ? target.training.exerciseTabs : {};
       target.training.setDone = target.training.setDone && typeof target.training.setDone === "object" ? target.training.setDone : {};
+      if (!Object.prototype.hasOwnProperty.call(target.training, "activeWorkout")) target.training.activeWorkout = null;
+      target.training.workoutProPreferences = {
+        loadStepByEquipment: { barbell:2.5, dumbbell:1, machine:5, cable:2.5, bodyweight:1, unilateral:1 },
+        wakeLockEnabled:false,
+        voiceEnabled:false,
+        soundEnabled:false,
+        notificationsEnabled:false,
+        ...(target.training.workoutProPreferences || {})
+      };
       target.migrations = target.migrations || {};
       if (Number(target.migrations.legacyAliceLogbook || 0) < 1 && Array.isArray(LEGACY_ALICE_LOGBOOK_HISTORY)) {
         const migration = migrateLegacyAliceLogbook(LEGACY_ALICE_LOGBOOK_HISTORY, target.training.sessions || []);
@@ -7283,6 +7339,9 @@
         target.migrations.aliceMethodBackup14Jul2026 = 1;
         target.migrations.aliceMethodBackup14Jul2026Imported = Math.max(0, merged.length - before.length);
       }
+      const workoutFDateCorrections = correctAliceWorkoutF16Jul2026(target);
+      target.migrations.aliceWorkoutF16Jul2026Corrected = Number(target.migrations.aliceWorkoutF16Jul2026Corrected || 0) + workoutFDateCorrections;
+      target.migrations.aliceWorkoutF16Jul2026 = 1;
       if (!target.meta) target.meta = {};
       target.meta.schemaVersion = DATA_SCHEMA_VERSION;
       return target;
@@ -7728,11 +7787,15 @@
         const loaded = incoming ? mergeState(clone(baseState), incoming) : clone(baseState);
         hydrateStateModel(loaded);
         recoverWorkoutJournal(loaded);
+        const postJournalFDateCorrections = correctAliceWorkoutF16Jul2026(loaded);
+        loaded.migrations.aliceWorkoutF16Jul2026Corrected = Number(loaded.migrations.aliceWorkoutF16Jul2026Corrected || 0) + postJournalFDateCorrections;
         repairSequentialWorkoutWeeks(loaded);
         // Audit reale anche per backup già marcati v4: il flag non garantisce
         // che la progressione sia stata materialmente importata.
         const repaired = repairImportedProgressions({ state: loaded });
-        if (!repaired.ok) throw new Error(repaired.error || "Riparazione progressioni non riuscita.");
+        if (!repaired.ok) {
+          loaded.meta = { ...(loaded.meta || {}), progressionAuditWarning:repaired.error || "Alcune progressioni legacy restano parziali.", progressionAudit:repaired.audit || null };
+        }
         if (saved) {
           try { writeLocalStateSnapshot(loaded, { touch: false, cloud: false }); } catch (error) {}
         }
@@ -7901,6 +7964,24 @@
       return released;
     }
 
+    function releaseAutomaticBackupsForStateWrite() {
+      try {
+        const records = JSON.parse(localStorage.getItem(BACKUP_HISTORY_KEY) || "[]");
+        if (!Array.isArray(records) || !records.length) return false;
+        const protectedTypes = new Set(["manual"]);
+        const compact = records.filter((record) => protectedTypes.has(record?.metadata?.type)).slice(0, 2);
+        if (compact.length === records.length) return false;
+        localStorage.setItem(BACKUP_HISTORY_KEY, JSON.stringify(compact));
+        return true;
+      } catch (error) { return false; }
+    }
+
+    function releaseStateWriteSpace() {
+      const obsolete = releaseObsoleteLocalBackups();
+      const automatic = releaseAutomaticBackupsForStateWrite();
+      return obsolete || automatic;
+    }
+
     function isStorageQuotaError(error) {
       const text = `${error?.name || ""} ${error?.message || error || ""}`.toLowerCase();
       return text.includes("quota") || text.includes("storage") || Number(error?.code) === 22 || Number(error?.code) === 1014;
@@ -7921,7 +8002,7 @@
         if (options.cloud !== false && snapshot === state) scheduleCloudSave();
         return true;
       } catch (error) {
-        if (isStorageQuotaError(error) && releaseObsoleteLocalBackups()) {
+        if (isStorageQuotaError(error) && releaseStateWriteSpace()) {
           try {
             localStorage.setItem(STORE_KEY, JSON.stringify(snapshot));
             lastPersistenceError = null;
@@ -7933,7 +8014,8 @@
           }
         }
         lastPersistenceError = { at: new Date().toISOString(), message: String(error?.message || error), scope: "localStorage" };
-        setPremiumSaveStatus("error", "Errore di salvataggio");
+        const cloudAlreadySynced = state.profile.account?.cloudStatus === "sync" && state.profile.account?.lastCloudSyncAt;
+        setPremiumSaveStatus("error", cloudAlreadySynced ? "Cloud sincronizzato · spazio locale insufficiente" : "Spazio locale insufficiente");
         return false;
       }
     }
@@ -8487,6 +8569,8 @@
         }
         state = mergeCloudAndLocalState(state, remoteState);
         recoverWorkoutJournal(state);
+        const realtimeFDateCorrections = correctAliceWorkoutF16Jul2026(state);
+        state.migrations.aliceWorkoutF16Jul2026Corrected = Number(state.migrations.aliceWorkoutF16Jul2026Corrected || 0) + realtimeFDateCorrections;
         state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
         lastCloudError = "";
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
@@ -8600,6 +8684,8 @@
           remoteState.programs = await loadCloudPrograms(rootData);
           state = mergeCloudAndLocalState(state, remoteState);
           recoverWorkoutJournal(state);
+          const cloudFDateCorrections = correctAliceWorkoutF16Jul2026(state);
+          state.migrations.aliceWorkoutF16Jul2026Corrected = Number(state.migrations.aliceWorkoutF16Jul2026Corrected || 0) + cloudFDateCorrections;
           const nutritionPhotos = await loadNutritionPhotosFromCloud().catch(() => []);
           if (!state.nutrition) state.nutrition = {};
           state.nutrition.dashboard = mergeNutritionDashboard(state.nutrition.dashboard || {}, { photos: nutritionPhotos });
@@ -9581,7 +9667,8 @@
         nutrition: ["Nutrizione", "Dashboard alimentazione"],
         volume: ["Volume", "Programmazione annuale"],
         quiz: ["Check-in", "Semaforo e benessere"],
-        coach: ["Coach", "Back office"]
+        coach: ["Coach", "Back office"],
+        settings: ["Impostazioni", "App, dati e sincronizzazione"]
       };
       document.getElementById("appTitle").textContent = titleMap[activeScreen][0];
       document.getElementById("appSubtitle").textContent = titleMap[activeScreen][1];
@@ -9594,6 +9681,7 @@
       if (activeScreen === "volume") screen.innerHTML = volumeScreenHtml();
       if (activeScreen === "quiz") screen.innerHTML = quizHtml();
       if (activeScreen === "coach") screen.innerHTML = coachHtml();
+      if (activeScreen === "settings") screen.innerHTML = settingsHtml();
       if (lastRenderedScreen && lastRenderedScreen !== activeScreen && premiumMotionEnabled()) { screen.classList.remove("screen-enter"); requestAnimationFrame(() => screen.classList.add("screen-enter")); }
       ensureCoachMascotFallbacks();
       bindScreen();
@@ -9813,12 +9901,17 @@
           <section class="phase11-today card"><div class="row"><div><span class="section-eyebrow">La tua seduta</span><h3>${escapeHtml(context.session.name || context.session.code)}</h3><p>${escapeHtml(displayLabel(context.session.focus || "Focus da definire"))}</p></div><span class="status-badge">${context.session.exercises?.length || 0} esercizi</span></div><div class="phase11-progress"><span style="width:${Math.min(100, (context.session.exercises?.length || 0) ? Math.round((stats.sessions.length ? 100 : 0)) : 0)}%"></span></div><div class="quick-actions"><button class="gold-button" data-screen-target="training">${iconSvg("start", "Inizia allenamento")} Avvia</button><button class="ghost-button" data-screen-target="logbook">${iconSvg("logbook", "Apri logbook")} Apri logbook</button></div></section>
           <section class="phase11-chart-card card"><div class="row"><div><span class="section-eyebrow">Progressi recenti</span><h3>Settimana in movimento</h3></div><span class="chip">${stats.sessions.length} sedute</span></div><div class="phase11-bars">${[0,1,2,3,4,5,6].map((day) => { const count = stats.sessions.filter((session) => { const stamp = sessionTimestamp(session); return stamp && new Date(stamp).getDay() === (day + 1) % 7; }).length; return `<div class="phase11-bar-col"><span style="height:${Math.max(8, Math.min(100, count * 34))}%"></span><small>${["L","M","M","G","V","S","D"][day]}</small></div>`; }).join("")}</div><p class="micro-copy">Volume e frequenza vengono aggiornati automaticamente dai tuoi log.</p></section>
         </div><aside class="phase11-side"><section class="card"><div class="row"><h3>Azioni rapide</h3><span class="chip">oggi</span></div><button class="quick-action" data-screen-target="training">${iconSvg("start", "Inizia allenamento")} Inizia allenamento <span>›</span></button><button class="quick-action" data-screen-target="logbook">${iconSvg("logbook", "Apri logbook")} Apri logbook <span>›</span></button><button class="quick-action" data-screen-target="quiz">${iconSvg("checkin", "Registra check-in")} Registra check-in <span>›</span></button></section><section class="card"><div class="row"><h3>Coach note</h3><span class="chip" style="color:${decision.color}">${escapeHtml(decision.label)}</span></div><p class="micro-copy">${escapeHtml(decision.text)}</p></section></aside></section>
-        ${divaBotSettingsHtml()}
-        ${experienceSettingsHtml()}
-        ${dataProtectionHtml()}
-        ${accountCardHtml()}
         ${onboardingHtml()}
       </div>`;
+    }
+
+    function workoutProSettingsHtml() {
+      const preferences = state.training?.workoutProPreferences || {};
+      return `<section class="card" aria-labelledby="workoutProSettingsTitle"><div class="row"><div><span class="section-eyebrow">Allenamento</span><h3 id="workoutProSettingsTitle">Workout Pro</h3></div><span class="chip">v112</span></div><div class="training-context-grid"><label><input type="checkbox" data-workout-pro-setting="wakeLockEnabled" ${preferences.wakeLockEnabled ? "checked" : ""}> Mantieni schermo attivo durante la sessione</label><label><input type="checkbox" data-workout-pro-setting="notificationsEnabled" ${preferences.notificationsEnabled ? "checked" : ""}> Notifiche al termine del timer</label><label><input type="checkbox" data-workout-pro-setting="voiceEnabled" ${preferences.voiceEnabled ? "checked" : ""}> Controllo vocale sperimentale</label><label><input type="checkbox" data-workout-pro-setting="soundEnabled" ${preferences.soundEnabled ? "checked" : ""}> Suono timer</label></div><p class="micro-copy">Schermo, microfono e notifiche vengono attivati soltanto dopo una tua azione esplicita e solo se il browser li supporta.</p></section>`;
+    }
+
+    function settingsHtml() {
+      return `<div class="phase11-dashboard settings-screen"><section class="phase11-hero card"><div><span class="section-eyebrow">Tutto in un posto</span><h2>Impostazioni</h2><p>Preferenze dell'app, Diva Bot, protezione dati e sincronizzazione.</p></div><span class="chip">${APP_BUILD}</span></section>${divaBotSettingsHtml()}${experienceSettingsHtml()}${workoutProSettingsHtml()}${dataProtectionHtml()}${accountCardHtml()}</div>`;
     }
 
     function dashboardSummaryCard(icon, label, value, detail, color, metric = null) {
@@ -10902,7 +10995,10 @@
     function scheduleWorkoutMascotSafety(target = null) {
       if (!workoutMascotVisible() || activeScreen !== "training") return;
       requestAnimationFrame(() => {
-        const focusTarget = target || (document.activeElement?.matches?.("[data-set-kg],[data-set-done],[data-workout-tab],#saveWorkout") ? document.activeElement : null);
+        const candidate = target || (document.activeElement?.matches?.("[data-set-kg],[data-workout-tab],#saveWorkout") ? document.activeElement : null);
+        // La spunta di una serie ridisegna la scheda: non deve trasformarsi in
+        // un ostacolo che fa planare Diva Bot verso un'altra posizione.
+        const focusTarget = candidate?.matches?.("[data-set-done]") ? null : candidate;
         moveWorkoutMascot(document.querySelector(".workout-mascot-anchor")?.dataset.position || state.ui.workoutMascotPosition);
         if (focusTarget) avoidWorkoutMascotOverlap(focusTarget);
       });
@@ -10966,7 +11062,7 @@
       if (!screen.dataset.workoutMascotSafetyBound) {
         screen.dataset.workoutMascotSafetyBound = "true";
         screen.addEventListener("focusin", (event) => {
-          if (event.target?.matches?.("[data-set-kg],[data-set-done],[data-workout-tab],#saveWorkout")) scheduleWorkoutMascotSafety(event.target);
+          if (event.target?.matches?.("[data-set-kg],[data-workout-tab],#saveWorkout")) scheduleWorkoutMascotSafety(event.target);
         });
         screen.addEventListener("scroll", () => {
           clearTimeout(workoutMascotUi.scrollTimer);
@@ -10982,7 +11078,12 @@
       }
       document.querySelector("[data-workout-mascot-show]")?.addEventListener("click", () => setWorkoutMascotVisibility(true));
       if (!button) return;
-      requestAnimationFrame(() => moveWorkoutMascot(state.ui.workoutMascotPosition || "bottom-right"));
+      const anchor = button.closest(".workout-mascot-anchor");
+      anchor?.classList.add("is-restoring");
+      requestAnimationFrame(() => {
+        moveWorkoutMascot(state.ui.workoutMascotPosition || "bottom-right");
+        requestAnimationFrame(() => anchor?.classList.remove("is-restoring"));
+      });
       button.addEventListener("contextmenu", (event) => { event.preventDefault(); showWorkoutMascotMenu(); });
       button.addEventListener("pointerdown", (event) => {
         if (event.button != null && event.button !== 0) return;
@@ -12170,6 +12271,11 @@
     }
 
     function workoutHistoryHtml() {
+      const renderedFDateCorrections = correctAliceWorkoutF16Jul2026(state);
+      if (renderedFDateCorrections > 0) {
+        state.migrations.aliceWorkoutF16Jul2026Corrected = Number(state.migrations.aliceWorkoutF16Jul2026Corrected || 0) + renderedFDateCorrections;
+        setTimeout(() => saveState({ cloud:false, immediate:true }), 0);
+      }
       const savedHere = state.training.sessions.filter((session) => session.source === "App" || Number(session.id) > 1000000000);
       const recent = savedHere.slice().sort((a, b) => String(b.dateInput || "").localeCompare(String(a.dateInput || "")) || Number(b.id || 0) - Number(a.id || 0));
       const selectedCode = currentTrainingContext().session.code;
@@ -14595,6 +14701,8 @@
     document.getElementById("helpButton").addEventListener("click", () => {
       showToast("Schede, storico e volume sono presi dal tuo Excel.");
     });
+
+    document.getElementById("settingsButton").addEventListener("click", () => setScreen("settings"));
 
     document.getElementById("modeButton").addEventListener("click", () => {
       if (state.profile.mode === "coach") {
