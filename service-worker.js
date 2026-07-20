@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v111";
+const CACHE_NAME = "atlas-app-v112-phase19.10";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -12,7 +12,9 @@ const APP_SHELL = [
   "./coach-mascot.svg",
   "./dashboard-alimentazione-backup-2026-07-15.json",
   "./food-backup.js",
-  "./atlas-nunito-sans.ttf"
+  "./atlas-nunito-sans.ttf",
+  "./workout-pro.css",
+  "./workout-pro.js"
 ];
 
 self.addEventListener("install", (event) => {

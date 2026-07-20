@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const mime = { ".html":"text/html; charset=utf-8", ".js":"text/javascript; charset=utf-8", ".json":"application/json", ".webmanifest":"application/manifest+json", ".svg":"image/svg+xml", ".png":"image/png", ".ttf":"font/ttf" };
+const mime = { ".html":"text/html; charset=utf-8", ".css":"text/css; charset=utf-8", ".js":"text/javascript; charset=utf-8", ".json":"application/json", ".webmanifest":"application/manifest+json", ".svg":"image/svg+xml", ".png":"image/png", ".ttf":"font/ttf" };
 
 http.createServer(async (request, response) => {
   try {
@@ -19,4 +19,4 @@ http.createServer(async (request, response) => {
     response.writeHead(404);
     response.end("Not found");
   }
-}).listen(8766, "127.0.0.1");
+}).listen(Number(process.env.PORT || 8766), "127.0.0.1");
