@@ -7,15 +7,15 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v121-phase19.7.3">
+  <link rel="manifest" href="manifest.webmanifest?v=v121-phase19.7.6">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="workout-pro.css?v=v121-phase19.7.3">
-  <link rel="stylesheet" href="coach-studio.css?v=v121-phase19.7.3">
-  <script type="module" src="programming-engine.js?v=v121-phase19.7.3"></script>
-  <script type="module" src="sync-reliability.js?v=v121-phase19.7.3"></script>
-  <script src="coach-studio.js?v=v121-phase19.7.3"></script>
-  <script defer src="workout-pro.js?v=v121-phase19.7.3"></script>
+  <link rel="stylesheet" href="workout-pro.css?v=v121-phase19.7.6">
+  <link rel="stylesheet" href="coach-studio.css?v=v121-phase19.7.6">
+  <script type="module" src="programming-engine.js?v=v121-phase19.7.6"></script>
+  <script type="module" src="sync-reliability.js?v=v121-phase19.7.6"></script>
+  <script src="coach-studio.js?v=v121-phase19.7.6"></script>
+  <script defer src="workout-pro.js?v=v121-phase19.7.6"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4720,6 +4720,7 @@
         <button class="rail-dot" data-jump="nutrition" title="Nutrizione" aria-label="Nutrizione"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19c5-9 9-14 16-14"/><path d="M5 5c5 2 8 6 9 12"/><path d="M4 19c7 1 13-2 16-14"/></svg><span>Nutrizione</span></button>
         <button class="rail-dot" data-bottom="quiz" title="Check-in" aria-label="Check-in"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Check-in</span></button>
         <button class="rail-dot" data-jump="settings" title="Impostazioni" aria-label="Impostazioni"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg><span>Impostazioni</span></button>
+        <button class="rail-dot diva-rail-toggle" data-global-diva-toggle title="Nascondi Diva Bot" aria-label="Nascondi Diva Bot" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="5" y="7" width="14" height="11" rx="4"/><path d="M12 7V4M9 12h.01M15 12h.01M9 16c2 1 4 1 6 0"/></svg><span>Diva Bot</span></button>
       </nav>
     </aside>
 
@@ -4794,6 +4795,8 @@
 
   </div>
 
+  <div id="globalDivaBotHost"></div>
+  <div class="animated-tooltip" id="animatedTooltip" role="tooltip" hidden></div>
   <div class="toast" id="toast"></div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
@@ -4806,7 +4809,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v121-phase19.7.3";
+    const APP_BUILD = "v121-phase19.7.6";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -9885,10 +9888,17 @@
       const enteringWorkout = activeScreen === "training" && lastRenderedScreen !== "training";
       document.body.dataset.theme = state.profile.theme || "dark";
       document.body.classList.toggle("nav-collapsed", !!state.ui?.mainNavCollapsed);
+      const mainNavToggle = document.querySelector("[data-main-nav-toggle]");
+      if (mainNavToggle) {
+        const collapsed = !!state.ui?.mainNavCollapsed;
+        mainNavToggle.setAttribute("aria-label", collapsed ? "Espandi navigazione" : "Comprimi navigazione");
+        mainNavToggle.title = collapsed ? "Espandi barra laterale" : "Comprimi barra laterale";
+      }
       applyExperiencePreferences();
       syncThemeUi();
       document.body.classList.toggle("coach-mode", state.profile.mode === "coach");
       updateNav();
+      renderGlobalDivaBot();
       const screen = document.getElementById("screen");
       if (loginRequired()) {
         document.getElementById("appTitle").textContent = APP_NAME;
@@ -10223,7 +10233,51 @@
 
     function divaBotSettingsHtml() {
       const preferences = divaBotPreferences();
-      return `<section class="card diva-bot-settings" aria-labelledby="divaBotSettingsTitle"><div class="row"><div><span class="section-eyebrow">Impostazioni</span><h3 id="divaBotSettingsTitle">Diva Bot</h3></div><span class="chip">preferenze salvate</span></div><div class="training-context-grid"><label><input type="checkbox" data-diva-bot-setting="visible" ${workoutMascotVisible() ? "checked" : ""}> Mostra Diva Bot durante l'allenamento</label><label>Personalità<select data-diva-bot-setting="personality"><option value="silent" ${preferences.personality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${preferences.personality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${preferences.personality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-setting="bubbles" ${preferences.bubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-setting="celebrations" ${preferences.celebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-setting="sounds" ${preferences.sounds ? "checked" : ""}> Suoni Diva Bot</label></div><p class="micro-copy">Suoni brevi e discreti, disattivati per impostazione predefinita. Animazioni e riduzione movimento seguono le preferenze di accessibilità.</p></section>`;
+      const globalPersonality = ["sweet","dynamic","calm"].includes(state.ui?.globalDivaPersonality) ? state.ui.globalDivaPersonality : "sweet";
+      return `<section class="card diva-bot-settings" aria-labelledby="divaBotSettingsTitle"><div class="row"><div><span class="section-eyebrow">Impostazioni</span><h3 id="divaBotSettingsTitle">Diva Bot</h3></div><span class="chip">preferenze salvate</span></div><div class="training-context-grid"><label><input type="checkbox" data-diva-bot-setting="globalVisible" ${state.ui?.globalDivaVisible !== false ? "checked" : ""}> Mostra Diva Bot in tutta l'app</label><label>Compagnia nell'app<select data-diva-bot-setting="globalPersonality"><option value="sweet" ${globalPersonality === "sweet" ? "selected" : ""}>Dolce</option><option value="dynamic" ${globalPersonality === "dynamic" ? "selected" : ""}>Dinamica</option><option value="calm" ${globalPersonality === "calm" ? "selected" : ""}>Tranquilla</option></select></label><label><input type="checkbox" data-diva-bot-setting="visible" ${workoutMascotVisible() ? "checked" : ""}> Mostra Diva Bot durante l'allenamento</label><label>Durante l'allenamento<select data-diva-bot-setting="personality"><option value="silent" ${preferences.personality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${preferences.personality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${preferences.personality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-setting="bubbles" ${preferences.bubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-setting="celebrations" ${preferences.celebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-setting="sounds" ${preferences.sounds ? "checked" : ""}> Suoni Diva Bot</label></div><p class="micro-copy">Suoni brevi e discreti, disattivati per impostazione predefinita. Animazioni e riduzione movimento seguono le preferenze di accessibilità.</p></section>`;
+    }
+
+    function globalDivaPersonality() {
+      return ["sweet","dynamic","calm"].includes(state.ui?.globalDivaPersonality) ? state.ui.globalDivaPersonality : "sweet";
+    }
+
+    function globalDivaMessage(personality = globalDivaPersonality()) {
+      const screenMessages = {
+        dashboard:"Eccomi Alice 💕 Ti tengo compagnia mentre organizzi la giornata.",
+        training:"Sono qui! Una serie alla volta e zero fretta sulla tecnica.",
+        progress:"Guardiamo i progressi insieme: anche i passi piccoli contano.",
+        logbook:"Custodisco io lo storico, tu pensa a diventare fortissima.",
+        coach:"Sono qui nel Coach Studio: programmiamo qualcosa di bellissimo.",
+        nutrition:"Ti faccio compagnia anche qui, senza toccare il tuo piano.",
+        quiz:"Check-in tranquillo: ascoltiamo come stai davvero.",
+        settings:"Qui puoi decidere anche che carattere devo avere ✨"
+      };
+      const base = screenMessages[activeScreen] || "Sono qui con te, Alice.";
+      if (personality === "dynamic") return `${base} Dai, facciamo succedere cose! ⚡`;
+      if (personality === "calm") return `${base} Con calma, senza pressione 🌙`;
+      return `${base} Ti sostengo io 🌸`;
+    }
+
+    function globalDivaBotHtml() {
+      const visible = state.ui?.globalDivaVisible !== false;
+      if (!visible) return `<button type="button" class="global-diva-restore" data-global-diva-toggle aria-label="Mostra Diva Bot">🤖 <span>Mostra Diva</span></button>`;
+      const preferences = divaBotPreferences();
+      const personality = globalDivaPersonality();
+      const open = !!state.ui?.globalDivaPanelOpen;
+      return `<aside class="global-diva-bot ${open?"panel-open":""}" aria-label="Diva Bot"><div class="global-diva-bubble" ${preferences.bubbles?"":"hidden"}>${escapeHtml(globalDivaMessage(personality))}</div><button type="button" class="global-diva-avatar" data-global-diva-open aria-label="Parla con Diva Bot" aria-expanded="${open}">${coachMascotHtml("global-floating")}</button>${open?`<section class="global-diva-panel"><button type="button" class="global-diva-panel-close" data-global-diva-close-panel aria-label="Chiudi">×</button><strong>Diva Bot</strong><span>Scegli come vuoi che ti faccia compagnia.</span><label>Personalità<select data-global-diva-personality><option value="sweet" ${personality==="sweet"?"selected":""}>Dolce</option><option value="dynamic" ${personality==="dynamic"?"selected":""}>Dinamica</option><option value="calm" ${personality==="calm"?"selected":""}>Tranquilla</option></select></label><button type="button" class="ghost-button" data-global-diva-toggle>Nascondi Diva Bot</button></section>`:""}</aside>`;
+    }
+
+    function renderGlobalDivaBot() {
+      const host = document.getElementById("globalDivaBotHost");
+      if (host) host.innerHTML = globalDivaBotHtml();
+      const visible = state.ui?.globalDivaVisible !== false;
+      const railToggle = document.querySelector(".diva-rail-toggle");
+      if (railToggle) {
+        railToggle.classList.toggle("is-hidden", !visible);
+        railToggle.setAttribute("aria-pressed", String(visible));
+        railToggle.setAttribute("aria-label", visible ? "Nascondi Diva Bot" : "Mostra Diva Bot");
+        railToggle.dataset.tooltip = visible ? "Nascondi Diva Bot" : "Mostra Diva Bot";
+      }
     }
 
     function experienceSettingsHtml() {
@@ -10797,10 +10851,54 @@
       return `<section class="coach-reference-panel"><div class="row"><div><h3>Anteprima atleta</h3><p class="micro-copy">Sola lettura · nessuna modifica possibile</p></div><button class="mini-button" data-studio-panel-close="reference">Chiudi</button></div><div class="coach-reference-selectors"><select data-studio-reference-program>${programs.map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id===reference?.id?"selected":""}>${escapeHtml(item.name)}</option>`).join("")}</select><select data-studio-reference-week>${Array.from({length:weekCount},(_,i)=>`<option value="${i+1}" ${coachProgramUi.referenceWeek===i+1?"selected":""}>Settimana ${i+1}</option>`).join("")}</select></div>${sheets.map((sheet,index)=>`<details class="coach-reference-sheet" ${index===0?"open":""}><summary>${escapeHtml(sheet.code)} · ${escapeHtml(sheet.name||sheet.focus||"Scheda")}</summary>${programRepository.getExercises(reference.id,sheet.id).map((exercise)=>{const p=coachWeekPrescription(exercise,coachProgramUi.referenceWeek);return `<div class="coach-reference-exercise"><strong>${escapeHtml(displayExerciseName(exercise.name||exercise.exercise||"Esercizio"))}</strong><span>${escapeHtml(p.sets||"—")} × ${escapeHtml(p.reps||"—")}</span><small>${escapeHtml(exercise.muscle||exercise.som||"")} · recupero ${escapeHtml(p.restSeconds||"—")}s${p.note?` · ${escapeHtml(p.note)}`:""}</small></div>`}).join("")}</details>`).join("")}</section>`;
     }
 
-    function coachInlineExerciseRowHtml(program,sheet,exercise,index,weekNumber) {
-      const p=coachWeekPrescription(exercise,weekNumber); const setType=exercise.metadata?.setType||"exercise";
+    function coachExecutionTypeOptions(selected) {
+      return [["repetitions","Ripetizioni"],["period","Periodo"],["ramping","Ramping"]].map(([value,label])=>`<option value="${value}" ${selected===value?"selected":""}>${label}</option>`).join("");
+    }
+
+    function coachSetGroupLabel(type) {
+      return ({superset:"Superserie",multiset:"Multiserie",alternative:"Alternativa",circuit:"Circuito"})[type] || "Gruppo";
+    }
+
+    function coachInlineGroupMenuHtml(sheet,exercise) {
+      const grouped=!!exercise.metadata?.setGroupId;
+      return `<details class="coach-row-group-menu"><summary title="Collega esercizi" aria-label="Collega esercizi">＋</summary><div><button type="button" data-set-group-action="superset" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">Superserie</button><button type="button" data-set-group-action="multiset" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">Multiserie</button><button type="button" data-set-group-action="alternative" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">Alternativa</button><button type="button" data-set-group-action="circuit" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">Circuito</button>${grouped?`<button type="button" class="danger" data-set-group-action="unlink" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">Scollega gruppo</button>`:""}</div></details>`;
+    }
+
+    function coachInlineExerciseRowHtml(program,sheet,exercise,index,weekNumber,positionLabel=String.fromCharCode(65+(index%26))) {
+      const p=coachWeekPrescription(exercise,weekNumber); const executionType=exercise.metadata?.executionType||"repetitions";
       const f=(field,value,type="text",extra="")=>`<input type="${type}" ${extra} data-inline-exercise-field="${field}" data-program-id="${escapeHtml(program.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" data-week-number="${weekNumber}" value="${escapeHtml(value??"")}">`;
-      return `<tr class="coach-inline-exercise ${coachProgramUi.highlightExerciseId===exercise.id?"just-progressed":""}" draggable="true" data-inline-row data-program-id="${escapeHtml(program.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}"><td data-label="Esercizio"><div class="coach-inline-name"><button class="drag-handle" title="Trascina per riordinare">⋮⋮</button><span class="program-exercise-letter">${String.fromCharCode(65+(index%26))}</span>${f("name",displayExerciseName(exercise.name||"Esercizio"))}</div><div class="coach-inline-sub">${f("muscle",exercise.muscle||exercise.som||"", "text", 'placeholder="Gruppo principale"')}${f("secondaryMuscles",(exercise.metadata?.secondaryMuscles||[]).join(", "),"text",'placeholder="Secondari"')}</div></td><td data-label="Tipo"><select data-inline-exercise-field="setType" data-program-id="${escapeHtml(program.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" data-week-number="${weekNumber}">${[["exercise","Esercizio"],["superset","Superserie"],["multiset","Multiserie"],["alternative","Alternativa"],["circuit","Circuito"]].map(([v,l])=>`<option value="${v}" ${setType===v?"selected":""}>${l}</option>`).join("")}</select></td><td data-label="Serie">${f("sets",p.sets,"number",'min="0"')}</td><td data-label="Rip/tempo">${f("reps",p.reps,"text",'placeholder="8-12"')}</td><td data-label="Rec">${f("restSeconds",p.restSeconds,"number",'min="0" step="5"')}</td><td data-label="Carico"><div class="coach-inline-load">${f("loadValue",p.loadValue,"number",'min="0" step="0.5"')}<select data-inline-exercise-field="loadUnit" data-program-id="${escapeHtml(program.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" data-week-number="${weekNumber}">${["kg","lb","%1RM"].map((u)=>`<option ${p.loadUnit===u?"selected":""}>${u}</option>`).join("")}</select></div></td><td data-label="RPE">${f("rpe",p.rpe)}</td><td data-label="RIR">${f("rir",p.rir)}</td><td data-label="TUT">${f("tempo",p.tempo,"text",'placeholder="3-1-X-0"')}</td><td data-label="Note">${f("note",p.note,"text",'placeholder="Note e istruzioni"')}</td><td data-label="Azioni"><div class="coach-inline-actions">${exercise.progression?.templateId?`<button class="progression-badge" data-progression-open="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Progressione attiva">↗ ${escapeHtml(progressionTemplateById(exercise.progression.templateId)?.name||"Progressione")}</button>`:`<button data-progression-open="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Crea progressione">↗</button>`}<button data-exercise-action="details" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Dettagli e video">ⓘ</button><button data-inline-replace="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Sostituisci">⇄</button><button data-exercise-action="duplicate" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Duplica">▣</button><button data-exercise-action="up" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Sposta su">↑</button><button data-exercise-action="down" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Sposta giù">↓</button><button data-inline-copy="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Copia">⧉</button><button class="danger-button" data-exercise-action="delete" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Elimina">⌫</button></div></td></tr>`;
+      return `<tr class="coach-inline-exercise ${exercise.metadata?.setGroupId?"in-set-group":""} ${coachProgramUi.highlightExerciseId===exercise.id?"just-progressed":""}" draggable="true" data-inline-row data-program-id="${escapeHtml(program.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}"><td data-label="Esercizio"><div class="coach-inline-name"><button class="drag-handle" title="Trascina per riordinare">⋮⋮</button><span class="program-exercise-letter">${escapeHtml(positionLabel)}</span>${f("name",displayExerciseName(exercise.name||"Esercizio"))}</div><div class="coach-inline-sub">${f("muscle",exercise.muscle||exercise.som||"", "text", 'placeholder="Gruppo principale"')}${f("secondaryMuscles",(exercise.metadata?.secondaryMuscles||[]).join(", "),"text",'placeholder="Secondari"')}</div></td><td data-label="Tipo"><select data-inline-exercise-field="executionType" data-program-id="${escapeHtml(program.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" data-week-number="${weekNumber}">${coachExecutionTypeOptions(executionType)}</select></td><td data-label="Serie">${f("sets",p.sets,"number",'min="0"')}</td><td data-label="Rip/tempo">${f("reps",p.reps,"text",'placeholder="8-12"')}</td><td data-label="Rec">${f("restSeconds",p.restSeconds,"number",'min="0" step="5"')}</td><td data-label="Carico"><div class="coach-inline-load">${f("loadValue",p.loadValue,"number",'min="0" step="0.5"')}<select data-inline-exercise-field="loadUnit" data-program-id="${escapeHtml(program.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" data-week-number="${weekNumber}">${["kg","lb","%1RM"].map((u)=>`<option ${p.loadUnit===u?"selected":""}>${u}</option>`).join("")}</select></div></td><td data-label="RPE">${f("rpe",p.rpe)}</td><td data-label="RIR">${f("rir",p.rir)}</td><td data-label="TUT">${f("tempo",p.tempo,"text",'placeholder="3-1-X-0"')}</td><td data-label="Note">${f("note",p.note,"text",'placeholder="Note e istruzioni"')}</td><td data-label="Azioni"><div class="coach-inline-actions">${exercise.progression?.templateId?`<button class="progression-badge" data-progression-open="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Progressione attiva">↗ ${escapeHtml(progressionTemplateById(exercise.progression.templateId)?.name||"Progressione")}</button>`:`<button data-progression-open="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Crea progressione">↗</button>`}<button data-exercise-action="details" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Dettagli e video">ⓘ</button><button data-inline-replace="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Sostituisci">⇄</button><button data-exercise-action="duplicate" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Duplica">▣</button><button data-exercise-action="up" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Sposta su">↑</button><button data-exercise-action="down" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Sposta giù">↓</button><button data-inline-copy="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Copia">⧉</button><button class="danger-button" data-exercise-action="delete" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Elimina">⌫</button>${coachInlineGroupMenuHtml(sheet,exercise)}</div></td></tr>`;
+    }
+
+    /* Editor 19.7.4: riga CoachPlus, note in finestra e collegamento rapido. */
+    function coachInlineExerciseRowHtml(program,sheet,exercise,index,weekNumber,positionLabel=String.fromCharCode(65+(index%26))) {
+      const p=coachWeekPrescription(exercise,weekNumber), executionType=exercise.metadata?.executionType||"repetitions";
+      const attrs=`data-program-id="${escapeHtml(program.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" data-week-number="${weekNumber}"`;
+      const f=(field,value,type="text",extra="")=>`<input type="${type}" ${extra} data-inline-exercise-field="${field}" ${attrs} value="${escapeHtml(value??"")}">`;
+      const progression=exercise.progression?.templateId?`<button class="progression-badge" data-progression-open="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Progressione attiva">↗ ${escapeHtml(progressionTemplateById(exercise.progression.templateId)?.name||"Progressione")}</button>`:`<button data-progression-open="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Crea progressione">↗</button>`;
+      return `<tr class="coach-inline-exercise ${exercise.metadata?.setGroupId?"in-set-group":""} ${coachProgramUi.highlightExerciseId===exercise.id?"just-progressed":""}" draggable="true" data-inline-row ${attrs}>
+        <td data-label="Esercizio"><div class="coach-inline-name"><button class="drag-handle" title="Trascina per riordinare">⋮⋮</button><button type="button" class="set-link-button ${exercise.metadata?.setGroupId?"active":""}" data-set-group-quick="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Crea superserie con l’esercizio successivo" aria-label="Crea superserie">↗</button><span class="program-exercise-letter">${escapeHtml(positionLabel)}</span>${f("name",displayExerciseName(exercise.name||"Esercizio"))}</div><div class="coach-inline-sub">${f("muscle",exercise.muscle||exercise.som||"", "text", 'placeholder="Gruppo principale"')}${f("secondaryMuscles",(exercise.metadata?.secondaryMuscles||[]).join(", "),"text",'placeholder="Secondari"')}</div></td>
+        <td data-label="Tipo"><select data-inline-exercise-field="executionType" ${attrs}>${coachExecutionTypeOptions(executionType)}</select></td><td data-label="Serie">${f("sets",p.sets,"number",'min="0"')}</td><td data-label="Rip/tempo">${f("reps",p.reps,"text",'placeholder="8-12"')}</td><td data-label="Rec">${f("restSeconds",p.restSeconds,"number",'min="0" step="5"')}</td><td data-label="Carico"><div class="coach-inline-load">${f("loadValue",p.loadValue,"number",'min="0" step="0.5"')}<select data-inline-exercise-field="loadUnit" ${attrs}>${["kg","lb","%1RM"].map((unit)=>`<option ${p.loadUnit===unit?"selected":""}>${unit}</option>`).join("")}</select></div></td><td data-label="RPE">${f("rpe",p.rpe)}</td><td data-label="RIR">${f("rir",p.rir)}</td><td data-label="TUT">${f("tempo",p.tempo,"text",'placeholder="3-1-X-0"')}</td>
+        <td data-label="Note"><button type="button" class="coach-inline-note" data-inline-note-open="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-week-number="${weekNumber}"><span>✎</span><em>${escapeHtml(p.note||"Aggiungi nota")}</em></button></td>
+        <td data-label="Azioni"><div class="coach-inline-actions">${progression}<button data-exercise-action="details" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Dettagli e video">ⓘ</button><button data-inline-replace="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Sostituisci">⇄</button><button data-exercise-action="duplicate" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Duplica">▣</button><button data-exercise-action="up" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Sposta su">↑</button><button data-exercise-action="down" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Sposta giù">↓</button><button data-inline-copy="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Copia">⧉</button><button class="danger-button" data-exercise-action="delete" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Elimina">⌫</button>${coachInlineGroupMenuHtml(sheet,exercise)}</div></td>
+      </tr>`;
+    }
+
+    function coachProgramExerciseRowsHtml(program,sheet,weekNumber) {
+      const exercises=programRepository.getExercises(program.id,sheet.id);
+      const groups=new Map();
+      exercises.forEach((exercise)=>{const id=exercise.metadata?.setGroupId;if(id){if(!groups.has(id))groups.set(id,[]);groups.get(id).push(exercise);}});
+      const groupLetters=new Map(); let displayIndex=0;
+      exercises.forEach((exercise)=>{const groupId=exercise.metadata?.setGroupId;if(groupId){if(!groupLetters.has(groupId))groupLetters.set(groupId,String.fromCharCode(65+(displayIndex++%26)));}else displayIndex++;});
+      const rendered=new Set();
+      return exercises.map((exercise,index)=>{
+        const groupId=exercise.metadata?.setGroupId;
+        if(!groupId) return coachInlineExerciseRowHtml(program,sheet,exercise,index,weekNumber,String.fromCharCode(65+([...exercises.slice(0,index)].filter((item,position,array)=>!item.metadata?.setGroupId||array.findIndex((other)=>other.metadata?.setGroupId===item.metadata?.setGroupId)===position).length%26)));
+        const members=groups.get(groupId)||[exercise]; const letter=groupLetters.get(groupId)||"A"; const memberIndex=Math.max(0,members.findIndex((item)=>item.id===exercise.id));
+        const header=rendered.has(groupId)?"":`<tr class="coach-set-group-header"><td colspan="11"><span>⌄</span><strong>${escapeHtml(coachSetGroupLabel(exercise.metadata?.setType))} · ${letter}</strong><em>${members.length} esercizi</em></td></tr>`;
+        rendered.add(groupId);
+        return `${header}${coachInlineExerciseRowHtml(program,sheet,exercise,index,weekNumber,`${letter}${memberIndex+1}`)}`;
+      }).join("");
     }
 
     function coachProgramBoardHtml(program) {
@@ -10810,8 +10908,8 @@
       const weekCount=Math.max(1,Number(program.durationWeeks)||1);
       const selectedWeek=Math.max(1,Math.min(weekCount,Number(studio.programWeek)||1));
       studio.programWeek=selectedWeek;
-      const rows=(sheet)=>sheet.id===coachProgramUi.expandedSheetId?programRepository.getExercises(program.id,sheet.id).map((exercise,index)=>coachInlineExerciseRowHtml(program,sheet,exercise,index,selectedWeek)).join(""):`<tr class="coach-collapsed-day"><td colspan="11"><strong>Giornata compressa</strong><span>Clicca l’intestazione per aprire e modificare gli esercizi.</span></td></tr>`;
-      return `<section class="coach-program-board"><div class="coach-program-assignment"><label>Programma<select id="coachProgramSelect">${coachProgramsForUi().map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id===program.id?"selected":""}>${escapeHtml(item.name)}</option>`).join("")}</select></label><div><span>Stato</span><strong class="program-status ${program.status==="active"?"active":""}">${programStatusLabel(program.status)}</strong></div><div><span>Durata</span><strong>${weekCount} settimane</strong></div><div><span>Editor</span><strong>unificato 19.6</strong></div></div><div class="coach-program-week-tabs">${Array.from({length:weekCount},(_,index)=>`<button class="${selectedWeek===index+1?"active":""}" data-program-week="${index+1}"><strong>Settimana ${index+1}</strong><span>${sheets.length} allenamenti</span></button>`).join("")}</div><div class="coach-program-board-head"><div><h2>Settimana ${selectedWeek}</h2><span>${sheets.length} ${sheets.length===1?"giorno":"giorni"} · modifica direttamente i campi</span></div><button class="ghost-button" data-sheet-action="new">+ Aggiungi allenamento</button></div><div class="coach-program-days">${sheets.map((sheet,index)=>`<article class="coach-program-day" data-board-sheet="${escapeHtml(sheet.id)}"><header><div><span>Giorno ${index+1}</span><h3>${escapeHtml(sheet.name||sheet.focus||`Scheda ${sheet.code}`)}</h3><small>${programRepository.getExercises(program.id,sheet.id).length} esercizi · ${escapeHtml(sheet.focus||sheet.split||"Allenamento")}</small></div><div class="quick-actions coach-day-actions"><button data-sheet-action="edit" data-sheet-id="${escapeHtml(sheet.id)}">✎ Nome e info</button><button data-sheet-action="duplicate" data-sheet-id="${escapeHtml(sheet.id)}">▣ Duplica</button><button data-sheet-action="left" data-sheet-id="${escapeHtml(sheet.id)}" title="Sposta prima">←</button><button data-sheet-action="right" data-sheet-id="${escapeHtml(sheet.id)}" title="Sposta dopo">→</button><button class="danger-button" data-sheet-action="delete" data-sheet-id="${escapeHtml(sheet.id)}">⌫</button><details class="coach-add-menu"><summary aria-label="Aggiungi elemento">+ Aggiungi</summary><div><button data-program-board-add-kind="exercise" data-sheet-id="${escapeHtml(sheet.id)}">Esercizio</button><button data-program-board-add-kind="superset" data-sheet-id="${escapeHtml(sheet.id)}">Superserie</button><button data-program-board-add-kind="multiset" data-sheet-id="${escapeHtml(sheet.id)}">Multiserie</button><button data-program-board-add-kind="alternative" data-sheet-id="${escapeHtml(sheet.id)}">Alternativa</button><button data-program-board-add-kind="circuit" data-sheet-id="${escapeHtml(sheet.id)}">Circuito</button>${coachProgramUi.clipboardExercise?`<button data-inline-paste data-sheet-id="${escapeHtml(sheet.id)}">Incolla esercizio copiato</button>`:""}</div></details></div></header><div class="coach-program-day-table"><table><thead><tr><th>Esercizio e muscoli</th><th>Tipo</th><th>Serie</th><th>Rip/tempo</th><th>Rec</th><th>Carico</th><th>RPE</th><th>RIR</th><th>TUT</th><th>Note</th><th>Azioni</th></tr></thead><tbody>${rows(sheet)||`<tr><td colspan="11" class="coach-empty-inline">Nessun esercizio. Usa “+ Aggiungi” per iniziare.</td></tr>`}</tbody></table></div></article>`).join("")}</div>${coachProgramVolumeHtml(program,selectedWeek)}<aside class="program-board-bot">${coachMascotHtml()}<div><strong>Diva Bot è qui ✨</strong><span>Controllo la settimana ${selectedWeek}; i suoni restano spenti finché non li attivi.</span></div></aside></section>`;
+      const rows=(sheet)=>sheet.id===coachProgramUi.expandedSheetId?coachProgramExerciseRowsHtml(program,sheet,selectedWeek):`<tr class="coach-collapsed-day"><td colspan="11"><strong>Giornata compressa</strong><span>Clicca l’intestazione per aprire e modificare gli esercizi.</span></td></tr>`;
+      return `<section class="coach-program-board"><div class="coach-program-assignment no-status"><label>Programma<select id="coachProgramSelect">${coachProgramsForUi().map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id===program.id?"selected":""}>${escapeHtml(item.name)}</option>`).join("")}</select></label><div><span>Durata</span><strong>${weekCount} settimane</strong></div><div><span>Editor</span><strong>veloce 19.7</strong></div></div><div class="coach-program-week-tabs">${Array.from({length:weekCount},(_,index)=>`<button class="${selectedWeek===index+1?"active":""}" data-program-week="${index+1}"><strong>Settimana ${index+1}</strong><span>${sheets.length} allenamenti</span></button>`).join("")}</div><div class="coach-program-board-head"><div><h2>Settimana ${selectedWeek}</h2><span>${sheets.length} ${sheets.length===1?"giorno":"giorni"} · modifica direttamente i campi</span></div><button class="ghost-button" data-sheet-action="new">+ Aggiungi allenamento</button></div><div class="coach-program-days">${sheets.map((sheet,index)=>`<article class="coach-program-day" data-board-sheet="${escapeHtml(sheet.id)}"><header><div><span>Giorno ${index+1}</span><h3>${escapeHtml(sheet.name||sheet.focus||`Scheda ${sheet.code}`)}</h3><small>${programRepository.getExercises(program.id,sheet.id).length} esercizi · ${escapeHtml(sheet.focus||sheet.split||"Allenamento")}</small></div><div class="quick-actions coach-day-actions"><button data-sheet-action="edit" data-sheet-id="${escapeHtml(sheet.id)}">✎ Nome e info</button><button data-sheet-action="duplicate" data-sheet-id="${escapeHtml(sheet.id)}">▣ Duplica</button><button data-sheet-action="left" data-sheet-id="${escapeHtml(sheet.id)}" title="Sposta prima">←</button><button data-sheet-action="right" data-sheet-id="${escapeHtml(sheet.id)}" title="Sposta dopo">→</button><button class="danger-button" data-sheet-action="delete" data-sheet-id="${escapeHtml(sheet.id)}">⌫</button><details class="coach-add-menu"><summary aria-label="Aggiungi elemento">+ Aggiungi</summary><div><button data-program-board-add-kind="exercise" data-sheet-id="${escapeHtml(sheet.id)}">Esercizio</button>${coachProgramUi.clipboardExercise?`<button data-inline-paste data-sheet-id="${escapeHtml(sheet.id)}">Incolla esercizio copiato</button>`:""}</div></details></div></header><div class="coach-program-day-table" tabindex="0" aria-label="Scheda scorrevole: trascina uno spazio vuoto oppure usa Maiusc e rotellina"><table><thead><tr><th>Esercizio e muscoli</th><th>Tipo</th><th>Serie</th><th>Rip/tempo</th><th>Rec</th><th>Carico</th><th>RPE</th><th>RIR</th><th>TUT</th><th>Note</th><th>Azioni</th></tr></thead><tbody>${rows(sheet)||`<tr><td colspan="11" class="coach-empty-inline">Nessun esercizio. Usa “+ Aggiungi” per iniziare.</td></tr>`}</tbody></table></div></article>`).join("")}</div>${coachProgramVolumeHtml(program,selectedWeek)}<aside class="program-board-bot">${coachMascotHtml()}<div><strong>Diva Bot è qui ✨</strong><span>Controllo la settimana ${selectedWeek}; i suoni restano spenti finché non li attivi.</span></div></aside></section>`;
     }
 
     function coachStudioProgramEditorHtml() {
@@ -11089,7 +11187,7 @@
       if (field === "name") return { name:String(value||"").trim() || "Esercizio" };
       if (field === "muscle") return { muscle:String(value||"").trim() || "Custom", som:String(value||"").trim() || "Custom" };
       if (field === "secondaryMuscles") return { metadata:{ ...(exercise.metadata||{}), secondaryMuscles:String(value||"").split(",").map((item)=>item.trim()).filter(Boolean) } };
-      if (field === "setType") return { metadata:{ ...(exercise.metadata||{}), setType:value||"exercise" } };
+      if (field === "executionType") return { metadata:{ ...(exercise.metadata||{}), executionType:value||"repetitions" } };
       const weeks=(exercise.progression?.weeks||[]).map((item)=>clone(item));
       let week=weeks.find((item)=>Number(item.weekNumber||item.week)===Number(weekNumber));
       if(!week){ week=parseWeekPrescription({},Number(weekNumber)||1); weeks.push(week); }
@@ -11120,6 +11218,54 @@
         if(program&&volume) volume.outerHTML=coachProgramVolumeHtml(program,Number(input.dataset.weekNumber)||1);
       }, immediate ? 0 : 220);
       return true;
+    }
+
+    function applyCoachSetGroupAction(sheetId, exerciseId, kind) {
+      const programId=coachProgramUi.programId;
+      const exercises=programRepository.getExercises(programId,sheetId);
+      const targetIndex=exercises.findIndex((item)=>item.id===exerciseId);
+      if(targetIndex<0)return showToast("Esercizio non trovato.");
+      const current=exercises[targetIndex];
+      const currentGroup=current.metadata?.setGroupId||"";
+      rememberExerciseState(programId,sheetId);
+      if(kind==="unlink"){
+        const members=currentGroup?exercises.filter((item)=>item.metadata?.setGroupId===currentGroup):[current];
+        members.forEach((item)=>programRepository.updateExercise(programId,sheetId,item.id,{metadata:{...(item.metadata||{}),setType:"exercise",setGroupId:""},prescription:{...(item.prescription||{}),technique:parseTechnique({type:"normal",groupId:""})}},{save:false,forceLocked:true}));
+        commitProgramCollection(state.programs,{immediate:true});
+        discardCoachDraft(programId,sheetId); render(); return showToast("Collegamento rimosso.");
+      }
+      const wanted=({superset:2,multiset:3,alternative:2,circuit:4})[kind]||2;
+      if(exercises.length<2)return showToast("Servono almeno due esercizi per creare un gruppo.");
+      const start=Math.min(targetIndex,Math.max(0,exercises.length-wanted));
+      const members=exercises.slice(start,Math.min(exercises.length,start+wanted));
+      const groupId=newEntityId("set-group");
+      const techniqueType=kind==="superset"?"superset":kind==="multiset"||kind==="circuit"?"giant-set":"normal";
+      members.forEach((item)=>programRepository.updateExercise(programId,sheetId,item.id,{metadata:{...(item.metadata||{}),setType:kind,setGroupId:groupId},prescription:{...(item.prescription||{}),technique:parseTechnique({type:techniqueType,groupId})}},{save:false,forceLocked:true}));
+      commitProgramCollection(state.programs,{immediate:true});
+      discardCoachDraft(programId,sheetId); render();
+      showToast(`${coachSetGroupLabel(kind)} creata con ${members.length} esercizi.`);
+    }
+
+    function bindCoachTablePan() {
+      document.querySelectorAll(".coach-program-day-table").forEach((scroller)=>{
+        let candidate=false,dragging=false,startX=0,startY=0,startLeft=0,pointerId=null;
+        scroller.addEventListener("pointerdown",(event)=>{
+          if(event.button!==0||event.target.closest("input,select,button,summary,details,a,label"))return;
+          candidate=true;dragging=false;startX=event.clientX;startY=event.clientY;startLeft=scroller.scrollLeft;pointerId=event.pointerId;
+        });
+        scroller.addEventListener("pointermove",(event)=>{
+          if(!candidate&&!dragging)return;
+          const dx=event.clientX-startX,dy=event.clientY-startY;
+          if(!dragging&&Math.hypot(dx,dy)>7){
+            if(Math.abs(dy)>=Math.abs(dx)){candidate=false;return;}
+            dragging=true;candidate=false;scroller.classList.add("is-panning");scroller.setPointerCapture?.(pointerId);
+          }
+          if(dragging){event.preventDefault();scroller.scrollLeft=startLeft-dx;}
+        });
+        const stop=(event)=>{candidate=false;if(!dragging)return;dragging=false;scroller.classList.remove("is-panning");scroller.releasePointerCapture?.(pointerId||event.pointerId);pointerId=null;};
+        scroller.addEventListener("pointerup",stop);scroller.addEventListener("pointercancel",stop);
+        scroller.addEventListener("wheel",(event)=>{if(!event.shiftKey||scroller.scrollWidth<=scroller.clientWidth)return;event.preventDefault();scroller.scrollLeft+=event.deltaY||event.deltaX;},{passive:false});
+      });
     }
 
     function scheduleCoachEditorSave(delay=700) {
@@ -11326,6 +11472,8 @@
     function updateDivaBotPreference(field, value) {
       state.ui = state.ui || {};
       if (field === "visible") state.ui.workoutMascotVisible = value === true;
+      if (field === "globalVisible") state.ui.globalDivaVisible = value === true;
+      if (field === "globalPersonality") state.ui.globalDivaPersonality = ["sweet","dynamic","calm"].includes(value) ? value : "sweet";
       if (field === "personality") state.ui.divaBotPersonality = DIVA_BOT_PERSONALITIES.has(value) ? value : "balanced";
       if (field === "bubbles") state.ui.divaBotBubbles = value === true;
       if (field === "celebrations") state.ui.divaBotCelebrations = value === true;
@@ -11988,12 +12136,13 @@
         return `<div class="coach-modal-backdrop"><section class="coach-modal phase4-details-modal"><h3>${type === "exercise-custom" ? "Esercizio personalizzato" : "Dettagli esercizio"}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="exerciseModalName" value="${escapeHtml(exercise?.name || "")}"></label><label>Gruppo principale<input id="exerciseModalMuscle" value="${escapeHtml(exercise?.muscle || "Custom")}"></label><label>Gruppi secondari<input id="exerciseModalSecondary" value="${escapeHtml((metadata.secondaryMuscles || []).join(", "))}" placeholder="Separati da virgola"></label><label>Attrezzatura<input id="exerciseModalEquipment" value="${escapeHtml(metadata.equipment || "")}"></label><label>Pattern<input id="exerciseModalPattern" value="${escapeHtml(metadata.pattern || "")}"></label><label class="full">Note<textarea id="exerciseModalNotes">${escapeHtml(exercise?.note || "")}</textarea></label><label><input id="exerciseModalMain" type="checkbox" ${metadata.mainLift ? "checked" : ""}> Esercizio principale</label><label><input id="exerciseModalLocked" type="checkbox" ${metadata.locked ? "checked" : ""}> Proteggi da modifiche</label></div>${type === "exercise-details" ? `<p class="micro-copy">ID stabile: ${escapeHtml(exercise?.id || "")} · creato ${escapeHtml(exercise?.createdAt || "n/d")} · aggiornato ${escapeHtml(exercise?.updatedAt || "n/d")}</p><button type="button" class="ghost-button" data-progression-open="${escapeHtml(exercise?.id || "")}">Apri progressione settimanale</button>${exerciseAnalysisHtml(exercise)}` : ""}<div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type === "exercise-custom" ? "Aggiungi" : "Salva dettagli"}</button></div></section></div>`;
       }
       if (type === "progression-editor") {
-        const ex = programRepository.getExerciseById(program?.id, sheet?.id, coachProgramUi.modalData.exerciseId);
-        const duration = programWeekCount(program, sheet);
+        const progressionSheet = targetSheet || sheet;
+        const ex = programRepository.getExerciseById(program?.id, progressionSheet?.id, coachProgramUi.modalData.exerciseId);
+        const duration = programWeekCount(program, progressionSheet);
         const progression = ex?.progression || {};
         const templateId = coachProgramUi.modalData.templateId || progression.templateId || "maintenance";
         const weeks = coachProgramUi.modalData.weeks || progression.weeks || generateProgressionWeeks(ex, templateId, duration);
-        return `<div class="coach-modal-backdrop"><section class="coach-modal progression-modal"><span class="section-eyebrow">${escapeHtml(program?.name||"Programma")} · ${escapeHtml(sheet?.name||sheet?.code||"Giornata")}</span><h3>Progressione · ${escapeHtml(ex?.name || "Esercizio")}</h3><div class="coach-flow-note"><strong>Prima controlli, poi applichi</strong><span>Genera l’anteprima delle settimane 1-${duration}. Le righe “manuale” restano intatte, a meno che tu scelga esplicitamente di sostituirle.</span></div><div class="form-grid"><label>Metodo di progressione<select id="progressionTemplateId">${progressionTemplates().map((t) => `<option value="${escapeHtml(t.id)}" ${t.id === templateId ? "selected":""}>${escapeHtml(t.name)}</option>`).join("")}</select></label><label>Quante settimane<input id="progressionDuration" type="number" min="1" value="${duration}"></label><label>Se una settimana è già modificata<select id="progressionApplyMode"><option value="empty-only">Conserva i miei valori manuali</option><option value="replace">Sostituisci anche i miei valori manuali</option></select></label></div><div class="progression-scroll"><table class="progression-table"><thead><tr><th>Settimana</th><th>Serie</th><th>Ripetizioni</th><th>RIR</th><th>RPE</th><th>Carico</th><th>Recupero</th><th>Tipo</th><th>Note</th></tr></thead><tbody>${weeks.map((w, i) => `<tr><td><strong>${i + 1}</strong>${w.source === "manual" ? '<span class="phase4-badge">manuale</span>' : '<span class="phase4-badge">anteprima</span>'}</td><td><input data-progression-week="${i}" data-progression-field="sets" type="number" min="0" value="${escapeHtml(w.sets ?? "")}"></td><td><input data-progression-week="${i}" data-progression-field="reps" value="${escapeHtml(formatReps(w.reps))}"></td><td><input data-progression-week="${i}" data-progression-field="rir" value="${escapeHtml(w.rir?.label || "")}"></td><td><input data-progression-week="${i}" data-progression-field="rpe" value="${escapeHtml(w.rpe?.label || "")}"></td><td><input data-progression-week="${i}" data-progression-field="load" type="number" min="0" value="${escapeHtml(w.prescribedLoad?.value ?? "")}"></td><td><input data-progression-week="${i}" data-progression-field="rest" type="number" min="0" value="${escapeHtml(w.restSeconds ?? "")}"></td><td><select data-progression-week="${i}" data-progression-field="type">${["normal","accumulation","intensification","deload","test","recovery","custom"].map((v) => `<option value="${v}" ${w.type === v ? "selected" : ""}>${v}</option>`).join("")}</select></td><td><input data-progression-week="${i}" data-progression-field="notes" value="${escapeHtml(w.notes || "")}"></td></tr>`).join("")}</tbody></table></div><div class="coach-modal-actions">${progression.templateId?`<button type="button" class="danger-button" data-progression-remove="${escapeHtml(ex?.id||"")}">Rimuovi progressione</button>`:""}${close}<button type="button" class="ghost-button" data-progression-generate>Rigenera anteprima</button><button type="button" class="gold-button" data-coach-modal-save>Conferma e applica</button></div></section></div>`;
+        return `<div class="coach-modal-backdrop"><section class="coach-modal progression-modal"><span class="section-eyebrow">${escapeHtml(program?.name||"Programma")} · ${escapeHtml(sheet?.name||sheet?.code||"Giornata")}</span><h3>Progressione · ${escapeHtml(ex?.name || "Esercizio")}</h3><div class="coach-flow-note"><strong>Libreria progressioni salvate · ${progressionTemplates().length} disponibili</strong><span>Scegli uno dei metodi già presenti e controlla l’anteprima delle settimane 1-${duration}. Le righe “manuale” restano intatte, a meno che tu scelga esplicitamente di sostituirle.</span></div><div class="form-grid"><label>Metodo di progressione<select id="progressionTemplateId">${progressionTemplates().map((t) => `<option value="${escapeHtml(t.id)}" ${t.id === templateId ? "selected":""}>${escapeHtml(t.name)}</option>`).join("")}</select></label><label>Quante settimane<input id="progressionDuration" type="number" min="1" value="${duration}"></label><label>Se una settimana è già modificata<select id="progressionApplyMode"><option value="empty-only">Conserva i miei valori manuali</option><option value="replace">Sostituisci anche i miei valori manuali</option></select></label></div><div class="progression-scroll"><table class="progression-table"><thead><tr><th>Settimana</th><th>Serie</th><th>Ripetizioni</th><th>RIR</th><th>RPE</th><th>Carico</th><th>Recupero</th><th>Tipo</th><th>Note</th></tr></thead><tbody>${weeks.map((w, i) => `<tr><td><strong>${i + 1}</strong>${w.source === "manual" ? '<span class="phase4-badge">manuale</span>' : '<span class="phase4-badge">anteprima</span>'}</td><td><input data-progression-week="${i}" data-progression-field="sets" type="number" min="0" value="${escapeHtml(w.sets ?? "")}"></td><td><input data-progression-week="${i}" data-progression-field="reps" value="${escapeHtml(formatReps(w.reps))}"></td><td><input data-progression-week="${i}" data-progression-field="rir" value="${escapeHtml(w.rir?.label || "")}"></td><td><input data-progression-week="${i}" data-progression-field="rpe" value="${escapeHtml(w.rpe?.label || "")}"></td><td><input data-progression-week="${i}" data-progression-field="load" type="number" min="0" value="${escapeHtml(w.prescribedLoad?.value ?? "")}"></td><td><input data-progression-week="${i}" data-progression-field="rest" type="number" min="0" value="${escapeHtml(w.restSeconds ?? "")}"></td><td><select data-progression-week="${i}" data-progression-field="type">${["normal","accumulation","intensification","deload","test","recovery","custom"].map((v) => `<option value="${v}" ${w.type === v ? "selected" : ""}>${v}</option>`).join("")}</select></td><td><input data-progression-week="${i}" data-progression-field="notes" value="${escapeHtml(w.notes || "")}"></td></tr>`).join("")}</tbody></table></div><div class="coach-modal-actions">${progression.templateId?`<button type="button" class="danger-button" data-progression-remove="${escapeHtml(ex?.id||"")}">Rimuovi progressione</button>`:""}${close}<button type="button" class="ghost-button" data-progression-generate>Rigenera anteprima</button><button type="button" class="gold-button" data-coach-modal-save>Conferma e applica</button></div></section></div>`;
       }
       if (type === "exercise-transfer") {
         const programs = coachProgramsForUi();
@@ -12014,7 +12163,12 @@
       }
       if (type === "coach-ai-confirm") {
         const suggestion = coachProgramUi.modalData.suggestion || {};
-        return `<div class="coach-modal-backdrop"><section class="coach-modal coach-ai-detail-modal"><div class="coach-detail-heading">${coachMascotHtml("compact")}<div><span class="chip">${escapeHtml(suggestion.severity || "media")} · ${escapeHtml(suggestion.confidence || "dati")}</span><h3>${escapeHtml(suggestion.title || "Suggerimento")}</h3></div></div><p class="coach-detail-lead">${escapeHtml(suggestion.problem || "")}</p><div class="coach-detail-grid"><div class="reference-row"><strong>Motivazione tecnica</strong><p>${escapeHtml(suggestion.reason || "Analisi basata sui dati presenti nella scheda.")}</p><strong>Dati utilizzati</strong><p>${(suggestion.dataUsed || []).map(escapeHtml).join(" · ") || "Nessun dato aggiuntivo"}</p></div><div class="reference-row"><strong>Intervento suggerito</strong><p>${escapeHtml(suggestion.actionLabel || "Applica modifica al repository")}</p>${suggestion.exercise ? `<p><b>Esercizio:</b> ${escapeHtml(suggestion.exercise)}</p>` : ""}${suggestion.prescription ? `<p>${suggestion.prescription.sets} serie × ${escapeHtml(suggestion.prescription.reps)} · RIR ${escapeHtml(suggestion.prescription.rir)} · ${suggestion.prescription.rest}s recupero</p>` : ""}${suggestion.progression ? `<strong>Progressione</strong><p>${escapeHtml(suggestion.progression)}</p>` : ""}</div></div>${suggestion.alternatives?.length ? `<div class="coach-alternative-grid"><strong>Alternative disponibili</strong>${suggestion.alternatives.slice(0,5).map((item) => `<button type="button" data-ai-alternative="${escapeHtml(item.name)}" data-ai-suggestion="${escapeHtml(suggestion.id)}"><img src="app-icon-192.png" alt=""><span><b>${escapeHtml(item.name)}</b><small>${escapeHtml(item.group || "Gruppo non indicato")} · ${escapeHtml(item.equipment || "Attrezzatura libera")}</small></span><em>Seleziona</em></button>`).join("")}</div>` : ""}<p class="micro-copy">L’azione entrerà nello storico undo/redo e potrà essere annullata.</p><div class="coach-modal-actions">${close}<button class="ghost-button" data-coach-ai-later>Più tardi</button><button class="gold-button" data-coach-modal-save>Applica suggerimento</button></div></section></div>`;
+        const actionable=suggestion.action?.type && suggestion.action.type!=="none";
+        return `<div class="coach-modal-backdrop"><section class="coach-modal coach-ai-detail-modal"><div class="coach-detail-heading">${coachMascotHtml("compact")}<div><span class="chip">${escapeHtml(suggestion.severity || "media")} · ${escapeHtml(suggestion.confidence || "dati")}</span><h3>${escapeHtml(suggestion.title || "Suggerimento")}</h3></div></div><p class="coach-detail-lead">${escapeHtml(suggestion.problem || "")}</p><div class="coach-detail-grid"><div class="reference-row"><strong>Motivazione tecnica</strong><p>${escapeHtml(suggestion.reason || "Analisi basata sui dati presenti nella scheda.")}</p><strong>Dati utilizzati</strong><p>${(suggestion.dataUsed || []).map(escapeHtml).join(" · ") || "Nessun dato aggiuntivo"}</p></div><div class="reference-row"><strong>${actionable?"Intervento suggerito":"Esito del controllo"}</strong><p>${escapeHtml(suggestion.actionLabel || "Nessuna modifica necessaria")}</p>${suggestion.exercise ? `<p><b>${actionable?"Esercizio":"Perimetro"}:</b> ${escapeHtml(suggestion.exercise)}</p>` : ""}${suggestion.prescription ? `<p>${suggestion.prescription.sets} serie × ${escapeHtml(suggestion.prescription.reps)} · RIR ${escapeHtml(suggestion.prescription.rir)} · ${suggestion.prescription.rest}s recupero</p>` : ""}${suggestion.progression ? `<strong>Progressione</strong><p>${escapeHtml(suggestion.progression)}</p>` : ""}</div></div>${suggestion.alternatives?.length ? `<div class="coach-alternative-grid"><strong>Alternative disponibili</strong>${suggestion.alternatives.slice(0,5).map((item) => `<button type="button" data-ai-alternative="${escapeHtml(item.name)}" data-ai-suggestion="${escapeHtml(suggestion.id)}"><img src="app-icon-192.png" alt=""><span><b>${escapeHtml(item.name)}</b><small>${escapeHtml(item.group || "Gruppo non indicato")} · ${escapeHtml(item.equipment || "Attrezzatura libera")}</small></span><em>Seleziona</em></button>`).join("")}</div>` : ""}${actionable?'<p class="micro-copy">L’azione entrerà nello storico undo/redo e potrà essere annullata.</p>':'<p class="micro-copy">È un controllo informativo: nessun dato verrà modificato.</p>'}<div class="coach-modal-actions">${close}${actionable?'<button class="ghost-button" data-coach-ai-later>Più tardi</button><button class="gold-button" data-coach-modal-save>Applica suggerimento</button>':'<button class="gold-button" data-coach-modal-close>Ho capito</button>'}</div></section></div>`;
+      }
+      if (type === "exercise-note") {
+        const program=programRepository.getProgramById(coachProgramUi.programId), sheetId=coachProgramUi.modalData.sheetId||coachProgramUi.sheetId, exercise=programRepository.getExerciseById(program?.id,sheetId,coachProgramUi.modalData.exerciseId), weekNumber=Number(coachProgramUi.modalData.weekNumber)||1, prescription=exercise?coachWeekPrescription(exercise,weekNumber):{};
+        return `<div class="coach-modal-backdrop"><section class="coach-modal coach-note-modal"><div class="row"><h3>${escapeHtml(displayExerciseName(exercise?.name||"Nota esercizio"))}</h3>${close}</div><label>Aggiungi nota all’atleta<textarea id="coachExerciseNote" rows="7" placeholder="Tecnica, indicazioni e dettagli per l’atleta…">${escapeHtml(prescription.note||"")}</textarea></label><div class="coach-modal-actions"><button class="gold-button" data-coach-modal-save>✓ Conferma</button></div></section></div>`;
       }
       return "";
     }
@@ -12418,7 +12572,8 @@
       const impact = suggestion.impact ? `<p><strong>Impatto previsto:</strong> ${escapeHtml(suggestion.impact.before || "")} → ${escapeHtml(suggestion.impact.after || "")}</p>` : "";
       const details = `<div class="coach-ai-conversation"><p><strong>Cosa ho notato</strong>${escapeHtml(suggestion.problem)}</p><p><strong>Perché te lo segnalo</strong>${escapeHtml(suggestion.reason)}</p><p><strong>Cosa farei</strong>${escapeHtml(suggestion.replacement || suggestion.progression || suggestion.exercise || "Nessuna modifica necessaria")}</p></div>${expanded ? `<div class="coach-ai-expanded">${involvedHtml}${prescription}<p><strong>Dove:</strong> ${escapeHtml(coachSuggestionLocation(suggestion))}</p>${impact}${suggestion.progression ? `<p><strong>Come procedere:</strong> ${escapeHtml(suggestion.progression)}</p>` : ""}<div class="coach-ai-data"><span>Dati considerati: ${suggestion.dataUsed.map(escapeHtml).join(" · ")}</span></div></div>` : ""}`;
       const ignoredCard = coachProgramUi.aiStatusTab === "ignored";
-      return `<article class="coach-ai-card ${suggestion.severity}"><div class="row"><h4>${escapeHtml(suggestion.title)}</h4><span class="chip">Importanza ${escapeHtml(suggestion.severity === "critical" ? "alta" : "media")} · Dati ${escapeHtml(suggestion.confidence === "alta" ? "solidi" : "parziali")}</span></div>${details}<div class="coach-ai-actions">${ignoredCard ? `<button class="apply" data-ai-restore="${escapeHtml(suggestion.id)}">Ripristina</button>` : `<button class="apply" data-ai-apply="${escapeHtml(suggestion.id)}">Valuta modifica</button><button data-ai-ignore="${escapeHtml(suggestion.id)}">Non ora</button><button data-ai-expand="${escapeHtml(suggestion.id)}">${expanded ? "Chiudi dettagli" : "Perché?"}</button>${suggestion.alternatives?.length ? `<button data-ai-alternatives-toggle="${escapeHtml(suggestion.id)}">Vedi alternative</button>` : ""}`}</div>${alternatives}</article>`;
+      const actionable=suggestion.action?.type && suggestion.action.type!=="none";
+      return `<article class="coach-ai-card ${suggestion.severity}"><div class="row"><h4>${escapeHtml(suggestion.title)}</h4><span class="chip">Importanza ${escapeHtml(suggestion.severity === "critical" ? "alta" : "media")} · Dati ${escapeHtml(suggestion.confidence === "alta" ? "solidi" : "parziali")}</span></div>${details}<div class="coach-ai-actions">${ignoredCard ? `<button class="apply" data-ai-restore="${escapeHtml(suggestion.id)}">Ripristina</button>` : `${actionable?`<button class="apply" data-ai-apply="${escapeHtml(suggestion.id)}">Valuta modifica</button><button data-ai-ignore="${escapeHtml(suggestion.id)}">Non ora</button>`:`<button data-ai-ignore="${escapeHtml(suggestion.id)}">Ho capito</button>`}<button data-ai-expand="${escapeHtml(suggestion.id)}">${expanded ? "Chiudi dettagli" : "Perché?"}</button>${suggestion.alternatives?.length ? `<button data-ai-alternatives-toggle="${escapeHtml(suggestion.id)}">Vedi alternative</button>` : ""}`}</div>${alternatives}</article>`;
     }
 
     function coachAiPanelHtml() {
@@ -13164,7 +13319,46 @@
       return new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }).format(new Date());
     }
 
+    function bindGlobalDivaBot() {
+      document.querySelectorAll("[data-global-diva-toggle]").forEach((button)=>{
+        if(button.dataset.globalDivaBound)return;
+        button.dataset.globalDivaBound="true";
+        button.addEventListener("click",()=>{
+          state.ui=state.ui||{};
+          state.ui.globalDivaVisible=state.ui.globalDivaVisible===false;
+          state.ui.globalDivaPanelOpen=false;
+          saveState({cloud:false});render();
+          showToast(state.ui.globalDivaVisible?"Diva Bot è tornata 💕":"Diva Bot nascosta. Puoi richiamarla dal menu.");
+        });
+      });
+      document.querySelector("[data-global-diva-open]")?.addEventListener("click",()=>{state.ui=state.ui||{};state.ui.globalDivaPanelOpen=!state.ui.globalDivaPanelOpen;render();});
+      document.querySelector("[data-global-diva-close-panel]")?.addEventListener("click",()=>{state.ui.globalDivaPanelOpen=false;render();});
+      document.querySelector("[data-global-diva-personality]")?.addEventListener("change",(event)=>{updateDivaBotPreference("globalPersonality",event.target.value);state.ui.globalDivaPanelOpen=true;render();showToast(`Diva Bot ora è ${event.target.options[event.target.selectedIndex].text.toLowerCase()}.`);});
+    }
+
+    function bindAnimatedTooltips() {
+      const tooltip=document.getElementById("animatedTooltip");if(!tooltip)return;
+      tooltip.hidden=true;tooltip.classList.remove("is-visible");
+      document.querySelectorAll("button[title],summary[title],[data-tooltip]").forEach((target)=>{
+        if(target.title){target.dataset.tooltip=target.title;target.removeAttribute("title");}
+        if(!target.dataset.tooltip||target.dataset.tooltipBound)return;
+        target.dataset.tooltipBound="true";
+        const show=()=>{
+          const label=target.dataset.tooltip;if(!label)return;
+          tooltip.textContent=label;tooltip.hidden=false;tooltip.classList.remove("is-visible");
+          const rect=target.getBoundingClientRect(),width=tooltip.offsetWidth,height=tooltip.offsetHeight;
+          tooltip.style.left=`${Math.max(8,Math.min(innerWidth-width-8,rect.left+rect.width/2-width/2))}px`;
+          tooltip.style.top=`${Math.max(8,rect.top-height-10)}px`;
+          requestAnimationFrame(()=>tooltip.classList.add("is-visible"));
+        };
+        const hide=()=>{tooltip.classList.remove("is-visible");setTimeout(()=>{if(!tooltip.classList.contains("is-visible"))tooltip.hidden=true;},140);};
+        target.addEventListener("pointerenter",show);target.addEventListener("pointerleave",hide);target.addEventListener("focus",show);target.addEventListener("blur",hide);
+      });
+    }
+
     function bindScreen() {
+      bindGlobalDivaBot();
+      bindAnimatedTooltips();
       document.querySelectorAll("[data-screen]").forEach((button) => {
         if (button.dataset.screenBound) return;
         button.dataset.screenBound = "true";
@@ -13206,6 +13400,12 @@
         input.addEventListener("input",()=>updateInlineExerciseField(input,false));
         input.addEventListener("change",()=>updateInlineExerciseField(input,true));
       });
+      document.querySelectorAll("[data-inline-note-open]").forEach((button)=>button.addEventListener("click",()=>{
+        selectCoachSheet(button.dataset.sheetId);openCoachModal("exercise-note",{sheetId:button.dataset.sheetId,exerciseId:button.dataset.inlineNoteOpen,weekNumber:Number(button.dataset.weekNumber)||1});render();
+      }));
+      document.querySelectorAll("[data-set-group-quick]").forEach((button)=>button.addEventListener("click",()=>applyCoachSetGroupAction(button.dataset.sheetId,button.dataset.setGroupQuick,button.classList.contains("active")?"unlink":"superset")));
+      document.querySelectorAll("[data-set-group-action]").forEach((button)=>button.addEventListener("click",()=>applyCoachSetGroupAction(button.dataset.sheetId,button.dataset.exerciseId,button.dataset.setGroupAction)));
+      bindCoachTablePan();
       document.querySelectorAll("[data-inline-copy]").forEach((button)=>button.addEventListener("click",()=>{
         const exercise=programRepository.getExerciseById(coachProgramUi.programId,button.dataset.sheetId,button.dataset.inlineCopy);
         if(exercise){coachProgramUi.clipboardExercise=clone(exercise);showToast("Esercizio copiato: scegli la giornata e premi Incolla.");render();}
@@ -13271,7 +13471,7 @@
       }));
       document.querySelectorAll("[data-diva-bot-setting]").forEach((input) => input.addEventListener("change", () => {
         const field = input.dataset.divaBotSetting;
-        updateDivaBotPreference(field, field === "personality" ? input.value : input.checked);
+        updateDivaBotPreference(field, field === "personality" || field === "globalPersonality" ? input.value : input.checked);
         if (field === "sounds") { if(input.checked)playDivaBotSound("soft");showToast(input.checked?"Suoni Diva Bot attivati.":"Suoni Diva Bot disattivati."); }
       }));
       document.querySelectorAll("[data-experience-setting]").forEach((input) => input.addEventListener("change", () => {
@@ -13725,11 +13925,14 @@
         coachProgramUi.modalData.exerciseIds = ids;
         render();
       });
-      document.querySelectorAll("[data-progression-open]").forEach((button) => button.addEventListener("click", () => {
-        if(button.dataset.sheetId) selectCoachSheet(button.dataset.sheetId);
+      document.querySelectorAll("[data-progression-open]").forEach((button) => button.addEventListener("click", (event) => {
+        event.preventDefault();event.stopPropagation();
+        const sheetId=button.dataset.sheetId||coachProgramUi.sheetId;
+        if(sheetId) selectCoachSheet(sheetId);
         const weekNumber = Number(button.dataset.progressionWeekNumber) || 0;
-        openCoachModal("progression-editor", { exerciseId: button.dataset.progressionOpen, weekNumber });
+        openCoachModal("progression-editor", { programId:coachProgramUi.programId, sheetId, exerciseId: button.dataset.progressionOpen, weekNumber, templateCount:progressionTemplates().length });
         render();
+        requestAnimationFrame(()=>document.getElementById("progressionTemplateId")?.focus());
         if (weekNumber > 0) {
           const target = document.querySelector(`[data-progression-week="${weekNumber - 1}"]`);
           target?.closest("tr")?.classList.add("coach-week-selected");
@@ -14983,6 +15186,7 @@
       if (type === "coach-ai-confirm") {
         const suggestion = coachProgramUi.modalData.suggestion || {};
         const action = suggestion.action || {};
+        if (!action.type || action.type === "none") { closeCoachModal(); render(); return showToast("Controllo informativo chiuso: nessuna modifica necessaria."); }
         const targetSheet = programRepository.getSheetById(program?.id, suggestion.sheetId || coachProgramUi.sheetId);
         if (!program || !targetSheet) return showToast("Scheda destinazione non trovata.");
         rememberExerciseState(program.id, targetSheet.id);
@@ -15016,6 +15220,15 @@
         return showToast("Suggerimento applicato e salvato.");
       }
       const sheetId = coachProgramUi.modalData.sheetId || coachProgramUi.sheetId;
+      if (type === "exercise-note") {
+        const exerciseId=coachProgramUi.modalData.exerciseId, weekNumber=Number(coachProgramUi.modalData.weekNumber)||1;
+        const exercise=programRepository.getExerciseById(program?.id,sheetId,exerciseId);
+        if(!exercise)return showToast("Esercizio non trovato.");
+        const patch=inlineExercisePatch(exercise,"note",document.getElementById("coachExerciseNote")?.value||"",weekNumber);
+        const result=programRepository.updateExercise(program.id,sheetId,exerciseId,patch,{immediate:true,forceLocked:true});
+        if(!result.ok)return showToast("Non sono riuscito a salvare la nota.");
+        discardCoachDraft(program.id,sheetId);closeCoachModal();render();return showToast("Nota salvata e visibile all’atleta.");
+      }
       const targetSheet = programRepository.getSheetById(program?.id, sheetId);
       if (type === "sheet-new" || type === "sheet-edit" || type === "sheet-rename") {
         const data = {
