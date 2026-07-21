@@ -10,8 +10,9 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="workout-pro.css?v=v114-phase19.2">
-  <script defer src="workout-pro.js?v=v114-phase19.2"></script>
+  <link rel="stylesheet" href="workout-pro.css?v=v115-phase20a">
+  <script type="module" src="programming-engine.js?v=v115-phase20a"></script>
+  <script defer src="workout-pro.js?v=v115-phase20a"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4806,7 +4807,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v114-phase19.2";
+    const APP_BUILD = "v115-phase20a";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -5915,6 +5916,15 @@
         manualSessionCode: "",
         manualPhase: ""
       },
+      programming: {
+        engineVersion: "20A.1",
+        decisions: {},
+        exclusions: [],
+        anomalies: [],
+        cacheMeta: {},
+        lastAnalysisHash: null,
+        updatedAt: null
+      },
       coach: {
         unlocked: false,
         activeTab: "create",
@@ -5997,6 +6007,32 @@
     state.training.date = todayInput();
     state.training.sessionName = "auto";
     hydrateStateModel(state);
+    let programmingEngineRuntime = null;
+    function programmingEngineInput() {
+      return {
+        programs: clone(state.programs || []),
+        sessions: clone(state.training?.sessions || []),
+        metrics: clone(state.metrics || {}),
+        quiz: clone(state.quiz || {}),
+        exclusions: clone(state.programming?.exclusions || [])
+      };
+    }
+    function initializeProgrammingEngineRuntime() {
+      if (programmingEngineRuntime || !window.BarbellDivaProgrammingEngine?.createProgrammingEngine) return programmingEngineRuntime;
+      programmingEngineRuntime = window.BarbellDivaProgrammingEngine.createProgrammingEngine({
+        dataProvider: programmingEngineInput,
+        persisted: state.programming,
+        onPersist(snapshot) {
+          state.programming = { ...(state.programming || {}), ...snapshot, engineVersion: window.BarbellDivaProgrammingEngine.PROGRAMMING_ENGINE_VERSION };
+          saveState({ cloud:false });
+        }
+      });
+      window.BarbellDivaProgramming = programmingEngineRuntime;
+      document.documentElement.dataset.programmingRuntime = "ready";
+      return programmingEngineRuntime;
+    }
+    window.addEventListener("barbell-diva:programming-engine-ready", initializeProgrammingEngineRuntime, { once:true });
+    if (window.BarbellDivaProgrammingEngine) initializeProgrammingEngineRuntime();
     state.ui = state.ui || {};
     state.ui.workoutMascotVisible = state.ui.workoutMascotVisible !== false;
     if (!["top-right", "middle-right", "bottom-right", "bottom-left"].includes(state.ui.workoutMascotPosition)) state.ui.workoutMascotPosition = "bottom-right";
@@ -7324,7 +7360,20 @@
         notificationsEnabled:false,
         ...(target.training.workoutProPreferences || {})
       };
+      target.programming = {
+        engineVersion: "20A.1",
+        decisions: {},
+        exclusions: [],
+        anomalies: [],
+        cacheMeta: {},
+        lastAnalysisHash: null,
+        updatedAt: null,
+        ...(target.programming || {})
+      };
+      target.programming.decisions = target.programming.decisions && typeof target.programming.decisions === "object" ? target.programming.decisions : {};
+      target.programming.exclusions = Array.isArray(target.programming.exclusions) ? target.programming.exclusions : [];
       target.migrations = target.migrations || {};
+      target.migrations.phase20AProgramming = 1;
       if (Number(target.migrations.legacyAliceLogbook || 0) < 1 && Array.isArray(LEGACY_ALICE_LOGBOOK_HISTORY)) {
         const migration = migrateLegacyAliceLogbook(LEGACY_ALICE_LOGBOOK_HISTORY, target.training.sessions || []);
         target.training.sessions = migration.sessions;
@@ -7543,6 +7592,7 @@
         validationIssues: validation.errors.slice(0, 200),
         programsUpdatedAt: options.touch === false ? state.meta?.programsUpdatedAt : new Date().toISOString()
       };
+      window.BarbellDivaProgramming?.invalidateProgrammingAnalysis({ scope:"all" });
       if (options.save !== false) saveState({ immediate: !!options.immediate, cloud: options.cloud !== false, touch: options.touch !== false });
       return repositoryResult(validation.valid, normalized, validation.errors, validation.warnings);
     }
@@ -9920,7 +9970,7 @@
 
     function workoutProSettingsHtml() {
       const preferences = state.training?.workoutProPreferences || {};
-      return `<section class="card" aria-labelledby="workoutProSettingsTitle"><div class="row"><div><span class="section-eyebrow">Allenamento</span><h3 id="workoutProSettingsTitle">Workout Pro</h3></div><span class="chip">v114</span></div><div class="training-context-grid"><label><input type="checkbox" data-workout-pro-setting="wakeLockEnabled" ${preferences.wakeLockEnabled ? "checked" : ""}> Mantieni schermo attivo durante la sessione</label><label><input type="checkbox" data-workout-pro-setting="notificationsEnabled" ${preferences.notificationsEnabled ? "checked" : ""}> Notifiche al termine del timer</label><label><input type="checkbox" data-workout-pro-setting="voiceEnabled" ${preferences.voiceEnabled ? "checked" : ""}> Controllo vocale sperimentale</label><label><input type="checkbox" data-workout-pro-setting="soundEnabled" ${preferences.soundEnabled ? "checked" : ""}> Suono timer</label></div><p class="micro-copy">Schermo, microfono e notifiche vengono attivati soltanto dopo una tua azione esplicita e solo se il browser li supporta.</p></section>`;
+      return `<section class="card" aria-labelledby="workoutProSettingsTitle"><div class="row"><div><span class="section-eyebrow">Allenamento</span><h3 id="workoutProSettingsTitle">Workout Pro</h3></div><span class="chip">v115</span></div><div class="training-context-grid"><label><input type="checkbox" data-workout-pro-setting="wakeLockEnabled" ${preferences.wakeLockEnabled ? "checked" : ""}> Mantieni schermo attivo durante la sessione</label><label><input type="checkbox" data-workout-pro-setting="notificationsEnabled" ${preferences.notificationsEnabled ? "checked" : ""}> Notifiche al termine del timer</label><label><input type="checkbox" data-workout-pro-setting="voiceEnabled" ${preferences.voiceEnabled ? "checked" : ""}> Controllo vocale sperimentale</label><label><input type="checkbox" data-workout-pro-setting="soundEnabled" ${preferences.soundEnabled ? "checked" : ""}> Suono timer</label></div><p class="micro-copy">Schermo, microfono e notifiche vengono attivati soltanto dopo una tua azione esplicita e solo se il browser li supporta.</p></section>`;
     }
 
     function settingsHtml() {
@@ -13628,6 +13678,7 @@
       const journalSaved = await persistWorkoutSessionDurably(savedSession);
       if (existingIndex >= 0) state.training.sessions[existingIndex] = savedSession;
       else state.training.sessions.push(savedSession);
+      window.BarbellDivaProgramming?.invalidateProgrammingAnalysis({ scope:"all" });
       trainingHistoryIndexCache = null;
       state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
       state.training.sessionName = "auto";
@@ -14463,6 +14514,7 @@
       const importedPrograms = programRepository.importData(programs, { replace: true, save: false });
       hydrateStateModel(state);
       state.training.exercises = buildExerciseIndex(allProgramSheets(state), state.training.sessions);
+      window.BarbellDivaProgramming?.invalidateProgrammingAnalysis({ scope:"all" });
       saveState({ immediate: true });
       return repositoryResult(importedPrograms.ok, state, importedPrograms.errors, [...migration.warnings, ...importedPrograms.warnings]);
     }

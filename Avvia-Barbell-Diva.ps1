@@ -2,7 +2,7 @@ param([int]$Port = 8767)
 
 $appRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $serverScript = Join-Path $appRoot 'Barbell-Diva-Server.ps1'
-$appUrl = "http://127.0.0.1:$Port/index.html?v=114-phase19.2"
+$appUrl = "http://127.0.0.1:$Port/index.html?v=115-phase20a"
 
 function Test-BarbellDivaPort {
   param([int]$TargetPort)

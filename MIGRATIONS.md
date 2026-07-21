@@ -28,3 +28,9 @@ L'Archivio allenamenti applica infine lo stesso controllo prima del rendering e 
 - Le sessioni storiche continuano ad aprirsi con i campi mancanti trattati come opzionali.
 - Warm-up, tecniche, gruppi e audit sono campi additivi.
 - Il salvataggio definitivo usa ancora il repository e la sync cloud esistenti.
+# Fase 20A — migrazione compatibile schema 5
+
+- `phase20AProgramming = 1` inizializza in modo idempotente il nodo opzionale `programming`.
+- Backup schema 4/5 senza il nodo vengono caricati con default conservativi.
+- Nessuna seduta, scheda, progressione o decisione precedente viene rimossa.
+- Nessun incremento di schema è necessario perché l'estensione è opzionale e retrocompatibile.
