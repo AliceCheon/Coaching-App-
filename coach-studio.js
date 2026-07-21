@@ -97,7 +97,7 @@
   }
 
   global.BarbellDivaCoachStudio = Object.freeze({
-    version: "19.6",
+    version: "19.7",
     routes: ROUTES,
     cleanRoute,
     normalizeStudio,

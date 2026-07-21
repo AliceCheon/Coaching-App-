@@ -131,3 +131,70 @@ body[data-theme="light"] .coach-program-assignment,body[data-theme="light"] .coa
 body[data-theme="light"] .coach-inline-exercise input,body[data-theme="light"] .coach-inline-exercise select,body[data-theme="light"] .coach-board-volume,body[data-theme="light"] .program-board-bot,body[data-theme="light"] .coach-ai-query{background:#fff;color:#281738}
 @media(max-width:1366px){.coach-editor-toolbar .quick-actions button{padding:6px 8px;font-size:.66rem}.coach-editor-layout.unified.reference-open,.coach-editor-layout.unified.ai-open{grid-template-columns:minmax(0,1fr) 350px}.coach-program-day-table table{min-width:1220px!important}.coach-ai-context-grid{grid-template-columns:1fr 1fr}.coach-ai-context-grid>label{grid-column:1/-1}}
 @media(prefers-reduced-motion:reduce){.coach-inline-exercise.just-progressed{animation:none;box-shadow:inset 0 0 0 2px var(--pink-primary)}}
+
+/* Fase 19.7 — percorso veloce dell'editor.
+   Le giornate fuori viewport non vengono dipinte finché non servono; durante
+   la digitazione evitiamo transizioni e repaint dell'intera tavola. */
+.coach-editor .coach-program-day{
+  content-visibility:auto;
+  contain:layout paint style;
+  contain-intrinsic-size:auto 520px;
+  box-shadow:0 8px 22px color-mix(in srgb,var(--bg-main) 18%,transparent);
+}
+.coach-editor .coach-program-day-table{contain:layout paint;overscroll-behavior:contain}
+.coach-editor .coach-inline-exercise input,
+.coach-editor .coach-inline-exercise select{
+  transition:border-color 120ms ease,box-shadow 120ms ease!important;
+}
+.coach-editor .coach-inline-exercise input:hover,
+.coach-editor .coach-inline-exercise select:hover{transform:none!important}
+.coach-editor .coach-studio-topbar,
+.coach-editor-toolbar{backdrop-filter:none!important}
+.coach-editor .coach-avatar{contain:layout paint}
+.coach-immediate-feedback{
+  position:fixed;z-index:10050;left:50%;top:22px;transform:translateX(-50%);
+  display:flex;align-items:center;gap:9px;padding:10px 15px;border:1px solid var(--border);
+  border-radius:999px;background:var(--surface-raised);color:var(--text);box-shadow:var(--shadow-card);
+  font-size:.78rem;pointer-events:none;animation:coachFeedbackIn 120ms ease both;
+}
+.coach-immediate-feedback[hidden]{display:none}
+.coach-busy-spinner{width:15px;height:15px;border:2px solid color-mix(in srgb,var(--pink-primary) 24%,transparent);border-top-color:var(--pink-primary);border-radius:50%;animation:coachBusySpin .7s linear infinite}
+@keyframes coachBusySpin{to{transform:rotate(360deg)}}
+@keyframes coachFeedbackIn{from{opacity:0;transform:translate(-50%,-5px)}to{opacity:1;transform:translate(-50%,0)}}
+@media(prefers-reduced-motion:reduce){.coach-busy-spinner{animation-duration:1.2s}.coach-immediate-feedback{animation:none}}
+
+/* Fase 19.7 — densità, leggibilità e flussi autoesplicativi. */
+@media(min-width:981px){
+  .stage{grid-template-columns:210px minmax(0,1fr)!important;gap:10px!important;padding:10px!important}
+  .desktop-rail{padding:11px 8px!important}
+  .coach-program-day-table table{min-width:1120px!important}
+  .coach-program-day-table td:first-child{min-width:215px!important}
+  .coach-program-day-table td:last-child{min-width:188px!important}
+}
+.coach-program-board{gap:12px}.coach-program-days{gap:12px}
+.coach-program-assignment>div:last-child strong{font-size:0}.coach-program-assignment>div:last-child strong::after{content:"veloce 19.7";font-size:.85rem}
+.coach-program-day-table th{font-size:.61rem!important}.coach-program-day-table td{font-size:.68rem}
+.coach-inline-name{grid-template-columns:22px 22px minmax(125px,1fr)}
+.coach-inline-sub{margin-left:48px}
+.coach-inline-actions{gap:3px}.coach-inline-actions button{min-width:28px;min-height:28px;padding:3px 5px}
+.coach-flow-note,.coach-ai-scope-help{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;border:1px solid var(--line);border-radius:13px;background:color-mix(in srgb,var(--card-2) 82%,var(--pink-primary) 18%);color:var(--text)}
+.coach-flow-note span,.coach-ai-scope-help span{color:var(--muted);font-size:.72rem}
+.coach-ai-scope-help{align-items:flex-start;flex-direction:column;gap:2px;padding:9px 10px}
+.coach-ai-context-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.coach-ai-context-grid>label{grid-column:auto!important}
+.coach-ai-answer{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:4px 9px}
+.coach-ai-answer p{grid-column:1/-1}.coach-ai-answer .coach-busy-spinner{grid-row:1}
+.coach-ai-card{content-visibility:auto;contain-intrinsic-size:auto 250px}
+.coach-ai-card,.coach-studio-stat-row{border-color:var(--line)!important;color:var(--text)}
+.coach-ai-card .chip{color:var(--text);background:var(--card-2);border:1px solid var(--line)}
+.coach-studio-stat-track{background:var(--card-2)!important;border:1px solid var(--line)}
+.assigned-questionnaire{display:grid;gap:12px;margin-bottom:18px;padding:15px;border:1px solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--card-2) 90%,var(--purple-primary) 10%)}
+.assigned-questionnaire h3{margin:2px 0}.assigned-questionnaire>p{margin:0;color:var(--muted);font-size:.78rem}
+.assigned-question-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.assigned-question{display:grid;gap:6px}.assigned-question strong{font-size:.78rem}.assigned-question input,.assigned-question select{width:100%;box-sizing:border-box}
+.assigned-photos{grid-column:1/-1}.assigned-question small{color:var(--muted)}
+.phase-wheel{border:1px solid var(--line);box-shadow:var(--shadow-card);background:conic-gradient(var(--pink-primary) 0 25%,var(--purple-primary) 25% 50%,var(--gold-2) 50% 75%,var(--info) 75% 100%)}
+.phase-wheel::before{background:var(--card);border:1px solid var(--line)}
+@media(max-width:700px){.coach-flow-note{align-items:flex-start;flex-direction:column}.coach-ai-context-grid,.assigned-question-grid{grid-template-columns:1fr}.assigned-photos{grid-column:auto}}
+.coach-studio-shortcut,.coach-question-card,.coach-ai-card,.coach-library-list-view .exercise-lab-card{transition:border-color 120ms ease,background-color 120ms ease,box-shadow 140ms ease!important}
+.coach-studio-shortcut:hover,.coach-question-card:hover,.coach-library-list-view .exercise-lab-card:hover{border-color:color-mix(in srgb,var(--pink-primary) 54%,var(--line));box-shadow:var(--shadow-card)}

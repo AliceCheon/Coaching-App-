@@ -73,3 +73,20 @@ body[data-animation-mode="reduced"] .wp19-mascot-anchor{transition-duration:100m
   .wp19-mascot-button .coach-avatar{width:46px;height:52px}
   .wp19-mascot-bubble{right:40px;max-width:52vw;font-size:.64rem}
 }
+
+/* Fase 19.7 — Workout Pro eredita esclusivamente il tema globale. */
+.wp19-overlay{background:var(--bg);color:var(--text)}
+.wp19-topbar,.wp19-quick-head{background:color-mix(in srgb,var(--card) 94%,transparent);border-color:var(--line);color:var(--text)}
+.wp19-exercise-card,.wp19-compact-card,.wp19-quick-exercise,.wp19-free-exercise,.wp19-free-empty,.wp19-sheet{background:linear-gradient(160deg,var(--card-2),var(--card));border-color:var(--line);color:var(--text);box-shadow:var(--shadow)}
+.wp19-input,.wp19-select,.wp19-textarea,.wp19-row-input{background:var(--card);border-color:var(--line);color:var(--text)}
+.wp19-icon-btn,.wp19-secondary,.wp19-stepper button,.wp19-chip-btn,.wp19-mode-card,.wp19-set-row,.wp19-mode-set-row,.wp19-summary-item,.wp19-details,.wp19-next-exercises>button,.wp19-exercise-strip button{background:var(--card-2);border-color:var(--line);color:var(--text)}
+.wp19-field>span,.wp19-stat span,.wp19-breadcrumb,.wp19-top-title span,.wp19-launch-card p,.wp19-resume-card p,.wp19-mode-card span,.wp19-free-head p,.wp19-suggestion p{color:var(--muted)}
+.wp19-stat,.wp19-progress,.wp19-timer-progress{background:var(--card-2);border-color:var(--line)}
+.wp19-dock,.wp19-timer,.wp19-mascot-bubble,.wp19-mascot-menu,.wp19-bot-restore{background:color-mix(in srgb,var(--card) 94%,transparent);border-color:var(--line);color:var(--text);box-shadow:var(--shadow)}
+.wp19-sheet-actions{background:linear-gradient(transparent,var(--card) 18%)}
+.wp19-modal{background:color-mix(in srgb,var(--bg) 72%,transparent)}
+.wp19-primary{color:var(--bg);background:linear-gradient(135deg,var(--pink-primary),var(--gold-2))}
+.wp19-danger,.wp19-row-delete{color:var(--danger);background:color-mix(in srgb,var(--danger) 12%,var(--card));border-color:color-mix(in srgb,var(--danger) 38%,var(--line))}
+.wp19-suggestion{background:color-mix(in srgb,var(--success) 10%,var(--card));border-color:color-mix(in srgb,var(--success) 34%,var(--line))}
+.wp19-cue{background:color-mix(in srgb,var(--pink-primary) 9%,var(--card));color:var(--muted)}
+.wp19-status-pill{background:color-mix(in srgb,var(--success) 13%,var(--card));color:var(--success)}
