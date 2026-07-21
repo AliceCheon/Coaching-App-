@@ -1,0 +1,31 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import vm from "node:vm";
+
+const root=path.resolve(import.meta.dirname,"..");
+const read=(name)=>fs.readFileSync(path.join(root,name),"utf8");
+const html=read("index.html"),sw=read("service-worker.js"),manifest=JSON.parse(read("manifest.webmanifest").replace(/^\uFEFF/,""));
+const workout=read("workout-pro.js"),engine=read("programming-engine.js"),css=read("workout-pro.css");
+
+test("integration 01 inline application JavaScript parses",()=>{for(const match of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi))new vm.Script(match[1]);});
+test("integration 02 external workout JavaScript parses",()=>assert.doesNotThrow(()=>new vm.Script(workout)));
+test("integration 03 service worker parses",()=>assert.doesNotThrow(()=>new vm.Script(sw)));
+test("integration 04 engine module is loaded before Workout Pro",()=>assert.ok(html.indexOf("programming-engine.js")<html.indexOf("workout-pro.js")));
+test("integration 05 engine is cached for offline use",()=>assert.match(sw,/"\.\/programming-engine\.js"/));
+test("integration 06 build and cache versions agree",()=>{assert.match(html,/APP_BUILD\s*=\s*"v115-phase20a"/);assert.match(sw,/atlas-app-v115-phase20a/);assert.match(manifest.start_url,/v=115-phase20a/);});
+test("integration 07 schema remains version 5",()=>assert.match(html,/DATA_SCHEMA_VERSION\s*=\s*5/));
+test("integration 08 programming state has conservative defaults",()=>{for(const token of ["engineVersion","decisions","exclusions","anomalies","cacheMeta","lastAnalysisHash"])assert.ok(html.includes(token));});
+test("integration 09 hydration migration is idempotent",()=>assert.match(html,/target\.migrations\.phase20AProgramming = 1/));
+test("integration 10 program commits invalidate analysis",()=>assert.match(html,/commitProgramCollection[\s\S]{0,900}invalidateProgrammingAnalysis/));
+test("integration 11 workout saves invalidate analysis",()=>assert.match(html,/state\.training\.sessions\.push\(savedSession\);[\s\S]{0,120}invalidateProgrammingAnalysis/));
+test("integration 12 backup restore invalidates analysis",()=>assert.match(html,/importBackupSnapshot[\s\S]{0,1800}invalidateProgrammingAnalysis/));
+test("integration 13 UI API exposes every required method",()=>{for(const method of ["getProgrammingSuggestions","getExerciseAnalysis","getWeeklyAnalysis","getProgramAnalysis","getSuggestionEvidence","getSuggestionSimulation","refreshProgrammingAnalysis","invalidateProgrammingAnalysis","markSuggestionViewed","recordSuggestionDecision"])assert.ok(engine.includes(method),`missing ${method}`);});
+test("integration 14 runtime is attached without a 20B UI",()=>{assert.match(html,/window\.BarbellDivaProgramming = programmingEngineRuntime/);assert.doesNotMatch(html,/programming-suggestion-panel|fase20b/i);});
+test("integration 15 persistence stores decisions but not derived analyses",()=>{assert.match(engine,/decisions:Object\.fromEntries\(decisions\)/);assert.doesNotMatch(html,/programming\.analyses\s*=/);});
+test("integration 16 suggestions are never auto-applied",()=>{assert.match(engine,/programModified:false/);assert.doesNotMatch(engine,/applyProgrammingSuggestion/);});
+test("integration 17 mobile Pro compact breakpoint is preserved",()=>{assert.match(css,/@media\s*\(max-width:620px\) and \(max-height:1000px\)/);assert.match(css,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);});
+test("integration 18 touch targets preserve 44 pixels",()=>assert.match(css,/min-height:44px/));
+test("integration 19 all progression strategies are explicit",()=>{for(const id of ["double-progression","linear-load","linear-reps","linear-sets","rir-progression","top-set-backoff","volume-progression","intensity-progression","undulating","pyramid","reverse-pyramid","density","recovery-decreasing","maintenance","deload"])assert.ok(engine.includes(`"${id}"`),`missing ${id}`);});
+test("integration 20 unsupported custom progression is explicit",()=>assert.match(engine,/UNSUPPORTED_PROGRESSION_IDS = Object\.freeze\(\["custom"\]\)/));

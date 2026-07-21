@@ -28,3 +28,48 @@ body[data-animation-mode="reduced"] .wp19-mascot-anchor{transition-duration:100m
 @media(max-width:620px){.wp19-mode-set-row{grid-template-columns:38px repeat(3,minmax(52px,1fr)) 38px 38px;gap:5px}.wp19-mode-set-row.can-delete{grid-template-columns:38px repeat(3,minmax(48px,1fr)) 38px 38px 38px}.wp19-set-select,.wp19-row-copy,.wp19-row-check,.wp19-row-delete{width:38px;height:42px}.wp19-free-head{align-items:stretch;flex-direction:column}.wp19-free-head .wp19-primary{width:100%;min-height:48px}.wp19-mascot-anchor{width:76px;height:84px}.wp19-mascot-button{width:76px;height:84px}.wp19-mascot-button .coach-avatar{width:74px;height:82px}.wp19-mascot-bubble{right:62px;max-width:55vw}.wp19-compact-mode .wp19-live-panel{display:none}}
 @media(max-width:390px){.wp19-mode-set-row{grid-template-columns:34px repeat(3,minmax(45px,1fr)) 34px 34px;padding:5px 3px}.wp19-mode-set-row.can-delete{grid-template-columns:32px repeat(3,minmax(41px,1fr)) 32px 32px 32px;gap:3px}.wp19-mode-set-row label span{font-size:.58rem}.wp19-set-select,.wp19-row-copy,.wp19-row-check,.wp19-row-delete{width:34px;height:40px}.wp19-mode-set-row.can-delete .wp19-set-select,.wp19-mode-set-row.can-delete .wp19-row-copy,.wp19-mode-set-row.can-delete .wp19-row-check,.wp19-mode-set-row.can-delete .wp19-row-delete{width:32px}.wp19-quick-mode .wp19-mode-set-row{grid-template-columns:32px minmax(54px,1fr) minmax(54px,1fr) 34px 34px}.wp19-quick-mode .wp19-set-select,.wp19-quick-mode .wp19-row-copy,.wp19-quick-mode .wp19-row-check{width:34px}.wp19-mascot-bubble{max-width:52vw;font-size:.68rem}}
 @media(prefers-reduced-motion:reduce){.wp19-mascot-anchor,.wp19-mascot-anchor *{animation:none!important;transition:none!important}}
+
+/* Mobile Pro compatto: i controlli principali restano in una singola viewport. */
+@media(max-width:620px) and (max-height:1000px){
+  .wp19-topbar{min-height:52px;padding:5px 8px;gap:7px}
+  .wp19-topbar .wp19-icon-btn{width:44px;min-height:44px;border-radius:12px}
+  .wp19-top-title strong{font-size:.98rem}
+  .wp19-top-title span{font-size:.66rem}
+  .wp19-stage.wp19-pro-mode{padding:7px 8px calc(76px + env(safe-area-inset-bottom));gap:6px}
+  .wp19-pro-mode .wp19-breadcrumb{font-size:.68rem;gap:6px;white-space:nowrap;overflow:hidden}
+  .wp19-pro-mode .wp19-breadcrumb span:first-child{overflow:hidden;text-overflow:ellipsis}
+  .wp19-pro-mode .wp19-progress{height:4px}
+  .wp19-pro-mode .wp19-live-panel{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+  .wp19-pro-mode .wp19-live-panel .wp19-stat{padding:5px 2px;border-radius:10px}
+  .wp19-pro-mode .wp19-live-panel .wp19-stat span{font-size:.52rem;letter-spacing:.035em;white-space:nowrap}
+  .wp19-pro-mode .wp19-live-panel .wp19-stat strong{margin-top:1px;font-size:.78rem;line-height:1.1}
+  .wp19-pro-mode .wp19-exercise-card{padding:9px;border-radius:16px;box-shadow:0 12px 34px rgba(0,0,0,.24)}
+  .wp19-pro-mode .wp19-kicker{font-size:.61rem;letter-spacing:.08em}
+  .wp19-pro-mode .wp19-exercise-name{font-size:1.35rem;margin:2px 0 6px;line-height:1}
+  .wp19-pro-mode .wp19-target-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+  .wp19-pro-mode .wp19-target-grid .wp19-stat{padding:6px;border-radius:10px}
+  .wp19-pro-mode .wp19-target-grid .wp19-stat span{font-size:.56rem;letter-spacing:.035em}
+  .wp19-pro-mode .wp19-target-grid .wp19-stat strong{margin-top:2px;font-size:.82rem}
+  .wp19-pro-mode .wp19-input-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:7px}
+  .wp19-pro-mode .wp19-input-grid .wp19-field:first-child{grid-column:auto}
+  .wp19-pro-mode .wp19-field{gap:3px;min-width:0}
+  .wp19-pro-mode .wp19-field>span{font-size:.63rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wp19-pro-mode .wp19-stepper{grid-template-columns:36px minmax(0,1fr) 36px;gap:3px}
+  .wp19-pro-mode .wp19-stepper button{width:36px;min-height:44px;border-radius:10px;font-size:1rem}
+  .wp19-pro-mode .wp19-input{min-height:44px;padding:5px 3px;border-radius:10px;font-size:.9rem}
+  .wp19-pro-mode .wp19-chip-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;overflow:visible;margin-top:6px;padding:0}
+  .wp19-pro-mode .wp19-chip-btn{min-width:0;min-height:38px;padding:3px 5px;border-radius:10px;font-size:.66rem;line-height:1.1;white-space:normal}
+  .wp19-pro-mode .wp19-field:has(.wp19-textarea){margin-top:6px}
+  .wp19-pro-mode .wp19-textarea{min-height:46px;max-height:46px;padding:7px 9px;border-radius:10px;font-size:.76rem}
+  .wp19-pro-mode .wp19-cue,.wp19-pro-mode .wp19-warning{margin-top:6px;padding:7px 9px;font-size:.7rem}
+  .wp19-pro-mode .wp19-suggestion{padding:8px;font-size:.7rem}
+  .wp19-pro-mode .wp19-suggestion p{margin:2px 0}
+  .wp19-pro-mode .wp19-details summary{min-height:42px;font-size:.76rem}
+  .wp19-dock{bottom:calc(4px + env(safe-area-inset-bottom));width:calc(100% - 12px);gap:5px;padding:6px;border-radius:15px}
+  .wp19-dock .wp19-icon-btn{width:44px;min-height:48px}
+  .wp19-dock .wp19-primary{min-height:48px;font-size:.9rem}
+  .wp19-mascot-anchor{width:48px;height:54px}
+  .wp19-mascot-button{width:48px;height:54px}
+  .wp19-mascot-button .coach-avatar{width:46px;height:52px}
+  .wp19-mascot-bubble{right:40px;max-width:52vw;font-size:.64rem}
+}

@@ -37,3 +37,20 @@ I gruppi hanno `type`, `exerciseIds`, `rounds`, recuperi tra esercizi/round e `o
 - Journal attivo: `barbell-diva.active-workout.journal.v1`.
 - Copia pre-conferma/finale: `barbell-diva.completed-workout.safety.v1`.
 - Il journal non crea una sessione definitiva in `training.sessions`.
+# Estensione compatibile Fase 20A
+
+Lo schema resta alla versione 5. È aggiunto il nodo opzionale `programming`, compatibile con backup precedenti:
+
+```json
+{
+  "engineVersion": "20A.1",
+  "decisions": {},
+  "exclusions": [],
+  "anomalies": [],
+  "cacheMeta": {},
+  "lastAnalysisHash": null,
+  "updatedAt": null
+}
+```
+
+Le analisi complete non vengono duplicate nello stato: sono risultati derivati e ricostruibili. Restano persistenti soltanto decisioni, esclusioni e metadati minimi.

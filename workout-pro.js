@@ -1,4 +1,4 @@
-/* Barbell Diva v114 - Phase 19.2 data-safety correction. Native JS, additive integration. */
+/* Barbell Diva v115 - Phase 20A programming-engine integration. Native JS, additive integration. */
 (() => {
   "use strict";
   const IS_TEST_MODE = new URLSearchParams(location.search).has("phase191test");

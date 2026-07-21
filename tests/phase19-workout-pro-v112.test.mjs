@@ -9,11 +9,12 @@ const workout = fs.readFileSync(path.join(root, "workout-pro.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "workout-pro.css"), "utf8");
 const sw = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
 
-test("build v114 Fase 19.2 and schema v5 are wired with cache busting", () => {
-  assert.match(html, /APP_BUILD\s*=\s*"v114-phase19\.2"/);
+test("build v115 Fase 20A and schema v5 are wired with cache busting", () => {
+  assert.match(html, /APP_BUILD\s*=\s*"v115-phase20a"/);
   assert.match(html, /DATA_SCHEMA_VERSION\s*=\s*5/);
-  assert.match(html, /workout-pro\.js\?v=v114-phase19\.2/);
-  assert.match(sw, /atlas-app-v114-phase19\.2/);
+  assert.match(html, /programming-engine\.js\?v=v115-phase20a/);
+  assert.match(html, /workout-pro\.js\?v=v115-phase20a/);
+  assert.match(sw, /atlas-app-v115-phase20a/);
 });
 
 test("DOM tests are isolated from Alice's real workout storage", () => {
