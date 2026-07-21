@@ -7,15 +7,15 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v121-phase19.7">
+  <link rel="manifest" href="manifest.webmanifest?v=v121-phase19.7.3">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="workout-pro.css?v=v121-phase19.7">
-  <link rel="stylesheet" href="coach-studio.css?v=v121-phase19.7">
-  <script type="module" src="programming-engine.js?v=v121-phase19.7"></script>
-  <script type="module" src="sync-reliability.js?v=v121-phase19.7"></script>
-  <script src="coach-studio.js?v=v121-phase19.7"></script>
-  <script defer src="workout-pro.js?v=v121-phase19.7"></script>
+  <link rel="stylesheet" href="workout-pro.css?v=v121-phase19.7.3">
+  <link rel="stylesheet" href="coach-studio.css?v=v121-phase19.7.3">
+  <script type="module" src="programming-engine.js?v=v121-phase19.7.3"></script>
+  <script type="module" src="sync-reliability.js?v=v121-phase19.7.3"></script>
+  <script src="coach-studio.js?v=v121-phase19.7.3"></script>
+  <script defer src="workout-pro.js?v=v121-phase19.7.3"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4806,7 +4806,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v121-phase19.7";
+    const APP_BUILD = "v121-phase19.7.3";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -6156,6 +6156,8 @@
       ,aiWeek: 1
       ,aiDayId: ""
       ,volumeRefreshTimer: null
+      ,expandedSheetId: ""
+      ,pendingScrollSheetId: ""
     };
 
     function clone(obj) {
@@ -10680,6 +10682,12 @@
       showCoachBusyFeedback(message);
       requestAnimationFrame(() => setTimeout(() => {
         render();
+        if(coachProgramUi.pendingScrollSheetId){
+          const card=document.querySelector(`[data-board-sheet="${CSS.escape(coachProgramUi.pendingScrollSheetId)}"]`);
+          const screen=document.getElementById("screen");
+          if(card&&screen) screen.scrollTop=Math.max(0,card.offsetTop-150);
+          coachProgramUi.pendingScrollSheetId="";
+        }
         setTimeout(() => document.getElementById("coachImmediateFeedback")?.remove(), 320);
       }, 0));
     }
@@ -10798,10 +10806,11 @@
     function coachProgramBoardHtml(program) {
       const studio=coachStudioState();
       const sheets=programRepository.getSheets(program.id);
+      if(!sheets.some((sheet)=>sheet.id===coachProgramUi.expandedSheetId)) coachProgramUi.expandedSheetId=sheets[0]?.id||"";
       const weekCount=Math.max(1,Number(program.durationWeeks)||1);
       const selectedWeek=Math.max(1,Math.min(weekCount,Number(studio.programWeek)||1));
       studio.programWeek=selectedWeek;
-      const rows=(sheet)=>programRepository.getExercises(program.id,sheet.id).map((exercise,index)=>coachInlineExerciseRowHtml(program,sheet,exercise,index,selectedWeek)).join("");
+      const rows=(sheet)=>sheet.id===coachProgramUi.expandedSheetId?programRepository.getExercises(program.id,sheet.id).map((exercise,index)=>coachInlineExerciseRowHtml(program,sheet,exercise,index,selectedWeek)).join(""):`<tr class="coach-collapsed-day"><td colspan="11"><strong>Giornata compressa</strong><span>Clicca l’intestazione per aprire e modificare gli esercizi.</span></td></tr>`;
       return `<section class="coach-program-board"><div class="coach-program-assignment"><label>Programma<select id="coachProgramSelect">${coachProgramsForUi().map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id===program.id?"selected":""}>${escapeHtml(item.name)}</option>`).join("")}</select></label><div><span>Stato</span><strong class="program-status ${program.status==="active"?"active":""}">${programStatusLabel(program.status)}</strong></div><div><span>Durata</span><strong>${weekCount} settimane</strong></div><div><span>Editor</span><strong>unificato 19.6</strong></div></div><div class="coach-program-week-tabs">${Array.from({length:weekCount},(_,index)=>`<button class="${selectedWeek===index+1?"active":""}" data-program-week="${index+1}"><strong>Settimana ${index+1}</strong><span>${sheets.length} allenamenti</span></button>`).join("")}</div><div class="coach-program-board-head"><div><h2>Settimana ${selectedWeek}</h2><span>${sheets.length} ${sheets.length===1?"giorno":"giorni"} · modifica direttamente i campi</span></div><button class="ghost-button" data-sheet-action="new">+ Aggiungi allenamento</button></div><div class="coach-program-days">${sheets.map((sheet,index)=>`<article class="coach-program-day" data-board-sheet="${escapeHtml(sheet.id)}"><header><div><span>Giorno ${index+1}</span><h3>${escapeHtml(sheet.name||sheet.focus||`Scheda ${sheet.code}`)}</h3><small>${programRepository.getExercises(program.id,sheet.id).length} esercizi · ${escapeHtml(sheet.focus||sheet.split||"Allenamento")}</small></div><div class="quick-actions coach-day-actions"><button data-sheet-action="edit" data-sheet-id="${escapeHtml(sheet.id)}">✎ Nome e info</button><button data-sheet-action="duplicate" data-sheet-id="${escapeHtml(sheet.id)}">▣ Duplica</button><button data-sheet-action="left" data-sheet-id="${escapeHtml(sheet.id)}" title="Sposta prima">←</button><button data-sheet-action="right" data-sheet-id="${escapeHtml(sheet.id)}" title="Sposta dopo">→</button><button class="danger-button" data-sheet-action="delete" data-sheet-id="${escapeHtml(sheet.id)}">⌫</button><details class="coach-add-menu"><summary aria-label="Aggiungi elemento">+ Aggiungi</summary><div><button data-program-board-add-kind="exercise" data-sheet-id="${escapeHtml(sheet.id)}">Esercizio</button><button data-program-board-add-kind="superset" data-sheet-id="${escapeHtml(sheet.id)}">Superserie</button><button data-program-board-add-kind="multiset" data-sheet-id="${escapeHtml(sheet.id)}">Multiserie</button><button data-program-board-add-kind="alternative" data-sheet-id="${escapeHtml(sheet.id)}">Alternativa</button><button data-program-board-add-kind="circuit" data-sheet-id="${escapeHtml(sheet.id)}">Circuito</button>${coachProgramUi.clipboardExercise?`<button data-inline-paste data-sheet-id="${escapeHtml(sheet.id)}">Incolla esercizio copiato</button>`:""}</div></details></div></header><div class="coach-program-day-table"><table><thead><tr><th>Esercizio e muscoli</th><th>Tipo</th><th>Serie</th><th>Rip/tempo</th><th>Rec</th><th>Carico</th><th>RPE</th><th>RIR</th><th>TUT</th><th>Note</th><th>Azioni</th></tr></thead><tbody>${rows(sheet)||`<tr><td colspan="11" class="coach-empty-inline">Nessun esercizio. Usa “+ Aggiungi” per iniziare.</td></tr>`}</tbody></table></div></article>`).join("")}</div>${coachProgramVolumeHtml(program,selectedWeek)}<aside class="program-board-bot">${coachMascotHtml()}<div><strong>Diva Bot è qui ✨</strong><span>Controllo la settimana ${selectedWeek}; i suoni restano spenti finché non li attivi.</span></div></aside></section>`;
     }
 
@@ -13185,6 +13194,13 @@
       document.querySelector("[data-studio-reference-program]")?.addEventListener("change",(event)=>{coachStudioState().referenceProgramId=event.target.value;renderCoachAfterFeedback("Aggiorno l’anteprima…");});
       document.querySelector("[data-studio-reference-week]")?.addEventListener("change",(event)=>{coachProgramUi.referenceWeek=Number(event.target.value)||1;renderCoachAfterFeedback("Aggiorno la settimana…");});
       document.querySelectorAll("[data-program-week]").forEach((button)=>button.addEventListener("click",()=>switchCoachProgramWeek(button.dataset.programWeek)));
+      document.querySelectorAll("[data-board-sheet]").forEach((card)=>{
+        const header=card.querySelector(":scope>header"); if(!header)return;
+        const open=()=>{if(coachProgramUi.expandedSheetId===card.dataset.boardSheet)return;coachProgramUi.expandedSheetId=card.dataset.boardSheet;coachProgramUi.pendingScrollSheetId=card.dataset.boardSheet;renderCoachAfterFeedback("Apro la giornata…");};
+        header.setAttribute("role","button"); header.setAttribute("tabindex","0"); header.setAttribute("aria-label",`Apri ${header.querySelector("h3")?.textContent||"giornata"}`);
+        header.addEventListener("click",(event)=>{if(event.target.closest("button,details,summary,input,select"))return;open();});
+        header.addEventListener("keydown",(event)=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();open();}});
+      });
       document.querySelectorAll("[data-program-board-add-kind]").forEach((button)=>button.addEventListener("click",()=>{selectCoachSheet(button.dataset.sheetId);coachProgramUi.pendingAddKind=button.dataset.programBoardAddKind||"exercise";openCoachModal("exercise-library");renderCoachAfterFeedback("Apro la libreria…");}));
       document.querySelectorAll("[data-inline-exercise-field]").forEach((input)=>{
         input.addEventListener("input",()=>updateInlineExerciseField(input,false));

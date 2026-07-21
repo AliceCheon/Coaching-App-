@@ -136,7 +136,7 @@ body[data-theme="light"] .coach-inline-exercise input,body[data-theme="light"] .
    Le giornate fuori viewport non vengono dipinte finché non servono; durante
    la digitazione evitiamo transizioni e repaint dell'intera tavola. */
 .coach-editor .coach-program-day{
-  content-visibility:auto;
+  content-visibility:visible;
   contain:layout paint style;
   contain-intrinsic-size:auto 520px;
   box-shadow:0 8px 22px color-mix(in srgb,var(--bg-main) 18%,transparent);
@@ -198,3 +198,65 @@ body[data-theme="light"] .coach-inline-exercise input,body[data-theme="light"] .
 @media(max-width:700px){.coach-flow-note{align-items:flex-start;flex-direction:column}.coach-ai-context-grid,.assigned-question-grid{grid-template-columns:1fr}.assigned-photos{grid-column:auto}}
 .coach-studio-shortcut,.coach-question-card,.coach-ai-card,.coach-library-list-view .exercise-lab-card{transition:border-color 120ms ease,background-color 120ms ease,box-shadow 140ms ease!important}
 .coach-studio-shortcut:hover,.coach-question-card:hover,.coach-library-list-view .exercise-lab-card:hover{border-color:color-mix(in srgb,var(--pink-primary) 54%,var(--line));box-shadow:var(--shadow-card)}
+
+/* Una sola giornata editabile alla volta: meno nodi, scroll stabile. */
+.coach-program-day>header[role="button"]{cursor:pointer;user-select:none}
+.coach-program-day>header[role="button"]:focus-visible{outline:2px solid var(--pink-primary);outline-offset:-2px}
+.coach-program-day>header[role="button"]::after{content:"Aperta";padding:5px 8px;border:1px solid var(--line);border-radius:999px;background:var(--card-2);color:var(--text);font-size:.62rem;font-weight:850}
+.coach-program-day:has(.coach-collapsed-day)>header[role="button"]::after{content:"Apri giornata"}
+.coach-program-day:has(.coach-collapsed-day) .coach-program-day-table{padding-bottom:0!important}
+.coach-program-day:has(.coach-collapsed-day) table thead{display:none}
+.coach-collapsed-day td{min-width:0!important;padding:12px 15px!important;background:color-mix(in srgb,var(--card-2) 82%,transparent)}
+.coach-collapsed-day strong,.coach-collapsed-day span{display:block}.coach-collapsed-day span{margin-top:2px;color:var(--muted);font-size:.68rem}
+
+/* Hotfix 19.7.3 — scala visiva CoachPlus, palette Barbell Diva. */
+@media(min-width:1180px){
+  .stage{grid-template-columns:230px minmax(0,1fr)!important;gap:14px!important;padding:14px!important}
+  .desktop-rail{padding:14px 10px!important}
+  .coach-studio-page{gap:18px!important}
+  .coach-studio-topbar{padding:13px 16px!important;margin-bottom:16px!important}
+  .coach-studio-workspace-nav{gap:12px!important;padding-top:10px!important}
+  .coach-studio-workspace-nav button{padding:9px 12px!important;font-size:.78rem!important}
+  .coach-studio-page-head h2{font-size:2.15rem!important;line-height:1.05}
+  .coach-studio-page-head p{font-size:.9rem;line-height:1.45}
+  .coach-editor-toolbar{position:relative!important;top:auto!important;padding:13px 16px!important;border-radius:18px}
+  .coach-editor-save-state{font-size:.82rem}
+  .coach-editor-toolbar .quick-actions{gap:9px}
+  .coach-editor-toolbar .quick-actions button{min-height:46px;padding:9px 15px;font-size:.82rem}
+  .coach-program-assignment{padding:15px 18px!important;min-height:72px}
+  .coach-program-assignment span,.coach-program-assignment>label{font-size:.78rem}
+  .coach-program-assignment strong,.coach-program-assignment select{font-size:.9rem}
+  .coach-program-week-tabs button{padding:14px 18px!important;font-size:.94rem}
+  .coach-program-week-tabs span{font-size:.74rem}
+  .coach-program-board-head{margin-top:12px}
+  .coach-program-board-head h2{font-size:2rem!important}
+  .coach-program-board-head span{font-size:1rem}
+  .coach-program-board-head button{min-height:42px;padding:8px 14px;font-size:.84rem}
+  .coach-program-day{border-radius:17px}
+  .coach-program-day>header{padding:18px 20px!important}
+  .coach-program-day>header>div:first-child{gap:4px 22px}
+  .coach-program-day>header span{font-size:.88rem}
+  .coach-program-day h3{font-size:1.14rem}
+  .coach-program-day header small{font-size:.82rem}
+  .coach-day-actions{gap:8px}
+  .coach-day-actions>button{min-height:38px;padding:7px 10px;font-size:.78rem}
+  .coach-add-menu summary{height:40px!important;padding:0 14px;font-size:.8rem!important}
+  .coach-program-day-table{padding:0 18px 18px!important}
+  .coach-program-day-table table{min-width:1420px!important;font-size:.9rem}
+  .coach-program-day-table th{padding:14px 8px!important;font-size:.76rem!important;letter-spacing:.025em}
+  .coach-program-day-table td{padding:11px 8px!important;font-size:.9rem;vertical-align:middle!important}
+  .coach-program-day-table td:first-child{min-width:300px!important}
+  .coach-program-day-table td:last-child{min-width:230px!important}
+  .coach-inline-name{grid-template-columns:28px 25px minmax(205px,1fr);gap:6px}
+  .coach-inline-sub{margin:6px 0 0 59px;gap:6px}
+  .coach-inline-exercise input,.coach-inline-exercise select{min-height:40px;min-width:62px;padding:8px 9px;font-size:.9rem}
+  .coach-inline-name input{font-weight:800}
+  .coach-inline-sub input{min-height:34px;font-size:.8rem}
+  .program-exercise-letter{width:25px;height:25px;font-size:.78rem}
+  .coach-inline-actions{gap:5px;flex-wrap:nowrap}
+  .coach-inline-actions button{min-width:36px;min-height:36px;padding:6px 8px;font-size:.82rem}
+  .coach-inline-actions .progression-badge{max-width:145px}
+  .coach-program-day>header[role="button"]::after{padding:7px 10px;font-size:.72rem}
+  .coach-collapsed-day td{padding:16px 20px!important}
+  .coach-collapsed-day strong{font-size:.9rem}.coach-collapsed-day span{font-size:.78rem}
+}
