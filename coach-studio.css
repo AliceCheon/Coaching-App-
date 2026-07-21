@@ -260,3 +260,50 @@ body[data-theme="light"] .coach-inline-exercise input,body[data-theme="light"] .
   .coach-collapsed-day td{padding:16px 20px!important}
   .coach-collapsed-day strong{font-size:.9rem}.coach-collapsed-day span{font-size:.78rem}
 }
+
+/* Hotfix 19.7.4 — gruppi reali, note leggibili e navigazione compatta. */
+@media(min-width:981px){
+  .rail-collapse{right:-17px!important;top:22px!important;bottom:auto!important;z-index:60;width:36px!important;height:36px!important;border-radius:50%!important;border:2px solid var(--surface)!important;background:linear-gradient(135deg,var(--pink-primary),var(--purple-primary))!important;color:#fff!important;box-shadow:var(--shadow-card)}
+  body.nav-collapsed .rail-collapse{left:auto!important;right:-17px!important;top:22px!important}
+  .coach-program-assignment.no-status{grid-template-columns:minmax(260px,1.7fr) repeat(2,minmax(150px,.55fr))!important}
+  .coach-program-assignment.no-status>div:last-child strong{font-size:.9rem!important}
+  .coach-program-assignment.no-status>div:last-child strong::after{content:none!important}
+}
+.coach-program-day-table{cursor:grab;scrollbar-gutter:stable;touch-action:pan-x pan-y}
+.coach-program-day-table.is-panning{cursor:grabbing;user-select:none}
+.coach-program-day-table input,.coach-program-day-table select,.coach-program-day-table button,.coach-program-day-table details{cursor:auto}
+.coach-inline-name{grid-template-columns:28px 30px 25px minmax(190px,1fr)!important}
+.coach-inline-sub{margin-left:71px!important}
+.set-link-button{width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--border);border-radius:9px;background:var(--surface-raised);color:var(--text-muted);font-size:0;cursor:pointer!important}.set-link-button::before{content:"🔗";font-size:.78rem}
+.set-link-button.active{background:color-mix(in srgb,var(--purple-primary) 24%,var(--surface-raised));border-color:var(--purple-primary);color:var(--pink-soft)}
+.coach-set-group-header td{padding:10px 13px!important;border:0!important;background:linear-gradient(90deg,color-mix(in srgb,var(--purple-primary) 25%,var(--surface-raised)),color-mix(in srgb,var(--pink-primary) 12%,var(--surface)))}
+.coach-set-group-header td>*{display:inline-block;margin-right:8px}.coach-set-group-header strong{color:var(--pink-soft);font-size:.82rem}.coach-set-group-header em{padding:4px 8px;border-radius:999px;background:color-mix(in srgb,var(--purple-primary) 22%,transparent);color:var(--text);font-size:.7rem;font-style:normal}
+.coach-inline-exercise.in-set-group td:first-child{border-left:3px solid color-mix(in srgb,var(--purple-primary) 74%,var(--pink-primary))}
+.coach-inline-note{width:100%;max-width:250px;display:flex;align-items:center;gap:7px;padding:7px 3px;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer!important}
+.coach-inline-note span{color:var(--pink-primary);font-size:1rem}.coach-inline-note em{max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted);font-size:.8rem;font-style:normal}.coach-inline-note:hover em{color:var(--text)}
+.coach-note-modal{width:min(800px,calc(100vw - 28px))!important}.coach-note-modal label{display:grid;gap:9px;font-weight:850}.coach-note-modal textarea{width:100%;min-height:170px;box-sizing:border-box;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-raised);color:var(--text);font:inherit;resize:vertical}
+.coach-row-group-menu{position:relative}.coach-row-group-menu summary{list-style:none;min-width:36px;min-height:36px;display:grid;place-items:center;border:1px solid var(--border);border-radius:9px;background:var(--surface-raised);color:var(--text);font-weight:900;cursor:pointer!important}.coach-row-group-menu summary::-webkit-details-marker{display:none}.coach-row-group-menu>div{position:absolute;z-index:80;right:0;top:42px;width:165px;display:grid;gap:2px;padding:7px;border:1px solid var(--border);border-radius:12px;background:var(--surface-raised);box-shadow:var(--shadow-raised)}.coach-row-group-menu>div button{width:100%;padding:9px 10px;text-align:left}.coach-row-group-menu>div button:hover{background:color-mix(in srgb,var(--purple-primary) 18%,transparent)}.coach-row-group-menu>div button.danger{color:var(--danger)}
+body[data-theme="light"] .coach-set-group-header td{background:linear-gradient(90deg,#ead8ff,#fff0f8)}body[data-theme="light"] .coach-note-modal textarea{background:#fff;color:#281738}
+@media(max-width:700px){.coach-inline-name{grid-template-columns:27px 29px 23px minmax(145px,1fr)!important}.coach-inline-sub{margin-left:67px!important}.coach-inline-note{min-height:44px}.coach-note-modal textarea{min-height:220px}}
+
+/* Hotfix 19.7.6 — scroll naturale, Diva Bot globale e microinterazioni. */
+.coach-studio-topbar,.coach-editor-toolbar{position:relative!important;top:auto!important;z-index:10!important;backdrop-filter:none!important}
+.coach-studio-topbar{background:var(--surface)!important}
+.coach-studio-workspace-nav button{opacity:1!important;transition:color .16s ease,background .16s ease,transform .16s ease!important}
+.coach-studio-workspace-nav button.active{background:linear-gradient(100deg,var(--pink-primary),var(--purple-primary))!important;color:#fff!important;box-shadow:0 7px 18px color-mix(in srgb,var(--pink-primary) 28%,transparent)}
+.coach-program-day-table{overflow-x:auto!important;overflow-y:visible!important;overscroll-behavior-x:contain!important;overscroll-behavior-y:auto!important;touch-action:pan-y pinch-zoom!important}
+.coach-program-day-table.is-panning{touch-action:none!important}
+.diva-rail-toggle{margin-top:8px!important;border-top:1px solid var(--border)!important}.diva-rail-toggle.is-hidden{color:var(--pink-soft)!important;background:color-mix(in srgb,var(--pink-primary) 14%,transparent)!important}
+.global-diva-bot{position:fixed;z-index:10010;right:20px;bottom:22px;width:92px;height:104px;filter:drop-shadow(0 13px 20px rgba(19,4,29,.3));pointer-events:none}
+.global-diva-avatar{width:92px;height:104px;padding:0;border:0;background:transparent;pointer-events:auto;cursor:pointer}.global-diva-avatar .coach-avatar,.global-diva-avatar .coach-mascot{width:90px;height:102px}
+.global-diva-bubble{position:absolute;right:76px;bottom:79px;width:max-content;max-width:min(290px,55vw);padding:10px 13px;border:1px solid color-mix(in srgb,var(--pink-primary) 38%,var(--border));border-radius:16px 16px 4px 16px;background:color-mix(in srgb,var(--surface-raised) 96%,var(--purple-primary) 4%);color:var(--text);font-size:.76rem;line-height:1.4;box-shadow:var(--shadow-card);pointer-events:auto;animation:divaBubbleIn .35s cubic-bezier(.2,.9,.25,1.25) both}
+.global-diva-panel{position:absolute;right:78px;bottom:2px;width:min(270px,calc(100vw - 125px));display:grid;gap:9px;padding:15px;border:1px solid color-mix(in srgb,var(--pink-primary) 38%,var(--border));border-radius:18px;background:var(--surface-raised);color:var(--text);box-shadow:var(--shadow-raised);pointer-events:auto;animation:divaPanelIn .22s cubic-bezier(.2,.9,.25,1.18) both}.global-diva-panel>span{color:var(--text-muted);font-size:.75rem}.global-diva-panel label{display:grid;gap:5px;font-size:.72rem;font-weight:850}.global-diva-panel select{width:100%}.global-diva-panel-close{position:absolute;right:7px;top:7px;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--text);font-size:1.15rem}
+.global-diva-bot.panel-open .global-diva-bubble{display:none}.global-diva-restore{position:fixed;z-index:10010;right:-2px;bottom:105px;display:flex;align-items:center;gap:6px;padding:9px 12px;border:1px solid color-mix(in srgb,var(--pink-primary) 40%,var(--border));border-radius:14px 0 0 14px;background:var(--surface-raised);color:var(--pink-soft);box-shadow:var(--shadow-card)}
+.animated-tooltip{position:fixed;z-index:10100;max-width:230px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--pink-primary) 40%,var(--border));border-radius:10px;background:var(--surface-raised);color:var(--text);font-size:.7rem;font-weight:800;line-height:1.3;box-shadow:var(--shadow-card);opacity:0;transform:translateY(5px) scale(.9);pointer-events:none;transition:opacity .12s ease,transform .14s cubic-bezier(.2,.9,.25,1.35)}.animated-tooltip.is-visible{opacity:1;transform:translateY(0) scale(1)}
+@keyframes divaBubbleIn{0%{opacity:0;transform:translate(10px,8px) scale(.82)}65%{transform:translate(-3px,-2px) scale(1.04)}100%{opacity:1;transform:none}}
+@keyframes divaPanelIn{from{opacity:0;transform:translateX(12px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes divaButtonBounce{0%,100%{transform:translateY(0) scale(1)}45%{transform:translateY(-3px) scale(1.04)}72%{transform:translateY(1px) scale(.99)}}
+body[data-animation-mode="full"].coach-mode button:not(:disabled):hover,body[data-animation-mode="full"] .desktop-rail button:not(:disabled):hover,body[data-animation-mode="full"] .global-diva-bot button:not(:disabled):hover{animation:divaButtonBounce .34s cubic-bezier(.2,.9,.25,1.25)}
+body.wp19-open #globalDivaBotHost{display:none}
+@media(max-width:700px){.global-diva-bot{right:8px;bottom:76px;transform:scale(.8);transform-origin:right bottom}.global-diva-bubble{max-width:65vw}.global-diva-restore{bottom:88px}.coach-studio-topbar{position:relative!important;top:auto!important}}
+@media(prefers-reduced-motion:reduce){.global-diva-bubble,.global-diva-panel,.animated-tooltip,body[data-animation-mode="full"] button:hover{animation:none!important;transition:none!important}}
