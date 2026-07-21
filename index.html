@@ -7,12 +7,15 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="manifest.webmanifest?v=v120-phase19.6">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="stylesheet" href="workout-pro.css?v=v115-phase20a">
+  <link rel="stylesheet" href="coach-studio.css?v=v120-phase19.6">
   <script type="module" src="programming-engine.js?v=v115-phase20a"></script>
-  <script defer src="workout-pro.js?v=v115-phase20a"></script>
+  <script type="module" src="sync-reliability.js?v=v116-sync-fix"></script>
+  <script src="coach-studio.js?v=v120-phase19.6"></script>
+  <script defer src="workout-pro.js?v=v116-sync-fix"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -3162,6 +3165,9 @@
     .toast-message[data-type="warning"] { border-color: rgba(255, 195, 92, .65); }
     .toast-message[data-type="error"] { border-color: rgba(255, 108, 132, .76); box-shadow: 0 12px 34px rgba(255, 78, 112, .16); }
     .toast-message[data-type="pr"] { border-color: rgba(255, 111, 203, .9); background: linear-gradient(135deg, #271329, #171511); box-shadow: 0 12px 34px rgba(255, 111, 203, .22); }
+    body[data-theme="light"] .toast-message { background-color:#fff7fb !important;background-image:linear-gradient(135deg,#ffffff,#fdf0fb) !important;color:#2f213a;border-color:rgba(155,91,207,.30);box-shadow:0 12px 30px rgba(84,52,112,.16); }
+    body[data-theme="light"] .toast-message[data-type="pr"] { background-color:#fff5fb !important;background-image:linear-gradient(135deg,#fff5fb,#f4e7ff) !important;border-color:rgba(194,55,152,.42);box-shadow:0 12px 30px rgba(171,70,152,.18); }
+    body[data-theme="light"] .toast-icon { background:rgba(142,73,190,.11);color:#74339d; }
     .toast-icon { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: rgba(255,255,255,.08); font-size: .9rem; }
     .toast-close { width: 34px; min-width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--text); cursor: pointer; font-size: 1.1rem; }
     .toast-close:focus-visible, .toast-message:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
@@ -4702,26 +4708,19 @@
 <body>
   <div id="premiumSplash" class="premium-splash" role="status" aria-live="polite"><div class="premium-splash-card"><div class="premium-monogram" aria-hidden="true">BD</div><h2>BARBELL DIVA</h2><p>Lift. Slay. Repeat.</p><small>Loading your empire…</small><div class="premium-loader" aria-hidden="true"></div></div></div>
   <div class="stage">
-    <aside class="desktop-rail" aria-label="Colonnina desktop">
-      <div class="rail-logo">A</div>
-      <button class="rail-dot active" data-jump="dashboard" title="Dashboard" aria-label="Dashboard">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z"/></svg>
-      </button>
-      <button class="rail-dot" data-jump="training" title="Allenamento" aria-label="Allenamento">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 6v12M18 6v12M3 10v4M21 10v4M6 12h12"/></svg>
-      </button>
-      <button class="rail-dot" data-jump="progress" title="Analisi progressi" aria-label="Analisi progressi">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 3 5-7"/></svg>
-      </button>
-      <button class="rail-dot" data-bottom="coach" title="Coach" aria-label="Coach">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M7 16h10"/><path d="M9 3h6"/></svg>
-      </button>
-      <button class="rail-dot" data-jump="nutrition" title="Nutrizione" aria-label="Nutrizione">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19c5-9 9-14 16-14"/><path d="M5 5c5 2 8 6 9 12"/><path d="M4 19c7 1 13-2 16-14"/></svg>
-      </button>
-      <button class="rail-dot" data-bottom="quiz" title="Check-in" aria-label="Check-in">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      </button>
+    <aside class="desktop-rail" aria-label="Navigazione principale">
+      <div class="rail-brand"><div class="rail-logo">BD</div><div><strong>Barbell Diva</strong><span>Alice workspace</span></div></div>
+      <button class="rail-collapse" type="button" data-main-nav-toggle aria-label="Comprimi navigazione">‹</button>
+      <nav class="rail-navigation">
+        <button class="rail-dot active" data-jump="dashboard" title="Dashboard" aria-label="Dashboard"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z"/></svg><span>Dashboard</span></button>
+        <button class="rail-dot" data-jump="training" title="Allenamento" aria-label="Allenamento"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 6v12M18 6v12M3 10v4M21 10v4M6 12h12"/></svg><span>Allenamento</span></button>
+        <button class="rail-dot" data-jump="progress" title="Analisi progressi" aria-label="Analisi progressi"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 3 5-7"/></svg><span>Analisi progressi</span></button>
+        <button class="rail-dot" data-jump="logbook" title="Logbook" aria-label="Logbook"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M5 4h14v16H5z"/><path d="M8 2v4M16 2v4M8 10h8M8 14h5"/></svg><span>Logbook</span></button>
+        <button class="rail-dot" data-bottom="coach" title="Coach Studio" aria-label="Coach Studio"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M7 16h10"/><path d="M9 3h6"/></svg><span>Coach Studio</span></button>
+        <button class="rail-dot" data-jump="nutrition" title="Nutrizione" aria-label="Nutrizione"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19c5-9 9-14 16-14"/><path d="M5 5c5 2 8 6 9 12"/><path d="M4 19c7 1 13-2 16-14"/></svg><span>Nutrizione</span></button>
+        <button class="rail-dot" data-bottom="quiz" title="Check-in" aria-label="Check-in"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Check-in</span></button>
+        <button class="rail-dot" data-jump="settings" title="Impostazioni" aria-label="Impostazioni"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg><span>Impostazioni</span></button>
+      </nav>
     </aside>
 
     <section class="phone-shell" aria-label="Barbell diva">
@@ -4807,7 +4806,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v115-phase20a";
+    const APP_BUILD = "v120-phase19.6";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -5928,6 +5927,35 @@
       coach: {
         unlocked: false,
         activeTab: "create",
+        studio: {
+          route: "programs",
+          programId: "",
+          questionnaireId: "",
+          filters: { query: "", status: "all", phase: "all", folder: "all", sort: "updated" },
+          editorView: "list",
+          sidebarOpen: false,
+          folders: [],
+          referenceOpen: false,
+          referenceProgramId: "",
+          infoOpen: false,
+          aiOpen: false,
+          programWeek: 1,
+          lastVisitedAt: null
+        },
+        questionnaires: [{
+          id: "questionnaire-weekly-checkin",
+          title: "Check-in settimanale",
+          type: "check-in",
+          active: true,
+          visibility: "all",
+          recurrence: "weekly",
+          questions: [
+            { id:"weight", label:"Peso di oggi", kind:"number", required:true },
+            { id:"photos", label:"Foto progressi", kind:"photos", required:false },
+            { id:"limitations", label:"Esercizi difficili o problemi", kind:"text", required:false },
+            { id:"intensity", label:"Intensità del programma", kind:"choice", required:true }
+          ]
+        }],
         athleteView: false,
         athleteLayout: "compact",
         viewChoice: "browse-old",
@@ -6057,6 +6085,10 @@
     let cloudUser = null;
     let cloudSaveTimer = null;
     let cloudStateUnsubscribe = null;
+    let cloudSessionsUnsubscribe = null;
+    let reliableSyncQueue = null;
+    let reliableSyncTimer = null;
+    const reliableSyncUi = { status:"local", lastSuccess:"", lastError:"", remoteDevice:"", diagnostics:null, loading:false };
     let lastCloudWriteAt = "";
     let lastCloudSnapshotAt = "";
     let lastCloudError = "";
@@ -6102,7 +6134,9 @@
       libraryMuscle: "",
       libraryEquipment: "",
       libraryPattern: "",
+      pendingAddKind: "exercise",
       labQuery: "",
+      labFiltersOpen: false,
       labFilters: { muscle:"", equipment:"", type:"", level:"", resistance:"", stimulus:"", stability:"", fatigue:"", progression:"", origin:"" },
       labPage: 1,
       selectedLabId: ""
@@ -6110,6 +6144,13 @@
       ,aiExpanded: new Set()
       ,aiNoticeDismissed: new Set()
       ,dashboardCoachOpen: false
+      ,inlineSaveTimer: null
+      ,clipboardExercise: null
+      ,referenceWeek: 1
+      ,aiProgramId: ""
+      ,aiQuestion: ""
+      ,aiAnswer: ""
+      ,aiLastAnalysisAt: ""
     };
 
     function clone(obj) {
@@ -6715,17 +6756,23 @@
       const { program, sheet } = ensureCoachProgramSelection();
       if (!program || !sheet) return { ok:false };
       rememberExerciseState(program.id, sheet.id);
-      const result = programRepository.createExercise(program.id, sheet.id, {
+      const addKind=coachProgramUi.pendingAddKind||"exercise";
+      const techniqueByKind={superset:"superset",multiset:"giant-set",alternative:"normal",circuit:"giant-set"};
+      const replacementId=coachProgramUi.modalData?.replaceExerciseId||"";
+      const replacement=replacementId?programRepository.getExerciseById(program.id,sheet.id,replacementId):null;
+      const exerciseData = {
         name:item.name,
         muscle:item.primaryMuscles[0] || item.targetRegion || "Custom",
         som:item.primaryMuscles[0] || item.targetRegion || "Custom",
         note:item.description || "",
-        prescription:{ sets:optionalNumber(item.programming.recommendedSets), reps:parseReps(item.programming.repRanges[0] || ""), rir:parseRir(item.programming.rirRpe || ""), rest:parseRest(item.programming.recovery || {seconds:90}), tempo:parseTempo(""), technique:parseTechnique("normal"), prescribedLoad:parsePrescribedLoad(null) },
+        prescription:{ sets:optionalNumber(item.programming.recommendedSets), reps:parseReps(item.programming.repRanges[0] || ""), rir:parseRir(item.programming.rirRpe || ""), rest:parseRest(item.programming.recovery || {seconds:90}), tempo:parseTempo(""), technique:parseTechnique(techniqueByKind[addKind]||"normal"), prescribedLoad:parsePrescribedLoad(null) },
         progression:{ weeks:[] },
         biomechanics:{ ...biomechanicsForExercise(item.name), primaryMuscles:item.primaryMuscles, secondaryMuscles:item.secondaryMuscles, resistanceProfile:item.resistanceProfile.type, stability:item.ratings.stability, systemicFatigue:item.ratings.systemicFatigue, progressionEase:item.ratings.progressionEase, technicalDifficulty:item.ratings.technicalDifficulty, confidence:item.aiAnalysis.confidence },
-        metadata:{ custom:item.isCustom, technicalProfileId:item.id, equipment:item.equipment, pattern:item.movementPattern, secondaryMuscles:item.secondaryMuscles, cues:item.cues, stabilizers:item.stabilizers, technicalProfile:clone(item) }
-      }, { immediate:true });
-      if (result.ok) discardCoachDraft(program.id, sheet.id);
+        metadata:{ custom:item.isCustom, technicalProfileId:item.id, equipment:item.equipment, pattern:item.movementPattern, secondaryMuscles:item.secondaryMuscles, cues:item.cues, stabilizers:item.stabilizers, setType:addKind, technicalProfile:clone(item) }
+      };
+      if(replacement){exerciseData.prescription=replacement.prescription;exerciseData.progression=replacement.progression;exerciseData.note=replacement.note||exerciseData.note;exerciseData.metadata={...replacement.metadata,...exerciseData.metadata};}
+      const result = replacement ? programRepository.updateExercise(program.id,sheet.id,replacementId,exerciseData,{immediate:true,forceLocked:true}) : programRepository.createExercise(program.id, sheet.id, exerciseData, { immediate:true });
+      if (result.ok) { discardCoachDraft(program.id, sheet.id); coachProgramUi.pendingAddKind="exercise"; }
       return result;
     }
 
@@ -7372,6 +7419,9 @@
       };
       target.programming.decisions = target.programming.decisions && typeof target.programming.decisions === "object" ? target.programming.decisions : {};
       target.programming.exclusions = Array.isArray(target.programming.exclusions) ? target.programming.exclusions : [];
+      target.coach = target.coach || {};
+      target.coach.studio = window.BarbellDivaCoachStudio.normalizeStudio(target.coach.studio);
+      target.coach.questionnaires = Array.isArray(target.coach.questionnaires) ? target.coach.questionnaires : clone(baseState.coach.questionnaires);
       target.migrations = target.migrations || {};
       target.migrations.phase20AProgramming = 1;
       if (Number(target.migrations.legacyAliceLogbook || 0) < 1 && Array.isArray(LEGACY_ALICE_LOGBOOK_HISTORY)) {
@@ -7877,7 +7927,9 @@
       const bounded = next.slice(-120);
       try {
         localStorage.setItem(WORKOUT_JOURNAL_KEY, JSON.stringify(bounded));
-        return readWorkoutJournal().some((row) => workoutSessionKey(row) === key);
+        const verified = readWorkoutJournal().some((row) => workoutSessionKey(row) === key);
+        if (verified && session.status === "completed") queueReliableWorkoutSession(session);
+        return verified;
       } catch (error) {
         if (isStorageQuotaError(error) && releaseObsoleteLocalBackups()) {
           try { localStorage.setItem(WORKOUT_JOURNAL_KEY, JSON.stringify(bounded)); return true; } catch (retryError) {}
@@ -8531,11 +8583,14 @@
             render();
             if (loaded) {
               startCloudStateRealtime();
+              startReliableSessionsRealtime();
+              scheduleReliableSync(100);
               startNutritionPhotosRealtime();
             }
           });
         } else {
           stopCloudStateRealtime();
+          stopReliableSessionsRealtime();
           stopNutritionPhotosRealtime();
         }
       });
@@ -8622,7 +8677,7 @@
         const stamp = String(data?.updatedAt || "");
         if (!snapshot.exists || !data?.state || !stamp || stamp === lastCloudWriteAt || stamp === lastCloudSnapshotAt) return;
         lastCloudSnapshotAt = stamp;
-        if (cloudLoading || coachProgramUi.dirtySheets.size) return;
+        if (cloudLoading) return;
         const account = state.profile.account || {};
         const remoteState = clone(data.state);
         try { remoteState.programs = await loadCloudPrograms(data); }
@@ -8786,6 +8841,96 @@
       });
     }
 
+    function reliableDeviceId() {
+      const key = `${STORE_KEY}.device-id.v1`; let value = localStorage.getItem(key);
+      if (!value) { value = `device-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,9)}`; localStorage.setItem(key, value); }
+      return value;
+    }
+
+    function initReliableSync() {
+      if (reliableSyncQueue || !window.BarbellDivaSyncEngine?.createPersistentSyncQueue) return reliableSyncQueue;
+      reliableSyncQueue = window.BarbellDivaSyncEngine.createPersistentSyncQueue({ storage:localStorage, key:`${STORE_KEY}.sync-queue.v1`, auditKey:`${STORE_KEY}.sync-audit.v1` });
+      (state.training.sessions || []).filter(item => item.status === "completed" && item.syncStatus !== "synced").forEach(queueReliableWorkoutSession);
+      document.documentElement.dataset.reliableSync = "ready";
+      return reliableSyncQueue;
+    }
+
+    function reliableSyncStats() {
+      return reliableSyncQueue?.stats?.() || { pending:0, syncing:0, failed:0, conflict:0 };
+    }
+
+    function refreshReliableSyncStatus() {
+      const stats = reliableSyncStats();
+      reliableSyncUi.status = !navigator.onLine ? "offline" : stats.conflict ? "conflict" : stats.failed ? "error" : (stats.pending || stats.syncing) ? "syncing" : cloudUser && state.profile.account?.syncReady ? "synced" : "local";
+      return reliableSyncUi.status;
+    }
+
+    function queueReliableWorkoutSession(session = {}) {
+      initReliableSync(); if (!reliableSyncQueue || !session) return session;
+      const normalized = window.BarbellDivaSyncEngine.normalizeSyncSession(session, { userId:cloudUser?.uid || state.profile.account?.uid || "", deviceId:reliableDeviceId(), now:new Date().toISOString(), syncStatus:"pending" });
+      const localIndex = (state.training.sessions || []).findIndex(item => String(item.id) === String(session.id));
+      if (localIndex >= 0) state.training.sessions[localIndex] = { ...state.training.sessions[localIndex], ...normalized };
+      reliableSyncQueue.enqueue(window.BarbellDivaSyncEngine.createSyncOperation(normalized, { userId:cloudUser?.uid || "", deviceId:reliableDeviceId(), now:new Date().toISOString() }));
+      reliableSyncQueue.audit("session-saved-local", { entityId:normalized.id, deviceId:normalized.deviceId }); refreshReliableSyncStatus();
+      if (navigator.onLine && cloudUser && state.profile.account?.syncReady) scheduleReliableSync(100);
+      return normalized;
+    }
+
+    function reliableSessionsCollection() {
+      const root = cloudDocument(); return root ? root.collection("sessions") : null;
+    }
+
+    function reliableSessionDocId(id) { return encodeURIComponent(String(id || "session")).replaceAll(".", "%2E"); }
+    function scheduleReliableSync(delay = 400) { clearTimeout(reliableSyncTimer); reliableSyncTimer = setTimeout(() => flushReliableSync({ silent:true }), delay); }
+
+    function mergeReliableRemoteSession(remote = {}) {
+      if (!remote?.id) return false; const sessions = state.training.sessions || (state.training.sessions = []); const index = sessions.findIndex(item => String(item.id) === String(remote.id));
+      if (index < 0) sessions.push(remote); else {
+        const result = window.BarbellDivaSyncEngine.reconcileSessionVersions(sessions[index], remote);
+        if (result.status === "conflict") { reliableSyncUi.status="conflict"; reliableSyncUi.lastError="La stessa seduta è stata modificata su due dispositivi."; return false; }
+        if (result.value) sessions[index] = result.value;
+      }
+      reliableSyncUi.remoteDevice = remote.deviceId || ""; state.training.exercises = buildExerciseIndex(allProgramSheets(), sessions); return true;
+    }
+
+    async function flushReliableSync(options = {}) {
+      initReliableSync(); const collection = reliableSessionsCollection();
+      if (!reliableSyncQueue || !collection || !cloudUser || !state.profile.account?.syncReady || !navigator.onLine) { refreshReliableSyncStatus(); if (!options.silent) showToast(navigator.onLine ? "Accedi al cloud prima di sincronizzare." : "Offline: le modifiche restano in coda.", "warning"); return { ok:false, synced:0 }; }
+      let synced=0, failed=0, conflicts=0; reliableSyncUi.status="syncing"; reliableSyncUi.lastError="";
+      for (const operation of reliableSyncQueue.pending()) {
+        reliableSyncQueue.markSyncing(operation.operationId);
+        try {
+          const ref=collection.doc(reliableSessionDocId(operation.entityId)), snapshot=await withTimeout(ref.get(),12000);
+          if (snapshot.exists) {
+            const remote=snapshot.data()?.session || snapshot.data(), result=window.BarbellDivaSyncEngine.reconcileSessionVersions(operation.payload,remote);
+            if (result.status === "conflict") { reliableSyncQueue.markConflict(operation.operationId,result.reason); reliableSyncUi.lastError="Conflitto: confronta la seduta locale con quella cloud."; conflicts++; continue; }
+            if (result.status === "merged" && Number(remote.revision||0)>Number(operation.payload.revision||0)) { mergeReliableRemoteSession(remote); reliableSyncQueue.markSynced(operation.operationId); synced++; continue; }
+          }
+          const payload={ ...operation.payload, userId:cloudUser.uid, syncStatus:"synced", cloudSyncedAt:new Date().toISOString() };
+          await withTimeout(ref.set({ session:payload, entityId:payload.id, userId:cloudUser.uid, revision:payload.revision, dataHash:payload.dataHash, deviceId:payload.deviceId, updatedAt:payload.updatedAt, serverUpdatedAt:window.firebase.firestore.FieldValue.serverTimestamp() },{ merge:true }),15000);
+          const local=(state.training.sessions||[]).find(item=>String(item.id)===String(payload.id)); if(local) Object.assign(local,{ syncStatus:"synced",cloudSyncedAt:payload.cloudSyncedAt,dataHash:payload.dataHash,deviceId:payload.deviceId,revision:payload.revision });
+          reliableSyncQueue.markSynced(operation.operationId); reliableSyncQueue.audit("confirmed-cloud",{entityId:payload.id,deviceId:payload.deviceId}); synced++;
+        } catch(error) { reliableSyncQueue.markFailed(operation.operationId,cloudErrorText(error,"sincronizzazione seduta")); reliableSyncUi.lastError=cloudErrorText(error,"sincronizzazione seduta"); failed++; }
+      }
+      reliableSyncQueue.removeSynced(); if(synced) reliableSyncUi.lastSuccess=new Date().toISOString(); refreshReliableSyncStatus(); writeLocalStateSnapshot(state,{touch:false,cloud:false});
+      if(failed) scheduleReliableSync(Math.min(30000,1500*Math.max(1,reliableSyncStats().failed)));
+      if(!options.silent) showToast(conflicts?"C'è un conflitto da controllare.":failed?"Cloud in attesa: riproverò automaticamente.":"Sincronizzazione completata.",conflicts||failed?"warning":"success");
+      return {ok:!failed&&!conflicts,synced,failed,conflicts};
+    }
+
+    function stopReliableSessionsRealtime(){ if(typeof cloudSessionsUnsubscribe === "function") cloudSessionsUnsubscribe(); cloudSessionsUnsubscribe=null; }
+    function startReliableSessionsRealtime(){
+      stopReliableSessionsRealtime(); const collection=reliableSessionsCollection(); if(!collection||!state.profile.account?.syncReady)return false;
+      cloudSessionsUnsubscribe=collection.onSnapshot(snapshot=>{let changed=false;snapshot.docChanges().forEach(change=>{if(!["added","modified"].includes(change.type))return;const remote=change.doc.data()?.session||change.doc.data();if(remote?.deviceId===reliableDeviceId()&&(state.training.sessions||[]).some(item=>item.dataHash&&item.dataHash===remote.dataHash))return;changed=mergeReliableRemoteSession(remote)||changed;reliableSyncQueue?.audit("received-remote",{entityId:remote?.id,deviceId:remote?.deviceId||""});});if(changed){reliableSyncUi.lastSuccess=new Date().toISOString();refreshReliableSyncStatus();writeLocalStateSnapshot(state,{touch:false,cloud:false});render();}},error=>{reliableSyncUi.status="error";reliableSyncUi.lastError=cloudErrorText(error,"aggiornamento sedute");}); return true;
+    }
+
+    async function runReliableDiagnostics(){
+      reliableSyncUi.loading=true;render();try{const collection=reliableSessionsCollection();if(!collection)throw new Error("Cloud non disponibile");const snapshot=await withTimeout(collection.get(),15000),remote=[];snapshot.forEach(doc=>remote.push(doc.data()?.session||doc.data()));const local=state.training.sessions||[],localIds=new Set(local.map(item=>String(item.id))),remoteIds=new Set(remote.map(item=>String(item.id)));const dedupe=window.BarbellDivaSyncEngine.deduplicateSessions([...local,...remote]);reliableSyncUi.diagnostics={onlyLocal:local.filter(item=>!remoteIds.has(String(item.id))).length,onlyCloud:remote.filter(item=>!localIds.has(String(item.id))).length,possibleDuplicates:dedupe.possibleDuplicates.length};reliableSyncUi.lastError="";}catch(error){reliableSyncUi.lastError=cloudErrorText(error,"diagnostica sedute");}finally{reliableSyncUi.loading=false;render();}
+    }
+
+    async function synchronizeReliableNow(){const result=await flushReliableSync({silent:false});startReliableSessionsRealtime();render();return result;}
+    window.addEventListener("barbell-diva:sync-engine-ready",()=>{initReliableSync();refreshReliableSyncStatus();},{once:true}); if(window.BarbellDivaSyncEngine)initReliableSync();
+
     function withTimeout(promise, ms) {
       return Promise.race([
         promise,
@@ -8845,6 +8990,8 @@
         return false;
       }
       startCloudStateRealtime();
+      startReliableSessionsRealtime();
+      scheduleReliableSync(100);
       startNutritionPhotosRealtime();
       writeLocalStateSnapshot(state, { touch: false, cloud: false });
       showToast("Questo dispositivo e stato caricato nel cloud.");
@@ -8877,6 +9024,8 @@
       saveState({ cloud: false, immediate: true });
       const reconciled = await saveCloudState();
       startCloudStateRealtime();
+      startReliableSessionsRealtime();
+      scheduleReliableSync(100);
       startNutritionPhotosRealtime();
       render();
       setCloudOperation(reconciled ? "success" : "error", reconciled ? `Sincronizzazione completata alle ${new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}.` : (lastCloudError || "Dati scaricati; upload locale in attesa."), reconciled ? 100 : 0);
@@ -8902,6 +9051,7 @@
     async function signOutGoogle() {
       if (!authService) return;
       stopCloudStateRealtime();
+      stopReliableSessionsRealtime();
       stopNutritionPhotosRealtime();
       await authService.signOut();
       showToast("Account scollegato. I dati locali restano qui.");
@@ -9613,15 +9763,14 @@
 
     function setScreen(screen) {
       if (screen === "coach" && !coachDesktopAllowed()) {
-        activeScreen = "dashboard";
-        activeBottom = "home";
-        render();
-        showToast("Coach si apre da PC browser.");
-        return;
+        activeScreen = "dashboard"; activeBottom = "home"; state.profile.mode = "athlete";
+        showToast("Coach Studio si usa da PC. Sul telefono resta l’esperienza atleta.");
+        return render();
       }
       if (screen === "coach" || screen === "volume") {
         state.profile.mode = "coach";
         state.coach.unlocked = true;
+        if (screen === "coach") state.coach.studio = window.BarbellDivaCoachStudio.normalizeStudio({ ...state.coach.studio, route:"programs" });
         saveState();
       }
       activeScreen = screen;
@@ -9645,7 +9794,12 @@
       }
       if (bottom === "quiz") activeScreen = "quiz";
       if (bottom === "coach") {
-        activeScreen = coachDesktopAllowed() ? "coach" : "dashboard";
+        if (!coachDesktopAllowed()) {
+          activeScreen = "dashboard"; activeBottom = "home"; state.profile.mode = "athlete";
+          showToast("Coach Studio si usa da PC. Sul telefono resta l’esperienza atleta.");
+          return render();
+        }
+        activeScreen = "coach";
         if (activeScreen === "coach") {
           state.profile.mode = "coach";
           state.coach.unlocked = true;
@@ -9656,7 +9810,7 @@
     }
 
     function coachDesktopAllowed() {
-      return typeof window === "undefined" || !window.matchMedia ? true : window.matchMedia("(min-width: 981px)").matches;
+      return !!window.matchMedia?.("(min-width: 981px)")?.matches;
     }
 
     function syncThemeUi() {
@@ -9700,13 +9854,11 @@
 
     function render() {
       cancelPremiumMetricAnimations();
+      if (activeScreen === "coach" && !coachDesktopAllowed()) { activeScreen = "dashboard"; activeBottom = "home"; state.profile.mode = "athlete"; }
       const coachViewport = captureCoachViewport();
       const enteringWorkout = activeScreen === "training" && lastRenderedScreen !== "training";
-      if ((activeScreen === "coach" || activeScreen === "volume") && !coachDesktopAllowed()) {
-        activeScreen = "dashboard";
-        activeBottom = "home";
-      }
       document.body.dataset.theme = state.profile.theme || "dark";
+      document.body.classList.toggle("nav-collapsed", !!state.ui?.mainNavCollapsed);
       applyExperiencePreferences();
       syncThemeUi();
       document.body.classList.toggle("coach-mode", state.profile.mode === "coach");
@@ -9973,8 +10125,13 @@
       return `<section class="card" aria-labelledby="workoutProSettingsTitle"><div class="row"><div><span class="section-eyebrow">Allenamento</span><h3 id="workoutProSettingsTitle">Workout Pro</h3></div><span class="chip">v115</span></div><div class="training-context-grid"><label><input type="checkbox" data-workout-pro-setting="wakeLockEnabled" ${preferences.wakeLockEnabled ? "checked" : ""}> Mantieni schermo attivo durante la sessione</label><label><input type="checkbox" data-workout-pro-setting="notificationsEnabled" ${preferences.notificationsEnabled ? "checked" : ""}> Notifiche al termine del timer</label><label><input type="checkbox" data-workout-pro-setting="voiceEnabled" ${preferences.voiceEnabled ? "checked" : ""}> Controllo vocale sperimentale</label><label><input type="checkbox" data-workout-pro-setting="soundEnabled" ${preferences.soundEnabled ? "checked" : ""}> Suono timer</label></div><p class="micro-copy">Schermo, microfono e notifiche vengono attivati soltanto dopo una tua azione esplicita e solo se il browser li supporta.</p></section>`;
     }
 
+    function reliableSyncPanelHtml(){
+      initReliableSync();const stats=reliableSyncStats(),status=refreshReliableSyncStatus(),labels={synced:"Sincronizzato",syncing:"Sincronizzazione in corso",offline:"Offline: salvo in coda",error:"Cloud in attesa",conflict:"Conflitto da controllare",local:"Solo su questo dispositivo"},diag=reliableSyncUi.diagnostics;
+      return `<section class="card reliable-sync-card"><div class="row"><div><span class="section-eyebrow">PC + telefono</span><h3>Sincronizzazione sedute</h3></div><span class="chip">${escapeHtml(labels[status]||status)}</span></div><div class="training-context-grid"><div><strong>Ultimo successo</strong><p class="micro-copy">${reliableSyncUi.lastSuccess?escapeHtml(backupDateLabel(reliableSyncUi.lastSuccess)):"non ancora confermato"}</p></div><div><strong>In coda</strong><p class="micro-copy">${Number(stats.pending||0)+Number(stats.syncing||0)+Number(stats.failed||0)}</p></div><div><strong>Questo dispositivo</strong><p class="micro-copy">${escapeHtml(reliableDeviceId())}</p></div><div><strong>Ultimo dispositivo remoto</strong><p class="micro-copy">${escapeHtml(reliableSyncUi.remoteDevice||"nessuno")}</p></div></div>${reliableSyncUi.lastError?`<p class="sync-error">${escapeHtml(reliableSyncUi.lastError)}</p>`:""}<div class="quick-actions"><button class="gold-button" data-reliable-sync-now>Sincronizza ora</button><button class="ghost-button" data-reliable-sync-check>${reliableSyncUi.loading?"Controllo…":"Controlla sedute mancanti"}</button></div>${diag?`<div class="training-context-grid"><div><strong>${diag.onlyLocal}</strong><p class="micro-copy">solo su questo dispositivo</p></div><div><strong>${diag.onlyCloud}</strong><p class="micro-copy">solo nel cloud</p></div><div><strong>${diag.possibleDuplicates}</strong><p class="micro-copy">possibili doppioni da verificare</p></div></div>`:""}<details><summary>Registro tecnico</summary><div class="history">${(reliableSyncQueue?.auditLog?.()||[]).slice(-6).reverse().map(row=>`<div class="history-row"><span><strong>${escapeHtml(row.event)}</strong><small>${escapeHtml(backupDateLabel(row.at))}</small></span><small>${escapeHtml(row.entityId||"")}</small></div>`).join("")||'<p class="micro-copy">Nessuna operazione registrata.</p>'}</div></details></section>`;
+    }
+
     function settingsHtml() {
-      return `<div class="phase11-dashboard settings-screen"><section class="phase11-hero card"><div><span class="section-eyebrow">Tutto in un posto</span><h2>Impostazioni</h2><p>Preferenze dell'app, Diva Bot, protezione dati e sincronizzazione.</p></div><span class="chip">${APP_BUILD}</span></section>${divaBotSettingsHtml()}${experienceSettingsHtml()}${workoutProSettingsHtml()}${dataProtectionHtml()}${accountCardHtml()}</div>`;
+      return `<div class="phase11-dashboard settings-screen"><section class="phase11-hero card"><div><span class="section-eyebrow">Tutto in un posto</span><h2>Impostazioni</h2><p>Preferenze dell'app, Diva Bot, protezione dati e sincronizzazione.</p></div><span class="chip">${APP_BUILD}</span></section>${divaBotSettingsHtml()}${experienceSettingsHtml()}${workoutProSettingsHtml()}${reliableSyncPanelHtml()}${dataProtectionHtml()}${accountCardHtml()}</div>`;
     }
 
     function dashboardSummaryCard(icon, label, value, detail, color, metric = null) {
@@ -10040,7 +10197,7 @@
 
     function divaBotSettingsHtml() {
       const preferences = divaBotPreferences();
-      return `<section class="card diva-bot-settings" aria-labelledby="divaBotSettingsTitle"><div class="row"><div><span class="section-eyebrow">Impostazioni</span><h3 id="divaBotSettingsTitle">Diva Bot</h3></div><span class="chip">preferenze salvate</span></div><div class="training-context-grid"><label><input type="checkbox" data-diva-bot-setting="visible" ${workoutMascotVisible() ? "checked" : ""}> Mostra Diva Bot durante l'allenamento</label><label>Personalità<select data-diva-bot-setting="personality"><option value="silent" ${preferences.personality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${preferences.personality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${preferences.personality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-setting="bubbles" ${preferences.bubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-setting="celebrations" ${preferences.celebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-setting="sounds" ${preferences.sounds ? "checked" : ""}> Suoni Diva Bot</label></div><p class="micro-copy">I suoni restano disattivati finché non saranno disponibili asset audio adatti.</p></section>`;
+      return `<section class="card diva-bot-settings" aria-labelledby="divaBotSettingsTitle"><div class="row"><div><span class="section-eyebrow">Impostazioni</span><h3 id="divaBotSettingsTitle">Diva Bot</h3></div><span class="chip">preferenze salvate</span></div><div class="training-context-grid"><label><input type="checkbox" data-diva-bot-setting="visible" ${workoutMascotVisible() ? "checked" : ""}> Mostra Diva Bot durante l'allenamento</label><label>Personalità<select data-diva-bot-setting="personality"><option value="silent" ${preferences.personality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${preferences.personality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${preferences.personality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-setting="bubbles" ${preferences.bubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-setting="celebrations" ${preferences.celebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-setting="sounds" ${preferences.sounds ? "checked" : ""}> Suoni Diva Bot</label></div><p class="micro-copy">Suoni brevi e discreti, disattivati per impostazione predefinita. Animazioni e riduzione movimento seguono le preferenze di accessibilità.</p></section>`;
     }
 
     function experienceSettingsHtml() {
@@ -10432,7 +10589,7 @@
       `;
     }
 
-    function coachHtml() {
+    function coachLegacyHtml() {
       const p = decisionPriority();
       const customCount = customProgramSheets().length;
       const importedGroups = new Set(sessionsForPhase(state.coach.editorPhase || state.training.phaseFilter || "Intensificazione").map((item) => item.letter || sessionLetter(item.code))).size || 0;
@@ -10452,6 +10609,214 @@
         <section class="coach-section">${coachVolumePanelHtml()}</section>
       `;
     }
+
+    const COACH_STUDIO_NAV = [
+      ["programs","▤","Programmi"], ["library","⌕","Libreria"], ["progressions","↗","Template progressione"],
+      ["ai","◇","Coach AI"], ["questionnaires","✓","Questionari"], ["statistics","▥","Statistiche"],
+      ["diagnostics","⚙","Diagnostica"], ["settings","☰","Impostazioni Coach"]
+    ];
+
+    function coachStudioState() {
+      state.coach.studio = window.BarbellDivaCoachStudio.normalizeStudio(state.coach.studio);
+      return state.coach.studio;
+    }
+
+    function coachStudioNavigate(route, data = {}) {
+      const studio = coachStudioState();
+      const next = window.BarbellDivaCoachStudio.cleanRoute(route);
+      Object.assign(studio, data, { route: next, sidebarOpen:false, lastVisitedAt:new Date().toISOString() });
+      if (data.programId) {
+        const exists = programRepository.getPrograms().some((program) => program.id === data.programId);
+        if (exists) { coachProgramUi.programId = data.programId; studio.programId = data.programId; }
+      }
+      const suffix = data.programId ? `/${encodeURIComponent(data.programId)}` : data.questionnaireId ? `/${encodeURIComponent(data.questionnaireId)}` : "";
+      if (history?.pushState && location.hash !== `#coach/${next}${suffix}`) history.pushState({coachRoute:next}, "", `#coach/${next}${suffix}`);
+      saveState({ immediate:true, cloud:false });
+      render();
+    }
+
+    function applyCoachStudioDeepLink() {
+      const match = location.hash.match(/^#coach\/([^/]+)(?:\/(.+))?$/);
+      if (!match) return false;
+      if (!coachDesktopAllowed()) { activeScreen="dashboard"; activeBottom="home"; state.profile.mode="athlete"; history.replaceState({}, "", location.pathname + location.search); return false; }
+      activeScreen = "coach"; activeBottom = "coach"; state.profile.mode = "coach"; state.coach.unlocked = true;
+      const route = window.BarbellDivaCoachStudio.cleanRoute(decodeURIComponent(match[1]));
+      const studio = window.BarbellDivaCoachStudio.normalizeStudio({ ...state.coach.studio, route, sidebarOpen:false });
+      if (match[2] && route === "program") studio.programId = decodeURIComponent(match[2]);
+      if (match[2] && route === "questionnaire") studio.questionnaireId = decodeURIComponent(match[2]);
+      state.coach.studio = studio;
+      return true;
+    }
+
+    function coachStudioTitle(route) {
+      const labels = Object.fromEntries(COACH_STUDIO_NAV.map(([key,,label]) => [key,label]));
+      return route === "program" ? "Editor programma" : route === "questionnaire" ? "Modifica questionario" : labels[route] || "Programmi";
+    }
+
+    function coachStudioShellHtml(content) {
+      const studio = coachStudioState();
+      const route = studio.route;
+      const parent = route === "program" ? "programs" : route === "questionnaire" ? "questionnaires" : route;
+      return `<div class="coach-studio-shell">
+        <main class="coach-studio-main">
+          <header class="coach-studio-topbar"><div class="coach-studio-breadcrumb"><strong>Coach Studio</strong><span>/</span><strong>${escapeHtml(coachStudioTitle(route))}</strong></div><div class="coach-studio-top-actions">${route==="programs"?`<button class="gold-button" type="button" data-program-action="new">+ Programma</button>`:""}</div><nav class="coach-studio-workspace-nav" aria-label="Strumenti Coach Studio">${COACH_STUDIO_NAV.map(([key,,label])=>`<button type="button" class="${parent===key?"active":""}" data-coach-studio-route="${key}">${escapeHtml(label)}</button>`).join("")}</nav></header>
+          ${content}
+        </main>
+      </div>`;
+    }
+
+    function coachStudioPageHead(eyebrow, title, text, action = "") {
+      return `<header class="coach-studio-page-head"><div><span class="section-eyebrow">${escapeHtml(eyebrow)}</span><h2>${escapeHtml(title)}</h2><p>${escapeHtml(text)}</p></div>${action}</header>`;
+    }
+
+    function coachStudioDashboardHtml() {
+      const metrics = window.BarbellDivaCoachStudio.programMetrics(state.programs);
+      const sessions = (state.training.sessions || []).filter((item) => !item.deletedAt);
+      const p = decisionPriority();
+      return `<section class="coach-studio-page">${coachStudioPageHead("Il tuo centro di comando","Buongiorno, Alice","Programmazione, monitoraggio e strumenti coach in un’unica area ordinata.",`<button class="gold-button" data-coach-studio-route="programs">Apri programmi</button>`)}
+        <div class="coach-studio-kpis"><article class="coach-studio-kpi"><span>Programmi attivi</span><strong>${metrics.active}</strong><small>${metrics.programs} totali</small></article><article class="coach-studio-kpi"><span>Schede</span><strong>${metrics.sheets}</strong><small>${metrics.exercises} esercizi collegati</small></article><article class="coach-studio-kpi"><span>Workout completati</span><strong>${sessions.length}</strong><small>storico conservato</small></article><article class="coach-studio-kpi"><span>Segnale Coach</span><strong>${p.level}</strong><small>${escapeHtml(p.label)}</small></article></div>
+        <div class="coach-studio-shortcuts"><button class="coach-studio-shortcut" data-coach-studio-route="programs"><strong>Programmi e schede</strong><span>Crea, duplica, archivia e modifica le settimane.</span></button><button class="coach-studio-shortcut" data-coach-studio-route="library"><strong>Libreria tecnica</strong><span>Cerca esercizi, dettagli e alternative.</span></button><button class="coach-studio-shortcut" data-coach-studio-route="questionnaires"><strong>Questionari e check-in</strong><span>Configura domande, visibilità e ricorrenza.</span></button><button class="coach-studio-shortcut" data-coach-studio-route="statistics"><strong>Statistiche</strong><span>Volumi, distribuzione e allenamenti salvati.</span></button></div>
+        <div class="coach-studio-grid"><article class="coach-studio-card"><span class="section-eyebrow">Prossimo passo</span><h3>${metrics.active ? "Controlla il programma attivo" : "Attiva un programma"}</h3><p>${escapeHtml(p.text)}</p><button class="ghost-button" data-coach-studio-route="programs">Vai ai programmi</button></article><article class="coach-studio-card"><span class="section-eyebrow">Integrità</span><h3>Schema ${DATA_SCHEMA_VERSION} · ${APP_BUILD}</h3><p>Sincronizzazione affidabile e backup restano collegati alla stessa base dati.</p><button class="ghost-button" data-coach-studio-route="diagnostics">Apri diagnostica</button></article></div>
+      </section>`;
+    }
+
+    function coachStudioProgramsHtml() {
+      const studio = coachStudioState();
+      const programs = window.BarbellDivaCoachStudio.filterPrograms(programRepository.getPrograms(), studio.filters);
+      const phases = Array.from(new Set(programRepository.getPrograms().map((item) => item.phase).filter(Boolean))).sort();
+      const folders = Array.from(new Set([...(studio.folders||[]),...programRepository.getPrograms().map((item)=>item.folder).filter(Boolean)])).sort();
+      const row = (program) => { const sheets=programRepository.getSheets(program.id); const exercises=sheets.reduce((sum,sheet)=>sum+programRepository.getExercises(program.id,sheet.id).length,0); return `<article class="coach-program-row"><div class="program-name"><strong>${escapeHtml(program.name)}</strong><small>${escapeHtml(program.phase || "Fase non indicata")}</small>${program.folder?`<span class="coach-folder-badge">${escapeHtml(program.folder)}</span>`:""}</div><span>${sheets.length} schede</span><span>${exercises} esercizi</span><span class="program-hide-tablet">${escapeHtml(program.durationWeeks || 1)} sett.</span><span class="program-hide-tablet"><span class="program-status ${program.status === "active" ? "active" : program.status === "archived" ? "archived" : ""}">${programStatusLabel(program.status)}</span></span><div class="coach-program-actions"><button class="gold-button" data-coach-studio-program="${escapeHtml(program.id)}">Modifica</button><button class="ghost-button" data-program-list-action="duplicate" data-program-id="${escapeHtml(program.id)}">Duplica</button><button class="danger-button" data-program-list-action="delete" data-program-id="${escapeHtml(program.id)}">Elimina</button></div></article>`; };
+      return `<section class="coach-studio-page">${coachStudioPageHead("Centro Coach","Programmi","Apri qualsiasi programma, nuovo o precedente, direttamente nello stesso editor.",`<div class="quick-actions"><button class="ghost-button" data-coach-folder-new>+ Cartella</button><button class="gold-button" data-program-action="new">+ Nuovo programma</button></div>`)}<div class="coach-program-toolbar"><input type="search" data-coach-program-filter="query" value="${escapeHtml(studio.filters.query)}" placeholder="Cerca programma"><select data-coach-program-filter="status"><option value="all">Tutti gli stati</option>${["active","draft","archived"].map((v)=>`<option value="${v}" ${studio.filters.status===v?"selected":""}>${programStatusLabel(v)}</option>`).join("")}</select><select data-coach-program-filter="phase"><option value="all">Tutte le fasi</option>${phases.map((v)=>`<option value="${escapeHtml(v)}" ${studio.filters.phase===v?"selected":""}>${escapeHtml(v)}</option>`).join("")}</select><select data-coach-program-filter="folder"><option value="all">Tutte le cartelle</option>${folders.map((v)=>`<option value="${escapeHtml(v)}" ${studio.filters.folder===v?"selected":""}>${escapeHtml(v)}</option>`).join("")}</select><select data-coach-program-filter="sort"><option value="updated">Più recenti</option><option value="name" ${studio.filters.sort==="name"?"selected":""}>Nome</option><option value="status" ${studio.filters.sort==="status"?"selected":""}>Stato</option></select></div><div class="coach-program-table">${programs.map(row).join("") || `<div class="coach-studio-card"><h3>Nessun risultato</h3><p>Modifica i filtri oppure crea un nuovo programma.</p></div>`}</div>${coachUiModalHtml()}</section>`;
+    }
+
+    function coachLiveVolumeRows(rows = coachBuilderRows()) {
+      const values = new Map();
+      rows.forEach((row)=>{ const muscle=String(row.group||row.som||"Altro").trim()||"Altro"; const sets=Math.max(0,Number(row.sets)||0); values.set(muscle,(values.get(muscle)||0)+sets); });
+      return Array.from(values,([muscle,sets])=>({muscle,sets})).sort((a,b)=>b.sets-a.sets);
+    }
+
+    function coachLiveVolumeBodyHtml(rows = coachBuilderRows()) {
+      const volume=coachLiveVolumeRows(rows); const max=Math.max(1,...volume.map((item)=>item.sets));
+      return volume.length?volume.map((item)=>`<div class="coach-live-volume-row"><span>${escapeHtml(item.muscle)}</span><div class="coach-live-volume-track"><div class="coach-live-volume-fill" style="width:${Math.max(4,item.sets/max*100)}%"></div></div><strong>${item.sets}</strong></div>`).join(""):`<span class="micro-copy">Aggiungi serie per vedere il volume.</span>`;
+    }
+
+    function coachLiveVolumeHtml() { return `<section class="coach-live-volume"><div class="row"><h3>Volume live</h3><span class="chip">senza salvare</span></div><div class="coach-live-volume-body">${coachLiveVolumeBodyHtml()}</div></section>`; }
+
+    function updateCoachLiveVolumeDom() { const target=document.querySelector(".coach-live-volume-body"); if(target) target.innerHTML=coachLiveVolumeBodyHtml(); }
+
+    function coachWeekPrescription(exercise, weekNumber) {
+      const base=exercise?.prescription||{};
+      const week=(exercise?.progression?.weeks||[]).find((item)=>Number(item.weekNumber||item.week)===Number(weekNumber))||{};
+      return {
+        sets:week.sets??base.sets??"", reps:formatReps(week.reps||base.reps)||"", restSeconds:week.restSeconds??week.rest?.seconds??base.rest?.seconds??"",
+        loadValue:week.prescribedLoad?.value??base.prescribedLoad?.value??"", loadUnit:week.prescribedLoad?.unit||base.prescribedLoad?.unit||"kg",
+        rpe:week.rpe?.label||base.rpe?.label||"", rir:week.rir?.label||base.rir?.label||"", tempo:week.tempo?.label||base.tempo?.label||"",
+        note:week.notes??exercise?.note??"", source:week.source||"base"
+      };
+    }
+
+    function coachProgramVolumeRows(program, weekNumber, sheetId="") {
+      const values=new Map();
+      const sheets=programRepository.getSheets(program.id).filter((sheet)=>!sheetId||sheet.id===sheetId);
+      sheets.forEach((sheet)=>programRepository.getExercises(program.id,sheet.id).forEach((exercise)=>{
+        const muscle=String(exercise.muscle||exercise.som||"Altro").trim()||"Altro";
+        const sets=Math.max(0,Number(coachWeekPrescription(exercise,weekNumber).sets)||0);
+        values.set(muscle,(values.get(muscle)||0)+sets);
+      }));
+      return Array.from(values,([muscle,sets])=>({muscle,sets})).sort((a,b)=>b.sets-a.sets);
+    }
+
+    function coachProgramVolumeHtml(program, weekNumber) {
+      const all=coachProgramVolumeRows(program,weekNumber); const max=Math.max(1,...all.map((item)=>item.sets));
+      const total=all.reduce((sum,item)=>sum+item.sets,0);
+      return `<section class="coach-board-volume"><div class="row"><div><span class="section-eyebrow">VOLUME DINAMICO</span><h3>Settimana ${weekNumber}</h3></div><strong>${total} serie totali</strong></div><div class="coach-volume-grid">${all.map((item)=>`<div class="coach-live-volume-row"><span>${escapeHtml(item.muscle)}</span><div class="coach-live-volume-track"><div class="coach-live-volume-fill" style="width:${Math.max(4,item.sets/max*100)}%"></div></div><strong>${item.sets}</strong></div>`).join("")||`<span class="micro-copy">Inserisci le serie per vedere il volume.</span>`}</div></section>`;
+    }
+
+    function coachStudioReferenceHtml() {
+      const studio=coachStudioState(); const programs=coachProgramsForUi(); let reference=programs.find((item)=>item.id===studio.referenceProgramId);
+      if(!reference) reference=programs.find((item)=>item.id!==studio.programId)||programs[0]; if(reference) studio.referenceProgramId=reference.id;
+      const sheets=reference?programRepository.getSheets(reference.id):[];
+      const weekCount=Math.max(1,Number(reference?.durationWeeks)||1); coachProgramUi.referenceWeek=Math.min(weekCount,Math.max(1,Number(coachProgramUi.referenceWeek)||1));
+      return `<section class="coach-reference-panel"><div class="row"><div><h3>Anteprima atleta</h3><p class="micro-copy">Sola lettura · nessuna modifica possibile</p></div><button class="mini-button" data-studio-panel-close="reference">Chiudi</button></div><div class="coach-reference-selectors"><select data-studio-reference-program>${programs.map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id===reference?.id?"selected":""}>${escapeHtml(item.name)}</option>`).join("")}</select><select data-studio-reference-week>${Array.from({length:weekCount},(_,i)=>`<option value="${i+1}" ${coachProgramUi.referenceWeek===i+1?"selected":""}>Settimana ${i+1}</option>`).join("")}</select></div>${sheets.map((sheet,index)=>`<details class="coach-reference-sheet" ${index===0?"open":""}><summary>${escapeHtml(sheet.code)} · ${escapeHtml(sheet.name||sheet.focus||"Scheda")}</summary>${programRepository.getExercises(reference.id,sheet.id).map((exercise)=>{const p=coachWeekPrescription(exercise,coachProgramUi.referenceWeek);return `<div class="coach-reference-exercise"><strong>${escapeHtml(displayExerciseName(exercise.name||exercise.exercise||"Esercizio"))}</strong><span>${escapeHtml(p.sets||"—")} × ${escapeHtml(p.reps||"—")}</span><small>${escapeHtml(exercise.muscle||exercise.som||"")} · recupero ${escapeHtml(p.restSeconds||"—")}s${p.note?` · ${escapeHtml(p.note)}`:""}</small></div>`}).join("")}</details>`).join("")}</section>`;
+    }
+
+    function coachInlineExerciseRowHtml(program,sheet,exercise,index,weekNumber) {
+      const p=coachWeekPrescription(exercise,weekNumber); const setType=exercise.metadata?.setType||"exercise";
+      const f=(field,value,type="text",extra="")=>`<input type="${type}" ${extra} data-inline-exercise-field="${field}" data-program-id="${escapeHtml(program.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" data-week-number="${weekNumber}" value="${escapeHtml(value??"")}">`;
+      return `<tr class="coach-inline-exercise ${coachProgramUi.highlightExerciseId===exercise.id?"just-progressed":""}" draggable="true" data-inline-row data-program-id="${escapeHtml(program.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}"><td data-label="Esercizio"><div class="coach-inline-name"><button class="drag-handle" title="Trascina per riordinare">⋮⋮</button><span class="program-exercise-letter">${String.fromCharCode(65+(index%26))}</span>${f("name",displayExerciseName(exercise.name||"Esercizio"))}</div><div class="coach-inline-sub">${f("muscle",exercise.muscle||exercise.som||"", "text", 'placeholder="Gruppo principale"')}${f("secondaryMuscles",(exercise.metadata?.secondaryMuscles||[]).join(", "),"text",'placeholder="Secondari"')}</div></td><td data-label="Tipo"><select data-inline-exercise-field="setType" data-program-id="${escapeHtml(program.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" data-week-number="${weekNumber}">${[["exercise","Esercizio"],["superset","Superserie"],["multiset","Multiserie"],["alternative","Alternativa"],["circuit","Circuito"]].map(([v,l])=>`<option value="${v}" ${setType===v?"selected":""}>${l}</option>`).join("")}</select></td><td data-label="Serie">${f("sets",p.sets,"number",'min="0"')}</td><td data-label="Rip/tempo">${f("reps",p.reps,"text",'placeholder="8-12"')}</td><td data-label="Rec">${f("restSeconds",p.restSeconds,"number",'min="0" step="5"')}</td><td data-label="Carico"><div class="coach-inline-load">${f("loadValue",p.loadValue,"number",'min="0" step="0.5"')}<select data-inline-exercise-field="loadUnit" data-program-id="${escapeHtml(program.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" data-week-number="${weekNumber}">${["kg","lb","%1RM"].map((u)=>`<option ${p.loadUnit===u?"selected":""}>${u}</option>`).join("")}</select></div></td><td data-label="RPE">${f("rpe",p.rpe)}</td><td data-label="RIR">${f("rir",p.rir)}</td><td data-label="TUT">${f("tempo",p.tempo,"text",'placeholder="3-1-X-0"')}</td><td data-label="Note">${f("note",p.note,"text",'placeholder="Note e istruzioni"')}</td><td data-label="Azioni"><div class="coach-inline-actions">${exercise.progression?.templateId?`<button class="progression-badge" data-progression-open="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Progressione attiva">↗ ${escapeHtml(progressionTemplateById(exercise.progression.templateId)?.name||"Progressione")}</button>`:`<button data-progression-open="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Crea progressione">↗</button>`}<button data-exercise-action="details" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Dettagli e video">ⓘ</button><button data-inline-replace="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Sostituisci">⇄</button><button data-exercise-action="duplicate" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Duplica">▣</button><button data-exercise-action="up" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Sposta su">↑</button><button data-exercise-action="down" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Sposta giù">↓</button><button data-inline-copy="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Copia">⧉</button><button class="danger-button" data-exercise-action="delete" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Elimina">⌫</button></div></td></tr>`;
+    }
+
+    function coachProgramBoardHtml(program) {
+      const studio=coachStudioState();
+      const sheets=programRepository.getSheets(program.id);
+      const weekCount=Math.max(1,Number(program.durationWeeks)||1);
+      const selectedWeek=Math.max(1,Math.min(weekCount,Number(studio.programWeek)||1));
+      studio.programWeek=selectedWeek;
+      const rows=(sheet)=>programRepository.getExercises(program.id,sheet.id).map((exercise,index)=>coachInlineExerciseRowHtml(program,sheet,exercise,index,selectedWeek)).join("");
+      return `<section class="coach-program-board"><div class="coach-program-assignment"><label>Programma<select id="coachProgramSelect">${coachProgramsForUi().map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id===program.id?"selected":""}>${escapeHtml(item.name)}</option>`).join("")}</select></label><div><span>Stato</span><strong class="program-status ${program.status==="active"?"active":""}">${programStatusLabel(program.status)}</strong></div><div><span>Durata</span><strong>${weekCount} settimane</strong></div><div><span>Editor</span><strong>unificato 19.6</strong></div></div><div class="coach-program-week-tabs">${Array.from({length:weekCount},(_,index)=>`<button class="${selectedWeek===index+1?"active":""}" data-program-week="${index+1}"><strong>Settimana ${index+1}</strong><span>${sheets.length} allenamenti</span></button>`).join("")}</div><div class="coach-program-board-head"><div><h2>Settimana ${selectedWeek}</h2><span>${sheets.length} ${sheets.length===1?"giorno":"giorni"} · modifica direttamente i campi</span></div><button class="ghost-button" data-sheet-action="new">+ Aggiungi allenamento</button></div><div class="coach-program-days">${sheets.map((sheet,index)=>`<article class="coach-program-day" data-board-sheet="${escapeHtml(sheet.id)}"><header><div><span>Giorno ${index+1}</span><h3>${escapeHtml(sheet.name||sheet.focus||`Scheda ${sheet.code}`)}</h3><small>${programRepository.getExercises(program.id,sheet.id).length} esercizi · ${escapeHtml(sheet.focus||sheet.split||"Allenamento")}</small></div><div class="quick-actions coach-day-actions"><button data-sheet-action="edit" data-sheet-id="${escapeHtml(sheet.id)}">✎ Nome e info</button><button data-sheet-action="duplicate" data-sheet-id="${escapeHtml(sheet.id)}">▣ Duplica</button><button data-sheet-action="left" data-sheet-id="${escapeHtml(sheet.id)}" title="Sposta prima">←</button><button data-sheet-action="right" data-sheet-id="${escapeHtml(sheet.id)}" title="Sposta dopo">→</button><button class="danger-button" data-sheet-action="delete" data-sheet-id="${escapeHtml(sheet.id)}">⌫</button><details class="coach-add-menu"><summary aria-label="Aggiungi elemento">+ Aggiungi</summary><div><button data-program-board-add-kind="exercise" data-sheet-id="${escapeHtml(sheet.id)}">Esercizio</button><button data-program-board-add-kind="superset" data-sheet-id="${escapeHtml(sheet.id)}">Superserie</button><button data-program-board-add-kind="multiset" data-sheet-id="${escapeHtml(sheet.id)}">Multiserie</button><button data-program-board-add-kind="alternative" data-sheet-id="${escapeHtml(sheet.id)}">Alternativa</button><button data-program-board-add-kind="circuit" data-sheet-id="${escapeHtml(sheet.id)}">Circuito</button>${coachProgramUi.clipboardExercise?`<button data-inline-paste data-sheet-id="${escapeHtml(sheet.id)}">Incolla esercizio copiato</button>`:""}</div></details></div></header><div class="coach-program-day-table"><table><thead><tr><th>Esercizio e muscoli</th><th>Tipo</th><th>Serie</th><th>Rip/tempo</th><th>Rec</th><th>Carico</th><th>RPE</th><th>RIR</th><th>TUT</th><th>Note</th><th>Azioni</th></tr></thead><tbody>${rows(sheet)||`<tr><td colspan="11" class="coach-empty-inline">Nessun esercizio. Usa “+ Aggiungi” per iniziare.</td></tr>`}</tbody></table></div></article>`).join("")}</div>${coachProgramVolumeHtml(program,selectedWeek)}<aside class="program-board-bot">${coachMascotHtml()}<div><strong>Diva Bot è qui ✨</strong><span>Controllo la settimana ${selectedWeek}; i suoni restano spenti finché non li attivi.</span></div></aside></section>`;
+    }
+
+    function coachStudioProgramEditorHtml() {
+      const studio = coachStudioState();
+      if (studio.programId) coachProgramUi.programId = studio.programId;
+      const selection = ensureCoachProgramSelection();
+      if (!selection.program) return coachStudioProgramsHtml();
+      studio.programId = selection.program.id;
+      studio.editorView="weekly"; const sideOpen=studio.referenceOpen||studio.aiOpen;
+      const editorBody=`<div class="coach-editor-layout unified ${studio.referenceOpen?"reference-open":""} ${studio.aiOpen?"ai-open":""}"><div>${coachProgramBoardHtml(selection.program)}</div>${sideOpen?`<aside class="coach-editor-side">${studio.referenceOpen?coachStudioReferenceHtml():""}${studio.aiOpen?coachAiPanelHtml():""}</aside>`:""}</div>`;
+      return `<section class="coach-studio-page coach-editor coach-editor-weekly">${coachStudioPageHead("Editor programma",selection.program.name,"Un’unica tavola settimanale: modifica, progressioni e controlli restano nello stesso punto.",`<button class="ghost-button" data-coach-studio-route="programs">← Programmi</button>`)}<div class="coach-editor-toolbar"><div class="coach-editor-save-state"><span class="save-dot"></span><strong data-coach-save-label>${coachProgramUi.saveStatus==="saving"?"Salvataggio…":"Salvato"}</strong></div><div class="quick-actions"><button class="gold-button" data-program-action="save">Salva</button><button class="ghost-button" data-program-list-action="save-as" data-program-id="${escapeHtml(selection.program.id)}">Salva come</button><button class="ghost-button" data-program-list-action="duplicate" data-program-id="${escapeHtml(selection.program.id)}">Duplica</button><button class="ghost-button" data-program-action="edit">Informazioni</button><button class="ghost-button ${studio.referenceOpen?"active":""}" data-studio-panel-toggle="reference">Anteprima atleta</button><button class="gold-button ${studio.aiOpen?"active":""}" data-studio-panel-toggle="ai">${coachMascotHtml()} Coach AI</button></div></div>${editorBody}${coachUiModalHtml()}</section>`;
+    }
+
+    function coachStudioProgressionsHtml() {
+      return `<section class="coach-studio-page">${coachStudioPageHead("Regole riutilizzabili","Template progressione","Scegli una logica e applicala dal singolo esercizio nell’editor, senza creare un secondo workflow.")}<div class="coach-progression-template-grid">${progressionTemplates().map((template)=>`<article class="coach-studio-card"><span class="section-eyebrow">${escapeHtml(template.category||"template")}</span><h3>${escapeHtml(template.name)}</h3><p>${escapeHtml(template.description||"")}</p><div class="row"><span class="chip">${escapeHtml(template.suitableFor||"tutti")}</span><button class="ghost-button" data-coach-studio-route="programs">Scegli programma</button></div></article>`).join("")}</div></section>`;
+    }
+
+    function coachStudioQuestionnairesHtml() {
+      const list = state.coach.questionnaires || [];
+      return `<section class="coach-studio-page">${coachStudioPageHead("Raccolta feedback","Questionari e check-in","Crea moduli, imposta visibilità e ricorrenza.",`<button class="gold-button" data-questionnaire-new>+ Nuovo questionario</button>`)}<div class="coach-question-list">${list.map((item)=>`<article class="coach-studio-card coach-question-card"><div><h3>${escapeHtml(item.title)}</h3><span class="micro-copy">${escapeHtml(item.type)} · ${item.questions?.length || 0} domande · ${escapeHtml(item.recurrence || "sempre")}</span></div><div class="quick-actions"><span class="chip">${item.active ? "Attivo" : "In pausa"}</span><button class="ghost-button" data-questionnaire-open="${escapeHtml(item.id)}">Modifica</button></div></article>`).join("")}</div></section>`;
+    }
+
+    function coachStudioQuestionnaireEditorHtml() {
+      const studio = coachStudioState();
+      const item = (state.coach.questionnaires || []).find((entry)=>entry.id===studio.questionnaireId);
+      if (!item) return coachStudioQuestionnairesHtml();
+      return `<section class="coach-studio-page">${coachStudioPageHead("Editor questionario",item.title,"Le modifiche vengono salvate nello stesso backup dell’app.",`<button class="ghost-button" data-coach-studio-route="questionnaires">← Elenco</button>`)}<div class="coach-studio-card coach-question-editor" data-questionnaire-editor="${escapeHtml(item.id)}"><div class="coach-question-fields"><label>Titolo<input data-questionnaire-field="title" value="${escapeHtml(item.title)}"></label><label>Tipologia<select data-questionnaire-field="type"><option value="check-in" ${item.type==="check-in"?"selected":""}>Check-in</option><option value="feedback" ${item.type==="feedback"?"selected":""}>Feedback</option><option value="assessment" ${item.type==="assessment"?"selected":""}>Valutazione</option></select></label><label>Ricorrenza<select data-questionnaire-field="recurrence">${[["always","Sempre"],["weekly","Settimanale"],["monthly","Mensile"],["program-end","Fine programma"]].map(([v,l])=>`<option value="${v}" ${item.recurrence===v?"selected":""}>${l}</option>`).join("")}</select></label><label>Visibilità<select data-questionnaire-field="visibility"><option value="all" ${item.visibility==="all"?"selected":""}>Tutti</option><option value="assigned" ${item.visibility==="assigned"?"selected":""}>Solo assegnati</option></select></label></div><label><input type="checkbox" data-questionnaire-field="active" ${item.active?"checked":""}> Questionario attivo</label><div class="coach-question-list">${(item.questions||[]).map((q,index)=>`<div class="coach-question-item"><label>Domanda<input data-question-label="${index}" value="${escapeHtml(q.label)}"></label><label>Risposta<select data-question-kind="${index}">${["text","number","choice","photos","scale"].map((v)=>`<option value="${v}" ${q.kind===v?"selected":""}>${v}</option>`).join("")}</select></label><button class="danger-button" data-question-delete="${index}">Elimina</button></div>`).join("")}</div><div class="quick-actions"><button class="ghost-button" data-question-add>+ Domanda</button><button class="gold-button" data-questionnaire-save>Salva questionario</button></div></div></section>`;
+    }
+
+    function coachStudioStatisticsHtml() {
+      const stats = window.BarbellDivaCoachStudio.statistics(state.programs,state.training.sessions);
+      const max = Math.max(1,...stats.byProgram.map((item)=>item.exercises));
+      return `<section class="coach-studio-page">${coachStudioPageHead("Analisi","Statistiche Coach","Una lettura sintetica dei dati già presenti nel programma e nel Logbook.")}<div class="coach-studio-kpis"><article class="coach-studio-kpi"><span>Workout completati</span><strong>${stats.completed}</strong><small>nel Logbook</small></article><article class="coach-studio-kpi"><span>Volume registrato</span><strong>${Math.round(stats.totalVolume)}</strong><small>kg complessivi</small></article><article class="coach-studio-kpi"><span>Esercizi programmati</span><strong>${stats.exercises}</strong><small>su ${stats.sheets} schede</small></article><article class="coach-studio-kpi"><span>Programmi attivi</span><strong>${stats.active}</strong><small>${stats.archived} archiviati</small></article></div><article class="coach-studio-card"><h3>Distribuzione esercizi per programma</h3><div class="coach-studio-stat-bars">${stats.byProgram.map((item)=>`<div class="coach-studio-stat-row"><strong>${escapeHtml(item.name)}</strong><div class="coach-studio-stat-track"><div class="coach-studio-stat-fill" style="width:${Math.max(3,item.exercises/max*100)}%"></div></div><span>${item.exercises}</span></div>`).join("")}</div></article>${coachVolumePanelHtml()}</section>`;
+    }
+
+    function coachStudioDiagnosticsHtml() {
+      const metrics=window.BarbellDivaCoachStudio.programMetrics(state.programs); const history=readBackupHistory();
+      return `<section class="coach-studio-page">${coachStudioPageHead("Controllo tecnico","Diagnostica","Stato locale, cloud, cache e integrità dei riferimenti.")}<div class="coach-diagnostic-grid"><div class="coach-diagnostic-item"><strong>${APP_BUILD}</strong><span>Build applicazione</span></div><div class="coach-diagnostic-item"><strong>Schema ${DATA_SCHEMA_VERSION}</strong><span>Versione dati</span></div><div class="coach-diagnostic-item"><strong>${navigator.onLine?"Online":"Offline"}</strong><span>Rete dispositivo</span></div><div class="coach-diagnostic-item"><strong>${state.profile.account?.syncReady?"Cloud pronto":"Solo locale"}</strong><span>Sincronizzazione</span></div><div class="coach-diagnostic-item"><strong>${metrics.programs}/${metrics.sheets}/${metrics.exercises}</strong><span>Programmi / schede / esercizi</span></div><div class="coach-diagnostic-item"><strong>${history.length}</strong><span>Backup locali</span></div></div>${reliableSyncPanelHtml()}${dataProtectionHtml()}</section>`;
+    }
+
+    function coachStudioSettingsHtml() {
+      const coach=coachAiState();
+      return `<section class="coach-studio-page">${coachStudioPageHead("Preferenze","Impostazioni Coach","Controlla l’esperienza Coach senza modificare le impostazioni nutrizionali.")}<article class="coach-studio-card"><h3>Coach AI</h3><div class="coach-settings-grid"><label><input type="checkbox" data-ai-toggle ${coach.enabled?"checked":""}> Suggerimenti attivi</label><label>Layout vista atleta<select data-studio-setting="athleteLayout">${["compact","wide","bottom"].map((v)=>`<option value="${v}" ${state.coach.athleteLayout===v?"selected":""}>${v}</option>`).join("")}</select></label></div></article>${divaBotSettingsHtml()}<article class="coach-studio-card"><h3>Accessibilità e interfaccia</h3>${experienceSettingsHtml()}</article>${accountCardHtml()}</section>`;
+    }
+
+    function coachStudioContentHtml() {
+      const route=coachStudioState().route;
+      if(route==="programs") return coachStudioProgramsHtml();
+      if(route==="program") return coachStudioProgramEditorHtml();
+      if(route==="library") return `<section class="coach-studio-page">${coachStudioPageHead("Catalogo tecnico","Libreria esercizi","Ricerca, filtri e dettagli tecnici nella libreria già esistente.")}${exerciseLabHtml()}${coachUiModalHtml()}</section>`;
+      if(route==="progressions") return coachStudioProgressionsHtml();
+      if(route==="ai") return `<section class="coach-studio-page">${coachStudioPageHead("Assistente","Coach AI","Suggerimenti spiegabili: proponi, confronta e applica solo ciò che approvi.")}${coachAiPanelHtml()}${coachUiModalHtml()}</section>`;
+      if(route==="questionnaires") return coachStudioQuestionnairesHtml();
+      if(route==="questionnaire") return coachStudioQuestionnaireEditorHtml();
+      if(route==="statistics") return coachStudioStatisticsHtml();
+      if(route==="archive") return `<section class="coach-studio-page">${coachStudioPageHead("Storico protetto","Archivio e versioni","Questa funzione avanzata resta nella protezione dati, non nel percorso di lavoro.")}${dataProtectionHtml()}</section>`;
+      if(route==="diagnostics") return coachStudioDiagnosticsHtml();
+      if(route==="settings") return coachStudioSettingsHtml();
+      if(route==="legacy" || route==="dashboard") return coachStudioProgramsHtml();
+      return coachStudioProgramsHtml();
+    }
+
+    function coachHtml() { return coachStudioShellHtml(coachStudioContentHtml()); }
 
     function coachCommandHtml() {
       const athleteLayout = state.coach.athleteLayout || "compact";
@@ -10662,6 +11027,42 @@
       coachProgramUi.selectedExercises.clear();
     }
 
+    function inlineExercisePatch(exercise, field, value, weekNumber) {
+      if (field === "name") return { name:String(value||"").trim() || "Esercizio" };
+      if (field === "muscle") return { muscle:String(value||"").trim() || "Custom", som:String(value||"").trim() || "Custom" };
+      if (field === "secondaryMuscles") return { metadata:{ ...(exercise.metadata||{}), secondaryMuscles:String(value||"").split(",").map((item)=>item.trim()).filter(Boolean) } };
+      if (field === "setType") return { metadata:{ ...(exercise.metadata||{}), setType:value||"exercise" } };
+      const weeks=(exercise.progression?.weeks||[]).map((item)=>clone(item));
+      let week=weeks.find((item)=>Number(item.weekNumber||item.week)===Number(weekNumber));
+      if(!week){ week=parseWeekPrescription({},Number(weekNumber)||1); weeks.push(week); }
+      if(field==="sets") week.sets=optionalNumber(value);
+      if(field==="reps") week.reps=parseReps(value);
+      if(field==="restSeconds"){week.restSeconds=optionalNumber(value);week.rest=parseRest({seconds:optionalNumber(value)});}
+      if(field==="loadValue") week.prescribedLoad=parsePrescribedLoad({value:optionalNumber(value),unit:week.prescribedLoad?.unit||"kg"});
+      if(field==="loadUnit") week.prescribedLoad=parsePrescribedLoad({value:week.prescribedLoad?.value,unit:value||"kg"});
+      if(field==="rpe") week.rpe=parseRir(value);
+      if(field==="rir") week.rir=parseRir(value);
+      if(field==="tempo") week.tempo=parseTempo(value);
+      if(field==="note") week.notes=String(value||"");
+      week.source="manual"; week.weekNumber=Number(weekNumber)||1;
+      const manualWeeks=Array.from(new Set([...(exercise.progression?.manualWeeks||[]).map(Number),week.weekNumber])).sort((a,b)=>a-b);
+      return { progression:{ ...(exercise.progression||{}), weeks:weeks.sort((a,b)=>Number(a.weekNumber||a.week)-Number(b.weekNumber||b.week)), manualWeeks } };
+    }
+
+    function updateInlineExerciseField(input, immediate=false) {
+      const programId=input.dataset.programId, sheetId=input.dataset.sheetId, exerciseId=input.dataset.exerciseId;
+      const exercise=programRepository.getExerciseById(programId,sheetId,exerciseId); if(!exercise)return false;
+      const patch=inlineExercisePatch(exercise,input.dataset.inlineExerciseField,input.value,Number(input.dataset.weekNumber)||1);
+      const result=programRepository.updateExercise(programId,sheetId,exerciseId,patch,{save:false,forceLocked:true});
+      if(!result.ok){updateCoachSaveIndicator("error");return false;}
+      updateCoachSaveIndicator("saving"); clearTimeout(coachProgramUi.inlineSaveTimer);
+      const commit=()=>{saveState({immediate:true});updateCoachSaveIndicator("saved");};
+      if(immediate)commit(); else coachProgramUi.inlineSaveTimer=setTimeout(commit,650);
+      const program=programRepository.getProgramById(programId); const volume=document.querySelector(".coach-board-volume");
+      if(program&&volume) volume.outerHTML=coachProgramVolumeHtml(program,Number(input.dataset.weekNumber)||1);
+      return true;
+    }
+
     function programStatusLabel(status) {
       return status === "active" ? "Attivo" : status === "archived" ? "Archiviato" : "Bozza";
     }
@@ -10834,6 +11235,15 @@
       saveState();
     }
 
+    function playDivaBotSound(kind="soft") {
+      if(!divaBotPreferences().sounds)return;
+      try {
+        const AudioContextClass=window.AudioContext||window.webkitAudioContext;if(!AudioContextClass)return;
+        const ctx=new AudioContextClass(),gain=ctx.createGain(),osc=ctx.createOscillator();
+        osc.type="sine";osc.frequency.value=kind==="celebrate"?740:520;gain.gain.setValueAtTime(0.0001,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.035,ctx.currentTime+0.015);gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.16);osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+0.17);osc.onended=()=>ctx.close();
+      } catch(error) { /* Il suono resta opzionale: nessun errore interrompe il flusso. */ }
+    }
+
     function divaBotSessionKey(context = currentTrainingContext()) {
       return `${context?.date || todayInput()}|${context?.session?.code || ""}`;
     }
@@ -10897,7 +11307,7 @@
         divaBotSession.recentMessageIds = [...divaBotSession.recentMessageIds, message.id].slice(-12);
         coachMascotController.recentMessages = divaBotSession.recentMessageIds;
       }
-      if (eventName === "personal_record") { showPremiumPrFeedback(context, preferences); triggerHaptic("pr"); }
+      if (eventName === "personal_record") { showPremiumPrFeedback(context, preferences); triggerHaptic("pr"); playDivaBotSound("celebrate"); }
       divaBotSession.lastEventAt[eventName] = Date.now();
       if (config.once) divaBotSession.shownEvents.add(eventName);
       if (context.onceKey) divaBotSession.shownEvents.add(`${eventName}:${context.onceKey}`);
@@ -11177,7 +11587,7 @@
       document.querySelector("[data-diva-bot-personality]")?.addEventListener("change", (event) => { updateDivaBotPreference("personality", event.target.value); showToast("Personalità Diva Bot aggiornata."); });
       document.querySelector("[data-diva-bot-bubbles]")?.addEventListener("change", (event) => { updateDivaBotPreference("bubbles", event.target.checked); document.getElementById("workoutMascotBubble")?.setAttribute("hidden", ""); });
       document.querySelector("[data-diva-bot-celebrations]")?.addEventListener("change", (event) => { updateDivaBotPreference("celebrations", event.target.checked); });
-      document.querySelector("[data-diva-bot-sounds]")?.addEventListener("change", (event) => { updateDivaBotPreference("sounds", event.target.checked); showToast("Preferenza suoni salvata: nessun audio aggiuntivo installato."); });
+      document.querySelector("[data-diva-bot-sounds]")?.addEventListener("change", (event) => { updateDivaBotPreference("sounds", event.target.checked); if(event.target.checked)playDivaBotSound("soft");showToast(event.target.checked?"Suoni Diva Bot attivati.":"Suoni Diva Bot disattivati."); });
     }
 
     function dashboardCoachSignal() {
@@ -11360,11 +11770,11 @@
       const muscles = [...new Set(all.flatMap((item) => item.primaryMuscles || []).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"it"));
       const pageSize = 48; const visible = profiles.slice(0, Math.max(pageSize, Number(coachProgramUi.labPage || 1) * pageSize));
       const option = (value,label,current) => `<option value="${escapeHtml(value)}" ${current === value ? "selected" : ""}>${escapeHtml(label)}</option>`;
-      return `<section class="exercise-lab coach-section">
-        <div class="exercise-lab-hero"><div><span class="section-eyebrow">Exercise Lab</span><h2>Libreria tecnica esercizi</h2><p>Profili qualitativi, biomeccanica, programmazione e analisi Coach AI. Le stime non sostituiscono una valutazione medica.</p></div><button type="button" class="gold-button" data-lab-create>Crea esercizio custom</button></div>
+      return `<section class="exercise-lab coach-section coach-library-list-view">
+        <div class="exercise-lab-hero"><div><span class="section-eyebrow">Coach Studio</span><h2>Libreria esercizi</h2><p>Cerca, consulta e modifica gli esercizi mantenendo tutti i profili tecnici esistenti.</p></div><div class="exercise-lab-hero-actions">${coachMascotHtml()}<button type="button" class="gold-button" data-lab-create>+ Aggiungi esercizio</button></div></div>
         <div class="exercise-lab-stats"><span><b>${counts.total}</b> disponibili</span><span><b>${counts.complete}</b> profili completi</span><span><b>${counts.partial}</b> profili parziali</span><span><b>${counts.basic}</b> da completare</span></div>
-        <div class="exercise-lab-filters">
-          <label class="lab-search">Cerca<input type="search" data-lab-query value="${escapeHtml(coachProgramUi.labQuery || "")}" placeholder="Nome, muscolo, attrezzatura"></label>
+        <div class="coach-library-searchbar"><label class="lab-search"><input type="search" data-lab-query value="${escapeHtml(coachProgramUi.labQuery || "")}" placeholder="Cerca esercizio: squat, leg curl, alzate..."></label><button type="button" class="ghost-button" data-lab-filter-toggle>⚲ Filtri</button></div>
+        <div class="exercise-lab-filters ${coachProgramUi.labFiltersOpen?"open":""}">
           <label>Muscolo<select data-lab-filter="muscle"><option value="">Tutti</option>${muscles.map((v)=>option(v,v,filters.muscle)).join("")}</select></label>
           <label>Attrezzatura<select data-lab-filter="equipment"><option value="">Tutte</option>${equipments.map((v)=>option(v,v,filters.equipment)).join("")}</select></label>
           <label>Tipo<select data-lab-filter="type"><option value="">Tutti</option>${option("compound","Multiarticolare",filters.type)}${option("isolation","Monoarticolare",filters.type)}</select></label>
@@ -11377,8 +11787,8 @@
           <label>Origine<select data-lab-filter="origin"><option value="">Tutti</option>${option("system","Sistema/importati",filters.origin)}${option("custom","Custom",filters.origin)}</select></label>
           <button type="button" class="ghost-button" data-lab-reset>Reset filtri</button>
         </div>
-        <div class="exercise-lab-result-row"><strong>${profiles.length} risultati</strong><span>Dettaglio caricato solo all’apertura per mantenere l’app veloce.</span></div>
-        <div class="exercise-lab-grid">${visible.map((item) => { const rating=contextualExerciseRating({name:item.name,biomechanics:{...biomechanicsForExercise(item.name),stability:item.ratings.stability,systemicFatigue:item.ratings.systemicFatigue,progressionEase:item.ratings.progressionEase,technicalDifficulty:item.ratings.technicalDifficulty}}, {goal:item.primaryMuscles[0]}); const stimulus=item.stimulusProfile.lengthened>=item.stimulusProfile.shortened?"Allungamento":"Accorciamento"; return `<article class="exercise-lab-card ${item.isCustom ? "custom" : ""}"><div class="row"><span class="lab-origin">${item.isCustom ? "CUSTOM" : item.origin === "program" ? "IN USO" : "SISTEMA"}</span><span class="lab-confidence ${item.aiAnalysis.confidence}">${item.aiAnalysis.confidence === "high" ? "Alta" : item.aiAnalysis.confidence === "medium" ? "Media" : "Bassa"}</span></div><h3>${escapeHtml(displayExerciseName(item.name))}</h3><p>${escapeHtml(item.primaryMuscles.join(", ") || "Muscolo da definire")} · ${escapeHtml(item.equipment)}</p><div class="lab-badges"><span>${item.compound ? "Multiarticolare" : "Monoarticolare"}</span><span>${escapeHtml(biomechanicsResistanceLabel(item.resistanceProfile.type))}</span><span>${stimulus}</span><b>${rating.tier} ${rating.score || "—"}/5</b></div><button type="button" class="ghost-button" data-lab-open="${escapeHtml(item.id)}">Apri profilo tecnico</button></article>`; }).join("") || `<div class="coach-ai-empty">Nessun esercizio corrisponde ai filtri.</div>`}</div>
+        <div class="exercise-lab-result-row"><strong>${profiles.length} risultati</strong><span>Apri un esercizio per il profilo tecnico completo.</span></div>
+        <div class="exercise-lab-grid">${visible.map((item) => `<article class="exercise-lab-card ${item.isCustom ? "custom" : ""}"><div class="coach-library-thumb"><span>▶</span><b>${escapeHtml(displayExerciseName(item.name).slice(0,2).toUpperCase())}</b></div><div class="coach-library-copy"><h3>${escapeHtml(displayExerciseName(item.name))}</h3><p>${escapeHtml(item.primaryMuscles.join(", ") || "Muscolo da definire")} · ${escapeHtml(item.equipment)}</p><div class="lab-badges"><span>${item.compound ? "Multiarticolare" : "Monoarticolare"}</span><span>${item.isCustom ? "Custom" : "Libreria"}</span></div></div><button type="button" class="coach-library-arrow" data-lab-open="${escapeHtml(item.id)}" aria-label="Apri ${escapeHtml(displayExerciseName(item.name))}">→</button></article>`).join("") || `<div class="coach-ai-empty">Nessun esercizio corrisponde ai filtri.</div>`}</div>
         ${visible.length < profiles.length ? `<button type="button" class="secondary-button lab-load-more" data-lab-more>Mostra altri</button>` : ""}
       </section>`;
     }
@@ -11439,9 +11849,15 @@
           : "Eliminare definitivamente questo esercizio custom?";
         return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>Elimina dalla Libreria</h3><p style="margin-top:12px">${escapeHtml(message)}</p>${profile ? `<p class="micro-copy">${escapeHtml(profile.name)}</p>` : ""}<div class="coach-modal-actions">${close}<button class="danger-button" data-coach-modal-save>Elimina dalla Libreria</button></div></section></div>`;
       }
-      if (type === "program-new" || type === "program-edit") {
-        const item = type === "program-edit" ? program : { name: "", phase: "", durationWeeks: 8, status: "draft" };
-        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${type === "program-new" ? "Nuovo programma" : "Modifica programma"}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(item?.name || "")}" placeholder="Nome programma"></label><label>Fase<input id="programModalPhase" value="${escapeHtml(item?.phase || "")}" placeholder="Volume, intensificazione..."></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Stato<select id="programModalStatus"><option value="draft" ${item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div><div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>Salva programma</button></div></section></div>`;
+      if (type === "folder-new") {
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>Nuova cartella</h3><label style="margin-top:12px">Nome cartella<input id="coachFolderName" placeholder="Es. Clienti attivi"></label><div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>Crea cartella</button></div></section></div>`;
+      }
+      if (type === "program-new" || type === "program-edit" || type === "program-save-as") {
+        const item = type === "program-new" ? { name: "", phase: "", durationWeeks: 8, status: "draft", folder:"" } : program;
+        const folders=Array.from(new Set([...(coachStudioState().folders||[]),...programRepository.getPrograms().map((entry)=>entry.folder).filter(Boolean)])).sort();
+        const heading=type === "program-new" ? "Nuovo programma" : type === "program-save-as" ? "Salva come nuovo programma" : "Modifica programma";
+        const defaultName=type === "program-save-as" ? `${item?.name||"Programma"} · copia` : item?.name||"";
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${heading}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(defaultName)}" placeholder="Nome programma"></label><label>Fase<input id="programModalPhase" value="${escapeHtml(item?.phase || "")}" placeholder="Volume, intensificazione..."></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Cartella<select id="programModalFolder"><option value="">Nessuna cartella</option>${folders.map((folder)=>`<option value="${escapeHtml(folder)}" ${item?.folder===folder?"selected":""}>${escapeHtml(folder)}</option>`).join("")}</select></label><label>Stato<select id="programModalStatus"><option value="draft" ${type==="program-save-as" || item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${type!=="program-save-as" && item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${type!=="program-save-as" && item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div><div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type==="program-save-as"?"Crea copia":"Salva programma"}</button></div></section></div>`;
       }
       if (type === "sheet-new" || type === "sheet-edit" || type === "sheet-rename") {
         const item = type === "sheet-new" ? { name: "", code: suggestedSheetCode(sheets), focus: "", split: "", note: "", color: "" } : targetSheet;
@@ -11461,7 +11877,7 @@
       if (type === "exercise-library") {
         const query = String(coachProgramUi.libraryQuery || "").toLowerCase();
         const items = technicalExerciseLibrary().filter((item) => (!query || normalizeExerciseName(`${item.name} ${item.primaryMuscles.join(" ")} ${item.equipment}`).includes(normalizeExerciseName(query))) && (!coachProgramUi.libraryMuscle || item.primaryMuscles.some((muscle) => normalizeExerciseName(muscle).includes(normalizeExerciseName(coachProgramUi.libraryMuscle)))));
-        return `<div class="coach-modal-backdrop"><section class="coach-modal phase4-library-modal"><div class="row"><div><h3>Aggiungi esercizio</h3><p class="micro-copy">Preview tecnica e accesso al profilo completo.</p></div>${close}</div><div class="phase4-library-filters"><input id="exerciseLibrarySearch" value="${escapeHtml(coachProgramUi.libraryQuery)}" placeholder="Cerca esercizio"><select id="exerciseLibraryMuscle"><option value="">Tutti i gruppi</option>${coachExerciseGroups().map((group) => `<option ${coachProgramUi.libraryMuscle === group ? "selected" : ""}>${escapeHtml(group)}</option>`).join("")}</select></div><div class="phase4-library-list technical-picker-list">${items.slice(0, 100).map((item) => `<article><div><strong>${escapeHtml(displayExerciseName(item.name))}</strong><span>${escapeHtml(item.primaryMuscles.join(", ") || "Custom")} · ${escapeHtml(item.equipment)} · ${escapeHtml(biomechanicsResistanceLabel(item.resistanceProfile.type))}</span><small>Stabilità ${item.ratings.stability || "—"}/5 · Fatica ${item.ratings.systemicFatigue || "—"}/5 · ${item.stimulusProfile.lengthened >= item.stimulusProfile.shortened ? "allungamento" : "accorciamento"}</small></div><div><button type="button" class="ghost-button" data-lab-open="${escapeHtml(item.id)}">Profilo</button><button type="button" class="gold-button" data-library-profile="${escapeHtml(item.id)}">Aggiungi</button></div></article>`).join("") || '<p class="micro-copy">Nessun risultato.</p>'}</div><button class="ghost-button" type="button" data-exercise-custom>+ Crea esercizio custom</button></section></div>`;
+        return `<div class="coach-modal-backdrop"><section class="coach-modal phase4-library-modal coach-library-picker"><div class="row"><div><h3>Aggiungi esercizio</h3><p class="micro-copy">Scegli dalla Libreria Barbell Diva.</p></div>${close}</div><div class="phase4-library-filters"><input id="exerciseLibrarySearch" value="${escapeHtml(coachProgramUi.libraryQuery)}" placeholder="Cerca esercizio: squat, leg curl, alzate..."><select id="exerciseLibraryMuscle"><option value="">Tutti i gruppi</option>${coachExerciseGroups().map((group) => `<option ${coachProgramUi.libraryMuscle === group ? "selected" : ""}>${escapeHtml(group)}</option>`).join("")}</select></div><div class="phase4-library-list technical-picker-list">${items.slice(0, 100).map((item) => `<article><div class="coach-library-thumb"><span>▶</span><b>${escapeHtml(displayExerciseName(item.name).slice(0,2).toUpperCase())}</b></div><div><strong>${escapeHtml(displayExerciseName(item.name))}</strong><span>${escapeHtml(item.primaryMuscles.join(", ") || "Custom")} · ${escapeHtml(item.equipment)}</span></div><div><button type="button" class="ghost-button" data-lab-open="${escapeHtml(item.id)}" aria-label="Profilo tecnico">ⓘ</button><button type="button" class="coach-library-arrow" data-library-profile="${escapeHtml(item.id)}" aria-label="Aggiungi">→</button></div></article>`).join("") || '<p class="micro-copy">Nessun risultato.</p>'}</div><button class="ghost-button" type="button" data-exercise-custom>+ Crea esercizio custom</button></section></div>`;
       }
       if (type === "biomechanics-compare") {
         const selected = (coachProgramUi.modalData.exerciseIds || []).map((id) => programRepository.getExerciseById(program?.id, sheet?.id, id)).filter(Boolean);
@@ -11479,7 +11895,7 @@
         const progression = ex?.progression || {};
         const templateId = coachProgramUi.modalData.templateId || progression.templateId || "maintenance";
         const weeks = coachProgramUi.modalData.weeks || progression.weeks || generateProgressionWeeks(ex, templateId, duration);
-        return `<div class="coach-modal-backdrop"><section class="coach-modal progression-modal"><h3>Progressione · ${escapeHtml(ex?.name || "Esercizio")}</h3><div class="form-grid"><label>Template<select id="progressionTemplateId">${progressionTemplates().map((t) => `<option value="${escapeHtml(t.id)}" ${t.id === templateId ? "selected" : ""}>${escapeHtml(t.name)}</option>`).join("")}</select></label><label>Settimane<input id="progressionDuration" type="number" min="1" value="${duration}"></label><label>Modalità<select id="progressionApplyMode"><option value="replace">Sostituisci automatiche</option><option value="empty-only">Solo settimane vuote</option></select></label></div><div class="progression-scroll"><table class="progression-table"><thead><tr><th>Settimana</th><th>Serie</th><th>Ripetizioni</th><th>RIR</th><th>RPE</th><th>Carico</th><th>Recupero</th><th>Tipo</th><th>Note</th></tr></thead><tbody>${weeks.map((w, i) => `<tr><td><strong>${i + 1}</strong>${w.source === "manual" ? '<span class="phase4-badge">manuale</span>' : '<span class="phase4-badge">auto</span>'}</td><td><input data-progression-week="${i}" data-progression-field="sets" type="number" min="0" value="${escapeHtml(w.sets ?? "")}"></td><td><input data-progression-week="${i}" data-progression-field="reps" value="${escapeHtml(formatReps(w.reps))}"></td><td><input data-progression-week="${i}" data-progression-field="rir" value="${escapeHtml(w.rir?.label || "")}"></td><td><input data-progression-week="${i}" data-progression-field="rpe" value="${escapeHtml(w.rpe?.label || "")}"></td><td><input data-progression-week="${i}" data-progression-field="load" type="number" min="0" value="${escapeHtml(w.prescribedLoad?.value ?? "")}"></td><td><input data-progression-week="${i}" data-progression-field="rest" type="number" min="0" value="${escapeHtml(w.restSeconds ?? "")}"></td><td><select data-progression-week="${i}" data-progression-field="type">${["normal","accumulation","intensification","deload","test","recovery","custom"].map((v) => `<option value="${v}" ${w.type === v ? "selected" : ""}>${v}</option>`).join("")}</select></td><td><input data-progression-week="${i}" data-progression-field="notes" value="${escapeHtml(w.notes || "")}"></td></tr>`).join("")}</tbody></table></div><div class="coach-modal-actions">${close}<button type="button" class="ghost-button" data-progression-generate>Genera anteprima</button><button type="button" class="gold-button" data-coach-modal-save>Applica progressione</button></div></section></div>`;
+        return `<div class="coach-modal-backdrop"><section class="coach-modal progression-modal"><span class="section-eyebrow">${escapeHtml(program?.name||"Programma")} · ${escapeHtml(sheet?.name||sheet?.code||"Giornata")}</span><h3>Progressione · ${escapeHtml(ex?.name || "Esercizio")}</h3><p class="micro-copy">Destinazione: settimane 1-${duration}. Genera l’anteprima, controlla ogni valore e poi applica.</p><div class="form-grid"><label>Template<select id="progressionTemplateId">${progressionTemplates().map((t) => `<option value="${escapeHtml(t.id)}" ${t.id === templateId ? "selected" : ""}>${escapeHtml(t.name)}</option>`).join("")}</select></label><label>Settimane<input id="progressionDuration" type="number" min="1" value="${duration}"></label><label>Conflitti con modifiche manuali<select id="progressionApplyMode"><option value="empty-only">Mantieni le settimane manuali</option><option value="replace">Sostituisci anche i valori manuali</option></select></label></div><div class="progression-scroll"><table class="progression-table"><thead><tr><th>Settimana</th><th>Serie</th><th>Ripetizioni</th><th>RIR</th><th>RPE</th><th>Carico</th><th>Recupero</th><th>Tipo</th><th>Note</th></tr></thead><tbody>${weeks.map((w, i) => `<tr><td><strong>${i + 1}</strong>${w.source === "manual" ? '<span class="phase4-badge">manuale</span>' : '<span class="phase4-badge">auto</span>'}</td><td><input data-progression-week="${i}" data-progression-field="sets" type="number" min="0" value="${escapeHtml(w.sets ?? "")}"></td><td><input data-progression-week="${i}" data-progression-field="reps" value="${escapeHtml(formatReps(w.reps))}"></td><td><input data-progression-week="${i}" data-progression-field="rir" value="${escapeHtml(w.rir?.label || "")}"></td><td><input data-progression-week="${i}" data-progression-field="rpe" value="${escapeHtml(w.rpe?.label || "")}"></td><td><input data-progression-week="${i}" data-progression-field="load" type="number" min="0" value="${escapeHtml(w.prescribedLoad?.value ?? "")}"></td><td><input data-progression-week="${i}" data-progression-field="rest" type="number" min="0" value="${escapeHtml(w.restSeconds ?? "")}"></td><td><select data-progression-week="${i}" data-progression-field="type">${["normal","accumulation","intensification","deload","test","recovery","custom"].map((v) => `<option value="${v}" ${w.type === v ? "selected" : ""}>${v}</option>`).join("")}</select></td><td><input data-progression-week="${i}" data-progression-field="notes" value="${escapeHtml(w.notes || "")}"></td></tr>`).join("")}</tbody></table></div><div class="coach-modal-actions">${progression.templateId?`<button type="button" class="danger-button" data-progression-remove="${escapeHtml(ex?.id||"")}">Rimuovi progressione</button>`:""}${close}<button type="button" class="ghost-button" data-progression-generate>Genera anteprima</button><button type="button" class="gold-button" data-coach-modal-save>Applica progressione</button></div></section></div>`;
       }
       if (type === "exercise-transfer") {
         const programs = coachProgramsForUi();
@@ -11795,7 +12211,8 @@
       const selection = ensureCoachProgramSelection();
       const sheet = selection.sheet;
       if (!sheet) return { program: selection.program, sheet: null, rows: [], duplicates: [], patternRuns: [], missingMetadata: [] };
-      const rows = coachBuilderRows().map((row) => ({ ...row, progression: programRepository.getExerciseById(selection.program.id, sheet.id, row.id)?.progression || { weeks: [] } })).filter((row) => row.exercise);
+      const weekNumber=Math.max(1,Number(coachStudioState().programWeek)||1);
+      const rows = programRepository.getExercises(selection.program.id,sheet.id).map((exercise)=>{const p=coachWeekPrescription(exercise,weekNumber);return { id:exercise.id, exercise:exercise.name, name:exercise.name, group:exercise.muscle||exercise.som||"Custom", muscle:exercise.muscle||exercise.som||"Custom", sets:p.sets, reps:p.reps, effort:p.rir||p.rpe, restSeconds:p.restSeconds, tempo:p.tempo, loadValue:p.loadValue, equipment:exercise.metadata?.equipment||"", pattern:exercise.metadata?.pattern||"", progression:exercise.progression||{weeks:[]}, metadata:exercise.metadata||{}, biomechanics:exercise.biomechanics, technicalProfile:exercise.metadata?.technicalProfile } }).filter((row)=>row.exercise);
       const duplicates = rows.filter((row, index) => rows.findIndex((other) => normalizeExerciseName(other.exercise) === normalizeExerciseName(row.exercise)) !== index);
       const patternMap = new Map();
       rows.forEach((row, index) => { const pattern = coachAiPattern(row.exercise, { pattern: row.pattern }); if (pattern !== "unknown") patternMap.set(pattern, [...(patternMap.get(pattern) || []), { row, index }]); });
@@ -11807,7 +12224,7 @@
       const focusText = String(sheet.focus || "").toLowerCase();
       const focusGroup = coachExerciseGroups().find((group) => focusText.includes(String(group).toLowerCase()));
       const focusGap = focusGroup && !rows.some((row) => String(row.group || "").toLowerCase() === focusGroup.toLowerCase()) ? { group: focusGroup, pattern: "isolation" } : null;
-      return { program: selection.program, sheet, rows, duplicates, patternRuns, overlapGroups, missingMetadata, focusGap };
+      return { program: selection.program, sheet, rows, duplicates, patternRuns, overlapGroups, missingMetadata, focusGap, weekNumber };
     }
 
     function getDisplayProgramName(programId) {
@@ -11871,9 +12288,9 @@
       const involved = suggestion.involvedExercises || [];
       const involvedHtml = expanded ? `<div class="coach-ai-involved"><strong>Esercizi coinvolti${involved.length ? ` (${involved.length})` : ""}:</strong>${involved.length ? `<ul>${involved.map((item) => `<li><b>${escapeHtml(item.name)}</b><span>${escapeHtml(item.group || "")} ${item.action ? `· ${escapeHtml(item.action)}` : ""} ${item.position ? `· posizione ${item.position}` : ""}</span></li>`).join("")}</ul>` : `<p>Non riesco a identificare con sufficiente precisione gli esercizi coinvolti.</p>`}</div>` : "";
       const impact = suggestion.impact ? `<p><strong>Impatto previsto:</strong> ${escapeHtml(suggestion.impact.before || "")} → ${escapeHtml(suggestion.impact.after || "")}</p>` : "";
-      const details = expanded ? `<div class="coach-ai-expanded"><p><strong>Cosa ho notato:</strong> ${escapeHtml(suggestion.problem)}</p><p><strong>Perché te lo segnalo:</strong> ${escapeHtml(suggestion.reason)}</p>${involvedHtml}${prescription}<p><strong>Proposta:</strong> ${escapeHtml(suggestion.exercise || "Nessuna modifica")}</p><p><strong>Dove:</strong> ${escapeHtml(coachSuggestionLocation(suggestion))}</p>${impact}${suggestion.progression ? `<p><strong>Progressione:</strong> ${escapeHtml(suggestion.progression)}</p>` : ""}<div class="coach-ai-data"><span>Ho guardato: ${suggestion.dataUsed.map(escapeHtml).join(" · ")}</span></div></div>` : `<p class="coach-ai-collapsed-copy">${escapeHtml(suggestion.problem)}${involved.length ? ` · ${involved.length} esercizi coinvolti` : ""}</p>`;
+      const details = `<div class="coach-ai-conversation"><p><strong>Problema</strong>${escapeHtml(suggestion.problem)}</p><p><strong>Perché</strong>${escapeHtml(suggestion.reason)}</p><p><strong>Soluzione</strong>${escapeHtml(suggestion.exercise || suggestion.progression || "Nessuna modifica necessaria")}</p></div>${expanded ? `<div class="coach-ai-expanded">${involvedHtml}${prescription}<p><strong>Dove:</strong> ${escapeHtml(coachSuggestionLocation(suggestion))}</p>${impact}${suggestion.progression ? `<p><strong>Progressione:</strong> ${escapeHtml(suggestion.progression)}</p>` : ""}<div class="coach-ai-data"><span>Ho guardato: ${suggestion.dataUsed.map(escapeHtml).join(" · ")}</span></div></div>` : ""}`;
       const ignoredCard = coachProgramUi.aiStatusTab === "ignored";
-      return `<article class="coach-ai-card ${suggestion.severity}"><div class="row"><h4>${escapeHtml(suggestion.title)}</h4><span class="chip">${escapeHtml(suggestion.severity === "critical" ? "Alta" : "Media")} · Confidenza ${escapeHtml(suggestion.confidence)}</span></div>${details}<div class="coach-ai-actions">${ignoredCard ? `<button class="apply" data-ai-restore="${escapeHtml(suggestion.id)}">Ripristina suggerimento</button>` : `<button class="apply" data-ai-apply="${escapeHtml(suggestion.id)}">Applica suggerimento</button><button data-ai-ignore="${escapeHtml(suggestion.id)}">Ignora</button><button data-ai-expand="${escapeHtml(suggestion.id)}">${expanded ? "Chiudi dettagli" : "Apri dettagli"}</button><button data-ai-alternatives-toggle="${escapeHtml(suggestion.id)}">Mostra alternative</button>`}</div>${alternatives}</article>`;
+      return `<article class="coach-ai-card ${suggestion.severity}"><div class="row"><h4>${escapeHtml(suggestion.title)}</h4><span class="chip">${escapeHtml(suggestion.severity === "critical" ? "Alta" : "Media")} · Confidenza ${escapeHtml(suggestion.confidence)}</span></div>${details}<div class="coach-ai-actions">${ignoredCard ? `<button class="apply" data-ai-restore="${escapeHtml(suggestion.id)}">Ripristina</button>` : `<button class="apply" data-ai-apply="${escapeHtml(suggestion.id)}">Applica</button><button data-ai-ignore="${escapeHtml(suggestion.id)}">Ignora</button><button data-ai-expand="${escapeHtml(suggestion.id)}">${expanded ? "Chiudi" : "Approfondisci"}</button><button data-ai-alternatives-toggle="${escapeHtml(suggestion.id)}">Alternative</button>`}</div>${alternatives}</article>`;
     }
 
     function coachAiPanelHtml() {
@@ -11888,8 +12305,11 @@
       const applied = new Set(ai.applied || []); const ignored = new Set(ai.ignored || []);
       const statusTab = coachProgramUi.aiStatusTab || "suggestions";
       const visible = statusTab === "applied" ? Object.values(ai.appliedRecords || {}).filter((item) => applied.has(item.id)).map((item) => ({ ...item, severity: item.severity || "info", confidence: item.confidence || "applicato", alternatives: item.alternatives || [], dataUsed: item.dataUsed || [], involvedExercises: item.involvedExercises || [] })) : statusTab === "ignored" ? Object.values(ai.ignoredRecords || {}).filter((item) => ignored.has(item.id)).map((item) => ({ ...item, severity: item.severity || "info", confidence: item.confidence || "salvato", problem: item.problem || "Puoi ripristinare questo controllo quando vuoi.", alternatives: item.alternatives || [], dataUsed: item.dataUsed || [], progression: item.progression || "", involvedExercises: item.involvedExercises || [] })) : filteredSuggestions.filter((item) => !applied.has(item.id));
-      const quality = coachAiQualityIssues(); const qualityBlock = quality.length ? `<section class="coach-ai-quality"><button type="button" data-ai-quality-toggle aria-expanded="${!!coachProgramUi.qualityExpanded}"><span>Qualità dati</span><b>${quality.length}</b><em>${coachProgramUi.qualityExpanded ? "-" : "+"}</em></button>${coachProgramUi.qualityExpanded ? `<div class="coach-ai-quality-body"><p>Completa i dati di questi esercizi per rendere i consigli più precisi.</p><ul>${quality.map((row) => `<li><span>${escapeHtml(row.exercise)}</span><button type="button" data-exercise-action="details" data-exercise-id="${escapeHtml(row.id)}">Completa dati</button></li>`).join("")}</ul></div>` : ""}</section>` : "";
-      return `<section class="coach-ai-panel"><div class="row"><div><h3 class="coach-section-title">COACH AI <span class="coach-ai-count">${suggestions.length}</span></h3><p class="micro-copy">Consigli brevi: apri solo quello che vuoi approfondire.</p></div><label class="coach-ai-toolbar"><input type="checkbox" data-ai-toggle ${ai.enabled ? "checked" : ""}> Consigli automatici ON/OFF</label></div><div class="coach-ai-status-tabs"><button class="${statusTab === "suggestions" ? "active" : ""}" data-ai-status-tab="suggestions">Suggerimenti ${suggestions.length}</button><button class="${statusTab === "applied" ? "active" : ""}" data-ai-status-tab="applied">Applicati ${ai.applied?.length || 0}</button><button class="${statusTab === "ignored" ? "active" : ""}" data-ai-status-tab="ignored">Ignorati ${ai.ignored?.length || 0}</button></div><div class="coach-ai-filters">${filters.map(([value,label]) => `<button class="coach-ai-filter ${filter === value ? "active" : ""}" data-ai-filter="${value}">${label}</button>`).join("")}</div><div class="coach-ai-scroll-area">${!ai.enabled ? `<div class="coach-ai-empty">Consigli automatici disattivati. Lo storico resta disponibile.</div>` : visible.length ? visible.map(coachAiSuggestionHtml).join("") : `<div class="coach-ai-empty">La scheda è coerente. Non ho modifiche importanti da suggerire.</div>`}${qualityBlock}</div><footer class="coach-ai-footer"><button class="coach-ai-all-button" data-ai-open-list>Vedi tutti i suggerimenti</button></footer></section>`;
+      const ctx=coachAiContext(); const quality = coachAiQualityIssues();
+      const qualityBlock = quality.length ? `<section class="coach-ai-quality"><button type="button" data-ai-quality-toggle aria-expanded="${!!coachProgramUi.qualityExpanded}"><span>Informazioni mancanti</span><b>${quality.length}</b><em>${coachProgramUi.qualityExpanded ? "-" : "+"}</em></button>${coachProgramUi.qualityExpanded ? `<div class="coach-ai-quality-body"><p>Questi dati servono per consigli più precisi; non invento ciò che manca.</p><ul>${quality.map((row) => `<li><span>${escapeHtml(row.exercise)}</span><button type="button" data-exercise-action="details" data-sheet-id="${escapeHtml(ctx.sheet?.id||"")}" data-exercise-id="${escapeHtml(row.id)}">Completa dati</button></li>`).join("")}</ul></div>` : ""}</section>` : `<div class="coach-ai-complete">✓ Informazioni principali complete</div>`;
+      const programs=coachProgramsForUi(); const last=coachProgramUi.aiLastAnalysisAt?new Date(coachProgramUi.aiLastAnalysisAt).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"non ancora eseguita";
+      const quick=["Controlla il volume","Ci sono esercizi ridondanti?","Come miglioro la progressione?","Cosa manca per analizzare meglio?"];
+      return `<section class="coach-ai-panel coach-ai-196"><header class="coach-ai-hero">${coachMascotHtml()}<div><span class="section-eyebrow">ASSISTENTE CONTESTUALE</span><h3>Coach AI</h3><p>Analizzo solo il programma e la settimana selezionati. Ogni modifica richiede la tua conferma.</p></div></header><div class="coach-ai-context-grid"><label>Programma<select data-ai-program-select>${programs.map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id===ctx.program?.id?"selected":""}>${escapeHtml(item.name)}</option>`).join("")}</select></label><div><span>Settimana</span><strong>${ctx.weekNumber||1}</strong></div><div><span>Giornata analizzata</span><strong>${escapeHtml(ctx.sheet?.name||ctx.sheet?.code||"Nessuna")}</strong></div><div><span>Esercizi</span><strong>${ctx.rows.length}</strong></div><div><span>Ultima analisi</span><strong>${escapeHtml(last)}</strong></div></div><div class="coach-ai-query"><label>Chiedi qualcosa sul programma<input data-ai-question value="${escapeHtml(coachProgramUi.aiQuestion||"")}" placeholder="Es. il volume dei quadricipiti è equilibrato?"></label><button class="gold-button" data-ai-analyze>Analizza</button><div class="coach-ai-quick-prompts">${quick.map((q)=>`<button data-ai-quick-question="${escapeHtml(q)}">${escapeHtml(q)}</button>`).join("")}</div>${coachProgramUi.aiAnswer?`<div class="coach-ai-answer"><strong>Diva Bot</strong><p>${escapeHtml(coachProgramUi.aiAnswer)}</p></div>`:""}</div>${qualityBlock}<div class="coach-ai-status-tabs"><button class="${statusTab === "suggestions" ? "active" : ""}" data-ai-status-tab="suggestions">Suggerimenti ${suggestions.length}</button><button class="${statusTab === "applied" ? "active" : ""}" data-ai-status-tab="applied">Applicati ${ai.applied?.length || 0}</button><button class="${statusTab === "ignored" ? "active" : ""}" data-ai-status-tab="ignored">Ignorati ${ai.ignored?.length || 0}</button></div><div class="coach-ai-filters">${filters.map(([value,label]) => `<button class="coach-ai-filter ${filter === value ? "active" : ""}" data-ai-filter="${value}">${label}</button>`).join("")}</div><div class="coach-ai-scroll-area">${!ai.enabled ? `<div class="coach-ai-empty">Analisi disattivata. Lo storico resta disponibile.</div>` : visible.length ? visible.map(coachAiSuggestionHtml).join("") : `<div class="coach-ai-empty">Non vedo criticità importanti nei dati disponibili.</div>`}</div></section>`;
     }
 
     function coachAiPopupHtml() {
@@ -12606,6 +13026,73 @@
       document.querySelectorAll("[data-screen-target]").forEach((button) => {
         button.addEventListener("click", () => setScreen(button.dataset.screenTarget));
       });
+      document.querySelectorAll("[data-coach-studio-route]").forEach((button) => button.addEventListener("click", () => coachStudioNavigate(button.dataset.coachStudioRoute)));
+      document.querySelector("[data-coach-studio-menu]")?.addEventListener("click", () => { const studio=coachStudioState(); studio.sidebarOpen = !studio.sidebarOpen; render(); });
+      document.querySelectorAll("[data-coach-studio-program]").forEach((button) => button.addEventListener("click", () => coachStudioNavigate("program", { programId:button.dataset.coachStudioProgram })));
+      document.querySelector("[data-coach-folder-new]")?.addEventListener("click",()=>{openCoachModal("folder-new");render();});
+      document.querySelectorAll("[data-program-list-action]").forEach((button)=>button.addEventListener("click",()=>{
+        coachProgramUi.programId=button.dataset.programId; coachStudioState().programId=button.dataset.programId;
+        coachProgramUi.sheetId=programRepository.getSheets(button.dataset.programId)[0]?.id||"";
+        const action=button.dataset.programListAction; handleProgramAction(action);
+        if(action==="duplicate") coachStudioNavigate("program",{programId:coachProgramUi.programId}); else render();
+      }));
+      document.querySelectorAll("[data-studio-panel-toggle]").forEach((button)=>button.addEventListener("click",()=>{
+        const studio=coachStudioState(), panel=button.dataset.studioPanelToggle;
+        if(panel==="info") studio.infoOpen=!studio.infoOpen;
+        if(panel==="reference"){studio.referenceOpen=!studio.referenceOpen;studio.aiOpen=false;}
+        if(panel==="ai"){studio.aiOpen=!studio.aiOpen;studio.referenceOpen=false;}
+        saveState({cloud:false});render();
+      }));
+      document.querySelectorAll("[data-studio-panel-close]").forEach((button)=>button.addEventListener("click",()=>{const studio=coachStudioState();studio[`${button.dataset.studioPanelClose}Open`]=false;saveState({cloud:false});render();}));
+      document.querySelector("[data-studio-reference-program]")?.addEventListener("change",(event)=>{coachStudioState().referenceProgramId=event.target.value;saveState({cloud:false});render();});
+      document.querySelector("[data-studio-reference-week]")?.addEventListener("change",(event)=>{coachProgramUi.referenceWeek=Number(event.target.value)||1;render();});
+      document.querySelectorAll("[data-program-week]").forEach((button)=>button.addEventListener("click",()=>{coachStudioState().programWeek=Number(button.dataset.programWeek)||1;saveState({cloud:false});render();}));
+      document.querySelectorAll("[data-program-board-add-kind]").forEach((button)=>button.addEventListener("click",()=>{selectCoachSheet(button.dataset.sheetId);coachProgramUi.pendingAddKind=button.dataset.programBoardAddKind||"exercise";openCoachModal("exercise-library");render();}));
+      document.querySelectorAll("[data-inline-exercise-field]").forEach((input)=>{
+        input.addEventListener("input",()=>updateInlineExerciseField(input,false));
+        input.addEventListener("change",()=>updateInlineExerciseField(input,true));
+      });
+      document.querySelectorAll("[data-inline-copy]").forEach((button)=>button.addEventListener("click",()=>{
+        const exercise=programRepository.getExerciseById(coachProgramUi.programId,button.dataset.sheetId,button.dataset.inlineCopy);
+        if(exercise){coachProgramUi.clipboardExercise=clone(exercise);showToast("Esercizio copiato: scegli la giornata e premi Incolla.");render();}
+      }));
+      document.querySelectorAll("[data-inline-paste]").forEach((button)=>button.addEventListener("click",()=>{
+        const source=coachProgramUi.clipboardExercise;if(!source)return;const now=new Date().toISOString();
+        const result=programRepository.createExercise(coachProgramUi.programId,button.dataset.sheetId,{...clone(source),id:newEntityId("exercise"),name:`${source.name} copia`,createdAt:now,updatedAt:now,deletedAt:""},{immediate:true});
+        if(result.ok){showToast("Esercizio incollato.");render();}
+      }));
+      document.querySelectorAll("[data-inline-replace]").forEach((button)=>button.addEventListener("click",()=>{
+        selectCoachSheet(button.dataset.sheetId);coachProgramUi.pendingAddKind="exercise";openCoachModal("exercise-library",{replaceExerciseId:button.dataset.inlineReplace});render();
+      }));
+      document.querySelectorAll("[data-inline-row]").forEach((row)=>{
+        row.addEventListener("dragstart",()=>{coachProgramUi.draggedExerciseId=row.dataset.exerciseId;selectCoachSheet(row.dataset.sheetId);row.classList.add("dragging");});
+        row.addEventListener("dragover",(event)=>event.preventDefault());
+        row.addEventListener("drop",(event)=>{event.preventDefault();const source=coachProgramUi.draggedExerciseId,target=row.dataset.exerciseId,sheetId=row.dataset.sheetId;if(!source||source===target)return;selectCoachSheet(sheetId);const ids=programRepository.getExercises(coachProgramUi.programId,sheetId).map((item)=>item.id);const from=ids.indexOf(source),to=ids.indexOf(target);if(from<0||to<0)return;ids.splice(to,0,ids.splice(from,1)[0]);programRepository.reorderExercises(coachProgramUi.programId,sheetId,ids,{immediate:true});coachProgramUi.draggedExerciseId="";render();});
+        row.addEventListener("dragend",()=>{coachProgramUi.draggedExerciseId="";row.classList.remove("dragging");});
+      });
+      document.querySelectorAll("[data-coach-program-filter]").forEach((input) => {
+        const apply = () => { coachStudioState().filters[input.dataset.coachProgramFilter] = input.value; saveState({cloud:false}); render(); };
+        input.addEventListener(input.type === "search" ? "change" : "change", apply);
+      });
+      document.querySelectorAll("[data-studio-progression]").forEach((button) => button.addEventListener("click", () => {
+        coachProgramUi.programId = button.dataset.programId; coachProgramUi.sheetId = button.dataset.sheetId;
+        coachStudioState().programId = button.dataset.programId;
+        openCoachModal("progression-editor", { exerciseId:button.dataset.studioProgression }); render();
+      }));
+      document.querySelector("[data-questionnaire-new]")?.addEventListener("click", () => {
+        const item = window.BarbellDivaCoachStudio.createQuestionnaire(); state.coach.questionnaires.push(item); saveState({immediate:true}); coachStudioNavigate("questionnaire", {questionnaireId:item.id});
+      });
+      document.querySelectorAll("[data-questionnaire-open]").forEach((button) => button.addEventListener("click", () => coachStudioNavigate("questionnaire", {questionnaireId:button.dataset.questionnaireOpen})));
+      document.querySelector("[data-question-add]")?.addEventListener("click", () => { const item=(state.coach.questionnaires||[]).find((entry)=>entry.id===coachStudioState().questionnaireId); if(!item)return; item.questions=item.questions||[]; item.questions.push({id:`question-${Date.now().toString(36)}`,label:"Nuova domanda",kind:"text",required:false}); item.updatedAt=new Date().toISOString(); saveState({immediate:true}); render(); });
+      document.querySelectorAll("[data-question-delete]").forEach((button) => button.addEventListener("click", () => { const item=(state.coach.questionnaires||[]).find((entry)=>entry.id===coachStudioState().questionnaireId); if(!item)return; item.questions.splice(Number(button.dataset.questionDelete),1); item.updatedAt=new Date().toISOString(); saveState({immediate:true}); render(); }));
+      document.querySelector("[data-questionnaire-save]")?.addEventListener("click", () => {
+        const item=(state.coach.questionnaires||[]).find((entry)=>entry.id===coachStudioState().questionnaireId); if(!item)return;
+        document.querySelectorAll("[data-questionnaire-field]").forEach((input)=>{item[input.dataset.questionnaireField]=input.type==="checkbox"?input.checked:input.value;});
+        document.querySelectorAll("[data-question-label]").forEach((input)=>{if(item.questions[Number(input.dataset.questionLabel)])item.questions[Number(input.dataset.questionLabel)].label=input.value;});
+        document.querySelectorAll("[data-question-kind]").forEach((input)=>{if(item.questions[Number(input.dataset.questionKind)])item.questions[Number(input.dataset.questionKind)].kind=input.value;});
+        item.updatedAt=new Date().toISOString(); saveState({immediate:true}); showToast("Questionario salvato."); render();
+      });
+      document.querySelectorAll("[data-studio-setting]").forEach((input)=>input.addEventListener("change",()=>{state.coach[input.dataset.studioSetting]=input.value;saveState({immediate:true});render();}));
       document.querySelectorAll("[data-dashboard-coach-open]").forEach((button) => button.addEventListener("click", () => {
         coachProgramUi.dashboardCoachOpen = true;
         const signal = dashboardCoachSignal();
@@ -12631,7 +13118,7 @@
       document.querySelectorAll("[data-diva-bot-setting]").forEach((input) => input.addEventListener("change", () => {
         const field = input.dataset.divaBotSetting;
         updateDivaBotPreference(field, field === "personality" ? input.value : input.checked);
-        if (field === "sounds") showToast("Preferenza suoni salvata: nessun audio aggiuntivo installato.");
+        if (field === "sounds") { if(input.checked)playDivaBotSound("soft");showToast(input.checked?"Suoni Diva Bot attivati.":"Suoni Diva Bot disattivati."); }
       }));
       document.querySelectorAll("[data-experience-setting]").forEach((input) => input.addEventListener("change", () => {
         const key = input.dataset.experienceSetting;
@@ -12964,6 +13451,7 @@
           if (!row) return;
           row[field.dataset.builderRowField] = field.value;
           markCoachDraftDirty(undefined, row.id);
+          updateCoachLiveVolumeDom();
         });
         field.addEventListener("change", () => {
           const rows = coachBuilderRows();
@@ -12980,6 +13468,7 @@
           markCoachDraftDirty(undefined, row.id);
           commitActiveCoachDraft({ immediate: false, quiet: true });
           updateCoachSaveIndicator(coachProgramUi.saveStatus);
+          updateCoachLiveVolumeDom();
         });
       });
       document.querySelectorAll("[data-builder-week]").forEach((field) => {
@@ -13054,6 +13543,7 @@
       document.querySelectorAll("[data-exercise-action]").forEach((button) => button.addEventListener("click", () => {
         const action = button.dataset.exerciseAction;
         const id = button.dataset.exerciseId;
+        if(button.dataset.sheetId) selectCoachSheet(button.dataset.sheetId);
         const { program, sheet } = ensureCoachProgramSelection();
         const exercise = programRepository.getExerciseById(program?.id, sheet?.id, id);
         if (!exercise) return;
@@ -13082,6 +13572,7 @@
         render();
       });
       document.querySelectorAll("[data-progression-open]").forEach((button) => button.addEventListener("click", () => {
+        if(button.dataset.sheetId) selectCoachSheet(button.dataset.sheetId);
         const weekNumber = Number(button.dataset.progressionWeekNumber) || 0;
         openCoachModal("progression-editor", { exerciseId: button.dataset.progressionOpen, weekNumber });
         render();
@@ -13092,6 +13583,10 @@
           target?.focus?.();
         }
       }));
+      document.querySelector("[data-progression-remove]")?.addEventListener("click",(event)=>{
+        const {program,sheet}=ensureCoachProgramSelection();const id=event.currentTarget.dataset.progressionRemove;const current=programRepository.getExerciseById(program?.id,sheet?.id,id);if(!current)return;
+        programRepository.updateExercise(program.id,sheet.id,id,{progression:{...(current.progression||{}),templateId:"",rule:null,weeks:[],manualWeeks:[]}},{immediate:true,forceLocked:true});closeCoachModal();showToast(`Progressione rimossa da ${current.name}.`);render();
+      });
       document.querySelectorAll("[data-coach-builder-view]").forEach((button) => button.addEventListener("click", () => {
         state.ui = state.ui || {};
         state.ui.coachEditorView = button.dataset.coachBuilderView === "exercises" ? "exercises" : "weeks";
@@ -13238,6 +13733,7 @@
         coachProgramUi.labPage = 1;
         render();
       }));
+      document.querySelectorAll("[data-lab-filter-toggle]").forEach((button)=>button.addEventListener("click",()=>{coachProgramUi.labFiltersOpen=!coachProgramUi.labFiltersOpen;render();}));
       document.querySelectorAll("[data-lab-reset]").forEach((button) => button.addEventListener("click", () => {
         coachProgramUi.labQuery = "";
         coachProgramUi.labFilters = { muscle:"", equipment:"", type:"", level:"", resistance:"", stimulus:"", stability:"", fatigue:"", progression:"", origin:"" };
@@ -13393,6 +13889,22 @@
       if (modalSave) modalSave.addEventListener("click", () => { saveCoachUiModal(); render(); });
       const aiToggle = document.querySelector("[data-ai-toggle]");
       if (aiToggle) aiToggle.addEventListener("change", () => { triggerDivaBotReaction("coach_analysis_started"); coachAiState().enabled = aiToggle.checked; render(); triggerDivaBotReaction("coach_analysis_completed"); });
+      document.querySelector("[data-ai-program-select]")?.addEventListener("change",(event)=>{selectCoachProgram(event.target.value);coachStudioState().programId=event.target.value;coachProgramUi.aiProgramId=event.target.value;saveState({cloud:false});render();});
+      const runCoachAiQuestion=(question)=>{
+        const ctx=coachAiContext(); const q=String(question||"").trim(); const suggestions=coachAiSuggestions(); const volume=ctx.program?coachProgramVolumeRows(ctx.program,ctx.weekNumber||1,ctx.sheet?.id):[];
+        coachProgramUi.aiQuestion=q; coachProgramUi.aiLastAnalysisAt=new Date().toISOString();
+        if(!ctx.sheet) coachProgramUi.aiAnswer="Seleziona un programma con almeno una giornata prima di avviare l’analisi.";
+        else if(/volume/i.test(q)) coachProgramUi.aiAnswer=volume.length?`Nella ${ctx.sheet.name||ctx.sheet.code}, settimana ${ctx.weekNumber}, risultano ${volume.map((item)=>`${item.sets} serie ${item.muscle}`).join(", ")}. Apri i suggerimenti sotto per valutare la distribuzione.`:"Non risultano ancora serie compilate: completa la prescrizione e riprova.";
+        else if(/ridond|duplic/i.test(q)) coachProgramUi.aiAnswer=ctx.duplicates.length?`Ho trovato ${ctx.duplicates.length} possibile duplicazione: ${ctx.duplicates.map((row)=>row.exercise).join(", ")}. Non applico nulla senza conferma.`:"Non risultano duplicati esatti nella giornata selezionata.";
+        else if(/progress/i.test(q)) coachProgramUi.aiAnswer=ctx.rows.some((row)=>!row.progression?.templateId)?"Alcuni esercizi non hanno ancora un template di progressione. Puoi aprire il pulsante ↗ sulla riga e vedere l’anteprima prima di applicarlo.":"Gli esercizi analizzati hanno una progressione associata; controlla comunque le settimane manuali evidenziate.";
+        else if(/manca|informaz/i.test(q)) coachProgramUi.aiAnswer=ctx.missingMetadata.length?`Mi mancano pattern o attrezzatura per: ${ctx.missingMetadata.map((row)=>row.exercise).join(", ")}. Completa i dettagli per aumentare la precisione.`:"Le informazioni principali risultano complete per questa giornata.";
+        else coachProgramUi.aiAnswer=suggestions.length?`Ho trovato ${suggestions.length} osservazioni contestuali per ${ctx.program.name}, settimana ${ctx.weekNumber}. Le trovi sotto con problema, motivo e soluzione; l’applicazione resta sempre manuale.`:`Non vedo criticità importanti nei dati disponibili per ${ctx.program.name}, settimana ${ctx.weekNumber}.`;
+        setCoachMascotState("thinking",{message:"Analisi completata ✨",duration:750,returnState:"happy"});saveState({cloud:false});render();
+      };
+      document.querySelector("[data-ai-question]")?.addEventListener("input",(event)=>{coachProgramUi.aiQuestion=event.target.value;});
+      document.querySelector("[data-ai-question]")?.addEventListener("keydown",(event)=>{if(event.key==="Enter"){event.preventDefault();runCoachAiQuestion(event.target.value);}});
+      document.querySelector("[data-ai-analyze]")?.addEventListener("click",()=>runCoachAiQuestion(document.querySelector("[data-ai-question]")?.value));
+      document.querySelectorAll("[data-ai-quick-question]").forEach((button)=>button.addEventListener("click",()=>runCoachAiQuestion(button.dataset.aiQuickQuestion)));
       document.querySelectorAll("[data-ai-filter]").forEach((button) => button.addEventListener("click", () => { triggerDivaBotReaction("coach_analysis_started"); coachAiState().filter = button.dataset.aiFilter || "all"; render(); triggerDivaBotReaction("coach_analysis_completed"); }));
       document.querySelectorAll("[data-ai-ignore]").forEach((button) => button.addEventListener("click", () => { const ai = coachAiState(); const suggestion = coachAiSuggestions().find((item) => item.id === button.dataset.aiIgnore); ai.ignored = [...new Set([...(ai.ignored || []), button.dataset.aiIgnore])]; ai.ignoredRecords = { ...(ai.ignoredRecords || {}), [button.dataset.aiIgnore]: suggestion ? clone(suggestion) : { id: button.dataset.aiIgnore, title: "Suggerimento ignorato" } }; state.coach.coachAi = ai; render(); showToast("Suggerimento ignorato."); }));
       document.querySelectorAll("[data-ai-alternatives-toggle]").forEach((button) => button.addEventListener("click", () => { const id = button.dataset.aiAlternativesToggle; if (coachProgramUi.aiExpanded.has(id)) coachProgramUi.aiExpanded.delete(id); else coachProgramUi.aiExpanded.add(id); render(); }));
@@ -13436,14 +13948,18 @@
       document.querySelectorAll("[data-library-add]").forEach((button) => button.addEventListener("click", () => {
         const { program, sheet } = ensureCoachProgramSelection();
         rememberExerciseState(program.id, sheet.id);
-        const created = programRepository.createExercise(program.id, sheet.id, { name: button.dataset.libraryAdd, muscle: button.dataset.libraryGroup, som: button.dataset.libraryGroup, prescription: { sets: null, reps: parseReps(""), rir: parseRir(""), rest: parseRest({ seconds: 90 }), tempo: parseTempo(""), technique: parseTechnique("normal"), prescribedLoad: parsePrescribedLoad(null) }, metadata: { custom: false } }, { immediate: true });
-        if (created.ok) { closeCoachModal(); discardCoachDraft(program.id, sheet.id); showToast("Esercizio aggiunto."); }
+        const replacementId=coachProgramUi.modalData?.replaceExerciseId||""; const current=replacementId?programRepository.getExerciseById(program.id,sheet.id,replacementId):null;
+        const data={ name: button.dataset.libraryAdd, muscle: button.dataset.libraryGroup, som: button.dataset.libraryGroup, prescription: current?.prescription || { sets: null, reps: parseReps(""), rir: parseRir(""), rest: parseRest({ seconds: 90 }), tempo: parseTempo(""), technique: parseTechnique("normal"), prescribedLoad: parsePrescribedLoad(null) }, progression:current?.progression, note:current?.note||"", metadata: { ...(current?.metadata||{}), custom: false } };
+        const created = current ? programRepository.updateExercise(program.id,sheet.id,replacementId,data,{immediate:true,forceLocked:true}) : programRepository.createExercise(program.id, sheet.id, data, { immediate: true });
+        if (created.ok) { closeCoachModal(); discardCoachDraft(program.id, sheet.id); showToast(current?"Esercizio sostituito; prescrizione e progressione conservate.":"Esercizio aggiunto."); }
         render();
       }));
       document.querySelectorAll("[data-library-profile]").forEach((button) => button.addEventListener("click", () => {
         const profile = technicalExerciseLibrary().find((item) => item.id === button.dataset.libraryProfile);
+        const kind=coachProgramUi.pendingAddKind||"exercise";
         const result = profile ? addTechnicalExerciseToActiveSheet(profile) : {ok:false};
-        if (result.ok) { closeCoachModal(); render(); showToast("Esercizio aggiunto dalla Libreria."); }
+        const kindLabel={superset:"Superserie",multiset:"Multiserie",alternative:"Alternativa",circuit:"Circuito"}[kind];
+        if (result.ok) { closeCoachModal(); render(); showToast(kind==="exercise"?"Esercizio aggiunto dalla Libreria.":`${kindLabel} aggiunta alla scheda.`); }
         else showToast("Esercizio non aggiunto.");
       }));
       const customExerciseButton = document.querySelector("[data-exercise-custom]");
@@ -13543,6 +14059,8 @@
       if (uploadLocalCloud) uploadLocalCloud.addEventListener("click", uploadThisDeviceToCloud);
       const downloadCloudLocal = document.getElementById("downloadCloudLocal");
       if (downloadCloudLocal) downloadCloudLocal.addEventListener("click", downloadCloudToThisDevice);
+      document.querySelector("[data-reliable-sync-now]")?.addEventListener("click", synchronizeReliableNow);
+      document.querySelector("[data-reliable-sync-check]")?.addEventListener("click", runReliableDiagnostics);
       document.querySelectorAll("[data-premium-error-action]").forEach((button) => button.addEventListener("click", () => {
         if (button.dataset.premiumErrorAction === "retry-cloud") { loadCloudState({ silent:false }).then(() => render()); }
         if (button.dataset.premiumErrorAction === "dashboard") setScreen("dashboard");
@@ -13798,10 +14316,12 @@
 
     function updateCoachSaveIndicator(status = coachProgramUi.saveStatus) {
       coachProgramUi.saveStatus = status;
+      const labelText = status === "dirty" ? "Modifiche da salvare" : status === "saving" ? "Salvataggio…" : status === "error" ? "Errore salvataggio" : "Salvato";
+      document.querySelectorAll("[data-coach-save-label]").forEach((label)=>{label.textContent=labelText;});
       const indicator = document.querySelector(".save-indicator");
       if (!indicator) return;
       indicator.className = `save-indicator ${status}`;
-      indicator.textContent = status === "dirty" ? "Modifiche da salvare" : status === "saving" ? "Salvataggio…" : status === "error" ? "Errore salvataggio" : "Salvato";
+      indicator.textContent = labelText;
     }
 
     function markCoachDraftDirty(sheetId = coachProgramUi.sheetId, rowId = "") {
@@ -14028,7 +14548,13 @@
       const { program } = ensureCoachProgramSelection();
       if (action === "new") return openCoachModal("program-new");
       if (!program) return;
+      if (action === "save") {
+        commitActiveCoachDraft({immediate:true,quiet:true});saveState({immediate:true});
+        updateCoachSaveIndicator("saved");playDivaBotSound("soft");
+        return showToast("Programma salvato.");
+      }
       if (action === "edit") return openCoachModal("program-edit", { programId: program.id });
+      if (action === "save-as") return openCoachModal("program-save-as", { programId: program.id });
       if (action === "delete") return openCoachModal("program-delete", { programId: program.id });
       if (action === "duplicate") {
         commitActiveCoachDraft({ immediate: true, quiet: true });
@@ -14150,22 +14676,34 @@
         openCoachModal("technical-profile", { exerciseId:saved.id });
         return showToast(existing ? "Profilo tecnico aggiornato." : "Esercizio custom salvato.");
       }
-      if (type === "program-new" || type === "program-edit") {
+      if (type === "folder-new") {
+        const name=document.getElementById("coachFolderName")?.value.trim();
+        if(!name) return showToast("Inserisci il nome della cartella.");
+        const studio=coachStudioState(); studio.folders=Array.from(new Set([...(studio.folders||[]),name])).sort();
+        closeCoachModal(); saveState({immediate:true}); return showToast("Cartella creata.");
+      }
+      if (type === "program-new" || type === "program-edit" || type === "program-save-as") {
         const data = {
           name: document.getElementById("programModalName")?.value.trim(),
           phase: document.getElementById("programModalPhase")?.value.trim(),
           durationWeeks: Number(document.getElementById("programModalDuration")?.value || 0),
           status: document.getElementById("programModalStatus")?.value || "draft",
+          folder: document.getElementById("programModalFolder")?.value || "",
           source: type === "program-new" ? "custom" : program?.source
         };
-        const result = type === "program-new"
-          ? programRepository.createProgram(data, { immediate: true })
-          : programRepository.updateProgram(program.id, data, { immediate: true });
+        let result;
+        if(type === "program-save-as") {
+          commitActiveCoachDraft({ immediate:true, quiet:true });
+          result=programRepository.duplicateProgram(program.id,{immediate:false});
+          if(result.ok) result=programRepository.updateProgram(result.value.id,data,{immediate:true});
+        } else result = type === "program-new" ? programRepository.createProgram(data, { immediate: true }) : programRepository.updateProgram(program.id, data, { immediate: true });
         if (!result.ok) return showToast("Controlla nome e durata del programma.");
         coachProgramUi.programId = result.value.id;
         coachProgramUi.sheetId = programRepository.getSheets(result.value.id)[0]?.id || "";
         closeCoachModal();
-        return showToast(type === "program-new" ? "Programma creato." : "Programma aggiornato.");
+        coachStudioState().programId=result.value.id;
+        if(type!=="program-edit") coachStudioNavigate("program",{programId:result.value.id});
+        return showToast(type === "program-save-as" ? "Nuovo programma creato e aperto nell’editor unico." : type === "program-new" ? "Programma creato e aperto nell’editor unico." : "Programma aggiornato.");
       }
       if (type === "program-delete") {
         const deletedId = program.id;
@@ -14239,8 +14777,11 @@
         const result = programRepository.updateExercise(program.id, targetSheet.id, exerciseId, { progression: { ...(current.progression || {}), templateId, rule: { templateId, kind: progressionTemplateById(templateId)?.rules?.kind || "custom" }, weeks: generated, manualWeeks } }, { immediate: true, forceLocked: true });
         if (!result.ok) return showToast("Progressione non valida: controlla i valori.");
         discardCoachDraft(program.id, targetSheet.id);
+        coachProgramUi.highlightExerciseId=exerciseId;
         closeCoachModal();
-        return showToast("Progressione salvata.");
+        setCoachMascotState("celebrate",{message:`Progressione applicata: settimane 1-${duration} ✨`,duration:1500,returnState:"happy"});playDivaBotSound("celebrate");
+        setTimeout(()=>{coachProgramUi.highlightExerciseId="";},2200);
+        return showToast(`Progressione applicata a ${current.name} nelle settimane 1-${duration}.`);
       }
       if (type === "exercise-transfer") {
         const sourceSheet = programRepository.getSheetById(program?.id, coachProgramUi.sheetId);
@@ -14764,6 +15305,9 @@
         if (button.dataset.bottom) setBottom(button.dataset.bottom);
       });
     });
+    document.querySelector("[data-main-nav-toggle]")?.addEventListener("click",()=>{
+      state.ui=state.ui||{}; state.ui.mainNavCollapsed=!state.ui.mainNavCollapsed; saveState({cloud:false}); render();
+    });
 
     document.getElementById("helpButton").addEventListener("click", () => {
       showToast("Schede, storico e volume sono presi dal tuo Excel.");
@@ -14809,6 +15353,7 @@
       const message = event.data || {};
       if (message.type === "barbell-diva:nutrition-save") receiveNutritionDashboard(message.state);
     });
+    window.addEventListener("popstate", () => { if (applyCoachStudioDeepLink()) render(); });
     let chartResizeFrame = null;
     function scheduleChartRedraw() {
       if (chartResizeFrame || document.hidden) return;
@@ -14818,7 +15363,10 @@
       });
     }
     window.addEventListener("resize", scheduleChartRedraw, { passive:true });
-    window.addEventListener("focus", refreshCloudIfSynced);
+    function reliableForegroundSync(){ if(!navigator.onLine){refreshReliableSyncStatus();return;} if(cloudUser&&state.profile.account?.syncReady){startReliableSessionsRealtime();scheduleReliableSync(80);loadCloudState({silent:true}).then(loaded=>{if(loaded){writeLocalStateSnapshot(state,{touch:false,cloud:false});render();}});} }
+    window.addEventListener("focus", reliableForegroundSync);
+    window.addEventListener("online", reliableForegroundSync);
+    window.addEventListener("offline",()=>{refreshReliableSyncStatus();if(activeScreen==="settings")render();});
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
         clearTimeout(coachMascotController.blinkTimer);
@@ -14828,12 +15376,13 @@
         return;
       }
       scheduleCoachMascotBlink();
-      refreshCloudIfSynced();
+      reliableForegroundSync();
       scheduleChartRedraw();
     });
     window.addEventListener("pagehide", () => { if (localSaveTimer) flushStateSave(); }, { passive:true });
     initializeDataSafety();
     recoverDurableWorkoutJournal();
+    applyCoachStudioDeepLink();
     const firebaseBootStarted = initFirebase();
     render();
     const premiumSplash = document.getElementById("premiumSplash");
