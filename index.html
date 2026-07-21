@@ -7,15 +7,15 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v120-phase19.6">
+  <link rel="manifest" href="manifest.webmanifest?v=v121-phase19.7">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="workout-pro.css?v=v115-phase20a">
-  <link rel="stylesheet" href="coach-studio.css?v=v120-phase19.6">
-  <script type="module" src="programming-engine.js?v=v115-phase20a"></script>
-  <script type="module" src="sync-reliability.js?v=v116-sync-fix"></script>
-  <script src="coach-studio.js?v=v120-phase19.6"></script>
-  <script defer src="workout-pro.js?v=v116-sync-fix"></script>
+  <link rel="stylesheet" href="workout-pro.css?v=v121-phase19.7">
+  <link rel="stylesheet" href="coach-studio.css?v=v121-phase19.7">
+  <script type="module" src="programming-engine.js?v=v121-phase19.7"></script>
+  <script type="module" src="sync-reliability.js?v=v121-phase19.7"></script>
+  <script src="coach-studio.js?v=v121-phase19.7"></script>
+  <script defer src="workout-pro.js?v=v121-phase19.7"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4806,7 +4806,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v120-phase19.6";
+    const APP_BUILD = "v121-phase19.7";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -6145,12 +6145,17 @@
       ,aiNoticeDismissed: new Set()
       ,dashboardCoachOpen: false
       ,inlineSaveTimer: null
+      ,inlineSaveIdleHandle: null
       ,clipboardExercise: null
       ,referenceWeek: 1
       ,aiProgramId: ""
       ,aiQuestion: ""
       ,aiAnswer: ""
       ,aiLastAnalysisAt: ""
+      ,aiScope: "week"
+      ,aiWeek: 1
+      ,aiDayId: ""
+      ,volumeRefreshTimer: null
     };
 
     function clone(obj) {
@@ -9575,7 +9580,26 @@
     }
 
     function displayExerciseName(name) {
-      return cleanText(name).replaceAll("_", " ").replace(/\s+-\s+/g, " - ");
+      let value = cleanText(name)
+        .replace(/[_]+/g, " ")
+        .replace(/\s*[-–—]+\s*/g, " ")
+        .replace(/([A-Za-zÀ-ÿ])(\d{2,3})(?!\d)/g, "$1 $2")
+        .replace(/\s+/g, " ")
+        .trim();
+      value = value.replace(/\bpanca\s+(\d{2,3})(?!\s*°)/gi, (_match, angle) => `panca ${angle}°`);
+      if (!value) return "";
+      value = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+      const preserved = [
+        [/\bleg extension\b/gi, "Leg Extension"],
+        [/\bromanian deadlift\b/gi, "Romanian Deadlift"],
+        [/\bstacco rumeno\b/gi, "Stacco Rumeno"],
+        [/\brdl\b/gi, "RDL"],
+        [/\brpe\b/gi, "RPE"],
+        [/\brir\b/gi, "RIR"],
+        [/\bamrap\b/gi, "AMRAP"]
+      ];
+      preserved.forEach(([pattern, replacement]) => { value = value.replace(pattern, replacement); });
+      return value;
     }
 
     function displayLabel(value) {
@@ -10631,8 +10655,33 @@
       }
       const suffix = data.programId ? `/${encodeURIComponent(data.programId)}` : data.questionnaireId ? `/${encodeURIComponent(data.questionnaireId)}` : "";
       if (history?.pushState && location.hash !== `#coach/${next}${suffix}`) history.pushState({coachRoute:next}, "", `#coach/${next}${suffix}`);
-      saveState({ immediate:true, cloud:false });
-      render();
+      // Route, pannelli e settimana selezionata sono stato di interfaccia: non
+      // serializziamo l'intero archivio dell'app prima di mostrare la schermata.
+      renderCoachAfterFeedback(next === "program" ? "Apro l’editor…" : "Carico la sezione…");
+    }
+
+    function showCoachBusyFeedback(message = "Caricamento…") {
+      if (activeScreen !== "coach") return;
+      if (!document.body) return;
+      let feedback = document.getElementById("coachImmediateFeedback");
+      if (!feedback) {
+        feedback = document.createElement("div");
+        feedback.id = "coachImmediateFeedback";
+        feedback.className = "coach-immediate-feedback";
+        feedback.setAttribute("role", "status");
+        feedback.setAttribute("aria-live", "polite");
+        document.body.appendChild(feedback);
+      }
+      feedback.innerHTML = `<span class="coach-busy-spinner" aria-hidden="true"></span><strong>${escapeHtml(message)}</strong>`;
+      feedback.hidden = false;
+    }
+
+    function renderCoachAfterFeedback(message = "Aggiorno…") {
+      showCoachBusyFeedback(message);
+      requestAnimationFrame(() => setTimeout(() => {
+        render();
+        setTimeout(() => document.getElementById("coachImmediateFeedback")?.remove(), 320);
+      }, 0));
     }
 
     function applyCoachStudioDeepLink() {
@@ -10675,7 +10724,7 @@
       const p = decisionPriority();
       return `<section class="coach-studio-page">${coachStudioPageHead("Il tuo centro di comando","Buongiorno, Alice","Programmazione, monitoraggio e strumenti coach in un’unica area ordinata.",`<button class="gold-button" data-coach-studio-route="programs">Apri programmi</button>`)}
         <div class="coach-studio-kpis"><article class="coach-studio-kpi"><span>Programmi attivi</span><strong>${metrics.active}</strong><small>${metrics.programs} totali</small></article><article class="coach-studio-kpi"><span>Schede</span><strong>${metrics.sheets}</strong><small>${metrics.exercises} esercizi collegati</small></article><article class="coach-studio-kpi"><span>Workout completati</span><strong>${sessions.length}</strong><small>storico conservato</small></article><article class="coach-studio-kpi"><span>Segnale Coach</span><strong>${p.level}</strong><small>${escapeHtml(p.label)}</small></article></div>
-        <div class="coach-studio-shortcuts"><button class="coach-studio-shortcut" data-coach-studio-route="programs"><strong>Programmi e schede</strong><span>Crea, duplica, archivia e modifica le settimane.</span></button><button class="coach-studio-shortcut" data-coach-studio-route="library"><strong>Libreria tecnica</strong><span>Cerca esercizi, dettagli e alternative.</span></button><button class="coach-studio-shortcut" data-coach-studio-route="questionnaires"><strong>Questionari e check-in</strong><span>Configura domande, visibilità e ricorrenza.</span></button><button class="coach-studio-shortcut" data-coach-studio-route="statistics"><strong>Statistiche</strong><span>Volumi, distribuzione e allenamenti salvati.</span></button></div>
+        <div class="coach-studio-shortcuts"><button class="coach-studio-shortcut" data-coach-studio-route="programs"><strong>Programmi e schede</strong><span>Crea, duplica, archivia e modifica le settimane.</span></button><button class="coach-studio-shortcut" data-coach-studio-route="library"><strong>Libreria tecnica</strong><span>Cerca esercizi, dettagli e alternative.</span></button><button class="coach-studio-shortcut" data-coach-studio-route="questionnaires"><strong>Questionari</strong><span>Crea e assegna qui; l’atleta li compila nella sezione Check-in.</span></button><button class="coach-studio-shortcut" data-coach-studio-route="statistics"><strong>Statistiche</strong><span>Volumi, distribuzione e allenamenti salvati.</span></button></div>
         <div class="coach-studio-grid"><article class="coach-studio-card"><span class="section-eyebrow">Prossimo passo</span><h3>${metrics.active ? "Controlla il programma attivo" : "Attiva un programma"}</h3><p>${escapeHtml(p.text)}</p><button class="ghost-button" data-coach-studio-route="programs">Vai ai programmi</button></article><article class="coach-studio-card"><span class="section-eyebrow">Integrità</span><h3>Schema ${DATA_SCHEMA_VERSION} · ${APP_BUILD}</h3><p>Sincronizzazione affidabile e backup restano collegati alla stessa base dati.</p><button class="ghost-button" data-coach-studio-route="diagnostics">Apri diagnostica</button></article></div>
       </section>`;
     }
@@ -10773,7 +10822,7 @@
 
     function coachStudioQuestionnairesHtml() {
       const list = state.coach.questionnaires || [];
-      return `<section class="coach-studio-page">${coachStudioPageHead("Raccolta feedback","Questionari e check-in","Crea moduli, imposta visibilità e ricorrenza.",`<button class="gold-button" data-questionnaire-new>+ Nuovo questionario</button>`)}<div class="coach-question-list">${list.map((item)=>`<article class="coach-studio-card coach-question-card"><div><h3>${escapeHtml(item.title)}</h3><span class="micro-copy">${escapeHtml(item.type)} · ${item.questions?.length || 0} domande · ${escapeHtml(item.recurrence || "sempre")}</span></div><div class="quick-actions"><span class="chip">${item.active ? "Attivo" : "In pausa"}</span><button class="ghost-button" data-questionnaire-open="${escapeHtml(item.id)}">Modifica</button></div></article>`).join("")}</div></section>`;
+      return `<section class="coach-studio-page">${coachStudioPageHead("Raccolta feedback","Questionari","Crea e assegna i moduli da qui. Nell’app atleta, Check-in mostra soltanto il questionario attivo assegnato.",`<button class="gold-button" data-questionnaire-new>+ Nuovo questionario</button>`)}<div class="coach-flow-note"><strong>Come funziona</strong><span>1. Crea le domande · 2. Attiva il questionario · 3. L’atleta lo compila in Check-in</span></div><div class="coach-question-list">${list.map((item)=>`<article class="coach-studio-card coach-question-card"><div><h3>${escapeHtml(item.title)}</h3><span class="micro-copy">${escapeHtml(item.type)} · ${item.questions?.length || 0} domande · ${escapeHtml(item.recurrence || "sempre")}</span></div><div class="quick-actions"><span class="chip">${item.active ? "Visibile in Check-in" : "In pausa"}</span><button class="ghost-button" data-questionnaire-open="${escapeHtml(item.id)}">Modifica</button></div></article>`).join("")}</div></section>`;
     }
 
     function coachStudioQuestionnaireEditorHtml() {
@@ -11055,12 +11104,52 @@
       const patch=inlineExercisePatch(exercise,input.dataset.inlineExerciseField,input.value,Number(input.dataset.weekNumber)||1);
       const result=programRepository.updateExercise(programId,sheetId,exerciseId,patch,{save:false,forceLocked:true});
       if(!result.ok){updateCoachSaveIndicator("error");return false;}
-      updateCoachSaveIndicator("saving"); clearTimeout(coachProgramUi.inlineSaveTimer);
-      const commit=()=>{saveState({immediate:true});updateCoachSaveIndicator("saved");};
-      if(immediate)commit(); else coachProgramUi.inlineSaveTimer=setTimeout(commit,650);
-      const program=programRepository.getProgramById(programId); const volume=document.querySelector(".coach-board-volume");
-      if(program&&volume) volume.outerHTML=coachProgramVolumeHtml(program,Number(input.dataset.weekNumber)||1);
+      scheduleCoachEditorSave(immediate ? 220 : 700);
+      clearTimeout(coachProgramUi.volumeRefreshTimer);
+      coachProgramUi.volumeRefreshTimer=setTimeout(()=>{
+        const program=programRepository.getProgramById(programId); const volume=document.querySelector(".coach-board-volume");
+        if(program&&volume) volume.outerHTML=coachProgramVolumeHtml(program,Number(input.dataset.weekNumber)||1);
+      }, immediate ? 0 : 220);
       return true;
+    }
+
+    function scheduleCoachEditorSave(delay=700) {
+      updateCoachSaveIndicator("saving");
+      clearTimeout(coachProgramUi.inlineSaveTimer);
+      if (coachProgramUi.inlineSaveIdleHandle && typeof cancelIdleCallback === "function") cancelIdleCallback(coachProgramUi.inlineSaveIdleHandle);
+      const commit = () => {
+        coachProgramUi.inlineSaveIdleHandle = null;
+        saveState({ immediate:true });
+        updateCoachSaveIndicator("saved");
+      };
+      coachProgramUi.inlineSaveTimer = setTimeout(() => {
+        coachProgramUi.inlineSaveTimer = null;
+        if (typeof requestIdleCallback === "function") coachProgramUi.inlineSaveIdleHandle = requestIdleCallback(commit, { timeout:1200 });
+        else setTimeout(commit, 0);
+      }, Math.max(120, Number(delay) || 700));
+    }
+
+    function switchCoachProgramWeek(weekNumber) {
+      const studio=coachStudioState(); const selection=ensureCoachProgramSelection();
+      const program=selection.program; if(!program)return;
+      const maxWeek=Math.max(1,Number(program.durationWeeks)||1);
+      const next=Math.max(1,Math.min(maxWeek,Number(weekNumber)||1));
+      studio.programWeek=next; coachProgramUi.aiWeek=next;
+      document.querySelectorAll("[data-program-week]").forEach((button)=>button.classList.toggle("active",Number(button.dataset.programWeek)===next));
+      const title=document.querySelector(".coach-program-board-head h2"); if(title)title.textContent=`Settimana ${next}`;
+      document.querySelectorAll("[data-inline-row]").forEach((row)=>{
+        const sheetId=row.dataset.sheetId, exerciseId=row.dataset.exerciseId;
+        const exercise=programRepository.getExerciseById(program.id,sheetId,exerciseId); if(!exercise)return;
+        const p=coachWeekPrescription(exercise,next);
+        row.querySelectorAll("[data-inline-exercise-field]").forEach((input)=>{
+          input.dataset.weekNumber=String(next);
+          const field=input.dataset.inlineExerciseField;
+          const values={sets:p.sets,reps:p.reps,restSeconds:p.restSeconds,loadValue:p.loadValue,loadUnit:p.loadUnit,rpe:p.rpe,rir:p.rir,tempo:p.tempo,note:p.note};
+          if(Object.prototype.hasOwnProperty.call(values,field)) input.value=values[field]??"";
+        });
+      });
+      const volume=document.querySelector(".coach-board-volume"); if(volume)volume.outerHTML=coachProgramVolumeHtml(program,next);
+      const bot=document.querySelector(".program-board-bot span"); if(bot)bot.textContent=`Controllo la settimana ${next}; i suoni restano spenti finché non li attivi.`;
     }
 
     function programStatusLabel(status) {
@@ -11895,7 +11984,7 @@
         const progression = ex?.progression || {};
         const templateId = coachProgramUi.modalData.templateId || progression.templateId || "maintenance";
         const weeks = coachProgramUi.modalData.weeks || progression.weeks || generateProgressionWeeks(ex, templateId, duration);
-        return `<div class="coach-modal-backdrop"><section class="coach-modal progression-modal"><span class="section-eyebrow">${escapeHtml(program?.name||"Programma")} · ${escapeHtml(sheet?.name||sheet?.code||"Giornata")}</span><h3>Progressione · ${escapeHtml(ex?.name || "Esercizio")}</h3><p class="micro-copy">Destinazione: settimane 1-${duration}. Genera l’anteprima, controlla ogni valore e poi applica.</p><div class="form-grid"><label>Template<select id="progressionTemplateId">${progressionTemplates().map((t) => `<option value="${escapeHtml(t.id)}" ${t.id === templateId ? "selected" : ""}>${escapeHtml(t.name)}</option>`).join("")}</select></label><label>Settimane<input id="progressionDuration" type="number" min="1" value="${duration}"></label><label>Conflitti con modifiche manuali<select id="progressionApplyMode"><option value="empty-only">Mantieni le settimane manuali</option><option value="replace">Sostituisci anche i valori manuali</option></select></label></div><div class="progression-scroll"><table class="progression-table"><thead><tr><th>Settimana</th><th>Serie</th><th>Ripetizioni</th><th>RIR</th><th>RPE</th><th>Carico</th><th>Recupero</th><th>Tipo</th><th>Note</th></tr></thead><tbody>${weeks.map((w, i) => `<tr><td><strong>${i + 1}</strong>${w.source === "manual" ? '<span class="phase4-badge">manuale</span>' : '<span class="phase4-badge">auto</span>'}</td><td><input data-progression-week="${i}" data-progression-field="sets" type="number" min="0" value="${escapeHtml(w.sets ?? "")}"></td><td><input data-progression-week="${i}" data-progression-field="reps" value="${escapeHtml(formatReps(w.reps))}"></td><td><input data-progression-week="${i}" data-progression-field="rir" value="${escapeHtml(w.rir?.label || "")}"></td><td><input data-progression-week="${i}" data-progression-field="rpe" value="${escapeHtml(w.rpe?.label || "")}"></td><td><input data-progression-week="${i}" data-progression-field="load" type="number" min="0" value="${escapeHtml(w.prescribedLoad?.value ?? "")}"></td><td><input data-progression-week="${i}" data-progression-field="rest" type="number" min="0" value="${escapeHtml(w.restSeconds ?? "")}"></td><td><select data-progression-week="${i}" data-progression-field="type">${["normal","accumulation","intensification","deload","test","recovery","custom"].map((v) => `<option value="${v}" ${w.type === v ? "selected" : ""}>${v}</option>`).join("")}</select></td><td><input data-progression-week="${i}" data-progression-field="notes" value="${escapeHtml(w.notes || "")}"></td></tr>`).join("")}</tbody></table></div><div class="coach-modal-actions">${progression.templateId?`<button type="button" class="danger-button" data-progression-remove="${escapeHtml(ex?.id||"")}">Rimuovi progressione</button>`:""}${close}<button type="button" class="ghost-button" data-progression-generate>Genera anteprima</button><button type="button" class="gold-button" data-coach-modal-save>Applica progressione</button></div></section></div>`;
+        return `<div class="coach-modal-backdrop"><section class="coach-modal progression-modal"><span class="section-eyebrow">${escapeHtml(program?.name||"Programma")} · ${escapeHtml(sheet?.name||sheet?.code||"Giornata")}</span><h3>Progressione · ${escapeHtml(ex?.name || "Esercizio")}</h3><div class="coach-flow-note"><strong>Prima controlli, poi applichi</strong><span>Genera l’anteprima delle settimane 1-${duration}. Le righe “manuale” restano intatte, a meno che tu scelga esplicitamente di sostituirle.</span></div><div class="form-grid"><label>Metodo di progressione<select id="progressionTemplateId">${progressionTemplates().map((t) => `<option value="${escapeHtml(t.id)}" ${t.id === templateId ? "selected":""}>${escapeHtml(t.name)}</option>`).join("")}</select></label><label>Quante settimane<input id="progressionDuration" type="number" min="1" value="${duration}"></label><label>Se una settimana è già modificata<select id="progressionApplyMode"><option value="empty-only">Conserva i miei valori manuali</option><option value="replace">Sostituisci anche i miei valori manuali</option></select></label></div><div class="progression-scroll"><table class="progression-table"><thead><tr><th>Settimana</th><th>Serie</th><th>Ripetizioni</th><th>RIR</th><th>RPE</th><th>Carico</th><th>Recupero</th><th>Tipo</th><th>Note</th></tr></thead><tbody>${weeks.map((w, i) => `<tr><td><strong>${i + 1}</strong>${w.source === "manual" ? '<span class="phase4-badge">manuale</span>' : '<span class="phase4-badge">anteprima</span>'}</td><td><input data-progression-week="${i}" data-progression-field="sets" type="number" min="0" value="${escapeHtml(w.sets ?? "")}"></td><td><input data-progression-week="${i}" data-progression-field="reps" value="${escapeHtml(formatReps(w.reps))}"></td><td><input data-progression-week="${i}" data-progression-field="rir" value="${escapeHtml(w.rir?.label || "")}"></td><td><input data-progression-week="${i}" data-progression-field="rpe" value="${escapeHtml(w.rpe?.label || "")}"></td><td><input data-progression-week="${i}" data-progression-field="load" type="number" min="0" value="${escapeHtml(w.prescribedLoad?.value ?? "")}"></td><td><input data-progression-week="${i}" data-progression-field="rest" type="number" min="0" value="${escapeHtml(w.restSeconds ?? "")}"></td><td><select data-progression-week="${i}" data-progression-field="type">${["normal","accumulation","intensification","deload","test","recovery","custom"].map((v) => `<option value="${v}" ${w.type === v ? "selected" : ""}>${v}</option>`).join("")}</select></td><td><input data-progression-week="${i}" data-progression-field="notes" value="${escapeHtml(w.notes || "")}"></td></tr>`).join("")}</tbody></table></div><div class="coach-modal-actions">${progression.templateId?`<button type="button" class="danger-button" data-progression-remove="${escapeHtml(ex?.id||"")}">Rimuovi progressione</button>`:""}${close}<button type="button" class="ghost-button" data-progression-generate>Rigenera anteprima</button><button type="button" class="gold-button" data-coach-modal-save>Conferma e applica</button></div></section></div>`;
       }
       if (type === "exercise-transfer") {
         const programs = coachProgramsForUi();
@@ -12209,11 +12298,17 @@
 
     function coachAiContext() {
       const selection = ensureCoachProgramSelection();
-      const sheet = selection.sheet;
-      if (!sheet) return { program: selection.program, sheet: null, rows: [], duplicates: [], patternRuns: [], missingMetadata: [] };
-      const weekNumber=Math.max(1,Number(coachStudioState().programWeek)||1);
-      const rows = programRepository.getExercises(selection.program.id,sheet.id).map((exercise)=>{const p=coachWeekPrescription(exercise,weekNumber);return { id:exercise.id, exercise:exercise.name, name:exercise.name, group:exercise.muscle||exercise.som||"Custom", muscle:exercise.muscle||exercise.som||"Custom", sets:p.sets, reps:p.reps, effort:p.rir||p.rpe, restSeconds:p.restSeconds, tempo:p.tempo, loadValue:p.loadValue, equipment:exercise.metadata?.equipment||"", pattern:exercise.metadata?.pattern||"", progression:exercise.progression||{weeks:[]}, metadata:exercise.metadata||{}, biomechanics:exercise.biomechanics, technicalProfile:exercise.metadata?.technicalProfile } }).filter((row)=>row.exercise);
-      const duplicates = rows.filter((row, index) => rows.findIndex((other) => normalizeExerciseName(other.exercise) === normalizeExerciseName(row.exercise)) !== index);
+      const program = programRepository.getProgramById(coachProgramUi.aiProgramId) || selection.program;
+      const sheets = program ? programRepository.getSheets(program.id) : [];
+      const scope = coachProgramUi.aiScope || "week";
+      const weekNumber=Math.max(1,Number(coachProgramUi.aiWeek || coachStudioState().programWeek)||1);
+      const requestedSheet = sheets.find((item)=>item.id===coachProgramUi.aiDayId) || selection.sheet || sheets[0] || null;
+      const selectedSheets = scope === "day" ? (requestedSheet ? [requestedSheet] : []) : sheets;
+      const sheet = requestedSheet;
+      if (!sheet || !program) return { program, sheet:null, sheets:[], rows:[], duplicates:[], patternRuns:[], missingMetadata:[], scope, scopeLabel:"nessun dato", weekNumber };
+      const weeksToRead=scope==="periodization"?Array.from({length:Math.max(1,Number(program.durationWeeks)||1)},(_,index)=>index+1):[weekNumber];
+      const rows = selectedSheets.flatMap((day)=>programRepository.getExercises(program.id,day.id).flatMap((exercise)=>weeksToRead.map((readWeek)=>{const p=coachWeekPrescription(exercise,readWeek);return { id:exercise.id, sheetId:day.id, sheetName:day.name||day.code, weekNumber:readWeek, exercise:exercise.name, name:exercise.name, group:exercise.muscle||exercise.som||"Custom", muscle:exercise.muscle||exercise.som||"Custom", sets:p.sets, reps:p.reps, effort:p.rir||p.rpe, restSeconds:p.restSeconds, tempo:p.tempo, loadValue:p.loadValue, equipment:exercise.metadata?.equipment||"", pattern:exercise.metadata?.pattern||"", progression:exercise.progression||{weeks:[]}, metadata:exercise.metadata||{}, biomechanics:exercise.biomechanics, technicalProfile:exercise.metadata?.technicalProfile } }))).filter((row)=>row.exercise);
+      const duplicates = rows.filter((row, index) => rows.findIndex((other) => normalizeExerciseName(other.exercise) === normalizeExerciseName(row.exercise) && other.sheetId === row.sheetId && Number(other.weekNumber||weekNumber) === Number(row.weekNumber||weekNumber)) !== index);
       const patternMap = new Map();
       rows.forEach((row, index) => { const pattern = coachAiPattern(row.exercise, { pattern: row.pattern }); if (pattern !== "unknown") patternMap.set(pattern, [...(patternMap.get(pattern) || []), { row, index }]); });
       const patternRuns = [...patternMap.entries()].filter(([, items]) => items.length >= 2).map(([pattern, items]) => ({ pattern, count: items.length, positions: items.map((item) => item.index + 1), row: items[items.length - 1].row }));
@@ -12224,7 +12319,30 @@
       const focusText = String(sheet.focus || "").toLowerCase();
       const focusGroup = coachExerciseGroups().find((group) => focusText.includes(String(group).toLowerCase()));
       const focusGap = focusGroup && !rows.some((row) => String(row.group || "").toLowerCase() === focusGroup.toLowerCase()) ? { group: focusGroup, pattern: "isolation" } : null;
-      return { program: selection.program, sheet, rows, duplicates, patternRuns, overlapGroups, missingMetadata, focusGap, weekNumber };
+      const scopeLabel = scope === "day" ? `giornata ${sheet.name||sheet.code}` : scope === "program" ? "intero programma" : scope === "periodization" ? "intera periodizzazione" : `settimana ${weekNumber}`;
+      return { program, sheet, sheets:selectedSheets, rows, duplicates, patternRuns, overlapGroups, missingMetadata, focusGap, weekNumber, scope, scopeLabel };
+    }
+
+    function coachAiAggregateSuggestions(ctx) {
+      if (!ctx?.rows?.length) return [];
+      const suggestions=[];
+      const groupSets=new Map();
+      let fatigueLoad=0, shortRecoveryCompounds=0, totalSets=0;
+      ctx.rows.forEach((row)=>{
+        const sets=Math.max(0,Number(row.sets)||0); totalSets+=sets;
+        const group=displayLabel(row.group||"Altro"); groupSets.set(group,(groupSets.get(group)||0)+sets);
+        const bio=biomechanicsForExercise(row.exercise,row.biomechanics||row.metadata?.biomechanics);
+        fatigueLoad+=sets*Math.max(1,Number(bio.systemicFatigue)||1);
+        if(Number(bio.systemicFatigue)>=4 && Number(row.restSeconds)>0 && Number(row.restSeconds)<90) shortRecoveryCompounds++;
+      });
+      const distribution=[...groupSets.entries()].sort((a,b)=>b[1]-a[1]);
+      const leader=distribution[0];
+      if(leader && totalSets && leader[1]/totalSets>=.42) suggestions.push({id:"aggregate-fatigue-distribution",category:"distribution",severity:"improve",title:`La fatica è concentrata su ${leader[0]}`,problem:`${leader[0]} raccoglie ${leader[1]} delle ${totalSets} serie previste nel perimetro selezionato.`,reason:"Quando una parte molto ampia del volume cade sullo stesso distretto, le giornate successive possono partire con recupero incompleto, soprattutto se usano muscoli secondari simili.",dataUsed:[`${leader[1]} serie ${leader[0]}`,`${totalSets} serie totali`,`${ctx.sheets.length} giornate`],actionLabel:"Rivedi distribuzione",action:{type:"none"},exercise:leader[0],replacement:"Sposta una parte delle serie su una giornata più distante",prescription:null,sheetId:ctx.sheet.id,position:1,alternatives:[],involvedExercises:[],progression:"Mantieni il volume totale e distribuiscilo prima di aumentarlo.",confidence:"alta",impact:{before:`${Math.round(leader[1]/totalSets*100)}% del volume su ${leader[0]}`,after:"Distribuzione più uniforme tra le giornate"}});
+      if(shortRecoveryCompounds) suggestions.push({id:"aggregate-recovery-density",category:"joint-demand",severity:"improve",title:"Recuperi stretti sugli esercizi più tassanti",problem:`Ho trovato ${shortRecoveryCompounds} esercizi ad alta fatica sistemica con meno di 90 secondi di recupero.`,reason:"Recuperi molto brevi sui movimenti più tassanti possono far calare tecnica e prestazione nelle serie successive; questo effetto si somma al volume della seduta.",dataUsed:[`${shortRecoveryCompounds} esercizi tassanti`,`indice di fatica complessivo ${Math.round(fatigueLoad)}`],actionLabel:"Controlla recuperi",action:{type:"none"},exercise:"Esercizi multiarticolari più tassanti",replacement:"Valuta 90-180 secondi in base all’obiettivo",prescription:null,sheetId:ctx.sheet.id,position:1,alternatives:[],involvedExercises:[],progression:"Aumenta prima la qualità delle serie, poi la densità.",confidence:"media"});
+      const missing=ctx.rows.filter((row)=>!row.progression?.templateId && !(row.progression?.weeks||[]).length);
+      if(missing.length) suggestions.push({id:"aggregate-progression-gaps",category:"progressione",severity:"info",title:"La progressione non è leggibile per tutto il programma",problem:`${missing.length} esercizi non hanno ancora una regola o settimane di progressione.`,reason:"Senza una regola comune non posso collegare in modo affidabile volume, intensità e recupero lungo il periodo: vedo la fotografia, ma non la direzione.",dataUsed:[`${missing.length} esercizi senza progressione`,`${ctx.rows.length} esercizi analizzati`],actionLabel:"Completa progressioni",action:{type:"none"},exercise:missing.slice(0,3).map((row)=>displayExerciseName(row.exercise)).join(", "),replacement:"Apri ↗ e controlla l’anteprima settimana per settimana",prescription:null,sheetId:missing[0]?.sheetId||ctx.sheet.id,position:1,alternatives:[],involvedExercises:missing.slice(0,4).map((row)=>({id:row.id,name:displayExerciseName(row.exercise),group:row.group,role:row.sheetName})),progression:"Definisci prima la regola dei movimenti principali, poi degli accessori.",confidence:"alta"});
+      if(!suggestions.length) suggestions.push({id:"aggregate-balanced",category:"validation",severity:"info",title:"Distribuzione complessivamente coerente",problem:"Non vedo una concentrazione evidente di volume o recuperi incompatibili nel perimetro scelto.",reason:"Ho confrontato serie per gruppo, richiesta sistemica, recuperi e presenza delle progressioni tra le giornate.",dataUsed:[`${ctx.rows.length} esercizi`,`${totalSets} serie`,`${ctx.sheets.length} giornate`],actionLabel:"Nessuna correzione urgente",action:{type:"none"},exercise:"Programma attuale",replacement:"Mantieni e verifica il feedback dell’atleta",prescription:null,sheetId:ctx.sheet.id,position:1,alternatives:[],involvedExercises:[],progression:"Rivaluta dopo i prossimi check-in.",confidence:"media"});
+      return suggestions;
     }
 
     function getDisplayProgramName(programId) {
@@ -12273,6 +12391,7 @@
     function coachAiSuggestions() {
       const ctx = coachAiContext();
       const ignored = new Set(coachAiState().ignored || []);
+      if (ctx.scope !== "day") return coachAiAggregateSuggestions(ctx).filter((suggestion)=>!ignored.has(suggestion.id)).map((suggestion)=>({...suggestion,programId:ctx.program?.id||""}));
       const ruleSuggestions = COACH_AI_RULES.filter((rule) => rule.enabled !== false && rule.id !== "missing-metadata").slice().sort((a, b) => b.priority - a.priority).flatMap((rule) => rule.when(ctx) ? [{ rule, suggestion: rule.build(ctx) }] : []).map((item) => ({ ...item.suggestion, category: item.suggestion.category || (item.rule.id === "specific-overlap" ? "exercise-choice" : item.rule.category || "validation"), programId: ctx.program?.id || "", involvedExercises: item.suggestion.involvedExercises?.length ? item.suggestion.involvedExercises : item.rule.id === "duplicate-exercise" ? ctx.duplicates.map((row) => coachSuggestionExercise(row, ctx, "ripetuto")) : item.suggestion.exercise ? [coachSuggestionExercise({ id: item.suggestion.action?.exerciseId, exercise: item.suggestion.exercise, group: item.suggestion.action?.muscle }, ctx, "proposto")] : [] }));
       return [...ruleSuggestions, ...coachAiAdvancedSuggestions(ctx)].filter((suggestion) => !ignored.has(suggestion.id));
     }
@@ -12288,16 +12407,16 @@
       const involved = suggestion.involvedExercises || [];
       const involvedHtml = expanded ? `<div class="coach-ai-involved"><strong>Esercizi coinvolti${involved.length ? ` (${involved.length})` : ""}:</strong>${involved.length ? `<ul>${involved.map((item) => `<li><b>${escapeHtml(item.name)}</b><span>${escapeHtml(item.group || "")} ${item.action ? `· ${escapeHtml(item.action)}` : ""} ${item.position ? `· posizione ${item.position}` : ""}</span></li>`).join("")}</ul>` : `<p>Non riesco a identificare con sufficiente precisione gli esercizi coinvolti.</p>`}</div>` : "";
       const impact = suggestion.impact ? `<p><strong>Impatto previsto:</strong> ${escapeHtml(suggestion.impact.before || "")} → ${escapeHtml(suggestion.impact.after || "")}</p>` : "";
-      const details = `<div class="coach-ai-conversation"><p><strong>Problema</strong>${escapeHtml(suggestion.problem)}</p><p><strong>Perché</strong>${escapeHtml(suggestion.reason)}</p><p><strong>Soluzione</strong>${escapeHtml(suggestion.exercise || suggestion.progression || "Nessuna modifica necessaria")}</p></div>${expanded ? `<div class="coach-ai-expanded">${involvedHtml}${prescription}<p><strong>Dove:</strong> ${escapeHtml(coachSuggestionLocation(suggestion))}</p>${impact}${suggestion.progression ? `<p><strong>Progressione:</strong> ${escapeHtml(suggestion.progression)}</p>` : ""}<div class="coach-ai-data"><span>Ho guardato: ${suggestion.dataUsed.map(escapeHtml).join(" · ")}</span></div></div>` : ""}`;
+      const details = `<div class="coach-ai-conversation"><p><strong>Cosa ho notato</strong>${escapeHtml(suggestion.problem)}</p><p><strong>Perché te lo segnalo</strong>${escapeHtml(suggestion.reason)}</p><p><strong>Cosa farei</strong>${escapeHtml(suggestion.replacement || suggestion.progression || suggestion.exercise || "Nessuna modifica necessaria")}</p></div>${expanded ? `<div class="coach-ai-expanded">${involvedHtml}${prescription}<p><strong>Dove:</strong> ${escapeHtml(coachSuggestionLocation(suggestion))}</p>${impact}${suggestion.progression ? `<p><strong>Come procedere:</strong> ${escapeHtml(suggestion.progression)}</p>` : ""}<div class="coach-ai-data"><span>Dati considerati: ${suggestion.dataUsed.map(escapeHtml).join(" · ")}</span></div></div>` : ""}`;
       const ignoredCard = coachProgramUi.aiStatusTab === "ignored";
-      return `<article class="coach-ai-card ${suggestion.severity}"><div class="row"><h4>${escapeHtml(suggestion.title)}</h4><span class="chip">${escapeHtml(suggestion.severity === "critical" ? "Alta" : "Media")} · Confidenza ${escapeHtml(suggestion.confidence)}</span></div>${details}<div class="coach-ai-actions">${ignoredCard ? `<button class="apply" data-ai-restore="${escapeHtml(suggestion.id)}">Ripristina</button>` : `<button class="apply" data-ai-apply="${escapeHtml(suggestion.id)}">Applica</button><button data-ai-ignore="${escapeHtml(suggestion.id)}">Ignora</button><button data-ai-expand="${escapeHtml(suggestion.id)}">${expanded ? "Chiudi" : "Approfondisci"}</button><button data-ai-alternatives-toggle="${escapeHtml(suggestion.id)}">Alternative</button>`}</div>${alternatives}</article>`;
+      return `<article class="coach-ai-card ${suggestion.severity}"><div class="row"><h4>${escapeHtml(suggestion.title)}</h4><span class="chip">Importanza ${escapeHtml(suggestion.severity === "critical" ? "alta" : "media")} · Dati ${escapeHtml(suggestion.confidence === "alta" ? "solidi" : "parziali")}</span></div>${details}<div class="coach-ai-actions">${ignoredCard ? `<button class="apply" data-ai-restore="${escapeHtml(suggestion.id)}">Ripristina</button>` : `<button class="apply" data-ai-apply="${escapeHtml(suggestion.id)}">Valuta modifica</button><button data-ai-ignore="${escapeHtml(suggestion.id)}">Non ora</button><button data-ai-expand="${escapeHtml(suggestion.id)}">${expanded ? "Chiudi dettagli" : "Perché?"}</button>${suggestion.alternatives?.length ? `<button data-ai-alternatives-toggle="${escapeHtml(suggestion.id)}">Vedi alternative</button>` : ""}`}</div>${alternatives}</article>`;
     }
 
     function coachAiPanelHtml() {
       const ai = coachAiState();
       const filter = ai.filter || "all";
       const suggestions = coachAiSuggestions();
-      const filters = [["all","Tutti"],["critical","Criticità"],["improvements","Miglioramenti"],["duplication","Duplicati"],["progression","Progressioni"],["exercise","Scelte esercizi"],["order","Ordine"],["missing","Qualità dati"],["distribution","Distribuzione"],["joint-demand","Articolazioni"],["validation","Validazione"]];
+      const filters = [["all","Tutti"],["critical","Priorità alta"],["improvements","Da migliorare"],["duplication","Ridondanze"],["progression","Progressioni"],["exercise","Scelte esercizi"],["order","Ordine"],["missing","Informazioni mancanti"],["distribution","Distribuzione fatica"],["joint-demand","Recuperi e stress"],["validation","Controlli superati"]];
       const categoryAliases = { exercise: "exercise-choice", order: "ordering", missing: "data-quality" };
       const normalizedFilter = categoryAliases[filter] || filter;
       const matchesFilter = (suggestion) => normalizedFilter === "all" || (normalizedFilter === "critical" && suggestion.severity === "critical") || (normalizedFilter === "improvements" && suggestion.severity === "improve") || suggestion.category === normalizedFilter;
@@ -12308,8 +12427,11 @@
       const ctx=coachAiContext(); const quality = coachAiQualityIssues();
       const qualityBlock = quality.length ? `<section class="coach-ai-quality"><button type="button" data-ai-quality-toggle aria-expanded="${!!coachProgramUi.qualityExpanded}"><span>Informazioni mancanti</span><b>${quality.length}</b><em>${coachProgramUi.qualityExpanded ? "-" : "+"}</em></button>${coachProgramUi.qualityExpanded ? `<div class="coach-ai-quality-body"><p>Questi dati servono per consigli più precisi; non invento ciò che manca.</p><ul>${quality.map((row) => `<li><span>${escapeHtml(row.exercise)}</span><button type="button" data-exercise-action="details" data-sheet-id="${escapeHtml(ctx.sheet?.id||"")}" data-exercise-id="${escapeHtml(row.id)}">Completa dati</button></li>`).join("")}</ul></div>` : ""}</section>` : `<div class="coach-ai-complete">✓ Informazioni principali complete</div>`;
       const programs=coachProgramsForUi(); const last=coachProgramUi.aiLastAnalysisAt?new Date(coachProgramUi.aiLastAnalysisAt).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"non ancora eseguita";
+      const allSheets=ctx.program?programRepository.getSheets(ctx.program.id):[];
+      const weekCount=Math.max(1,Number(ctx.program?.durationWeeks)||1);
+      const scopeOptions=[["day","Una giornata"],["week","Settimana completa"],["program","Intero programma"],["periodization","Intera periodizzazione"]];
       const quick=["Controlla il volume","Ci sono esercizi ridondanti?","Come miglioro la progressione?","Cosa manca per analizzare meglio?"];
-      return `<section class="coach-ai-panel coach-ai-196"><header class="coach-ai-hero">${coachMascotHtml()}<div><span class="section-eyebrow">ASSISTENTE CONTESTUALE</span><h3>Coach AI</h3><p>Analizzo solo il programma e la settimana selezionati. Ogni modifica richiede la tua conferma.</p></div></header><div class="coach-ai-context-grid"><label>Programma<select data-ai-program-select>${programs.map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id===ctx.program?.id?"selected":""}>${escapeHtml(item.name)}</option>`).join("")}</select></label><div><span>Settimana</span><strong>${ctx.weekNumber||1}</strong></div><div><span>Giornata analizzata</span><strong>${escapeHtml(ctx.sheet?.name||ctx.sheet?.code||"Nessuna")}</strong></div><div><span>Esercizi</span><strong>${ctx.rows.length}</strong></div><div><span>Ultima analisi</span><strong>${escapeHtml(last)}</strong></div></div><div class="coach-ai-query"><label>Chiedi qualcosa sul programma<input data-ai-question value="${escapeHtml(coachProgramUi.aiQuestion||"")}" placeholder="Es. il volume dei quadricipiti è equilibrato?"></label><button class="gold-button" data-ai-analyze>Analizza</button><div class="coach-ai-quick-prompts">${quick.map((q)=>`<button data-ai-quick-question="${escapeHtml(q)}">${escapeHtml(q)}</button>`).join("")}</div>${coachProgramUi.aiAnswer?`<div class="coach-ai-answer"><strong>Diva Bot</strong><p>${escapeHtml(coachProgramUi.aiAnswer)}</p></div>`:""}</div>${qualityBlock}<div class="coach-ai-status-tabs"><button class="${statusTab === "suggestions" ? "active" : ""}" data-ai-status-tab="suggestions">Suggerimenti ${suggestions.length}</button><button class="${statusTab === "applied" ? "active" : ""}" data-ai-status-tab="applied">Applicati ${ai.applied?.length || 0}</button><button class="${statusTab === "ignored" ? "active" : ""}" data-ai-status-tab="ignored">Ignorati ${ai.ignored?.length || 0}</button></div><div class="coach-ai-filters">${filters.map(([value,label]) => `<button class="coach-ai-filter ${filter === value ? "active" : ""}" data-ai-filter="${value}">${label}</button>`).join("")}</div><div class="coach-ai-scroll-area">${!ai.enabled ? `<div class="coach-ai-empty">Analisi disattivata. Lo storico resta disponibile.</div>` : visible.length ? visible.map(coachAiSuggestionHtml).join("") : `<div class="coach-ai-empty">Non vedo criticità importanti nei dati disponibili.</div>`}</div></section>`;
+      return `<section class="coach-ai-panel coach-ai-196"><header class="coach-ai-hero">${coachMascotHtml()}<div><span class="section-eyebrow">ASSISTENTE CONTESTUALE</span><h3>Coach AI</h3><p>Scegli cosa vuoi controllare. Metto in relazione esercizi, volume, recuperi e distribuzione della fatica; nessuna modifica parte senza conferma.</p></div></header><div class="coach-ai-scope-help"><strong>1. Scegli il perimetro</strong><span>Puoi analizzare una giornata, una settimana o l’intero percorso.</span></div><div class="coach-ai-context-grid"><label>Programma<select data-ai-program-select>${programs.map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id===ctx.program?.id?"selected":""}>${escapeHtml(item.name)}</option>`).join("")}</select></label><label>Analizza<select data-ai-scope-select>${scopeOptions.map(([value,label])=>`<option value="${value}" ${ctx.scope===value?"selected":""}>${label}</option>`).join("")}</select></label><label>Settimana<select data-ai-week-select>${Array.from({length:weekCount},(_,index)=>`<option value="${index+1}" ${ctx.weekNumber===index+1?"selected":""}>Settimana ${index+1}</option>`).join("")}</select></label>${ctx.scope==="day"?`<label>Giornata<select data-ai-day-select>${allSheets.map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id===ctx.sheet?.id?"selected":""}>${escapeHtml(item.name||item.code)}</option>`).join("")}</select></label>`:`<div><span>Perimetro attivo</span><strong>${escapeHtml(ctx.scopeLabel)}</strong></div>`}<div><span>Esercizi letti</span><strong>${ctx.rows.length}</strong></div><div><span>Ultima analisi</span><strong>${escapeHtml(last)}</strong></div></div><div class="coach-ai-query"><div class="coach-ai-scope-help"><strong>2. Fai una domanda oppure usa un controllo rapido</strong><span>La risposta userà soltanto il programma e il perimetro mostrati sopra.</span></div><label>Domanda per Diva Bot<input data-ai-question value="${escapeHtml(coachProgramUi.aiQuestion||"")}" placeholder="Es. la fatica delle gambe è distribuita bene?"></label><button class="gold-button" data-ai-analyze>Analizza ora</button><div class="coach-ai-quick-prompts">${quick.map((q)=>`<button data-ai-quick-question="${escapeHtml(q)}">${escapeHtml(q)}</button>`).join("")}</div>${coachProgramUi.aiAnswer?`<div class="coach-ai-answer" aria-live="polite"><strong>Diva Bot</strong><p>${escapeHtml(coachProgramUi.aiAnswer)}</p></div>`:""}</div>${qualityBlock}<div class="coach-ai-status-tabs"><button class="${statusTab === "suggestions" ? "active" : ""}" data-ai-status-tab="suggestions">Osservazioni ${suggestions.length}</button><button class="${statusTab === "applied" ? "active" : ""}" data-ai-status-tab="applied">Applicate ${ai.applied?.length || 0}</button><button class="${statusTab === "ignored" ? "active" : ""}" data-ai-status-tab="ignored">Rimandate ${ai.ignored?.length || 0}</button></div><div class="coach-ai-filters">${filters.map(([value,label]) => `<button class="coach-ai-filter ${filter === value ? "active" : ""}" data-ai-filter="${value}">${label}</button>`).join("")}</div><div class="coach-ai-scroll-area">${!ai.enabled ? `<div class="coach-ai-empty">Analisi disattivata. Lo storico resta disponibile.</div>` : visible.length ? visible.map(coachAiSuggestionHtml).join("") : `<div class="coach-ai-empty">Non vedo criticità importanti nei dati disponibili.</div>`}</div></section>`;
     }
 
     function coachAiPopupHtml() {
@@ -12944,18 +13066,34 @@
       </section>`;
     }
 
+    function assignedQuestionnaireHtml() {
+      const questionnaire=(state.coach?.questionnaires||[]).find((item)=>item.active && item.type==="check-in");
+      if(!questionnaire) return `<div class="coach-flow-note"><strong>Nessun questionario assegnato</strong><span>Quando il coach ne attiva uno, apparirà qui automaticamente.</span></div>`;
+      state.quiz.questionnaireAnswers=state.quiz.questionnaireAnswers||{};
+      const answer=(id)=>state.quiz.questionnaireAnswers[id]??"";
+      const fields=(questionnaire.questions||[]).map((question)=>{
+        const required=question.required?' <span aria-hidden="true">*</span>':"";
+        if(question.kind==="photos") return `<label class="assigned-question assigned-photos"><strong>${escapeHtml(question.label)}${required}</strong><input type="file" accept="image/*" multiple data-assigned-photo="${escapeHtml(question.id)}"><small>Puoi selezionare le foto ora; il nome dei file resta associato a questo check-in.</small></label>`;
+        if(question.kind==="choice") return `<label class="assigned-question"><strong>${escapeHtml(question.label)}${required}</strong><select data-assigned-question="${escapeHtml(question.id)}"><option value="">Scegli una risposta</option>${["Molto intenso","Impegnativo ma gestibile","Adeguato","Troppo facile"].map((value)=>`<option ${answer(question.id)===value?"selected":""}>${value}</option>`).join("")}</select></label>`;
+        if(question.kind==="scale") return `<label class="assigned-question"><strong>${escapeHtml(question.label)}${required}</strong><input type="range" min="1" max="5" value="${escapeHtml(answer(question.id)||3)}" data-assigned-question="${escapeHtml(question.id)}"><small>1 = basso · 5 = alto</small></label>`;
+        return `<label class="assigned-question"><strong>${escapeHtml(question.label)}${required}</strong><input type="${question.kind==="number"?"number":"text"}" value="${escapeHtml(answer(question.id))}" data-assigned-question="${escapeHtml(question.id)}" ${question.required?"required":""} placeholder="Inserisci la risposta"></label>`;
+      }).join("");
+      return `<section class="assigned-questionnaire" data-assigned-questionnaire="${escapeHtml(questionnaire.id)}"><div class="row"><div><span class="section-eyebrow">QUESTIONARIO ASSEGNATO</span><h3>${escapeHtml(questionnaire.title)}</h3></div><span class="chip">${escapeHtml(questionnaire.recurrence==="weekly"?"Settimanale":questionnaire.recurrence||"Attivo")}</span></div><p>Compila queste domande e gli indicatori di recupero sotto: verranno salvati insieme con un solo pulsante.</p><div class="assigned-question-grid">${fields}</div></section>`;
+    }
+
     function quizHtml() {
       const p = checkinStatusMeta();
       const advice = checkinAdvice();
       return `
         <div class="hero-title">
           <h2>Check-in <span>allenamento</span></h2>
-          <p>Semaforo spiegato e check-in rapido, separati dal workout e dalla zona coach.</p>
+          <p>Qui compili il questionario assegnato dal coach e gli indicatori di recupero, in un unico invio.</p>
         </div>
         <div class="checkin-grid">
           ${checkinTrafficHtml()}
           <section class="card checkin-form-card">
-            <div class="row"><h3>Check-in benessere</h3><span class="chip">1-5</span></div>
+            ${assignedQuestionnaireHtml()}
+            <div class="row"><h3>Indicatori di recupero</h3><span class="chip">1-5</span></div>
             <p class="micro-copy" style="margin-top:6px">Come ti senti oggi? Valuta da 1 a 5.</p>
             <div class="checkin-slider-grid">
               ${checkinScale("energy", "Energia", "1 scarica - 5 alta")}
@@ -12965,7 +13103,7 @@
               ${checkinScale("hunger", "Fame", "1 bassa - 5 alta")}
             </div>
             <div class="coach-result" style="border-color:${advice.color};background:color-mix(in srgb, ${advice.color} 10%, transparent)"><strong>${escapeHtml(advice.title)}</strong>${escapeHtml(advice.text)}</div>
-            <button class="gold-button" style="width:100%;margin-top:12px" id="saveQuiz">Salva check-in</button>
+            <button class="gold-button" style="width:100%;margin-top:12px" id="saveQuiz">Invia questionario e check-in</button>
           </section>
         </div>
         <section class="card">
@@ -13041,13 +13179,13 @@
         if(panel==="info") studio.infoOpen=!studio.infoOpen;
         if(panel==="reference"){studio.referenceOpen=!studio.referenceOpen;studio.aiOpen=false;}
         if(panel==="ai"){studio.aiOpen=!studio.aiOpen;studio.referenceOpen=false;}
-        saveState({cloud:false});render();
+        renderCoachAfterFeedback(panel==="ai"?"Preparo l’analisi…":"Apro l’anteprima…");
       }));
-      document.querySelectorAll("[data-studio-panel-close]").forEach((button)=>button.addEventListener("click",()=>{const studio=coachStudioState();studio[`${button.dataset.studioPanelClose}Open`]=false;saveState({cloud:false});render();}));
-      document.querySelector("[data-studio-reference-program]")?.addEventListener("change",(event)=>{coachStudioState().referenceProgramId=event.target.value;saveState({cloud:false});render();});
-      document.querySelector("[data-studio-reference-week]")?.addEventListener("change",(event)=>{coachProgramUi.referenceWeek=Number(event.target.value)||1;render();});
-      document.querySelectorAll("[data-program-week]").forEach((button)=>button.addEventListener("click",()=>{coachStudioState().programWeek=Number(button.dataset.programWeek)||1;saveState({cloud:false});render();}));
-      document.querySelectorAll("[data-program-board-add-kind]").forEach((button)=>button.addEventListener("click",()=>{selectCoachSheet(button.dataset.sheetId);coachProgramUi.pendingAddKind=button.dataset.programBoardAddKind||"exercise";openCoachModal("exercise-library");render();}));
+      document.querySelectorAll("[data-studio-panel-close]").forEach((button)=>button.addEventListener("click",()=>{const studio=coachStudioState();studio[`${button.dataset.studioPanelClose}Open`]=false;renderCoachAfterFeedback("Chiudo il pannello…");}));
+      document.querySelector("[data-studio-reference-program]")?.addEventListener("change",(event)=>{coachStudioState().referenceProgramId=event.target.value;renderCoachAfterFeedback("Aggiorno l’anteprima…");});
+      document.querySelector("[data-studio-reference-week]")?.addEventListener("change",(event)=>{coachProgramUi.referenceWeek=Number(event.target.value)||1;renderCoachAfterFeedback("Aggiorno la settimana…");});
+      document.querySelectorAll("[data-program-week]").forEach((button)=>button.addEventListener("click",()=>switchCoachProgramWeek(button.dataset.programWeek)));
+      document.querySelectorAll("[data-program-board-add-kind]").forEach((button)=>button.addEventListener("click",()=>{selectCoachSheet(button.dataset.sheetId);coachProgramUi.pendingAddKind=button.dataset.programBoardAddKind||"exercise";openCoachModal("exercise-library");renderCoachAfterFeedback("Apro la libreria…");}));
       document.querySelectorAll("[data-inline-exercise-field]").forEach((input)=>{
         input.addEventListener("input",()=>updateInlineExerciseField(input,false));
         input.addEventListener("change",()=>updateInlineExerciseField(input,true));
@@ -13620,13 +13758,14 @@
         programRepository.updateExercise(program.id, sheet.id, exerciseId, { metadata: { ...(current.metadata || {}), note2: input.value } }, { immediate: true, forceLocked: true }); updateCoachSaveIndicator("saved");
       }));
       document.querySelectorAll("[data-progression-generate]").forEach((button) => button.addEventListener("click", () => {
+        showCoachBusyFeedback("Sto generando l’anteprima…");
         const { program, sheet } = ensureCoachProgramSelection();
         const ex = programRepository.getExerciseById(program?.id, sheet?.id, coachProgramUi.modalData.exerciseId);
         const templateId = document.getElementById("progressionTemplateId")?.value || "maintenance";
         const duration = Math.max(1, Number(document.getElementById("progressionDuration")?.value || programWeekCount(program, sheet)));
         coachProgramUi.modalData.weeks = generateProgressionWeeks(ex, templateId, duration);
         coachProgramUi.modalData.templateId = templateId;
-        render();
+        requestAnimationFrame(()=>setTimeout(render,0));
       }));
       document.querySelectorAll("[data-progression-week]").forEach((input) => input.addEventListener("change", () => {
         const index = Number(input.dataset.progressionWeek);
@@ -13785,12 +13924,23 @@
       });
       const saveWorkout = document.getElementById("saveWorkout");
       if (saveWorkout) saveWorkout.addEventListener("click", saveWorkoutSession);
+      document.querySelectorAll("[data-assigned-question]").forEach((input)=>input.addEventListener("input",()=>{
+        state.quiz.questionnaireAnswers=state.quiz.questionnaireAnswers||{};
+        state.quiz.questionnaireAnswers[input.dataset.assignedQuestion]=input.value;
+      }));
+      document.querySelectorAll("[data-assigned-photo]").forEach((input)=>input.addEventListener("change",()=>{
+        state.quiz.questionnaireAnswers=state.quiz.questionnaireAnswers||{};
+        state.quiz.questionnaireAnswers[input.dataset.assignedPhoto]=[...(input.files||[])].map((file)=>file.name);
+      }));
       const saveQuiz = document.getElementById("saveQuiz");
       if (saveQuiz) {
         saveQuiz.addEventListener("click", () => {
+          const assigned=document.querySelector("[data-assigned-questionnaire]");
+          state.quiz.questionnaireHistory=Array.isArray(state.quiz.questionnaireHistory)?state.quiz.questionnaireHistory:[];
+          if(assigned) state.quiz.questionnaireHistory.push({id:newEntityId("checkin"),questionnaireId:assigned.dataset.assignedQuestionnaire,createdAt:new Date().toISOString(),answers:clone(state.quiz.questionnaireAnswers||{}),wellness:{energy:state.quiz.energy,sleep:state.quiz.sleep,doms:state.quiz.doms,stress:state.quiz.stress,hunger:state.quiz.hunger}});
           saveState();
           const p = decisionPriority();
-          showToast(`Check-in salvato: ${p.level} - ${p.label}`);
+          showToast(`Questionario e check-in salvati: ${p.level} - ${p.label}`);
           render();
         });
       }
@@ -13889,17 +14039,29 @@
       if (modalSave) modalSave.addEventListener("click", () => { saveCoachUiModal(); render(); });
       const aiToggle = document.querySelector("[data-ai-toggle]");
       if (aiToggle) aiToggle.addEventListener("change", () => { triggerDivaBotReaction("coach_analysis_started"); coachAiState().enabled = aiToggle.checked; render(); triggerDivaBotReaction("coach_analysis_completed"); });
-      document.querySelector("[data-ai-program-select]")?.addEventListener("change",(event)=>{selectCoachProgram(event.target.value);coachStudioState().programId=event.target.value;coachProgramUi.aiProgramId=event.target.value;saveState({cloud:false});render();});
+      document.querySelector("[data-ai-program-select]")?.addEventListener("change",(event)=>{coachProgramUi.aiProgramId=event.target.value;coachProgramUi.aiDayId=programRepository.getSheets(event.target.value)[0]?.id||"";renderCoachAfterFeedback("Carico il programma per l’analisi…");});
+      document.querySelector("[data-ai-scope-select]")?.addEventListener("change",(event)=>{coachProgramUi.aiScope=event.target.value;renderCoachAfterFeedback("Aggiorno il perimetro…");});
+      document.querySelector("[data-ai-week-select]")?.addEventListener("change",(event)=>{coachProgramUi.aiWeek=Math.max(1,Number(event.target.value)||1);renderCoachAfterFeedback("Leggo la settimana scelta…");});
+      document.querySelector("[data-ai-day-select]")?.addEventListener("change",(event)=>{coachProgramUi.aiDayId=event.target.value;renderCoachAfterFeedback("Leggo la giornata scelta…");});
       const runCoachAiQuestion=(question)=>{
-        const ctx=coachAiContext(); const q=String(question||"").trim(); const suggestions=coachAiSuggestions(); const volume=ctx.program?coachProgramVolumeRows(ctx.program,ctx.weekNumber||1,ctx.sheet?.id):[];
-        coachProgramUi.aiQuestion=q; coachProgramUi.aiLastAnalysisAt=new Date().toISOString();
-        if(!ctx.sheet) coachProgramUi.aiAnswer="Seleziona un programma con almeno una giornata prima di avviare l’analisi.";
-        else if(/volume/i.test(q)) coachProgramUi.aiAnswer=volume.length?`Nella ${ctx.sheet.name||ctx.sheet.code}, settimana ${ctx.weekNumber}, risultano ${volume.map((item)=>`${item.sets} serie ${item.muscle}`).join(", ")}. Apri i suggerimenti sotto per valutare la distribuzione.`:"Non risultano ancora serie compilate: completa la prescrizione e riprova.";
-        else if(/ridond|duplic/i.test(q)) coachProgramUi.aiAnswer=ctx.duplicates.length?`Ho trovato ${ctx.duplicates.length} possibile duplicazione: ${ctx.duplicates.map((row)=>row.exercise).join(", ")}. Non applico nulla senza conferma.`:"Non risultano duplicati esatti nella giornata selezionata.";
-        else if(/progress/i.test(q)) coachProgramUi.aiAnswer=ctx.rows.some((row)=>!row.progression?.templateId)?"Alcuni esercizi non hanno ancora un template di progressione. Puoi aprire il pulsante ↗ sulla riga e vedere l’anteprima prima di applicarlo.":"Gli esercizi analizzati hanno una progressione associata; controlla comunque le settimane manuali evidenziate.";
-        else if(/manca|informaz/i.test(q)) coachProgramUi.aiAnswer=ctx.missingMetadata.length?`Mi mancano pattern o attrezzatura per: ${ctx.missingMetadata.map((row)=>row.exercise).join(", ")}. Completa i dettagli per aumentare la precisione.`:"Le informazioni principali risultano complete per questa giornata.";
-        else coachProgramUi.aiAnswer=suggestions.length?`Ho trovato ${suggestions.length} osservazioni contestuali per ${ctx.program.name}, settimana ${ctx.weekNumber}. Le trovi sotto con problema, motivo e soluzione; l’applicazione resta sempre manuale.`:`Non vedo criticità importanti nei dati disponibili per ${ctx.program.name}, settimana ${ctx.weekNumber}.`;
-        setCoachMascotState("thinking",{message:"Analisi completata ✨",duration:750,returnState:"happy"});saveState({cloud:false});render();
+        const q=String(question||"").trim(); coachProgramUi.aiQuestion=q;
+        const answer=document.querySelector(".coach-ai-answer") || (()=>{const box=document.createElement("div");box.className="coach-ai-answer";document.querySelector(".coach-ai-query")?.append(box);return box;})();
+        if(answer) answer.innerHTML='<span class="coach-busy-spinner" aria-hidden="true"></span><strong>Sto analizzando…</strong><p>Collego volume, recuperi e distribuzione della fatica.</p>';
+        setCoachMascotState("thinking",{message:"Sto analizzando…",duration:900,returnState:"happy"});
+        setTimeout(()=>{
+          const ctx=coachAiContext(); const suggestions=coachAiSuggestions();
+          const volumes=new Map(); let totalSets=0, demanding=0, shortRest=0;
+          ctx.rows.forEach((row)=>{const sets=Math.max(0,Number(row.sets)||0);totalSets+=sets;const group=displayLabel(row.group||"Altro");volumes.set(group,(volumes.get(group)||0)+sets);const bio=biomechanicsForExercise(row.exercise,row.biomechanics||row.metadata?.biomechanics);if(Number(bio.systemicFatigue)>=4){demanding++;if(Number(row.restSeconds)>0&&Number(row.restSeconds)<90)shortRest++;}});
+          const top=[...volumes.entries()].sort((a,b)=>b[1]-a[1]).slice(0,3);
+          coachProgramUi.aiLastAnalysisAt=new Date().toISOString();
+          if(!ctx.sheet) coachProgramUi.aiAnswer="Non ho ancora una giornata da leggere. Scegli un programma compilato e riprova.";
+          else if(/ridond|duplic/i.test(q)) coachProgramUi.aiAnswer=ctx.duplicates.length?`In ${ctx.scopeLabel} ho trovato ${ctx.duplicates.length} ripetizioni esatte (${ctx.duplicates.map((row)=>displayExerciseName(row.exercise)).join(", ")}). Il punto non è solo il doppione: quelle serie sommano fatica sullo stesso gesto senza garantire uno stimolo diverso. Prima di eliminarle, controllerei se hanno davvero tecnica o obiettivo differenti.`:`In ${ctx.scopeLabel} non vedo duplicati esatti. Ho comunque confrontato muscoli e pattern: le eventuali sovrapposizioni utili sono spiegate nelle osservazioni sotto.`;
+          else if(/progress/i.test(q)) {const missing=ctx.rows.filter((row)=>!row.progression?.templateId&&!(row.progression?.weeks||[]).length);coachProgramUi.aiAnswer=missing.length?`${missing.length} esercizi non mostrano ancora una direzione tra le settimane. Senza questa informazione il volume attuale può sembrare corretto, ma non è possibile capire come cresceranno intensità e fatica. Partirei dai movimenti principali e userei sempre l’anteprima prima di applicare.`:`Le progressioni sono presenti nel perimetro scelto. Controllerei comunque le settimane manuali: hanno priorità e non verranno sovrascritte senza una scelta esplicita.`;}
+          else if(/manca|informaz/i.test(q)) coachProgramUi.aiAnswer=ctx.missingMetadata.length?`Per ${ctx.missingMetadata.map((row)=>displayExerciseName(row.exercise)).slice(0,4).join(", ")} mancano dettagli tecnici. Posso leggere serie e recuperi, ma non distinguere bene lo stress articolare o proporre alternative affidabili: completa quei profili prima di prendere una decisione.`:"Le informazioni principali sono presenti: posso collegare prescrizioni, recuperi e profili tecnici senza dover indovinare.";
+          else coachProgramUi.aiAnswer=totalSets?`In ${ctx.scopeLabel} vedo ${totalSets} serie su ${ctx.rows.length} esercizi. Il volume è guidato da ${top.map(([group,sets])=>`${group} (${sets})`).join(", ")}. ${demanding?`${demanding} esercizi hanno una richiesta sistemica alta${shortRest?` e ${shortRest} hanno recuperi sotto 90 secondi`:""}; per questo valuterei la qualità delle serie prima di aumentare altro volume.`:"Non emergono movimenti ad alta fatica sistemica dai dati disponibili."} Ho preparato ${suggestions.length} osservazioni motivate qui sotto.`:"Non ci sono ancora abbastanza serie compilate per collegare volume e fatica. Completa almeno serie e recuperi, poi riprova.";
+          coachProgramUi.aiAnswer=String(coachProgramUi.aiAnswer||"").replace("1 esercizi","1 esercizio").replace("1 osservazioni","1 osservazione");
+          saveState({cloud:false}); render();
+        },0);
       };
       document.querySelector("[data-ai-question]")?.addEventListener("input",(event)=>{coachProgramUi.aiQuestion=event.target.value;});
       document.querySelector("[data-ai-question]")?.addEventListener("keydown",(event)=>{if(event.key==="Enter"){event.preventDefault();runCoachAiQuestion(event.target.value);}});
