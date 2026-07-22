@@ -2,7 +2,7 @@
   "name": "Barbell diva",
   "short_name": "Diva",
   "description": "Allenamento, logbook, progressioni e coaching di Alice.",
-  "start_url": "./index.html?v=122-phase19.8.1",
+  "start_url": "./index.html?v=123-phase19.9",
   "id": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -31,7 +31,7 @@
       "name": "Workout",
       "short_name": "Workout",
       "description": "Apri subito il logbook allenamento.",
-      "url": "./index.html?v=122-phase19.8.1#training",
+      "url": "./index.html?v=123-phase19.9#training",
       "icons": [
         {
           "src": "./app-icon-192.png",
@@ -44,7 +44,7 @@
       "name": "Coach",
       "short_name": "Coach",
       "description": "Apri la zona coach.",
-      "url": "./index.html?v=122-phase19.8.1#coach/programs",
+      "url": "./index.html?v=123-phase19.9#coach/programs",
       "icons": [
         {
           "src": "./app-icon-192.png",
