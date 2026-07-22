@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v132-phase24.1-coach-ai-ux";
+const CACHE_NAME = "atlas-app-v133-release-candidate";
 const APP_SHELL = [
   "./",
   "./index.html",
