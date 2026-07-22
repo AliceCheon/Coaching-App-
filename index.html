@@ -7,23 +7,24 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v130-phase23.0-knowledge-engine">
+  <link rel="manifest" href="manifest.webmanifest?v=v131-phase24.0-coach-ai3">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="workout-pro.css?v=v130-phase23.0-knowledge-engine">
-  <link rel="stylesheet" href="coach-studio.css?v=v130-phase23.0-knowledge-engine">
-  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v130-phase23.0-knowledge-engine">
-  <script src="exercise-library-19.8.js?v=v130-phase23.0-knowledge-engine"></script>
-  <script src="master-exercise-library.js?v=v130-phase23.0-knowledge-engine"></script>
-  <script src="athlete-context.js?v=v130-phase23.0-knowledge-engine"></script>
-  <script src="coach-ai-engine-2.js?v=v130-phase23.0-knowledge-engine"></script>
-  <script src="knowledge-graph.js?v=v130-phase23.0-knowledge-engine"></script>
-  <script src="decision-rules.js?v=v130-phase23.0-knowledge-engine"></script>
-  <script src="decision-engine.js?v=v130-phase23.0-knowledge-engine"></script>
-  <script type="module" src="programming-engine.js?v=v130-phase23.0-knowledge-engine"></script>
-  <script type="module" src="sync-reliability.js?v=v130-phase23.0-knowledge-engine"></script>
-  <script src="coach-studio.js?v=v130-phase23.0-knowledge-engine"></script>
-  <script defer src="workout-pro.js?v=v130-phase23.0-knowledge-engine"></script>
+  <link rel="stylesheet" href="workout-pro.css?v=v131-phase24.0-coach-ai3">
+  <link rel="stylesheet" href="coach-studio.css?v=v131-phase24.0-coach-ai3">
+  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v131-phase24.0-coach-ai3">
+  <script src="exercise-library-19.8.js?v=v131-phase24.0-coach-ai3"></script>
+  <script src="master-exercise-library.js?v=v131-phase24.0-coach-ai3"></script>
+  <script src="athlete-context.js?v=v131-phase24.0-coach-ai3"></script>
+  <script src="coach-ai-engine-2.js?v=v131-phase24.0-coach-ai3"></script>
+  <script src="knowledge-graph.js?v=v131-phase24.0-coach-ai3"></script>
+  <script src="decision-rules.js?v=v131-phase24.0-coach-ai3"></script>
+  <script src="decision-engine.js?v=v131-phase24.0-coach-ai3"></script>
+  <script src="coach-ai3-programming.js?v=v131-phase24.0-coach-ai3"></script>
+  <script type="module" src="programming-engine.js?v=v131-phase24.0-coach-ai3"></script>
+  <script type="module" src="sync-reliability.js?v=v131-phase24.0-coach-ai3"></script>
+  <script src="coach-studio.js?v=v131-phase24.0-coach-ai3"></script>
+  <script defer src="workout-pro.js?v=v131-phase24.0-coach-ai3"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4840,7 +4841,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v130-phase23.0-knowledge-engine";
+    const APP_BUILD = "v131-phase24.0-coach-ai3";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -5866,7 +5867,7 @@
 };
 
 
-    const DATA_SCHEMA_VERSION = 9;
+    const DATA_SCHEMA_VERSION = 10;
     const BACKUP_SCHEMA_VERSION = 1;
     const BACKUP_HISTORY_KEY = "alice-method-app.v8.backup-history.v1";
     const BACKUP_BUILD_KEY = "alice-method-app.v8.backup-build.v1";
@@ -5874,7 +5875,7 @@
     const PRE_V55_BACKUP_KEY = "alice-method-app.pre-v55-backup";
     const PRE_WEEK_CONSOLIDATION_BACKUP_KEY = "barbell-diva.pre-week-consolidation-backup";
     const PROGRAM_STATUSES = new Set(["draft", "available", "active", "archived", "deleted"]);
-    const SCHEMA_MIGRATIONS = new Map([[1, migrateV1ToV2], [2, migrateV2ToV3], [3, migrateV3ToV4], [4, migrateV4ToV5], [5, migrateV5ToV6], [6, migrateV6ToV7], [7, migrateV7ToV8], [8, migrateV8ToV9]]);
+    const SCHEMA_MIGRATIONS = new Map([[1, migrateV1ToV2], [2, migrateV2ToV3], [3, migrateV3ToV4], [4, migrateV4ToV5], [5, migrateV5ToV6], [6, migrateV6ToV7], [7, migrateV7ToV8], [8, migrateV8ToV9], [9, migrateV9ToV10]]);
 
     const baseState = {
       profile: {
@@ -5920,6 +5921,7 @@
       athleteIntelligence: {},
       masterExerciseLibrary: window.BarbellDivaMasterLibrary.bootstrapStore({}, { names:window.BARBELL_DIVA_EXERCISE_NAMES_19_8 || [], profiles:Object.entries(COACH_EXERCISE_LIBRARY||{}).flatMap(([group,rows])=>(rows||[]).map(row=>({...row,muscle:row.som||group,origin:"system"}))), programs:buildProgramsFromLegacy(PROGRAM_LIBRARY, []).map(consolidateLegacyWeeklyProgram) }),
       knowledgeEngine: { version:"23.0.0", lastSnapshotHash:"", cacheMeta:{hits:0,misses:0,invalidations:0}, eventLog:[], updatedAt:null },
+      coachAi3: { version:"3.0.0", history:[], lastProposalAt:null },
       // Anche il primo avvio (senza un backup precedente) passa dalla stessa
       // normalizzazione usata dalla migrazione: la griglia non deve mai
       // ricevere le vecchie schede settimanali come celle vuote.
@@ -6219,6 +6221,10 @@
       ,expandedSheetIds: new Set()
       ,librarySpecific: ""
       ,modalDiagnostics: { mounts:0, unmounts:0, opens:0, closes:0, listenerBinds:0, localPreviewUpdates:0, globalRenders:0, globalRendersWithModal:0, libraryReconciles:0, libraryNodesCreated:0, libraryNodesReused:0, operationDurations:{} }
+      ,ai3Preview: null
+      ,ai3Undo: null
+      ,ai3SelectedOption: {}
+      ,ai3Expanded: true
     };
     let coachModalRenderingPortal = false;
     window.__coachModalDiagnostics = coachProgramUi.modalDiagnostics;
@@ -7403,6 +7409,14 @@
       return migrated;
     }
 
+    function migrateV9ToV10(input = {}) {
+      const migrated=clone(input||{});
+      migrated.coachAi3={version:"3.0.0",history:[],lastProposalAt:null,...(migrated.coachAi3||{})};
+      migrated.coachAi3.history=Array.isArray(migrated.coachAi3.history)?migrated.coachAi3.history.slice(-500):[];
+      migrated.meta={...(migrated.meta||{}),schemaVersion:10,coachAi3MigrationAt:new Date().toISOString(),coachAi3Version:"3.0.0"};
+      return migrated;
+    }
+
     function migrateV1ToV2(input = {}) {
       const migrated = clone(input || {});
       const legacyProgram = migrated.training?.program || [];
@@ -7618,6 +7632,8 @@
         ...(target.knowledgeEngine || {})
       };
       target.knowledgeEngine.eventLog = Array.isArray(target.knowledgeEngine.eventLog) ? target.knowledgeEngine.eventLog.slice(-200) : [];
+      target.coachAi3={version:"3.0.0",history:[],lastProposalAt:null,...(target.coachAi3||{})};
+      target.coachAi3.history=Array.isArray(target.coachAi3.history)?target.coachAi3.history.slice(-500):[];
       target.coach = target.coach || {};
       target.coach.studio = window.BarbellDivaCoachStudio.normalizeStudio(target.coach.studio);
       target.coach.questionnaires = Array.isArray(target.coach.questionnaires) ? target.coach.questionnaires : clone(baseState.coach.questionnaires);
@@ -11220,6 +11236,48 @@
 
     function coachAi2ExerciseTableHtml(analyses=[]){return `<article class="ai2-exercise-analysis"><div class="row"><div><span class="section-eyebrow">Analisi per esercizio</span><h3>Carichi, ripetizioni, volume e progressioni</h3></div><span class="chip">storico reale</span></div><div class="ai2-exercise-table"><div class="ai2-exercise-head"><b>Esercizio</b><b>Ultime rilevazioni</b><b>Trend</b><b>Progressione</b></div>${analyses.map((x)=>{const first=x.trend.points?.[0],last=x.trend.points?.at(-1);return `<button type="button" data-ai2-exercise-open="${escapeHtml(x.id)}" data-ai2-sheet-id="${escapeHtml(x.sheetId)}"><span><strong>${escapeHtml(x.name)}</strong><small>${escapeHtml(x.sheetName||"")} · ${escapeHtml(x.pattern)}</small></span><span><b>${x.history.length}</b><small>${first&&last?`${first.load??"—"} → ${last.load??"—"} kg · ${first.reps??"—"} → ${last.reps??"—"} rep`:"dati insufficienti"}</small></span><span><b>${escapeHtml(x.trend.status)}</b><small>${x.trend.changePct==null?"—":`${x.trend.changePct}%`}</small></span><span><b>${escapeHtml(x.progression.status)}</b><small>${escapeHtml(x.progression.templateId||"nessun template")}</small></span></button>`}).join("")}</div></article>`;}
 
+    function coachAi3Model(programId="") {
+      if(!window.BarbellDivaCoachAI3) throw new Error("Coach AI 3.0 non disponibile.");
+      const analysis=coachAi2Analysis(programId);
+      const model=window.BarbellDivaCoachAI3.build({program:analysis.program,context:analysis.context,decisionResult:analysis.result,masterLibrary:state.masterExerciseLibrary});
+      return {...analysis,model};
+    }
+
+    function coachAi3EvaluateState(simulatedState,programId) {
+      const runtime=window.BarbellDivaDecisionEngine.createDecisionEngine({graphApi:window.BarbellDivaKnowledgeGraph,rulesApi:window.BarbellDivaDecisionRules,analyzer:window.BarbellDivaCoachAI2});
+      return runtime.evaluate({state:simulatedState,programId,athleteApi:window.BarbellDivaAthleteContext,masterApi:window.BarbellDivaMasterLibrary,history:Object.values(simulatedState.athleteIntelligence?.insightHistory||{}).flat(),config:{performanceWindow:Number(coachProgramUi.ai2Window)||5}});
+    }
+
+    function coachAi3CreatePreview(proposalId,optionId) {
+      const {program,result,model}=coachAi3Model();
+      const proposal=model.proposals.find(item=>item.id===proposalId),option=proposal?.options.find(item=>item.id===optionId);
+      if(!proposal||!option) throw new Error("Proposta Coach AI non trovata.");
+      if(window.BarbellDivaCoachAI3.hash(program)!==model.programFingerprint) throw new Error("Il programma è cambiato: aggiorna l’analisi.");
+      const patched=window.BarbellDivaCoachAI3.applyPatch(program,option.operations),simulatedState=clone(state),index=(simulatedState.programs||[]).findIndex(item=>item.id===program.id);
+      if(index<0) throw new Error("Programma destinazione non trovato.");
+      simulatedState.programs[index]=patched.after;
+      const afterResult=coachAi3EvaluateState(simulatedState,program.id);
+      return {id:`ai3-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,programId:program.id,programName:program.name,programFingerprint:model.programFingerprint,proposal,option,patched,simulation:window.BarbellDivaCoachAI3.simulation(result,afterResult),createdAt:new Date().toISOString()};
+    }
+
+    function coachAi3HistoryRecord(entry) {
+      state.coachAi3=state.coachAi3||{version:"3.0.0",history:[]};
+      state.coachAi3.history=window.BarbellDivaCoachAI3.record(state.coachAi3.history,entry);
+      state.coachAi3.lastProposalAt=new Date().toISOString();
+    }
+
+    function coachAi3Delta(before,after,suffix="") { const a=before??"—",b=after??"—"; return `<div class="ai3-delta"><span>${escapeHtml(a)}${suffix}</span><b>→</b><strong>${escapeHtml(b)}${suffix}</strong></div>`; }
+    function coachAi3PreviewHtml(preview) {
+      if(!preview)return "";const s=preview.simulation,ops=preview.option.operations||[];
+      return `<div class="coach-modal-backdrop ai3-backdrop"><section class="coach-modal ai3-preview-modal" role="dialog" aria-modal="true" aria-labelledby="ai3PreviewTitle"><span class="section-eyebrow">Simulazione isolata · nessuna modifica applicata</span><h2 id="ai3PreviewTitle">${escapeHtml(preview.option.label)}: ${escapeHtml(preview.proposal.title)}</h2><p>${escapeHtml(preview.proposal.reason)}</p><div class="ai3-simulation-grid"><article><small>Program Score</small>${coachAi3Delta(s.score.before,s.score.after)}</article><article><small>Serie settimanali</small>${coachAi3Delta(s.weeklySets.before,s.weeklySets.after)}</article><article><small>Fatica sistemica</small>${coachAi3Delta(s.fatigue.before,s.fatigue.after)}</article><article><small>Interventi esatti</small><strong>${ops.length}</strong><p>${ops.map(op=>escapeHtml(Object.keys(op.changes||{}).join(", "))).join(" · ")}</p></article></div>${s.muscles.length?`<div class="ai3-muscle-deltas"><h3>Volume per distretto</h3>${s.muscles.map(x=>`<span><b>${escapeHtml(x.muscle)}</b>${x.before} → ${x.after} serie</span>`).join("")}</div>`:""}<details open><summary>Perché questa opzione</summary><p>${escapeHtml(preview.option.description)}</p><div class="ai3-procon"><div><b>Vantaggi</b><ul>${preview.option.pros.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul></div><div><b>Limiti</b><ul>${preview.option.cons.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul></div></div><p><b>Dati:</b> ${(preview.proposal.dataUsed||[]).map(x=>`${escapeHtml(x.label)}: ${escapeHtml(x.value)}`).join(" · ")||"contesto del programma"}</p><p><b>Regole:</b> ${escapeHtml((preview.proposal.rules||[]).join(" · ")||"analisi deterministica")}</p></details><p class="micro-copy">Confermare applicherà soltanto questa opzione. Potrai annullarla finché il programma non viene modificato di nuovo.</p><div class="coach-modal-actions"><button class="ghost-button" data-ai3-preview-reject>Rifiuta proposta</button><button class="ghost-button" data-ai3-preview-cancel>Continua a valutare</button><button class="gold-button" data-ai3-preview-confirm>Applica questa modifica</button></div></section></div>`;
+    }
+
+    function coachAi3ReviewHtml(program,result) {
+      const model=window.BarbellDivaCoachAI3.build({program,context:activeAthleteIntelligence(program.id),decisionResult:result,masterLibrary:state.masterExerciseLibrary}),history=(state.coachAi3?.history||[]).filter(x=>x.programId===program.id).slice(0,12),undo=coachProgramUi.ai3Undo;
+      const statusLabel={suggested:"proposta",accepted:"accettata",rejected:"rifiutata",undone:"annullata"};
+      return `<section class="ai3-review"><div class="row"><div><span class="section-eyebrow">Coach AI 3.0 · Intelligent Programming</span><h2>Revisione completa e modifiche sotto il tuo controllo</h2><p>Analizza volume, frequenza, ordine, recupero, progressioni, priorità e fatica. Non applica mai nulla da solo.</p></div><div class="quick-actions">${undo?'<button class="ghost-button" data-ai3-undo>Annulla ultima modifica AI</button>':''}<span class="chip">${model.proposals.length} proposte · ${model.review.items.length} rilievi</span></div></div><div class="ai3-audit-grid"><article><b>Score attuale</b><strong>${model.review.score??"—"}/100</strong></article><article><b>Volume</b><strong>${model.review.summary.weeklySets} serie</strong></article><article><b>Progressioni</b><strong>${model.review.summary.progressionCoverage??"—"}%</strong></article><article><b>Fatica</b><strong>${escapeHtml(model.review.summary.fatigue)}</strong></article></div>${model.review.items.length?`<details class="ai3-findings"><summary>Revisione tecnica: ${model.review.items.length} osservazioni</summary>${model.review.items.map(x=>`<article><span class="chip">${escapeHtml(x.category)} · ${escapeHtml(x.confidence)}</span><b>${escapeHtml(x.title)}</b><p>${escapeHtml(x.description)}</p></article>`).join("")}</details>`:""}<div class="ai3-proposals">${model.proposals.length?model.proposals.map(proposal=>`<article class="ai3-proposal"><div class="row"><div><span class="chip">${escapeHtml(proposal.kind)} · priorità ${escapeHtml(proposal.priority)}</span><h3>${escapeHtml(proposal.title)}</h3></div><span class="chip">confidenza ${escapeHtml(proposal.confidence)}</span></div><p>${escapeHtml(proposal.reason)}</p><details><summary>Motivazione, dati e regole</summary><p><b>Dati usati:</b> ${(proposal.dataUsed||[]).map(x=>`${escapeHtml(x.label)}: ${escapeHtml(x.value)}`).join(" · ")||"programma e profilo atleta"}</p><p><b>Regole:</b> ${escapeHtml((proposal.rules||[]).join(" · ")||"analisi deterministica")}</p></details><div class="ai3-options">${proposal.options.map(option=>`<section><b>${escapeHtml(option.label)}</b><p>${escapeHtml(option.description)}</p><div class="ai3-procon"><small>+ ${escapeHtml(option.pros.join(" · "))}</small><small>− ${escapeHtml(option.cons.join(" · "))}</small></div><button class="ghost-button" data-ai3-preview="${escapeHtml(proposal.id)}" data-ai3-option="${escapeHtml(option.id)}">Simula ${escapeHtml(option.label.toLowerCase())}</button></section>`).join("")}</div></article>`).join(""):`<article class="athlete-missing-card"><h3>Nessuna correzione applicabile con sufficiente precisione</h3><p>Il Coach AI non inventa interventi quando dati o regole non consentono una proposta sicura.</p></article>`}</div><details class="ai3-history"><summary>Storico decisioni Coach AI (${history.length})</summary>${history.length?history.map(x=>`<div><span class="chip ${escapeHtml(x.status)}">${escapeHtml(statusLabel[x.status]||x.status)}</span><b>${escapeHtml(x.title||"Proposta")}</b><small>${escapeHtml(x.optionLabel||"")} · ${new Date(x.updatedAt||x.createdAt).toLocaleString("it-IT")}</small></div>`).join(""):'<p>Nessuna decisione ancora registrata.</p>'}</details>${coachAi3PreviewHtml(coachProgramUi.ai3Preview)}</section>`;
+    }
+
     function coachAi2PageHtml(compact=false) {
       const {program,result}=coachAi2Analysis(); const score=result.score; const missing=result.missing||[];
       const preview=coachProgramUi.ai2Preview, undo=coachProgramUi.ai2Undo;
@@ -11228,7 +11286,7 @@
         <div class="ai2-score-card"><div class="ai2-score"><strong>${score.score}</strong><span>/100</span></div><div><h3>Program Score · ${escapeHtml(program.name||"Programma")}</h3><p>Confidenza ${escapeHtml(score.confidence)} · completezza ${score.completeness}%</p><small>${escapeHtml(score.explanation)}</small><details><summary>Sottopunteggi spiegabili</summary><div class="ai2-score-details">${Object.entries(score.componentDetails||{}).map(([key,detail])=>`<article><div class="row"><b>${escapeHtml(key)}</b><strong>${detail.value==null?"—":detail.value+"/100"}</strong></div><p>${escapeHtml(detail.reason)}</p><small>peso ${score.weights[key]} · ${(detail.data||[]).map(d=>`${escapeHtml(d.label)}: ${escapeHtml(d.value)} (${escapeHtml(d.source)})`).join(" · ")||"dato mancante"}</small></article>`).join("")}</div></details></div>${undo?'<button class="ghost-button" data-ai2-undo>Annulla ultima modifica</button>':''}</div>
         <nav class="ai2-sections">${["Overview","Strategia","Programma","Performance","Fatica","Progressioni","Suggerimenti","Storico"].map((x)=>`<span>${x}</span>`).join("")}</nav><div class="coach-studio-kpis ai2-kpis"><article class="coach-studio-kpi"><span>Serie settimanali</span><strong>${result.metrics.weeklySets}</strong><small>calcolate</small></article><article class="coach-studio-kpi"><span>Esercizi</span><strong>${result.metrics.exercises}</strong><small>dati reali</small></article><article class="coach-studio-kpi"><span>Progressioni</span><strong>${result.metrics.progressionCoverage==null?"—":Math.round(result.metrics.progressionCoverage*100)+"%"}</strong><small>copertura calcolata</small></article><article class="coach-studio-kpi"><span>Finestra performance</span><select data-ai2-window>${[3,5,8].map((v)=>`<option value="${v}" ${Number(coachProgramUi.ai2Window||5)===v?"selected":""}>${v} rilevazioni</option>`).join("")}</select><small>solo storico reale</small></article></div>
         <article class="ai2-context-card"><div><span class="section-eyebrow">Nutrizione</span><h3>${escapeHtml(result.nutritionPolicy.mode)} · ${escapeHtml(activeAthleteIntelligence(program.id).nutrition.phase)}</h3><p>${escapeHtml(result.nutritionPolicy.reason)}</p></div><div><span class="section-eyebrow">Deload Advisor</span><h3>${escapeHtml(result.deload.decision)}</h3><p>${escapeHtml(result.deload.reason)}</p><small>${result.deload.signals.map(x=>escapeHtml(x.label)).join(" · ")||"Nessun segnale convergente"}</small></div></article>
-        ${missing.length?`<article class="athlete-missing-card"><h3>Dati mancanti: non li invento</h3><ul>${missing.map((x)=>`<li><strong>${escapeHtml(x.label)}</strong><span>${escapeHtml(x.where)} · ${escapeHtml(x.why)}</span></li>`).join("")}</ul></article>`:""}${compact?"":coachAi2ExerciseTableHtml(result.metrics.exerciseAnalyses)}
+        ${missing.length?`<article class="athlete-missing-card"><h3>Dati mancanti: non li invento</h3><ul>${missing.map((x)=>`<li><strong>${escapeHtml(x.label)}</strong><span>${escapeHtml(x.where)} · ${escapeHtml(x.why)}</span></li>`).join("")}</ul></article>`:""}${compact?"":coachAi3ReviewHtml(program,result)}${compact?"":coachAi2ExerciseTableHtml(result.metrics.exerciseAnalyses)}
         <div class="ai2-insights">${result.insights.map((item)=>`<article class="ai2-insight ${escapeHtml(item.severity)}" data-ai2-insight="${escapeHtml(item.id)}"><div class="row"><span class="chip">${escapeHtml(item.category)} · ${escapeHtml(item.priority)}</span><span class="chip">${escapeHtml(item.confidence)} · ${escapeHtml(item.status)}</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.description)}</p><details><summary>Mostrami perché</summary><p>${escapeHtml(item.reason)}</p><div>${(item.data||[]).map((d)=>`<span class="ai2-datum"><b>${escapeHtml(d.label)}</b>${escapeHtml(Array.isArray(d.value)?d.value.join(" → "):d.value)} <em>${escapeHtml(d.source)}</em></span>`).join("")}</div>${item.decisionTrace?`<div class="ai2-suggestion"><b>Traccia decisionale</b><p>Regole: ${escapeHtml((item.decisionTrace.rules||[]).join(" · ")||"analisi deterministica")}</p>${(item.decisionTrace.conditions||[]).length?`<p>Condizioni vere: ${escapeHtml(item.decisionTrace.conditions.filter(c=>c.value).map(c=>c.expression).join(" · ")||"nessuna")}</p>`:""}${(item.decisionTrace.alternativesDiscarded||[]).length?`<p>Alternative scartate: ${escapeHtml(item.decisionTrace.alternativesDiscarded.map(a=>`${a.title}: ${a.reason}`).join(" · "))}</p>`:""}</div>`:""}<div class="ai2-suggestion"><b>Suggerimento</b><p>${escapeHtml(item.suggestion||"Nessuna modifica automatica proposta.")}</p></div></details><div class="quick-actions">${(item.actions||[]).map((a)=>`<button class="gold-button" data-ai2-action="${escapeHtml(a.type)}" data-ai2-insight-id="${escapeHtml(item.id)}">${escapeHtml(a.label)}</button>`).join("")}<button class="ghost-button" data-ai2-status="ignored" data-ai2-insight-id="${escapeHtml(item.id)}">Ignora</button><button class="ghost-button" data-ai2-status="later" data-ai2-insight-id="${escapeHtml(item.id)}">Più tardi</button><button class="ghost-button" data-ai2-status="archived" data-ai2-insight-id="${escapeHtml(item.id)}">Archivia</button></div></article>`).join("")}</div>${modal}</div>`;
     }
 
@@ -13767,6 +13825,14 @@
       document.querySelector("[data-ai2-preview-cancel]")?.addEventListener("click",()=>{coachProgramUi.ai2Preview=null;render();});
       document.querySelector("[data-ai2-preview-confirm]")?.addEventListener("click",()=>{const p=coachProgramUi.ai2Preview;if(!p)return;const current=programRepository.getExerciseById(p.programId,p.sheetId,p.exerciseId);coachProgramUi.ai2Undo={programId:p.programId,sheetId:p.sheetId,exerciseId:p.exerciseId,before:p.before};programRepository.updateExercise(p.programId,p.sheetId,p.exerciseId,{progression:{...(current.progression||{}),templateId:"double-progression",rule:{kind:"double-progression",source:"coach-ai2"},manualWeeks:current.progression?.manualWeeks||[]}}, {immediate:true,forceLocked:true});coachProgramUi.ai2Preview=null;coachAi2Cache={fingerprint:"",result:null};showToast("Progressione applicata. Puoi annullarla dal pannello.");render();});
       document.querySelector("[data-ai2-undo]")?.addEventListener("click",()=>{const u=coachProgramUi.ai2Undo;if(!u)return;programRepository.updateExercise(u.programId,u.sheetId,u.exerciseId,u.before,{immediate:true,forceLocked:true});coachProgramUi.ai2Undo=null;coachAi2Cache={fingerprint:"",result:null};showToast("Ultima modifica Coach AI annullata.");render();});
+      document.querySelectorAll("[data-ai3-preview]").forEach(button=>button.addEventListener("click",()=>{
+        button.disabled=true;button.textContent="Sto simulando…";showToast("Coach AI simula la modifica senza toccare il programma…");
+        setTimeout(()=>{try{const preview=coachAi3CreatePreview(button.dataset.ai3Preview,button.dataset.ai3Option);coachProgramUi.ai3Preview=preview;coachAi3HistoryRecord({id:preview.id,programId:preview.programId,proposalId:preview.proposal.id,optionId:preview.option.id,title:preview.proposal.title,optionLabel:preview.option.label,status:"suggested",createdAt:preview.createdAt,programFingerprint:preview.programFingerprint});saveState({immediate:true});render();}catch(error){showToast(error.message||"Impossibile simulare la proposta.");button.disabled=false;button.textContent="Riprova simulazione";}},20);
+      }));
+      document.querySelector("[data-ai3-preview-cancel]")?.addEventListener("click",()=>{coachProgramUi.ai3Preview=null;render();});
+      document.querySelector("[data-ai3-preview-reject]")?.addEventListener("click",()=>{const p=coachProgramUi.ai3Preview;if(!p)return;coachAi3HistoryRecord({id:p.id,programId:p.programId,proposalId:p.proposal.id,optionId:p.option.id,title:p.proposal.title,optionLabel:p.option.label,status:"rejected",createdAt:p.createdAt,rejectedAt:new Date().toISOString(),programFingerprint:p.programFingerprint});coachProgramUi.ai3Preview=null;saveState({immediate:true});showToast("Proposta rifiutata e registrata nello storico.");render();});
+      document.querySelector("[data-ai3-preview-confirm]")?.addEventListener("click",()=>{const p=coachProgramUi.ai3Preview;if(!p)return;const current=programRepository.getProgramById(p.programId);if(!current)return showToast("Programma destinazione non trovato.");if(window.BarbellDivaCoachAI3.hash(current)!==p.programFingerprint){coachProgramUi.ai3Preview=null;showToast("Il programma è cambiato: riesegui la simulazione prima di applicare.");return render();}const result=programRepository.updateProgram(p.programId,{sheets:p.patched.after.sheets},{immediate:true});if(!result.ok)return showToast("La modifica non supera la validazione del programma.");coachProgramUi.ai3Undo={historyId:p.id,programId:p.programId,beforeProgram:p.patched.before,afterFingerprint:window.BarbellDivaCoachAI3.hash(result.value)};coachAi3HistoryRecord({id:p.id,programId:p.programId,proposalId:p.proposal.id,optionId:p.option.id,title:p.proposal.title,optionLabel:p.option.label,status:"accepted",createdAt:p.createdAt,acceptedAt:new Date().toISOString(),beforeFingerprint:p.programFingerprint,afterFingerprint:coachProgramUi.ai3Undo.afterFingerprint});coachProgramUi.ai3Preview=null;coachAi2Cache={fingerprint:"",result:null};saveState({immediate:true});showToast("Applicata soltanto la modifica confermata. Annullamento disponibile.");render();});
+      document.querySelector("[data-ai3-undo]")?.addEventListener("click",()=>{const u=coachProgramUi.ai3Undo;if(!u)return;const current=programRepository.getProgramById(u.programId);if(!current)return showToast("Programma da ripristinare non trovato.");if(window.BarbellDivaCoachAI3.hash(current)!==u.afterFingerprint)return showToast("Il programma è cambiato dopo l’intervento: annullamento automatico bloccato per proteggere le modifiche successive.");const result=programRepository.updateProgram(u.programId,{sheets:u.beforeProgram.sheets},{immediate:true});if(!result.ok)return showToast("Ripristino non riuscito.");const previous=(state.coachAi3?.history||[]).find(x=>x.id===u.historyId)||{};coachAi3HistoryRecord({...previous,id:u.historyId,programId:u.programId,status:"undone",undoneAt:new Date().toISOString()});coachProgramUi.ai3Undo=null;coachAi2Cache={fingerprint:"",result:null};saveState({immediate:true});showToast("Modifica Coach AI annullata: programma ripristinato.");render();});
     }
 
     function bindScreen() {

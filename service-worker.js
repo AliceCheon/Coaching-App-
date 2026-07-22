@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v130-phase23.0-knowledge-engine";
+const CACHE_NAME = "atlas-app-v131-phase24.0-coach-ai3";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -23,6 +23,7 @@ const APP_SHELL = [
   "./knowledge-graph.js",
   "./decision-rules.js",
   "./decision-engine.js",
+  "./coach-ai3-programming.js",
   "./coach-studio.js",
   "./sync-reliability.js",
   "./programming-engine.js"
