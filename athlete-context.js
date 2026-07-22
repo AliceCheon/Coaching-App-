@@ -8,7 +8,7 @@
   const SCHEMA_VERSION = 2;
   const GOALS = ["ipertrofia", "forza massimale", "forza resistente", "ricomposizione", "dimagrimento", "mantenimento", "performance", "powerbuilding", "bodybuilding", "tecnica", "ritorno allo sport", "benessere", "preparazione gara", "personalizzato"];
   const BLOCK_TYPES = ["adattamento anatomico", "accumulo", "volume", "ipertrofia", "intensificazione", "forza", "peaking", "tecnica", "specializzazione", "realizzazione", "deload", "taper", "mantenimento", "ricondizionamento", "personalizzato"];
-  const MUSCLES = ["pettorali", "dorsali", "deltoidi", "bicipiti", "tricipiti", "quadricipiti", "femorali", "glutei", "polpacci", "adduttori", "abduttori", "core"];
+  const MUSCLES = ["pettorali", "dorsali", "spalle", "bicipiti", "tricipiti", "quadricipiti", "femorali", "glutei", "polpacci", "adduttori", "abduttori", "core"];
   const PATTERNS = ["squat", "hinge", "spinta orizzontale", "tirata orizzontale", "spinta verticale", "tirata verticale", "flessione ginocchio", "estensione ginocchio", "carry", "core"];
   const EQUIPMENT = ["bilanciere", "manubri", "cavi", "macchinari", "multipower", "rack", "panca", "elastici", "corpo libero", "kettlebell", "cardio"];
   const NUTRITION_PHASES = ["bulk", "lean bulk", "mantenimento", "cut", "mini cut", "reverse diet", "ricomposizione", "peak week", "non definita"];
@@ -20,6 +20,14 @@
   const numberOrNull = (value) => Number.isFinite(Number(value)) && value !== "" && value != null ? Number(value) : null;
   const list = (value) => Array.isArray(value) ? value.filter(Boolean) : [];
   const id = (prefix) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  function normalizeMuscleName(value) {
+    const clean = text(value).toLowerCase();
+    if (["deltoide", "deltoidi", "spalla", "spalle"].includes(clean)) return "spalle";
+    return clean;
+  }
+  function muscleList(value) {
+    return [...new Set(list(value).map((item) => normalizeMuscleName(typeof item === "string" ? item : item?.muscle || item?.name)).filter(Boolean))];
+  }
 
   function createDefaultAthlete(legacy = {}) {
     const profile = legacy.profile || legacy || {};
@@ -48,7 +56,7 @@
       ...base, ...input, id: text(input.id, base.id),
       general: { ...base.general, ...general, name: text(general.name, base.general.name), age: numberOrNull(general.age), heightCm: numberOrNull(general.heightCm), weightKg: numberOrNull(general.weightKg), trainingYears: numberOrNull(general.trainingYears), weeklySessions: numberOrNull(general.weeklySessions), sessionMinutes: numberOrNull(general.sessionMinutes) },
       goals: { ...base.goals, ...goals, secondary: list(goals.secondary), targetMetrics: list(goals.targetMetrics) },
-      muscles: { ...base.muscles, ...muscles, priorities: list(muscles.priorities).map((item,index)=>typeof item === "string" ? { muscle:item, level:index===0?"alta":"media" } : { muscle:text(item.muscle || item.name), level:PRIORITY_LEVELS.includes(item.level) ? item.level : Number(item.priority)===1 ? "massima" : Number(item.priority)===2 ? "alta" : "media" }), deficits: list(muscles.deficits), strengths: list(muscles.strengths), maintain: list(muscles.maintain) },
+      muscles: { ...base.muscles, ...muscles, priorities: list(muscles.priorities).map((item,index)=>typeof item === "string" ? { muscle:normalizeMuscleName(item), level:index===0?"alta":"media" } : { muscle:normalizeMuscleName(item.muscle || item.name), level:PRIORITY_LEVELS.includes(item.level) ? item.level : Number(item.priority)===1 ? "massima" : Number(item.priority)===2 ? "alta" : "media" }).filter((item,index,rows)=>item.muscle && rows.findIndex((other)=>other.muscle===item.muscle)===index), deficits: muscleList(muscles.deficits), strengths: muscleList(muscles.strengths), maintain: muscleList(muscles.maintain) },
       pains: list(input.pains).map((item,index)=>typeof item === "string" ? { id:`pain-legacy-${index}`, area:item, side:"non indicato", intensity:null, status:"da valutare", onsetDate:"", aggravatingMovements:[], toleratedExercises:[], notes:"", legacy:true } : { id:item.id || `pain-${index}`, area:text(item.area), side:text(item.side,"non indicato"), intensity:numberOrNull(item.intensity ?? item.severity), status:PAIN_STATUSES.includes(item.status) ? item.status : "da valutare", onsetDate:text(item.onsetDate), aggravatingMovements:list(item.aggravatingMovements), toleratedExercises:list(item.toleratedExercises), notes:text(item.notes), type:text(item.type) }),
       motorLimitations: list(input.motorLimitations).map((item,index)=>typeof item === "string" ? { id:`limit-legacy-${index}`, movement:item, severity:"moderata", status:"da valutare", description:"", affectedPatterns:[], notes:"", legacy:true } : { id:item.id || `limit-${index}`, movement:text(item.movement), severity:SEVERITY_LEVELS.includes(item.severity) ? item.severity : "moderata", status:PAIN_STATUSES.includes(item.status) ? item.status : "da valutare", description:text(item.description), affectedPatterns:list(item.affectedPatterns), notes:text(item.notes) }),
       preferences: { ...base.preferences, ...(input.preferences || {}), favoriteExercises: list(input.preferences?.favoriteExercises), dislikedExercises: list(input.preferences?.dislikedExercises), excludedExercises: list(input.preferences?.excludedExercises), preferredEquipment: list(input.preferences?.preferredEquipment), preferredDays: list(input.preferences?.preferredDays) },
@@ -81,7 +89,7 @@
     const raw = input && typeof input === "object" ? input : {};
     const athletes = list(raw.athletes).length ? raw.athletes.map((item) => normalizeAthlete(item, legacy)) : [createDefaultAthlete(legacy)];
     const activeAthleteId = athletes.some((item) => item.id === raw.activeAthleteId) ? raw.activeAthleteId : athletes[0].id;
-    const strategies = list(raw.strategies).length ? raw.strategies.map((item) => ({ ...createDefaultStrategy(item.athleteId || activeAthleteId), ...item, secondaryGoals: list(item.secondaryGoals), techniques: list(item.techniques), performanceMarkers: list(item.performanceMarkers), targetPatterns: list(item.targetPatterns), targetMuscles: list(item.targetMuscles) })) : [createDefaultStrategy(activeAthleteId)];
+    const strategies = list(raw.strategies).length ? raw.strategies.map((item) => ({ ...createDefaultStrategy(item.athleteId || activeAthleteId), ...item, secondaryGoals: list(item.secondaryGoals), techniques: list(item.techniques), performanceMarkers: list(item.performanceMarkers), targetPatterns: list(item.targetPatterns), targetMuscles: muscleList(item.targetMuscles) })) : [createDefaultStrategy(activeAthleteId)];
     const nutritionByAthlete = {};
     Object.entries(raw.nutritionByAthlete || {}).forEach(([key, value]) => { nutritionByAthlete[key] = normalizeNutrition(value); });
     if (!nutritionByAthlete[activeAthleteId]) nutritionByAthlete[activeAthleteId] = normalizeNutrition(estimateNutritionPhase(legacy.nutrition || {}));
@@ -147,5 +155,5 @@
     return { ok: errors.length === 0, errors };
   }
 
-  return { SCHEMA_VERSION, GOALS, BLOCK_TYPES, MUSCLES, PATTERNS, EQUIPMENT, NUTRITION_PHASES, PRIORITY_LEVELS, SEVERITY_LEVELS, PAIN_STATUSES, createDefaultAthlete, createDefaultStrategy, normalizeAthlete, normalizeStore, normalizeNutrition, getAthlete, getStrategy, upsertAthlete, upsertStrategy, linkProgram, estimateNutritionPhase, syncNutrition, missingFields, selectors, validate, id };
+  return { SCHEMA_VERSION, GOALS, BLOCK_TYPES, MUSCLES, PATTERNS, EQUIPMENT, NUTRITION_PHASES, PRIORITY_LEVELS, SEVERITY_LEVELS, PAIN_STATUSES, normalizeMuscleName, createDefaultAthlete, createDefaultStrategy, normalizeAthlete, normalizeStore, normalizeNutrition, getAthlete, getStrategy, upsertAthlete, upsertStrategy, linkProgram, estimateNutritionPhase, syncNutrition, missingFields, selectors, validate, id };
 });
