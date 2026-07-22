@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v125-phase19.9.1-icon";
+const CACHE_NAME = "atlas-app-v128-phase21.1-consolidation";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -18,6 +18,8 @@ const APP_SHELL = [
   "./coach-studio.css",
   "./coach-program-editor-19.8.css",
   "./exercise-library-19.8.js",
+  "./athlete-context.js",
+  "./coach-ai-engine-2.js",
   "./coach-studio.js",
   "./sync-reliability.js",
   "./programming-engine.js"

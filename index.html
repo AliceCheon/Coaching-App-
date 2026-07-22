@@ -7,17 +7,19 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v125-phase19.9.1-icon">
+  <link rel="manifest" href="manifest.webmanifest?v=v128-phase21.1-consolidation">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="workout-pro.css?v=v125-phase19.9.1-icon">
-  <link rel="stylesheet" href="coach-studio.css?v=v125-phase19.9.1-icon">
-  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v125-phase19.9.1-icon">
-  <script src="exercise-library-19.8.js?v=v125-phase19.9.1-icon"></script>
-  <script type="module" src="programming-engine.js?v=v125-phase19.9.1-icon"></script>
-  <script type="module" src="sync-reliability.js?v=v125-phase19.9.1-icon"></script>
-  <script src="coach-studio.js?v=v125-phase19.9.1-icon"></script>
-  <script defer src="workout-pro.js?v=v125-phase19.9.1-icon"></script>
+  <link rel="stylesheet" href="workout-pro.css?v=v128-phase21.1-consolidation">
+  <link rel="stylesheet" href="coach-studio.css?v=v128-phase21.1-consolidation">
+  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v128-phase21.1-consolidation">
+  <script src="exercise-library-19.8.js?v=v128-phase21.1-consolidation"></script>
+  <script src="athlete-context.js?v=v128-phase21.1-consolidation"></script>
+  <script src="coach-ai-engine-2.js?v=v128-phase21.1-consolidation"></script>
+  <script type="module" src="programming-engine.js?v=v128-phase21.1-consolidation"></script>
+  <script type="module" src="sync-reliability.js?v=v128-phase21.1-consolidation"></script>
+  <script src="coach-studio.js?v=v128-phase21.1-consolidation"></script>
+  <script defer src="workout-pro.js?v=v128-phase21.1-consolidation"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4834,7 +4836,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v125-phase19.9.1-icon";
+    const APP_BUILD = "v128-phase21.1-consolidation";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -5860,7 +5862,7 @@
 };
 
 
-    const DATA_SCHEMA_VERSION = 5;
+    const DATA_SCHEMA_VERSION = 7;
     const BACKUP_SCHEMA_VERSION = 1;
     const BACKUP_HISTORY_KEY = "alice-method-app.v8.backup-history.v1";
     const BACKUP_BUILD_KEY = "alice-method-app.v8.backup-build.v1";
@@ -5868,7 +5870,7 @@
     const PRE_V55_BACKUP_KEY = "alice-method-app.pre-v55-backup";
     const PRE_WEEK_CONSOLIDATION_BACKUP_KEY = "barbell-diva.pre-week-consolidation-backup";
     const PROGRAM_STATUSES = new Set(["draft", "available", "active", "archived", "deleted"]);
-    const SCHEMA_MIGRATIONS = new Map([[1, migrateV1ToV2], [2, migrateV2ToV3], [3, migrateV3ToV4], [4, migrateV4ToV5]]);
+    const SCHEMA_MIGRATIONS = new Map([[1, migrateV1ToV2], [2, migrateV2ToV3], [3, migrateV3ToV4], [4, migrateV4ToV5], [5, migrateV5ToV6], [6, migrateV6ToV7]]);
 
     const baseState = {
       profile: {
@@ -5911,6 +5913,7 @@
         soreness: "",
         context: "soft"
       },
+      athleteIntelligence: {},
       // Anche il primo avvio (senza un backup precedente) passa dalla stessa
       // normalizzazione usata dalla migrazione: la griglia non deve mai
       // ricevere le vecchie schede settimanali come celle vuote.
@@ -7352,6 +7355,20 @@
       return migrated;
     }
 
+    function migrateV5ToV6(input = {}) {
+      const migrated = clone(input || {});
+      migrated.athleteIntelligence = window.BarbellDivaAthleteContext.normalizeStore(migrated.athleteIntelligence, migrated);
+      migrated.meta = { ...(migrated.meta || {}), schemaVersion:6, athleteIntelligenceMigrationAt:new Date().toISOString() };
+      return migrated;
+    }
+
+    function migrateV6ToV7(input = {}) {
+      const migrated=clone(input||{});
+      migrated.athleteIntelligence=window.BarbellDivaAthleteContext.normalizeStore(migrated.athleteIntelligence,migrated);
+      migrated.meta={...(migrated.meta||{}),schemaVersion:7,athleteClinicalMigrationAt:new Date().toISOString()};
+      return migrated;
+    }
+
     function migrateV1ToV2(input = {}) {
       const migrated = clone(input || {});
       const legacyProgram = migrated.training?.program || [];
@@ -7525,6 +7542,7 @@
 
     function hydrateStateModel(target = state) {
       target.programs = (target.programs || []).map(normalizeProgramModel);
+      target.athleteIntelligence = window.BarbellDivaAthleteContext.normalizeStore(target.athleteIntelligence, target);
       target.training = target.training || {};
       const legacyManual = target.training.sessionName && target.training.sessionName !== "auto";
       target.training.contextMode = target.training.contextMode === "manual" || legacyManual ? "manual" : "auto";
@@ -8605,6 +8623,7 @@
       if (!state.nutrition) state.nutrition = {};
       const before = JSON.stringify(state.nutrition.dashboard || {});
       state.nutrition.dashboard = mergeNutritionDashboard(state.nutrition.dashboard || {}, payload);
+      state.athleteIntelligence = window.BarbellDivaAthleteContext.syncNutrition(athleteIntelligenceStore(), athleteIntelligenceStore().activeAthleteId, { ...state.nutrition, dashboard:state.nutrition.dashboard });
       if (JSON.stringify(state.nutrition.dashboard || {}) !== before) {
         saveState({ cloud: false });
         if (cloudUser && dbService && state.profile.account?.syncReady) {
@@ -10821,7 +10840,7 @@
     }
 
     const COACH_STUDIO_NAV = [
-      ["programs","▤","Programmi"], ["library","⌕","Libreria"], ["progressions","↗","Template progressione"],
+      ["programs","▤","Programmi"], ["athlete","♙","Profilo atleta"], ["strategy","◎","Strategia"], ["library","⌕","Libreria"], ["progressions","↗","Template progressione"],
       ["ai","◇","Coach AI"], ["questionnaires","✓","Questionari"], ["statistics","▥","Statistiche"],
       ["diagnostics","⚙","Diagnostica"], ["settings","☰","Impostazioni Coach"]
     ];
@@ -11058,7 +11077,9 @@
       if (!selection.program) return coachStudioProgramsHtml();
       studio.programId = selection.program.id;
       studio.editorView="weekly"; const sideOpen=studio.referenceOpen||studio.aiOpen;
-      const editorBody=`<div class="coach-editor-layout unified ${studio.referenceOpen?"reference-open":""} ${studio.aiOpen?"ai-open":""}"><div>${coachProgramBoardHtml(selection.program)}</div>${sideOpen?`<aside class="coach-editor-side">${studio.referenceOpen?coachStudioReferenceHtml():""}${studio.aiOpen?coachAiPanelHtml():""}</aside>`:""}</div>`;
+      const linked=activeAthleteIntelligence(selection.program.id);
+      const contextSummary=`<div class="athlete-context-strip program-context-summary"><span><b>Atleta</b>${escapeHtml(linked.athlete?.general?.name||"Non collegato")}</span><span><b>Strategia</b>${escapeHtml(linked.strategy?.name||"Scheda libera")}</span><span><b>Blocco</b>${escapeHtml(linked.programLink?.blockType||linked.strategy?.blockType||"libero")}</span><span><b>Nutrizione</b>${escapeHtml(linked.nutrition?.phase||"non definita")}</span><button class="ghost-button" data-coach-studio-route="strategy">Modifica collegamento</button></div>`;
+      const editorBody=`${contextSummary}<div class="coach-editor-layout unified ${studio.referenceOpen?"reference-open":""} ${studio.aiOpen?"ai-open":""}"><div>${coachProgramBoardHtml(selection.program)}</div>${sideOpen?`<aside class="coach-editor-side">${studio.referenceOpen?coachStudioReferenceHtml():""}${studio.aiOpen?coachAi2PageHtml(true):""}</aside>`:""}</div>`;
       return `<section class="coach-studio-page coach-editor coach-editor-weekly">${coachStudioPageHead("Editor programma",selection.program.name,"Un’unica tavola settimanale: modifica, progressioni e controlli restano nello stesso punto.",`<button class="ghost-button" data-coach-studio-route="programs">← Programmi</button>`)}<div class="coach-editor-toolbar"><div class="coach-editor-save-state"><span class="save-dot"></span><strong data-coach-save-label>${coachProgramUi.saveStatus==="saving"?"Salvataggio…":"Salvato"}</strong></div><div class="quick-actions"><button class="gold-button" data-program-action="save">Salva</button><button class="ghost-button" data-program-list-action="save-as" data-program-id="${escapeHtml(selection.program.id)}">Salva come</button><button class="ghost-button" data-program-list-action="duplicate" data-program-id="${escapeHtml(selection.program.id)}">Duplica</button><button class="ghost-button" data-program-action="edit">Informazioni</button><button class="ghost-button ${studio.referenceOpen?"active":""}" data-studio-panel-toggle="reference">Anteprima atleta</button><button class="gold-button ${studio.aiOpen?"active":""}" data-studio-panel-toggle="ai">${coachMascotHtml()} Coach AI</button></div></div>${editorBody}${coachUiModalHtml()}</section>`;
     }
 
@@ -11095,13 +11116,77 @@
       return `<section class="coach-studio-page">${coachStudioPageHead("Preferenze","Impostazioni Coach","Controlla l’esperienza Coach senza modificare le impostazioni nutrizionali.")}<article class="coach-studio-card"><h3>Coach AI</h3><div class="coach-settings-grid"><label><input type="checkbox" data-ai-toggle ${coach.enabled?"checked":""}> Suggerimenti attivi</label><label>Layout vista atleta<select data-studio-setting="athleteLayout">${["compact","wide","bottom"].map((v)=>`<option value="${v}" ${state.coach.athleteLayout===v?"selected":""}>${v}</option>`).join("")}</select></label></div></article>${divaBotSettingsHtml()}<article class="coach-studio-card"><h3>Accessibilità e interfaccia</h3>${experienceSettingsHtml()}</article>${accountCardHtml()}</section>`;
     }
 
+    function athleteIntelligenceStore() {
+      state.athleteIntelligence = window.BarbellDivaAthleteContext.normalizeStore(state.athleteIntelligence, state);
+      return state.athleteIntelligence;
+    }
+
+    function activeAthleteIntelligence(programId = "") {
+      return window.BarbellDivaAthleteContext.selectors(athleteIntelligenceStore(), state, programId || coachStudioState().programId || coachProgramUi.programId || "");
+    }
+
+    function csvValue(items) { return (items || []).map((item) => typeof item === "string" ? item : item.muscle || item.name || "").filter(Boolean).join(", "); }
+    function csvList(value) { return String(value || "").split(/[,\n]/).map((item) => item.trim()).filter(Boolean); }
+    function athleteOptionsHtml(selected = "") { return athleteIntelligenceStore().athletes.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id===selected?"selected":""}>${escapeHtml(item.general.name)}</option>`).join(""); }
+    function strategyOptionsHtml(selected = "", athleteId = "") { return athleteIntelligenceStore().strategies.filter((item) => !athleteId || item.athleteId===athleteId).map((item) => `<option value="${escapeHtml(item.id)}" ${item.id===selected?"selected":""}>${escapeHtml(item.name)}</option>`).join(""); }
+    function athletePriorityRowsHtml(items=[]){const rows=items.length?items:[{muscle:"",level:"alta"}];return rows.map((item,index)=>`<div class="athlete-structured-row priority-row" data-priority-row="${index}"><label>Muscolo<select data-priority-muscle><option value="">Seleziona</option>${window.BarbellDivaAthleteContext.MUSCLES.map((m)=>`<option value="${m}" ${item.muscle===m?"selected":""}>${m}</option>`).join("")}</select></label><label>Priorità<select data-priority-level>${window.BarbellDivaAthleteContext.PRIORITY_LEVELS.map((v)=>`<option value="${v}" ${item.level===v?"selected":""}>${v}</option>`).join("")}</select></label><button type="button" class="danger-button" data-priority-remove="${index}" aria-label="Rimuovi priorità">×</button></div>`).join("");}
+    function athletePainRowsHtml(items=[]){const rows=items.length?items:[{id:"",area:"",side:"non indicato",intensity:null,status:"da valutare",onsetDate:"",aggravatingMovements:[],toleratedExercises:[],notes:""}];return rows.map((item,index)=>`<article class="athlete-clinical-row" data-pain-row="${index}" data-item-id="${escapeHtml(item.id||"")}"><div class="row"><strong>Dolore ${index+1}</strong><button type="button" class="danger-button" data-pain-remove="${index}">Rimuovi</button></div><div class="athlete-form-grid"><label>Area<input data-pain-field="area" value="${escapeHtml(item.area||"")}" placeholder="es. spalla"></label><label>Lato<select data-pain-field="side">${["non indicato","destro","sinistro","bilaterale","centrale"].map((v)=>`<option value="${v}" ${item.side===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Intensità 0-10<input type="number" min="0" max="10" data-pain-field="intensity" value="${item.intensity??""}"></label><label>Stato<select data-pain-field="status">${window.BarbellDivaAthleteContext.PAIN_STATUSES.map((v)=>`<option value="${v}" ${item.status===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Data comparsa<input type="date" data-pain-field="onsetDate" value="${escapeHtml(item.onsetDate||"")}"></label><label>Movimenti che peggiorano<input data-pain-list="aggravatingMovements" value="${escapeHtml(csvValue(item.aggravatingMovements))}"></label><label class="full">Esercizi tollerati<input data-pain-list="toleratedExercises" value="${escapeHtml(csvValue(item.toleratedExercises))}"></label><label class="full">Note<textarea data-pain-field="notes">${escapeHtml(item.notes||"")}</textarea></label></div></article>`).join("");}
+    function athleteLimitationRowsHtml(items=[]){const rows=items.length?items:[{id:"",movement:"",severity:"moderata",status:"da valutare",description:"",affectedPatterns:[],notes:""}];return rows.map((item,index)=>`<article class="athlete-clinical-row" data-limit-row="${index}" data-item-id="${escapeHtml(item.id||"")}"><div class="row"><strong>Limitazione ${index+1}</strong><button type="button" class="danger-button" data-limit-remove="${index}">Rimuovi</button></div><div class="athlete-form-grid"><label>Movimento<input data-limit-field="movement" value="${escapeHtml(item.movement||"")}" placeholder="es. flessione spalla"></label><label>Gravità<select data-limit-field="severity">${window.BarbellDivaAthleteContext.SEVERITY_LEVELS.map((v)=>`<option value="${v}" ${item.severity===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Stato<select data-limit-field="status">${window.BarbellDivaAthleteContext.PAIN_STATUSES.map((v)=>`<option value="${v}" ${item.status===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Pattern interessati<input data-limit-list="affectedPatterns" value="${escapeHtml(csvValue(item.affectedPatterns))}"></label><label class="full">Descrizione<textarea data-limit-field="description">${escapeHtml(item.description||"")}</textarea></label><label class="full">Note<textarea data-limit-field="notes">${escapeHtml(item.notes||"")}</textarea></label></div></article>`).join("");}
+
+    function coachAthleteProfileHtml() {
+      const ctx=activeAthleteIntelligence(), athlete=ctx.athlete, g=athlete.general, goals=athlete.goals, p=athlete.preferences, e=athlete.equipment;
+      const missing=ctx.missing.map((item)=>`<li><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.where)} · ${escapeHtml(item.why)}</span></li>`).join("");
+      return `<section class="coach-studio-page athlete-intelligence-page" data-athlete-profile="${escapeHtml(athlete.id)}">${coachStudioPageHead("Athlete Context","Profilo atleta","La fonte unica che collega strategia, programmi, Nutrizione e Coach AI 2.")}
+        ${missing?`<article class="athlete-missing-card"><h3>Informazioni utili ancora mancanti</h3><ul>${missing}</ul></article>`:""}
+        <details class="athlete-section" open><summary>Dati generali</summary><div class="athlete-form-grid"><label>Nome<input data-athlete-field="general.name" value="${escapeHtml(g.name)}"></label><label>Data di nascita<input type="date" data-athlete-field="general.birthDate" value="${escapeHtml(g.birthDate)}"></label><label>Età<input type="number" data-athlete-field="general.age" value="${g.age??""}"></label><label>Sesso<input data-athlete-field="general.sex" value="${escapeHtml(g.sex)}"></label><label>Altezza cm<input type="number" data-athlete-field="general.heightCm" value="${g.heightCm??""}"></label><label>Peso kg<input type="number" step="0.1" data-athlete-field="general.weightKg" value="${g.weightKg??""}"></label><label>Livello<select data-athlete-field="general.level"><option value="">Da definire</option>${["principiante","intermedio","avanzato"].map((v)=>`<option ${g.level===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Anni di allenamento<input type="number" data-athlete-field="general.trainingYears" value="${g.trainingYears??""}"></label><label>Sessioni settimanali<input type="number" data-athlete-field="general.weeklySessions" value="${g.weeklySessions??""}"></label><label>Minuti per sessione<input type="number" data-athlete-field="general.sessionMinutes" value="${g.sessionMinutes??""}"></label><label class="full">Note coach<textarea data-athlete-field="general.coachNotes">${escapeHtml(g.coachNotes)}</textarea></label></div></details>
+        <details class="athlete-section" open><summary>Obiettivi e priorità</summary><div class="athlete-form-grid"><label>Obiettivo primario<select data-athlete-field="goals.primary">${window.BarbellDivaAthleteContext.GOALS.map((v)=>`<option value="${v}" ${goals.primary===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Obiettivi secondari<input data-athlete-list="goals.secondary" value="${escapeHtml(csvValue(goals.secondary))}" placeholder="forza, performance..."></label><label>Data obiettivo<input type="date" data-athlete-field="goals.targetDate" value="${escapeHtml(goals.targetDate)}"></label><label class="full">Target misurabili<input data-athlete-list="goals.targetMetrics" value="${escapeHtml(csvValue(goals.targetMetrics))}" placeholder="es. +10 kg squat, circonferenza..."></label><div class="full"><div class="row"><strong>Priorità muscolari con livello</strong><button type="button" class="ghost-button" data-priority-add>+ Priorità</button></div><div class="athlete-structured-list">${athletePriorityRowsHtml(athlete.muscles.priorities)}</div></div><label>Carenze percepite<input data-athlete-list="muscles.deficits" value="${escapeHtml(csvValue(athlete.muscles.deficits))}"></label><label>Punti di forza<input data-athlete-list="muscles.strengths" value="${escapeHtml(csvValue(athlete.muscles.strengths))}"></label><label>Da mantenere<input data-athlete-list="muscles.maintain" value="${escapeHtml(csvValue(athlete.muscles.maintain))}"></label><label class="full">Note obiettivo<textarea data-athlete-field="goals.notes">${escapeHtml(goals.notes)}</textarea></label></div></details>
+        <details class="athlete-section" open><summary>Cartella clinico-sportiva</summary><p class="micro-copy clinical-disclaimer">Informazioni dichiarate dall’atleta o registrate dal coach. Non sono diagnosi mediche.</p><div class="clinical-group"><div class="row"><h3>Dolori strutturati</h3><button type="button" class="ghost-button" data-pain-add>+ Aggiungi dolore</button></div><div class="athlete-structured-list">${athletePainRowsHtml(athlete.pains)}</div></div><div class="clinical-group"><div class="row"><h3>Limitazioni motorie</h3><button type="button" class="ghost-button" data-limit-add>+ Aggiungi limitazione</button></div><div class="athlete-structured-list">${athleteLimitationRowsHtml(athlete.motorLimitations)}</div></div></details>
+        <details class="athlete-section"><summary>Preferenze e attrezzatura</summary><div class="athlete-form-grid"><label>Esercizi preferiti<input data-athlete-list="preferences.favoriteExercises" value="${escapeHtml(csvValue(p.favoriteExercises))}"></label><label>Esercizi sgraditi<input data-athlete-list="preferences.dislikedExercises" value="${escapeHtml(csvValue(p.dislikedExercises))}"></label><label>Esercizi esclusi<input data-athlete-list="preferences.excludedExercises" value="${escapeHtml(csvValue(p.excludedExercises))}"></label><label>Giorni preferiti<input data-athlete-list="preferences.preferredDays" value="${escapeHtml(csvValue(p.preferredDays))}"></label><label>Modalità preferita<input data-athlete-field="preferences.modality" value="${escapeHtml(p.modality)}"></label><label>Preset attrezzatura<select data-athlete-field="equipment.preset">${["palestra completa","home gym","attrezzatura personalizzata"].map((v)=>`<option ${e.preset===v?"selected":""}>${v}</option>`).join("")}</select></label><label class="full">Attrezzatura disponibile<input data-athlete-list="equipment.items" value="${escapeHtml(csvValue(e.items))}" placeholder="bilanciere, cavi, manubri..."></label><label class="full">Note preferenze<textarea data-athlete-field="preferences.notes">${escapeHtml(p.notes)}</textarea></label></div></details>
+        <div class="athlete-savebar"><span data-athlete-save-status>Modifiche non salvate non cambiano il profilo.</span><button class="gold-button" data-athlete-save>Salva profilo atleta</button></div></section>`;
+    }
+
+    function coachStrategyHtml() {
+      const store=athleteIntelligenceStore(), ctx=activeAthleteIntelligence(), strategy=store.strategies.find((item)=>item.id===coachStudioState().strategyId) || ctx.strategy || window.BarbellDivaAthleteContext.createDefaultStrategy(ctx.athlete.id), nutrition=store.nutritionByAthlete[strategy.athleteId] || ctx.nutrition;
+      return `<section class="coach-studio-page athlete-intelligence-page" data-strategy-editor="${escapeHtml(strategy.id)}">${coachStudioPageHead("Direzione del blocco","Strategia","Obiettivi e vincoli leggibili dal coach, dal programma e dal Coach AI 2.",`<button class="ghost-button" data-strategy-new>+ Nuova strategia</button>`)}
+        <article class="athlete-context-strip"><label>Atleta<select data-strategy-field="athleteId">${athleteOptionsHtml(strategy.athleteId)}</select></label><label>Strategia<select data-strategy-select>${strategyOptionsHtml(strategy.id,strategy.athleteId)}</select></label><span><b>Fase nutrizionale</b>${escapeHtml(nutrition.phase)} · ${escapeHtml(nutrition.source)} · confidenza ${escapeHtml(nutrition.confidence)}</span></article>
+        <details class="athlete-section" open><summary>Blocco e obiettivi</summary><div class="athlete-form-grid"><label>Nome<input data-strategy-field="name" value="${escapeHtml(strategy.name)}"></label><label>Tipo blocco<select data-strategy-field="blockType">${window.BarbellDivaAthleteContext.BLOCK_TYPES.map((v)=>`<option value="${v}" ${strategy.blockType===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Obiettivo primario<select data-strategy-field="primaryGoal">${window.BarbellDivaAthleteContext.GOALS.map((v)=>`<option value="${v}" ${strategy.primaryGoal===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Obiettivi secondari<input data-strategy-list="secondaryGoals" value="${escapeHtml(csvValue(strategy.secondaryGoals))}"></label><label>Durata settimane<input type="number" data-strategy-field="durationWeeks" value="${strategy.durationWeeks||8}"></label><label>Frequenza target<input type="number" data-strategy-field="frequency" value="${strategy.frequency??""}"></label><label>Muscoli target<input data-strategy-list="targetMuscles" value="${escapeHtml(csvValue(strategy.targetMuscles))}"></label><label>Pattern target<input data-strategy-list="targetPatterns" value="${escapeHtml(csvValue(strategy.targetPatterns))}"></label></div></details>
+        <details class="athlete-section" open><summary>Prescrizione strategica</summary><div class="athlete-form-grid"><label>Volume target<input data-strategy-field="targetVolume" value="${escapeHtml(strategy.targetVolume)}"></label><label>Fatica target<input data-strategy-field="targetFatigue" value="${escapeHtml(strategy.targetFatigue)}"></label><label>RPE target<input data-strategy-field="targetRpe" value="${escapeHtml(strategy.targetRpe)}"></label><label>RIR target<input data-strategy-field="targetRir" value="${escapeHtml(strategy.targetRir)}"></label><label>Uso del cedimento<input data-strategy-field="failurePolicy" value="${escapeHtml(strategy.failurePolicy)}"></label><label>Recuperi<input data-strategy-field="restPolicy" value="${escapeHtml(strategy.restPolicy)}"></label><label>Densità<input data-strategy-field="density" value="${escapeHtml(strategy.density)}"></label><label>Tecniche<input data-strategy-list="techniques" value="${escapeHtml(csvValue(strategy.techniques))}"></label><label class="full">Indicatori di performance<input data-strategy-list="performanceMarkers" value="${escapeHtml(csvValue(strategy.performanceMarkers))}"></label><label class="full">Note strategiche<textarea data-strategy-field="notes">${escapeHtml(strategy.notes)}</textarea></label></div></details>
+        <details class="athlete-section"><summary>Collegamenti programma</summary><div class="program-link-list">${(state.programs||[]).filter((p)=>!p.deletedAt).map((p)=>{const link=store.programLinks[p.id]||{};return `<div><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(link.strategyId?store.strategies.find((x)=>x.id===link.strategyId)?.name||"Strategia non trovata":"Scheda libera")}</span><button class="ghost-button" data-program-link="${escapeHtml(p.id)}">Collega a questa strategia</button></div>`}).join("")}</div></details>
+        <details class="athlete-section"><summary>Fase nutrizionale condivisa</summary><div class="athlete-form-grid"><label>Fase<select data-nutrition-phase>${window.BarbellDivaAthleteContext.NUTRITION_PHASES.map((v)=>`<option value="${v}" ${nutrition.phase===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Fonte<select data-nutrition-source><option value="estimated" ${nutrition.source!=="manual"?"selected":""}>Stimata dai dati</option><option value="manual" ${nutrition.source==="manual"?"selected":""}>Manuale coach</option></select></label><label class="full">Motivo / note<input data-nutrition-reason value="${escapeHtml(nutrition.reason)}"></label></div><p class="micro-copy">Una fase manuale non viene mai sovrascritta dalla sincronizzazione nutrizionale.</p></details>
+        <div class="athlete-savebar"><span data-strategy-save-status>Strategia pronta per il salvataggio.</span><button class="gold-button" data-strategy-save>Salva strategia</button></div></section>`;
+    }
+
+    let coachAi2Cache={fingerprint:"",result:null};
+    function coachAi2Analysis(programId="") {
+      const program=(state.programs||[]).find((item)=>item.id===(programId||coachStudioState().programId||coachProgramUi.programId)) || (state.programs||[]).find((item)=>!item.deletedAt) || {id:"",sheets:[]};
+      const context=activeAthleteIntelligence(program.id); const payload={context,program,sessions:state.training?.sessions||[],config:{performanceWindow:Number(coachProgramUi.ai2Window)||5}}; const fingerprint=window.BarbellDivaCoachAI2.stableHash(payload);
+      if(coachAi2Cache.fingerprint===fingerprint&&coachAi2Cache.result)return {program,context,result:coachAi2Cache.result};
+      const result=window.BarbellDivaCoachAI2.analyze(payload); const history=state.athleteIntelligence.insightHistory[context.athlete.id]||[]; result.insights=window.BarbellDivaCoachAI2.mergeHistory(history,result.insights); coachAi2Cache={fingerprint,result}; return {program,context,result};
+    }
+
+    function coachAi2ExerciseTableHtml(analyses=[]){return `<article class="ai2-exercise-analysis"><div class="row"><div><span class="section-eyebrow">Analisi per esercizio</span><h3>Carichi, ripetizioni, volume e progressioni</h3></div><span class="chip">storico reale</span></div><div class="ai2-exercise-table"><div class="ai2-exercise-head"><b>Esercizio</b><b>Ultime rilevazioni</b><b>Trend</b><b>Progressione</b></div>${analyses.map((x)=>{const first=x.trend.points?.[0],last=x.trend.points?.at(-1);return `<button type="button" data-ai2-exercise-open="${escapeHtml(x.id)}" data-ai2-sheet-id="${escapeHtml(x.sheetId)}"><span><strong>${escapeHtml(x.name)}</strong><small>${escapeHtml(x.sheetName||"")} · ${escapeHtml(x.pattern)}</small></span><span><b>${x.history.length}</b><small>${first&&last?`${first.load??"—"} → ${last.load??"—"} kg · ${first.reps??"—"} → ${last.reps??"—"} rep`:"dati insufficienti"}</small></span><span><b>${escapeHtml(x.trend.status)}</b><small>${x.trend.changePct==null?"—":`${x.trend.changePct}%`}</small></span><span><b>${escapeHtml(x.progression.status)}</b><small>${escapeHtml(x.progression.templateId||"nessun template")}</small></span></button>`}).join("")}</div></article>`;}
+
+    function coachAi2PageHtml(compact=false) {
+      const {program,result}=coachAi2Analysis(); const score=result.score; const missing=result.missing||[];
+      const preview=coachProgramUi.ai2Preview, undo=coachProgramUi.ai2Undo;
+      const modal=preview?`<div class="coach-modal-backdrop"><section class="coach-modal"><h3>Anteprima modifica Coach AI</h3><p><b>${escapeHtml(preview.exerciseName||"Esercizio")}</b></p><div class="reference-row"><strong>Prima</strong><p>${escapeHtml(preview.beforeLabel)}</p><strong>Dopo</strong><p>${escapeHtml(preview.afterLabel)}</p></div><p class="micro-copy">La modifica sarà registrata e potrà essere annullata.</p><div class="coach-modal-actions"><button class="ghost-button" data-ai2-preview-cancel>Annulla</button><button class="gold-button" data-ai2-preview-confirm>Conferma modifica</button></div></section></div>`:"";
+      return `<div class="coach-ai2 ${compact?"is-compact":""}">${compact?"":coachStudioPageHead("Athlete Intelligence","Coach AI 2","Analisi deterministica e spiegabile: dati reali, calcoli, stime e mancanze restano distinti.")}
+        <div class="ai2-score-card"><div class="ai2-score"><strong>${score.score}</strong><span>/100</span></div><div><h3>Program Score · ${escapeHtml(program.name||"Programma")}</h3><p>Confidenza ${escapeHtml(score.confidence)} · completezza ${score.completeness}%</p><small>${escapeHtml(score.explanation)}</small><details><summary>Sottopunteggi spiegabili</summary><div class="ai2-score-details">${Object.entries(score.componentDetails||{}).map(([key,detail])=>`<article><div class="row"><b>${escapeHtml(key)}</b><strong>${detail.value==null?"—":detail.value+"/100"}</strong></div><p>${escapeHtml(detail.reason)}</p><small>peso ${score.weights[key]} · ${(detail.data||[]).map(d=>`${escapeHtml(d.label)}: ${escapeHtml(d.value)} (${escapeHtml(d.source)})`).join(" · ")||"dato mancante"}</small></article>`).join("")}</div></details></div>${undo?'<button class="ghost-button" data-ai2-undo>Annulla ultima modifica</button>':''}</div>
+        <nav class="ai2-sections">${["Overview","Strategia","Programma","Performance","Fatica","Progressioni","Suggerimenti","Storico"].map((x)=>`<span>${x}</span>`).join("")}</nav><div class="coach-studio-kpis ai2-kpis"><article class="coach-studio-kpi"><span>Serie settimanali</span><strong>${result.metrics.weeklySets}</strong><small>calcolate</small></article><article class="coach-studio-kpi"><span>Esercizi</span><strong>${result.metrics.exercises}</strong><small>dati reali</small></article><article class="coach-studio-kpi"><span>Progressioni</span><strong>${result.metrics.progressionCoverage==null?"—":Math.round(result.metrics.progressionCoverage*100)+"%"}</strong><small>copertura calcolata</small></article><article class="coach-studio-kpi"><span>Finestra performance</span><select data-ai2-window>${[3,5,8].map((v)=>`<option value="${v}" ${Number(coachProgramUi.ai2Window||5)===v?"selected":""}>${v} rilevazioni</option>`).join("")}</select><small>solo storico reale</small></article></div>
+        <article class="ai2-context-card"><div><span class="section-eyebrow">Nutrizione</span><h3>${escapeHtml(result.nutritionPolicy.mode)} · ${escapeHtml(activeAthleteIntelligence(program.id).nutrition.phase)}</h3><p>${escapeHtml(result.nutritionPolicy.reason)}</p></div><div><span class="section-eyebrow">Deload Advisor</span><h3>${escapeHtml(result.deload.decision)}</h3><p>${escapeHtml(result.deload.reason)}</p><small>${result.deload.signals.map(x=>escapeHtml(x.label)).join(" · ")||"Nessun segnale convergente"}</small></div></article>
+        ${missing.length?`<article class="athlete-missing-card"><h3>Dati mancanti: non li invento</h3><ul>${missing.map((x)=>`<li><strong>${escapeHtml(x.label)}</strong><span>${escapeHtml(x.where)} · ${escapeHtml(x.why)}</span></li>`).join("")}</ul></article>`:""}${compact?"":coachAi2ExerciseTableHtml(result.metrics.exerciseAnalyses)}
+        <div class="ai2-insights">${result.insights.map((item)=>`<article class="ai2-insight ${escapeHtml(item.severity)}" data-ai2-insight="${escapeHtml(item.id)}"><div class="row"><span class="chip">${escapeHtml(item.category)} · ${escapeHtml(item.priority)}</span><span class="chip">${escapeHtml(item.confidence)} · ${escapeHtml(item.status)}</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.description)}</p><details><summary>Mostrami perché</summary><p>${escapeHtml(item.reason)}</p><div>${(item.data||[]).map((d)=>`<span class="ai2-datum"><b>${escapeHtml(d.label)}</b>${escapeHtml(Array.isArray(d.value)?d.value.join(" → "):d.value)} <em>${escapeHtml(d.source)}</em></span>`).join("")}</div><div class="ai2-suggestion"><b>Suggerimento</b><p>${escapeHtml(item.suggestion||"Nessuna modifica automatica proposta.")}</p></div></details><div class="quick-actions">${(item.actions||[]).map((a)=>`<button class="gold-button" data-ai2-action="${escapeHtml(a.type)}" data-ai2-insight-id="${escapeHtml(item.id)}">${escapeHtml(a.label)}</button>`).join("")}<button class="ghost-button" data-ai2-status="ignored" data-ai2-insight-id="${escapeHtml(item.id)}">Ignora</button><button class="ghost-button" data-ai2-status="later" data-ai2-insight-id="${escapeHtml(item.id)}">Più tardi</button><button class="ghost-button" data-ai2-status="archived" data-ai2-insight-id="${escapeHtml(item.id)}">Archivia</button></div></article>`).join("")}</div>${modal}</div>`;
+    }
+
     function coachStudioContentHtml() {
       const route=coachStudioState().route;
       if(route==="programs") return coachStudioProgramsHtml();
       if(route==="program") return coachStudioProgramEditorHtml();
+      if(route==="athlete") return coachAthleteProfileHtml();
+      if(route==="strategy") return coachStrategyHtml();
       if(route==="library") return `<section class="coach-studio-page">${coachStudioPageHead("Catalogo tecnico","Libreria esercizi","Ricerca, filtri e dettagli tecnici nella libreria già esistente.")}${exerciseLabHtml()}${coachUiModalHtml()}</section>`;
       if(route==="progressions") return coachStudioProgressionsHtml();
-      if(route==="ai") return `<section class="coach-studio-page">${coachStudioPageHead("Assistente","Coach AI","Suggerimenti spiegabili: proponi, confronta e applica solo ciò che approvi.")}${coachAiPanelHtml()}${coachUiModalHtml()}</section>`;
+      if(route==="ai") return `<section class="coach-studio-page">${coachAi2PageHtml(false)}${coachUiModalHtml()}</section>`;
       if(route==="questionnaires") return coachStudioQuestionnairesHtml();
       if(route==="questionnaire") return coachStudioQuestionnaireEditorHtml();
       if(route==="statistics") return coachStudioStatisticsHtml();
@@ -11352,6 +11437,7 @@
       const result=programRepository.updateExercise(programId,sheetId,exerciseId,patch,{save:false,forceLocked:true});
       if(!result.ok){updateCoachSaveIndicator("error");return false;}
       scheduleCoachEditorSave(immediate ? 220 : 700);
+      scheduleCoachAi2ContextRefresh(programId,immediate?260:850);
       clearTimeout(coachProgramUi.volumeRefreshTimer);
       coachProgramUi.volumeRefreshTimer=setTimeout(()=>{
         const program=programRepository.getProgramById(programId); const volume=document.querySelector(".coach-board-volume");
@@ -11422,6 +11508,10 @@
         if (typeof requestIdleCallback === "function") coachProgramUi.inlineSaveIdleHandle = requestIdleCallback(commit, { timeout:1200 });
         else setTimeout(commit, 0);
       }, Math.max(120, Number(delay) || 700));
+    }
+
+    function scheduleCoachAi2ContextRefresh(programId,delay=850){
+      if(!coachStudioState().aiOpen)return;clearTimeout(coachProgramUi.ai2RefreshTimer);coachProgramUi.ai2RefreshTimer=setTimeout(()=>{if(!coachStudioState().aiOpen)return;coachAi2Cache={fingerprint:"",result:null};const host=document.querySelector(".coach-editor-side");if(host){host.innerHTML=coachAi2PageHtml(true);bindAthleteIntelligenceUi();}},Math.max(250,Number(delay)||850));
     }
 
     function switchCoachProgramWeek(weekNumber) {
@@ -12285,7 +12375,9 @@
         const folders=Array.from(new Set([...(coachStudioState().folders||[]),...programRepository.getPrograms().map((entry)=>entry.folder).filter(Boolean)])).sort();
         const heading=type === "program-new" ? "Nuovo programma" : type === "program-save-as" ? "Salva come nuovo programma" : "Modifica programma";
         const defaultName=type === "program-save-as" ? `${item?.name||"Programma"} · copia` : item?.name||"";
-        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${heading}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(defaultName)}" placeholder="Nome programma"></label><label>Fase<input id="programModalPhase" value="${escapeHtml(item?.phase || "")}" placeholder="Volume, intensificazione..."></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Cartella<select id="programModalFolder"><option value="">Nessuna cartella</option>${folders.map((folder)=>`<option value="${escapeHtml(folder)}" ${item?.folder===folder?"selected":""}>${escapeHtml(folder)}</option>`).join("")}</select></label><label>Stato<select id="programModalStatus"><option value="draft" ${type==="program-save-as" || item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${type!=="program-save-as" && item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${type!=="program-save-as" && item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div><div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type==="program-save-as"?"Crea copia":"Salva programma"}</button></div></section></div>`;
+        const store=athleteIntelligenceStore(), linked=store.programLinks[item?.id]||{}, athleteId=linked.athleteId||store.activeAthleteId;
+        const contextFields=`<div class="program-setup"><h4>Contesto atleta e strategia</h4><label><input type="checkbox" id="programModalFree" ${linked.freeProgram?"checked":""}> Scheda libera: salta il collegamento</label><div class="form-grid"><label>Atleta<select id="programModalAthlete">${athleteOptionsHtml(athleteId)}</select></label><label>Strategia<select id="programModalStrategy"><option value="">Nessuna / rapida dopo</option>${strategyOptionsHtml(linked.strategyId||"",athleteId)}</select></label><label>Tipo blocco<select id="programModalBlock">${window.BarbellDivaAthleteContext.BLOCK_TYPES.map((v)=>`<option value="${v}" ${linked.blockType===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Fase nutrizionale<select id="programModalNutrition">${window.BarbellDivaAthleteContext.NUTRITION_PHASES.map((v)=>`<option value="${v}" ${linked.nutritionalPhase===v?"selected":""}>${v}</option>`).join("")}</select></label></div></div>`;
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${heading}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(defaultName)}" placeholder="Nome programma"></label><label>Fase<input id="programModalPhase" value="${escapeHtml(item?.phase || "")}" placeholder="Volume, intensificazione..."></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Cartella<select id="programModalFolder"><option value="">Nessuna cartella</option>${folders.map((folder)=>`<option value="${escapeHtml(folder)}" ${item?.folder===folder?"selected":""}>${escapeHtml(folder)}</option>`).join("")}</select></label><label>Stato<select id="programModalStatus"><option value="draft" ${type==="program-save-as" || item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${type!=="program-save-as" && item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${type!=="program-save-as" && item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div>${contextFields}<div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type==="program-save-as"?"Crea copia":"Salva programma"}</button></div></section></div>`;
       }
       if (type === "sheet-new" || type === "sheet-edit" || type === "sheet-rename") {
         const item = type === "sheet-new" ? { name: "", code: suggestedSheetCode(sheets), focus: "", split: "", note: "", color: "" } : targetSheet;
@@ -13576,9 +13668,51 @@
       });
     }
 
+    function setNestedValue(target,path,value){const keys=String(path).split(".");let node=target;keys.slice(0,-1).forEach((key)=>{node[key]=node[key]&&typeof node[key]==="object"?node[key]:{};node=node[key];});node[keys.at(-1)]=value;}
+    function inputValue(input){if(input.type==="number")return input.value===""?null:Number(input.value);return input.value;}
+    function bindAthleteIntelligenceUi(){
+      document.querySelector("[data-athlete-save]")?.addEventListener("click",()=>{
+        const ctx=activeAthleteIntelligence(),athlete=clone(ctx.athlete);
+        document.querySelectorAll("[data-athlete-field]").forEach((input)=>setNestedValue(athlete,input.dataset.athleteField,inputValue(input)));
+        document.querySelectorAll("[data-athlete-list]").forEach((input)=>setNestedValue(athlete,input.dataset.athleteList,csvList(input.value)));
+        athlete.muscles.priorities=[...document.querySelectorAll("[data-priority-row]")].map((row)=>({muscle:row.querySelector("[data-priority-muscle]")?.value||"",level:row.querySelector("[data-priority-level]")?.value||"media"})).filter((item)=>item.muscle);
+        athlete.pains=[...document.querySelectorAll("[data-pain-row]")].map((row)=>{const value=(name)=>row.querySelector(`[data-pain-field="${name}"]`)?.value||"",listValue=(name)=>csvList(row.querySelector(`[data-pain-list="${name}"]`)?.value);return{id:row.dataset.itemId||window.BarbellDivaAthleteContext.id("pain"),area:value("area"),side:value("side"),intensity:value("intensity")===""?null:Number(value("intensity")),status:value("status"),onsetDate:value("onsetDate"),aggravatingMovements:listValue("aggravatingMovements"),toleratedExercises:listValue("toleratedExercises"),notes:value("notes")};}).filter((item)=>item.area);
+        athlete.motorLimitations=[...document.querySelectorAll("[data-limit-row]")].map((row)=>{const value=(name)=>row.querySelector(`[data-limit-field="${name}"]`)?.value||"",listValue=(name)=>csvList(row.querySelector(`[data-limit-list="${name}"]`)?.value);return{id:row.dataset.itemId||window.BarbellDivaAthleteContext.id("limit"),movement:value("movement"),severity:value("severity"),status:value("status"),description:value("description"),affectedPatterns:listValue("affectedPatterns"),notes:value("notes")};}).filter((item)=>item.movement);
+        athlete.updatedAt=new Date().toISOString();state.athleteIntelligence=window.BarbellDivaAthleteContext.upsertAthlete(athleteIntelligenceStore(),athlete);saveState({immediate:true});showToast("Profilo atleta salvato e condiviso con Strategia e Coach AI 2.");render();
+      });
+      const addClinicalItem=(kind)=>{const ctx=activeAthleteIntelligence(),athlete=clone(ctx.athlete);if(kind==="priority")athlete.muscles.priorities.push({muscle:"",level:"alta"});if(kind==="pain")athlete.pains.push({id:window.BarbellDivaAthleteContext.id("pain"),area:"",side:"non indicato",intensity:null,status:"da valutare",onsetDate:"",aggravatingMovements:[],toleratedExercises:[],notes:""});if(kind==="limit")athlete.motorLimitations.push({id:window.BarbellDivaAthleteContext.id("limit"),movement:"",severity:"moderata",status:"da valutare",description:"",affectedPatterns:[],notes:""});state.athleteIntelligence=window.BarbellDivaAthleteContext.upsertAthlete(athleteIntelligenceStore(),athlete);render();};
+      document.querySelector("[data-priority-add]")?.addEventListener("click",()=>addClinicalItem("priority"));document.querySelector("[data-pain-add]")?.addEventListener("click",()=>addClinicalItem("pain"));document.querySelector("[data-limit-add]")?.addEventListener("click",()=>addClinicalItem("limit"));
+      document.querySelectorAll("[data-priority-remove]").forEach((button)=>button.addEventListener("click",()=>{const athlete=clone(activeAthleteIntelligence().athlete);athlete.muscles.priorities.splice(Number(button.dataset.priorityRemove),1);state.athleteIntelligence=window.BarbellDivaAthleteContext.upsertAthlete(athleteIntelligenceStore(),athlete);render();}));
+      document.querySelectorAll("[data-pain-remove]").forEach((button)=>button.addEventListener("click",()=>{const athlete=clone(activeAthleteIntelligence().athlete);athlete.pains.splice(Number(button.dataset.painRemove),1);state.athleteIntelligence=window.BarbellDivaAthleteContext.upsertAthlete(athleteIntelligenceStore(),athlete);render();}));
+      document.querySelectorAll("[data-limit-remove]").forEach((button)=>button.addEventListener("click",()=>{const athlete=clone(activeAthleteIntelligence().athlete);athlete.motorLimitations.splice(Number(button.dataset.limitRemove),1);state.athleteIntelligence=window.BarbellDivaAthleteContext.upsertAthlete(athleteIntelligenceStore(),athlete);render();}));
+      document.querySelector("[data-strategy-select]")?.addEventListener("change",(event)=>{const store=athleteIntelligenceStore(),strategy=store.strategies.find((x)=>x.id===event.target.value);if(strategy){store.activeAthleteId=strategy.athleteId;coachStudioState().strategyId=strategy.id;saveState({immediate:true});render();}});
+      document.querySelector("[data-strategy-new]")?.addEventListener("click",()=>{const store=athleteIntelligenceStore(),strategy={...window.BarbellDivaAthleteContext.createDefaultStrategy(store.activeAthleteId),id:window.BarbellDivaAthleteContext.id("strategy"),name:"Nuova strategia"};state.athleteIntelligence=window.BarbellDivaAthleteContext.upsertStrategy(store,strategy);coachStudioState().strategyId=strategy.id;saveState({immediate:true});render();});
+      document.querySelector("[data-strategy-save]")?.addEventListener("click",()=>{
+        const ctx=activeAthleteIntelligence(),strategyId=document.querySelector("[data-strategy-editor]")?.dataset.strategyEditor,strategy=clone(athleteIntelligenceStore().strategies.find((x)=>x.id===strategyId)||ctx.strategy||window.BarbellDivaAthleteContext.createDefaultStrategy(ctx.athlete.id));
+        document.querySelectorAll("[data-strategy-field]").forEach((input)=>setNestedValue(strategy,input.dataset.strategyField,inputValue(input)));
+        document.querySelectorAll("[data-strategy-list]").forEach((input)=>setNestedValue(strategy,input.dataset.strategyList,csvList(input.value)));
+        state.athleteIntelligence=window.BarbellDivaAthleteContext.upsertStrategy(athleteIntelligenceStore(),strategy);
+        const nutrition=state.athleteIntelligence.nutritionByAthlete[strategy.athleteId]||{};nutrition.phase=document.querySelector("[data-nutrition-phase]")?.value||nutrition.phase;nutrition.source=document.querySelector("[data-nutrition-source]")?.value||nutrition.source;nutrition.reason=document.querySelector("[data-nutrition-reason]")?.value||nutrition.reason;nutrition.updatedAt=new Date().toISOString();state.athleteIntelligence.nutritionByAthlete[strategy.athleteId]=nutrition;
+        saveState({immediate:true});showToast("Strategia salvata. I programmi collegati e Coach AI 2 sono aggiornati.");render();
+      });
+      document.querySelectorAll("[data-program-link]").forEach((button)=>button.addEventListener("click",()=>{const strategyId=document.querySelector("[data-strategy-editor]")?.dataset.strategyEditor,strategy=athleteIntelligenceStore().strategies.find((x)=>x.id===strategyId)||activeAthleteIntelligence().strategy;if(!strategy)return;const nutrition=athleteIntelligenceStore().nutritionByAthlete[strategy.athleteId]||{};state.athleteIntelligence=window.BarbellDivaAthleteContext.linkProgram(athleteIntelligenceStore(),button.dataset.programLink,{athleteId:strategy.athleteId,strategyId:strategy.id,blockType:strategy.blockType,nutritionalPhase:nutrition.phase});saveState({immediate:true});showToast("Programma collegato senza modificare esercizi o progressioni.");render();}));
+      document.querySelectorAll("[data-ai2-status]").forEach((button)=>button.addEventListener("click",()=>{const {context,result}=coachAi2Analysis(),current=result.insights.find((x)=>x.id===button.dataset.ai2InsightId);if(!current)return;const history=state.athleteIntelligence.insightHistory[context.athlete.id]||[];const index=history.findIndex((x)=>x.id===current.id),saved={...current,status:button.dataset.ai2Status,updatedAt:new Date().toISOString()};if(index>=0)history[index]=saved;else history.push(saved);state.athleteIntelligence.insightHistory[context.athlete.id]=history.slice(-200);coachAi2Cache={fingerprint:"",result:null};saveState({immediate:true});render();}));
+      document.querySelector("[data-ai2-window]")?.addEventListener("change",(event)=>{coachProgramUi.ai2Window=Number(event.target.value)||5;coachAi2Cache={fingerprint:"",result:null};render();});
+      document.querySelectorAll("[data-ai2-action]").forEach((button)=>button.addEventListener("click",()=>{
+        const type=button.dataset.ai2Action,{program,result}=coachAi2Analysis(),item=result.insights.find((x)=>x.id===button.dataset.ai2InsightId),action=item?.actions?.find((x)=>x.type===type);if(!action)return;
+        if(type==="openProgressions")return coachStudioNavigate("progressions");if(type==="openLibrary")return coachStudioNavigate("library");if(type==="openAthlete")return coachStudioNavigate("athlete");if(type==="reviewProgram")return coachStudioNavigate("program",{programId:program.id});if(type==="reviewRecovery")return coachStudioNavigate("statistics");if(type==="reviewExercise"){coachProgramUi.programId=program.id;coachProgramUi.sheetId=action.sheetId;openCoachModal("exercise-details",{sheetId:action.sheetId,exerciseId:action.exerciseId});return render();}
+        if(type==="applyDefaultProgression"){const exercise=programRepository.getExerciseById(program.id,action.sheetId,action.exerciseId);if(!exercise)return showToast("Esercizio destinazione non trovato.");coachProgramUi.ai2Preview={programId:program.id,sheetId:action.sheetId,exerciseId:action.exerciseId,exerciseName:exercise.name,before:clone(exercise),beforeLabel:exercise.progression?.templateId||"Nessuna progressione collegata",afterLabel:"Doppia progressione, con valori manuali protetti"};render();}
+      }));
+      document.querySelectorAll("[data-ai2-exercise-open]").forEach((button)=>button.addEventListener("click",()=>{const {program}=coachAi2Analysis();coachProgramUi.programId=program.id;coachProgramUi.sheetId=button.dataset.ai2SheetId;openCoachModal("exercise-details",{sheetId:button.dataset.ai2SheetId,exerciseId:button.dataset.ai2ExerciseOpen});render();}));
+      document.querySelector("[data-ai2-preview-cancel]")?.addEventListener("click",()=>{coachProgramUi.ai2Preview=null;render();});
+      document.querySelector("[data-ai2-preview-confirm]")?.addEventListener("click",()=>{const p=coachProgramUi.ai2Preview;if(!p)return;const current=programRepository.getExerciseById(p.programId,p.sheetId,p.exerciseId);coachProgramUi.ai2Undo={programId:p.programId,sheetId:p.sheetId,exerciseId:p.exerciseId,before:p.before};programRepository.updateExercise(p.programId,p.sheetId,p.exerciseId,{progression:{...(current.progression||{}),templateId:"double-progression",rule:{kind:"double-progression",source:"coach-ai2"},manualWeeks:current.progression?.manualWeeks||[]}}, {immediate:true,forceLocked:true});coachProgramUi.ai2Preview=null;coachAi2Cache={fingerprint:"",result:null};showToast("Progressione applicata. Puoi annullarla dal pannello.");render();});
+      document.querySelector("[data-ai2-undo]")?.addEventListener("click",()=>{const u=coachProgramUi.ai2Undo;if(!u)return;programRepository.updateExercise(u.programId,u.sheetId,u.exerciseId,u.before,{immediate:true,forceLocked:true});coachProgramUi.ai2Undo=null;coachAi2Cache={fingerprint:"",result:null};showToast("Ultima modifica Coach AI annullata.");render();});
+    }
+
     function bindScreen() {
       bindGlobalDivaBot();
       bindAnimatedTooltips();
+      bindAthleteIntelligenceUi();
       document.querySelectorAll("[data-screen]").forEach((button) => {
         if (button.dataset.screenBound) return;
         button.dataset.screenBound = "true";
@@ -15459,6 +15593,14 @@
           if(result.ok) result=programRepository.updateProgram(result.value.id,data,{immediate:true});
         } else result = type === "program-new" ? programRepository.createProgram(data, { immediate: true }) : programRepository.updateProgram(program.id, data, { immediate: true });
         if (!result.ok) return showToast("Controlla nome e durata del programma.");
+        state.athleteIntelligence = window.BarbellDivaAthleteContext.linkProgram(athleteIntelligenceStore(), result.value.id, {
+          athleteId:document.getElementById("programModalAthlete")?.value,
+          strategyId:document.getElementById("programModalStrategy")?.value,
+          blockType:document.getElementById("programModalBlock")?.value,
+          nutritionalPhase:document.getElementById("programModalNutrition")?.value,
+          freeProgram:document.getElementById("programModalFree")?.checked
+        });
+        saveState({immediate:true});
         coachProgramUi.programId = result.value.id;
         coachProgramUi.sheetId = programRepository.getSheets(result.value.id)[0]?.id || "";
         closeCoachModal();
