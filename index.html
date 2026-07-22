@@ -7,17 +7,17 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v123-phase19.9">
+  <link rel="manifest" href="manifest.webmanifest?v=v125-phase19.9.1-icon">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="workout-pro.css?v=v123-phase19.9">
-  <link rel="stylesheet" href="coach-studio.css?v=v123-phase19.9">
-  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v123-phase19.9">
-  <script src="exercise-library-19.8.js?v=v123-phase19.9"></script>
-  <script type="module" src="programming-engine.js?v=v123-phase19.9"></script>
-  <script type="module" src="sync-reliability.js?v=v123-phase19.9"></script>
-  <script src="coach-studio.js?v=v123-phase19.9"></script>
-  <script defer src="workout-pro.js?v=v123-phase19.9"></script>
+  <link rel="stylesheet" href="workout-pro.css?v=v125-phase19.9.1-icon">
+  <link rel="stylesheet" href="coach-studio.css?v=v125-phase19.9.1-icon">
+  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v125-phase19.9.1-icon">
+  <script src="exercise-library-19.8.js?v=v125-phase19.9.1-icon"></script>
+  <script type="module" src="programming-engine.js?v=v125-phase19.9.1-icon"></script>
+  <script type="module" src="sync-reliability.js?v=v125-phase19.9.1-icon"></script>
+  <script src="coach-studio.js?v=v125-phase19.9.1-icon"></script>
+  <script defer src="workout-pro.js?v=v125-phase19.9.1-icon"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4705,6 +4705,28 @@
         transition-delay:0ms !important;
       }
     }
+    /* Fase 19.9.1: contenimento dei repaint e UX tecnica delle modali */
+    .coach-modal-backdrop[data-coach-portal-modal] { backdrop-filter:none !important; -webkit-backdrop-filter:none !important; background:rgba(34,18,46,.56); animation:none; }
+    .coach-modal-backdrop[data-coach-portal-modal] > .coach-modal { contain:layout paint; animation:coachModalStableIn .12s ease-out both; }
+    @keyframes coachModalStableIn { from { opacity:.65; transform:translateY(4px) } to { opacity:1; transform:none } }
+    .progression-scroll,.technical-picker-list { contain:layout paint; }
+    .technical-picker-list > article { content-visibility:auto; contain-intrinsic-size:72px; }
+    .exercise-detail-status { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:14px 0; }
+    .exercise-detail-status span { display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--line-soft); border-radius:12px; background:color-mix(in srgb,var(--surface) 86%,var(--accent-soft)); font-size:.82rem; }
+    .exercise-detail-status b { display:grid; place-items:center; width:24px; height:24px; border-radius:50%; background:var(--accent); color:white; }
+    .coach-details-section { margin-top:14px; padding:16px; border:1px solid var(--line-soft); border-radius:16px; background:color-mix(in srgb,var(--surface) 95%,var(--accent-soft)); }
+    .coach-details-section legend { padding:0 8px; font-weight:800; color:var(--text); }
+    .progression-confirm-panel { margin:14px 0 4px; padding:16px; border:1px solid var(--accent); border-radius:16px; background:color-mix(in srgb,var(--surface) 88%,var(--accent-soft)); }
+    .progression-confirm-compare { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .progression-confirm-compare p { display:grid; gap:5px; margin:0; padding:10px; border-radius:12px; background:var(--surface); }
+    .missing-field-guide { margin-top:10px; }
+    .missing-field-guide ul { display:grid; gap:7px; margin:8px 0 0; padding:0; list-style:none; }
+    .missing-field-guide li { display:grid; grid-template-columns:auto 1fr auto; gap:9px; align-items:start; padding:9px 10px; border:1px solid var(--line-soft); border-radius:12px; background:var(--surface); }
+    .missing-field-guide li > span { color:var(--accent); font-size:1.1rem; }
+    .missing-field-guide li div { display:grid; gap:3px; }
+    .missing-field-guide small { color:var(--muted); line-height:1.35; }
+    .missing-field-guide em { padding:3px 7px; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-size:.7rem; font-style:normal; }
+    @media (max-width:700px) { .exercise-detail-status,.progression-confirm-compare { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -4812,7 +4834,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v123-phase19.9";
+    const APP_BUILD = "v125-phase19.9.1-icon";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -6166,7 +6188,7 @@
       ,pendingScrollSheetId: ""
       ,expandedSheetIds: new Set()
       ,librarySpecific: ""
-      ,modalDiagnostics: { mounts:0, unmounts:0, opens:0, closes:0, listenerBinds:0, localPreviewUpdates:0 }
+      ,modalDiagnostics: { mounts:0, unmounts:0, opens:0, closes:0, listenerBinds:0, localPreviewUpdates:0, globalRenders:0, globalRendersWithModal:0, libraryReconciles:0, libraryNodesCreated:0, libraryNodesReused:0, operationDurations:{} }
     };
     let coachModalRenderingPortal = false;
     window.__coachModalDiagnostics = coachProgramUi.modalDiagnostics;
@@ -6371,32 +6393,55 @@
       return { sets: optionalNumber(p.sets) ?? 3, reps, rir: parseRir(p.rir), rpe: parseRir(p.rpe), restSeconds: optionalNumber(p.rest?.seconds) ?? 90, prescribedLoad: parsePrescribedLoad(p.prescribedLoad), loadUnit: p.prescribedLoad?.unit || "kg", tempo: parseTempo(p.tempo), technique: parseTechnique(p.technique) };
     }
     function progressionNumber(value, fallback = null) { const n = Number(value); return Number.isFinite(n) ? n : fallback; }
+    function progressionRuntimeConfig(template = {}, exercise = {}, overrides = {}) {
+      const base=progressionBasePrescription(exercise),parameters={...(template.parameters||{}),...(overrides||{})};
+      const optional=(key,fallback)=>parameters[key] === "" || parameters[key] == null ? fallback : progressionNumber(parameters[key],fallback);
+      const baseRepMin=base.reps.min??base.reps.max,baseRepMax=base.reps.max??base.reps.min;
+      return {
+        kind:template.rules?.kind||"custom",parameters,
+        startSets:optional("startSets",base.sets),
+        repMin:optional("repMin",baseRepMin),repMax:optional("repMax",baseRepMax),
+        startRir:optional("startRir",base.rir.min),startRpe:optional("startRpe",base.rpe.min),
+        startRest:optional("startRest",base.restSeconds),startLoad:optional("startLoad",base.prescribedLoad.value),
+        loadUnit:String(parameters.loadUnit||base.loadUnit||"kg"),
+        increment:optional("increment",0),setsIncrement:optional("setsIncrement",optional("increment",0)),
+        maxSets:optional("maxSets",base.sets),rirStart:optional("rirStart",base.rir.min),rirEnd:optional("rirEnd",base.rir.min),
+        backoffPercent:optional("backoffPercent",1),backoffSets:optional("backoffSets",0),
+        restDecrement:optional("restDecrement",optional("decrement",0)),minRest:optional("minRest",base.restSeconds),
+        reduction:optional("reduction",1),rirIncrease:optional("rirIncrease",0),deloadEvery:optional("deloadEvery",0)
+      };
+    }
     function generateProgressionWeeks(exercise = {}, templateId = "maintenance", duration = 1, parameters = {}, existing = []) {
       const template = progressionTemplateById(templateId) || progressionTemplateById("custom");
       const base = progressionBasePrescription(exercise);
       const count = Math.max(1, Number(duration) || 1);
-      const rule = { templateId: template.id, kind: template.rules?.kind || "custom", parameters: { ...(template.parameters || {}), ...(parameters || {}) } };
+      const runtime=progressionRuntimeConfig(template,exercise,parameters);
+      const rule = { templateId: template.id, kind: runtime.kind, parameters: runtime.parameters };
       const current = Array.isArray(existing) ? existing : [];
       const manual = new Set((exercise.progression?.manualWeeks || []).map(Number));
       return Array.from({ length: count }, (_, index) => {
         const weekNumber = index + 1;
         const previous = current[index] ? parseWeekPrescription(current[index], weekNumber, base) : null;
         if (previous && (manual.has(weekNumber) || previous.source === "manual")) return { ...previous, week: weekNumber, weekNumber, source: "manual" };
-        let sets = progressionNumber(base.sets, 3), reps = base.reps, rir = base.rir, rpe = base.rpe, restSeconds = base.restSeconds, load = base.prescribedLoad;
+        let sets=runtime.startSets,reps=parseReps(runtime.repMin!=null&&runtime.repMax!=null?`${runtime.repMin}-${runtime.repMax}`:base.reps),rir=parseRir(runtime.startRir),rpe=parseRir(runtime.startRpe),restSeconds=runtime.startRest,load=parsePrescribedLoad({value:runtime.startLoad,unit:runtime.loadUnit});
         const kind = rule.kind;
-        if (kind === "double") { const min=progressionNumber(rule.parameters.repMin,reps.min??8),max=progressionNumber(rule.parameters.repMax,reps.max??min); reps=parseReps(`${min}-${max}`);sets=progressionNumber(rule.parameters.sets,sets); }
-        if (kind === "linear-reps" && index===0) reps=parseReps(reps.min??reps.max??8);
-        if ((kind === "linear-sets" || kind === "volume") && index===0) sets=Math.min(sets,Number(rule.parameters.maxSets||sets));
+        if (kind === "double") { if(runtime.repMin!=null||runtime.repMax!=null) reps=parseReps(`${runtime.repMin??runtime.repMax}-${runtime.repMax??runtime.repMin}`);sets=progressionNumber(rule.parameters.sets,sets); }
+        if (kind === "linear-reps" && index===0) reps=parseReps(runtime.repMin??runtime.repMax);
+        if ((kind === "linear-sets" || kind === "volume") && index===0) sets=Math.min(sets,runtime.maxSets);
         if ((kind === "linear-load" || kind === "intensity") && load?.value == null) load = { ...load, value:null, unit:load?.unit||base.loadUnit, label:"Da adattare dopo la prestazione" };
-        if ((kind === "linear-load" || kind === "intensity") && load?.value == null) load = { ...load, value: null, unit: load?.unit || base.loadUnit, label: "Carico iniziale non disponibile" };
-        if (kind === "rir") { const start=progressionNumber(rule.parameters.rirStart,rir.min??3);rir=parseRir(start); }
-        if (kind === "top-set-backoff") { const backoffSets = Number(rule.parameters.backoffSets || 3); sets = backoffSets + 1; }
-        if (kind === "recovery" || kind === "density") restSeconds = Math.max(Number(rule.parameters.minRest||45), restSeconds);
+        if (kind === "rir") rir=parseRir(runtime.rirStart);
+        if (kind === "top-set-backoff") sets = runtime.backoffSets + 1;
+        if (kind === "recovery" || kind === "density") restSeconds = Math.max(runtime.minRest, restSeconds);
         let type = "normal", notes = "";
-        if (kind === "deload" || (rule.parameters.deloadEvery && weekNumber % Number(rule.parameters.deloadEvery) === 0)) { type = "deload"; sets = Math.max(1, Math.round(sets * Number(rule.parameters.reduction || 0.6))); if (load?.value != null) load = { ...load, value: load.value * Number(rule.parameters.reduction || 0.6) }; rir = parseRir((rir.min ?? 1) + Number(rule.parameters.rirIncrease || 2)); notes = "Settimana di scarico"; }
-        if (kind === "top-set-backoff") notes = `Top set + ${Number(rule.parameters.backoffSets || 3)} back-off`;
+        if(kind==="linear-load"||kind==="intensity")notes=`Dopo completamento valido: +${runtime.increment} ${runtime.loadUnit}`;
+        if(kind==="linear-reps")notes=`Dopo completamento valido: +${runtime.increment} ripetizioni`;
+        if(kind==="linear-sets"||kind==="volume")notes=`Dopo completamento valido: +${runtime.setsIncrement} serie, massimo ${runtime.maxSets}`;
+        if(kind==="rir")notes=`Target autoregolato: RIR ${runtime.rirStart}${runtime.rirEnd!=null&&runtime.rirEnd!==runtime.rirStart?` → ${runtime.rirEnd}`:""}`;
+        if(kind==="density"||kind==="recovery")notes=`Dopo completamento valido: -${runtime.restDecrement}s, minimo ${runtime.minRest}s`;
+        if (kind === "deload" || (runtime.deloadEvery>0 && weekNumber % runtime.deloadEvery === 0)) { type = "deload"; sets = Math.max(1, Math.round(sets * runtime.reduction)); if (load?.value != null) load = { ...load, value: load.value * runtime.reduction }; rir = parseRir((rir.min ?? runtime.rirStart ?? 0) + runtime.rirIncrease); notes = "Settimana di scarico"; }
+        if (kind === "top-set-backoff") notes = `Top set + ${runtime.backoffSets} back-off`;
         if (index>0 && template.mode!=="planned" && kind!=="maintenance" && kind!=="deload") notes=[notes,"La prescrizione definitiva verrà aggiornata dopo il completamento della settimana precedente."].filter(Boolean).join(" ");
-        return parseWeekPrescription({ id: previous?.id || stableId("week", exercise.id || exercise.name || "exercise", weekNumber), week: weekNumber, weekNumber, sets, reps, rir, rpe, restSeconds, prescribedLoad: load, loadUnit: load?.unit || base.loadUnit, tempo: base.tempo, technique: base.technique, type, notes, status: "planned", source: "auto", rule, segments: kind === "top-set-backoff" ? [{ kind: "top-set", sets: 1 }, { kind: "back-off", sets: Number(rule.parameters.backoffSets || 3), loadFactor: Number(rule.parameters.backoffPercent || 0.9) }] : undefined }, weekNumber, base);
+        return parseWeekPrescription({ id: previous?.id || stableId("week", exercise.id || exercise.name || "exercise", weekNumber), week: weekNumber, weekNumber, sets, reps, rir, rpe, restSeconds, prescribedLoad: load, loadUnit: load?.unit || base.loadUnit, tempo: base.tempo, technique: base.technique, type, notes, status: "planned", source: "auto", rule, segments: kind === "top-set-backoff" ? [{ kind: "top-set", sets: 1 }, { kind: "back-off", sets: runtime.backoffSets, loadFactor: runtime.backoffPercent }] : undefined }, weekNumber, base);
       });
     }
 
@@ -6781,12 +6826,17 @@
       });
     }
 
+    function canonicalExerciseLibraryKey(name="") {
+      const aliases=[...canonicalExerciseNames(name)].filter(Boolean).sort((a,b)=>a.localeCompare(b,"it"));
+      return aliases[0]||normalizeExerciseName(name);
+    }
+
     function technicalExerciseLibrary() {
       if (technicalLibraryCache.stateRef === state && technicalLibraryCache.revision === technicalLibraryRevision && technicalLibraryCache.profiles) return technicalLibraryCache.profiles;
       const entries = new Map();
       const put = (entry) => {
         const profile = technicalExerciseProfile(entry, { origin:entry.origin });
-        const key = profile.isCustom ? `id:${profile.id}` : `name:${normalizeExerciseName(profile.name)}`;
+        const key = profile.isCustom ? `id:${profile.id}` : `name:${canonicalExerciseLibraryKey(profile.name)}`;
         const current = entries.get(key);
         if (!current || ["basic","partial","complete"].indexOf(technicalProfileCompleteness(profile)) >= ["basic","partial","complete"].indexOf(technicalProfileCompleteness(current)) || profile.origin === "override") entries.set(key, profile);
       };
@@ -9959,6 +10009,8 @@
     }
 
     function render() {
+      coachProgramUi.modalDiagnostics.globalRenders += 1;
+      if (coachProgramUi.modal) coachProgramUi.modalDiagnostics.globalRendersWithModal += 1;
       cancelPremiumMetricAnimations();
       if (activeScreen === "coach" && !coachDesktopAllowed()) { activeScreen = "dashboard"; activeBottom = "home"; state.profile.mode = "athlete"; }
       const coachViewport = captureCoachViewport();
@@ -12080,7 +12132,7 @@
         const stimulus = item.stimulusProfile.lengthened >= item.stimulusProfile.midRange && item.stimulusProfile.lengthened >= item.stimulusProfile.shortened ? "lengthened" : item.stimulusProfile.shortened >= item.stimulusProfile.midRange ? "shortened" : "mid";
         const level = item.ratings.technicalDifficulty >= 4 ? "advanced" : item.ratings.technicalDifficulty >= 2 ? "intermediate" : "beginner";
         return (!query || normalizeExerciseName(`${item.name} ${item.variant} ${item.equipment} ${muscleText}`).includes(query))
-          && (!filters.muscle || muscleText.includes(normalizeExerciseName(filters.muscle)))
+          && (!filters.muscle || [...(item.primaryMuscles||[]),...(item.secondaryMuscles||[])].some((muscle)=>normalizeMuscleCategory(muscle)===filters.muscle))
           && (!filters.equipment || item.equipment === filters.equipment)
           && (!filters.type || (filters.type === "compound" ? item.compound : !item.compound))
           && (!filters.level || level === filters.level)
@@ -12095,13 +12147,28 @@
       return profiles;
     }
 
+    function exerciseLabCardHtml(item) {
+      return `<article class="exercise-lab-card ${item.isCustom?"custom":""}" data-lab-card="${escapeHtml(item.id)}"><div class="coach-library-thumb"><span>▶</span><b>${escapeHtml(displayExerciseName(item.name).slice(0,2).toUpperCase())}</b></div><div class="coach-library-copy"><h3>${escapeHtml(displayExerciseName(item.name))}</h3><p>${escapeHtml(item.primaryMuscles.join(", ")||"Muscolo da definire")} · ${escapeHtml(item.equipment)}</p><div class="lab-badges"><span>${item.compound?"Multiarticolare":"Monoarticolare"}</span><span>${item.isCustom?"Custom":"Libreria"}</span></div></div><button type="button" class="coach-library-arrow" data-lab-open="${escapeHtml(item.id)}" aria-label="Apri ${escapeHtml(displayExerciseName(item.name))}">→</button></article>`;
+    }
+    function exerciseLabCardsHtml(items=[]) { return items.map(exerciseLabCardHtml).join("")||`<div class="coach-ai-empty">Nessun esercizio corrisponde ai filtri.</div>`; }
+    function updateExerciseLabInPlace() {
+      const section=document.querySelector(".exercise-lab"),grid=section?.querySelector(".exercise-lab-grid");if(!section||!grid)return;
+      const started=performance.now(),profiles=exerciseLabFilteredProfiles(),pageSize=48,visible=profiles.slice(0,Math.max(pageSize,Number(coachProgramUi.labPage||1)*pageSize));
+      const existing=new Map([...grid.querySelectorAll("[data-lab-card]")].map((node)=>[node.dataset.labCard,node])),fragment=document.createDocumentFragment(),template=document.createElement("template");
+      if(!visible.length){grid.innerHTML='<div class="coach-ai-empty">Nessun esercizio corrisponde ai filtri.</div>';}
+      else{visible.forEach((item)=>{let node=existing.get(String(item.id));if(node)coachProgramUi.modalDiagnostics.libraryNodesReused+=1;else{template.innerHTML=exerciseLabCardHtml(item);node=template.content.firstElementChild;coachProgramUi.modalDiagnostics.libraryNodesCreated+=1;}fragment.appendChild(node);});grid.replaceChildren(fragment);}
+      const count=section.querySelector(".exercise-lab-result-row strong");if(count)count.textContent=`${profiles.length} risultati`;
+      const more=section.querySelector("[data-lab-more]");if(more)more.hidden=visible.length>=profiles.length;
+      coachProgramUi.modalDiagnostics.libraryReconciles+=1;coachProgramUi.modalDiagnostics.operationDurations.exerciseLabUpdate=Number((performance.now()-started).toFixed(2));section.dataset.lastUpdateMs=String(coachProgramUi.modalDiagnostics.operationDurations.exerciseLabUpdate);
+    }
+
     function exerciseLabHtml() {
       const profiles = exerciseLabFilteredProfiles();
       const all = technicalExerciseLibrary();
       const counts = technicalProfileCounts();
       const filters = coachProgramUi.labFilters || {};
       const equipments = [...new Set(all.map((item) => item.equipment).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"it"));
-      const muscles = [...new Set(all.flatMap((item) => item.primaryMuscles || []).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"it"));
+      const muscles = [...new Set(all.flatMap((item) => item.primaryMuscles || []).filter(Boolean).map(normalizeMuscleCategory))].sort((a,b)=>a.localeCompare(b,"it"));
       const pageSize = 48; const visible = profiles.slice(0, Math.max(pageSize, Number(coachProgramUi.labPage || 1) * pageSize));
       const option = (value,label,current) => `<option value="${escapeHtml(value)}" ${current === value ? "selected" : ""}>${escapeHtml(label)}</option>`;
       return `<section class="exercise-lab coach-section coach-library-list-view">
@@ -12122,7 +12189,7 @@
           <button type="button" class="ghost-button" data-lab-reset>Reset filtri</button>
         </div>
         <div class="exercise-lab-result-row"><strong>${profiles.length} risultati</strong><span>Apri un esercizio per il profilo tecnico completo.</span></div>
-        <div class="exercise-lab-grid">${visible.map((item) => `<article class="exercise-lab-card ${item.isCustom ? "custom" : ""}"><div class="coach-library-thumb"><span>▶</span><b>${escapeHtml(displayExerciseName(item.name).slice(0,2).toUpperCase())}</b></div><div class="coach-library-copy"><h3>${escapeHtml(displayExerciseName(item.name))}</h3><p>${escapeHtml(item.primaryMuscles.join(", ") || "Muscolo da definire")} · ${escapeHtml(item.equipment)}</p><div class="lab-badges"><span>${item.compound ? "Multiarticolare" : "Monoarticolare"}</span><span>${item.isCustom ? "Custom" : "Libreria"}</span></div></div><button type="button" class="coach-library-arrow" data-lab-open="${escapeHtml(item.id)}" aria-label="Apri ${escapeHtml(displayExerciseName(item.name))}">→</button></article>`).join("") || `<div class="coach-ai-empty">Nessun esercizio corrisponde ai filtri.</div>`}</div>
+        <div class="exercise-lab-grid">${exerciseLabCardsHtml(visible)}</div>
         ${visible.length < profiles.length ? `<button type="button" class="secondary-button lab-load-more" data-lab-more>Mostra altri</button>` : ""}
       </section>`;
     }
@@ -12134,7 +12201,7 @@
       const list = (items) => escapeHtml((items || []).join(", ") || "Non disponibile");
       const evidence = (item.evidenceSources || []).map((source) => `<li><a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.title)}</a><span>${escapeHtml(source.organization || "Fonte tecnica")} · ${escapeHtml(source.use || "riferimento generale")}</span></li>`).join("");
       const provenance = `${Object.keys(item.aiAnalysis?.generated || {}).length ? '<span class="chip">Stimato AI</span>' : ""}${item.manualOverrides?.confirmedByCoach ? '<span class="chip">Confermato dal coach</span>' : ""}${Object.keys(item.manualOverrides || {}).filter((key)=>!['confirmedByCoach','updatedAt'].includes(key)).length ? '<span class="chip">Modificato manualmente</span>' : ""}`;
-      return `<div class="coach-modal-backdrop"><section class="coach-modal technical-profile-modal">
+      return `<div class="coach-modal-backdrop" data-coach-portal-modal><section class="coach-modal technical-profile-modal">
         <div class="row"><div><span class="section-eyebrow">Profilo tecnico</span><h2>${escapeHtml(displayExerciseName(item.name))}</h2><p>${escapeHtml(item.variant || item.category)} · ${escapeHtml(item.equipment)}</p></div><button class="ghost-button" data-coach-modal-close>Chiudi</button></div>
         <div class="lab-badges">${provenance}</div><div class="technical-confidence ${item.aiAnalysis.confidence}"><strong>Affidabilità: ${confidenceLabel}</strong><span>${escapeHtml(item.aiAnalysis.reasoning || item.evidenceMethod || item.resistanceProfile.explanation)}</span></div>
         <div class="technical-profile-grid"><section><h3>Identità e muscoli</h3><p><b>Principali:</b> ${list(item.primaryMuscles)}</p><p><b>Secondari:</b> ${list(item.secondaryMuscles)}</p><p><b>Stabilizzatori:</b> ${list(item.stabilizers)}</p><p><b>Categoria:</b> ${escapeHtml(item.category)} · ${item.unilateral ? "unilaterale" : "bilaterale"} · ${item.compound ? "multiarticolare" : "monoarticolare"}</p><p>${escapeHtml(item.description || item.movementDescription || "Descrizione da completare.")}</p></section>
@@ -12151,7 +12218,7 @@
       const item = technicalExerciseProfile(profile || { id:stableId("technical-custom",Date.now()), isCustom:true, origin:"custom", name:"", resistanceProfile:{type:"unknown",confidence:"low"} });
       const close=`<button class="ghost-button" data-coach-modal-close>Annulla</button>`;
       const selectOption=(value,label,current)=>`<option value="${value}" ${current===value?"selected":""}>${label}</option>`;
-      return `<div class="coach-modal-backdrop"><section class="coach-modal technical-editor-modal"><div class="row"><div><span class="section-eyebrow">Exercise Lab</span><h2>${profile ? "Modifica profilo" : "Crea esercizio custom"}</h2></div>${close}</div>
+      return `<div class="coach-modal-backdrop" data-coach-portal-modal><section class="coach-modal technical-editor-modal"><div class="row"><div><span class="section-eyebrow">Exercise Lab</span><h2>${profile ? "Modifica profilo" : "Crea esercizio custom"}</h2></div>${close}</div>
         <div class="technical-editor-sections"><fieldset><legend>Identità</legend><label>Nome<input id="techName" value="${escapeHtml(item.name === "Esercizio senza nome" ? "" : item.name)}"></label><label>Variante<input id="techVariant" value="${escapeHtml(item.variant)}"></label><label>Categoria<input id="techCategory" value="${escapeHtml(item.category)}"></label><label>Attrezzatura<input id="techEquipment" value="${escapeHtml(item.equipment === "Non indicata" ? "" : item.equipment)}"></label><label>Macchina o marca<input id="techMachine" value="${escapeHtml(item.machineModel)}"></label><label class="wide">Descrizione<textarea id="techDescription">${escapeHtml(item.description)}</textarea></label><label><input type="checkbox" id="techUnilateral" ${item.unilateral?"checked":""}> Unilaterale</label><label><input type="checkbox" id="techCompound" ${item.compound?"checked":""}> Multiarticolare</label><label>Catena cinetica<select id="techChain"><option value="">Da definire</option>${selectOption("open","Aperta",item.kineticChain)}${selectOption("closed","Chiusa",item.kineticChain)}</select></label></fieldset>
         <fieldset><legend>Muscoli</legend><label>Principali<input id="techPrimary" value="${escapeHtml(item.primaryMuscles.join(", "))}"></label><label>Secondari<input id="techSecondary" value="${escapeHtml(item.secondaryMuscles.join(", "))}"></label><label>Stabilizzatori<input id="techStabilizers" value="${escapeHtml(item.stabilizers.join(", "))}"></label><label>Distretto target<input id="techTarget" value="${escapeHtml(item.targetRegion)}"></label><label>Priorità<input id="techPriority" value="${escapeHtml(item.musclePriority)}"></label></fieldset>
         <fieldset><legend>Esecuzione e questionario tecnico</legend><label>Posizione del corpo<input id="techBodyPosition" value="${escapeHtml(item.bodyPosition)}"></label><label>Traiettoria<input id="techTrajectory" value="${escapeHtml(item.trajectory)}"></label><label>Range of motion<input id="techRom" value="${escapeHtml(item.rangeOfMotion)}"></label><label>Tipo di presa<input id="techGrip" value="${escapeHtml(item.grip)}"></label><label>Direzione della forza<input id="techForce" value="${escapeHtml(item.forceDirection)}"></label><label>Punto applicazione carico<input id="techLoadApplication" value="${escapeHtml(item.loadApplication)}"></label><label>Posizione cavo / camma<input id="techCable" value="${escapeHtml(item.cablePosition)}"></label><label>Articolazioni<input id="techJoints" value="${escapeHtml(item.joints.join(", "))}"></label><label>Azioni articolari<input id="techJointActions" value="${escapeHtml(item.jointActions.join(", "))}"></label><label class="wide">Descrizione movimento<textarea id="techMovement">${escapeHtml(item.movementDescription)}</textarea></label><label class="wide">Cue tecnici<textarea id="techCues">${escapeHtml(item.cues.join("\n"))}</textarea></label><label class="wide">Errori comuni<textarea id="techErrors">${escapeHtml(item.commonErrors.join("\n"))}</textarea></label></fieldset>
@@ -12168,7 +12235,9 @@
     function progressionTemplateEditorHtml(template={}) {
       const sourceList=(template.sourceKeys||[]).map((key)=>PROGRESSION_SOURCES[key]).filter(Boolean).map((source)=>`${source.name} (${source.year})`).join(", ");
       const field=(id,label,value,wide=false)=>`<label class="${wide?"full":""}">${label}<input id="${id}" value="${escapeHtml(value||"")}"></label>`;
-      return `<div class="coach-modal-backdrop" data-coach-portal-modal><section class="coach-modal progression-template-editor"><div class="row"><div><span class="section-eyebrow">EDITOR TEMPLATE</span><h2>${escapeHtml(template.name||"Nuovo template")}</h2></div><button class="ghost-button" data-coach-modal-close>Annulla</button></div><div class="form-grid">${field("ptName","Nome",template.name,true)}${field("ptDescription","Descrizione",template.description,true)}${field("ptGoal","Obiettivo",template.goal)}${field("ptSuitable","Atleta / uso",template.suitableFor)}${field("ptCompatibility","Compatibilità",(template.compatibility||[]).join(", "),true)}${field("ptLevels","Livelli",(template.levels||[]).join(", "))}${field("ptDuration","Durata",template.durationPolicy||"dynamic")}<label class="full">Prescrizione di partenza<textarea id="ptPrescription">${escapeHtml(template.prescription||"")}</textarea></label><label class="full">Regola di avanzamento<textarea id="ptAdvancement">${escapeHtml(template.advancement||"")}</textarea></label><label class="full">Regola di mantenimento<textarea id="ptMaintenance">${escapeHtml(template.maintenance||"")}</textarea></label><label class="full">Regola di regressione<textarea id="ptRegression">${escapeHtml(template.regression||"")}</textarea></label><label class="full">Plateau<textarea id="ptPlateau">${escapeHtml(template.plateau||"")}</textarea></label><label class="full">Deload<textarea id="ptDeload">${escapeHtml(template.deload||"")}</textarea></label><label class="full">Spiegazione in linguaggio naturale<textarea id="ptNatural">${escapeHtml(template.description||"")}</textarea></label><label class="full">Fonte o nota metodologica<textarea id="ptMethod">${escapeHtml(sourceList||template.designNotes||"")}</textarea></label></div><div class="coach-flow-note"><strong>Prescrizione e algoritmo sono separati</strong><span>I valori iniziali descrivono cosa fare; le regole spiegano quando avanzare, mantenere o regredire.</span></div><div class="coach-modal-actions"><button class="ghost-button" data-coach-modal-close>Annulla</button><button class="gold-button" data-coach-modal-save>Salva template</button></div></section></div>`;
+      const p=template.parameters||{},numeric=(id,label,key,placeholder="")=>`<label>${label}<input id="${id}" type="number" step="any" value="${escapeHtml(p[key]??"")}" placeholder="${escapeHtml(placeholder)}"></label>`;
+      const kinds=[["maintenance","Mantenimento"],["double","Doppia progressione"],["linear-load","Carico lineare"],["linear-reps","Ripetizioni lineari"],["linear-sets","Serie lineari"],["rir","Autoregolazione RIR"],["top-set-backoff","Top set + back-off"],["volume","Volume"],["intensity","Intensità"],["undulating","Ondulata"],["pyramid","Piramidale"],["reverse-pyramid","Piramidale inversa"],["density","Densità"],["recovery","Recupero"],["deload","Deload"],["custom","Personalizzata"]];
+      return `<div class="coach-modal-backdrop" data-coach-portal-modal><section class="coach-modal progression-template-editor"><div class="row"><div><span class="section-eyebrow">EDITOR TEMPLATE</span><h2>${escapeHtml(template.name||"Nuovo template")}</h2></div><button class="ghost-button" data-coach-modal-close>Annulla</button></div><div class="form-grid">${field("ptName","Nome",template.name,true)}${field("ptDescription","Descrizione",template.description,true)}${field("ptGoal","Obiettivo",template.goal)}${field("ptSuitable","Atleta / uso",template.suitableFor)}${field("ptCompatibility","Compatibilità",(template.compatibility||[]).join(", "),true)}${field("ptLevels","Livelli",(template.levels||[]).join(", "))}${field("ptDuration","Durata",template.durationPolicy||"dynamic")}<label>Algoritmo<select id="ptRuleKind">${kinds.map(([value,label])=>`<option value="${value}" ${(template.rules?.kind||"custom")===value?"selected":""}>${label}</option>`).join("")}</select></label><label>Modalità<select id="ptMode"><option value="adaptive" ${template.mode!=="planned"?"selected":""}>Adattiva ai risultati</option><option value="planned" ${template.mode==="planned"?"selected":""}>Pianificata</option></select></label></div><fieldset class="coach-details-section progression-logic-fields"><legend>Prescrizione che alimenta davvero l’anteprima</legend><p class="micro-copy full">Lascia vuoto un valore per usare quello dell’esercizio. Questi numeri vengono salvati nella regola e letti dal generatore.</p><div class="form-grid">${numeric("ptStartSets","Serie iniziali","startSets","dall’esercizio")}${numeric("ptRepMin","Ripetizioni minime","repMin","dall’esercizio")}${numeric("ptRepMax","Ripetizioni massime","repMax","dall’esercizio")}${numeric("ptStartRir","RIR iniziale","startRir","dall’esercizio")}${numeric("ptStartRpe","RPE iniziale","startRpe","dall’esercizio")}${numeric("ptStartLoad","Carico iniziale","startLoad","dall’esercizio")}${numeric("ptStartRest","Recupero iniziale (sec)","startRest","dall’esercizio")}${numeric("ptIncrement","Incremento","increment","0")}${numeric("ptSetsIncrement","Incremento serie","setsIncrement","0")}${numeric("ptMaxSets","Serie massime","maxSets","dall’esercizio")}${numeric("ptRirStart","RIR target iniziale","rirStart","dall’esercizio")}${numeric("ptRirEnd","RIR target finale","rirEnd","dall’esercizio")}${numeric("ptBackoffSets","Serie back-off","backoffSets","0")}${numeric("ptBackoffPercent","Fattore carico back-off","backoffPercent","1")}${numeric("ptRestDecrement","Riduzione recupero (sec)","restDecrement","0")}${numeric("ptMinRest","Recupero minimo (sec)","minRest","dall’esercizio")}${numeric("ptReduction","Fattore deload","reduction","1")}${numeric("ptRirIncrease","Aumento RIR deload","rirIncrease","0")}${numeric("ptDeloadEvery","Deload ogni N settimane","deloadEvery","disattivo")}</div></fieldset><div class="form-grid"><label class="full">Descrizione della prescrizione<textarea id="ptPrescription">${escapeHtml(template.prescription||"")}</textarea></label><label class="full">Regola di avanzamento<textarea id="ptAdvancement">${escapeHtml(template.advancement||"")}</textarea></label><label class="full">Regola di mantenimento<textarea id="ptMaintenance">${escapeHtml(template.maintenance||"")}</textarea></label><label class="full">Regola di regressione<textarea id="ptRegression">${escapeHtml(template.regression||"")}</textarea></label><label class="full">Plateau<textarea id="ptPlateau">${escapeHtml(template.plateau||"")}</textarea></label><label class="full">Deload<textarea id="ptDeload">${escapeHtml(template.deload||"")}</textarea></label><label class="full">Spiegazione in linguaggio naturale<textarea id="ptNatural">${escapeHtml(template.description||"")}</textarea></label><label class="full">Fonte o nota metodologica<textarea id="ptMethod">${escapeHtml(sourceList||template.designNotes||"")}</textarea></label></div><div class="coach-flow-note"><strong>Testo e algoritmo restano coerenti</strong><span>Le descrizioni spiegano la scelta; algoritmo e parametri sopra determinano l’anteprima e vengono salvati nella progressione.</span></div><div class="coach-modal-actions"><button class="ghost-button" data-coach-modal-close>Annulla</button><button class="gold-button" data-coach-modal-save>Salva template</button></div></section></div>`;
     }
 
     function exerciseLibraryFilteredItems() {
@@ -12177,7 +12246,7 @@
     }
 
     function exerciseLibraryResultsHtml(items,replacing=false) {
-      return items.slice(0,120).map((item)=>`<article><div class="coach-library-thumb"><span>▶</span><b>${escapeHtml(displayExerciseName(item.name).slice(0,2).toUpperCase())}</b></div><div><strong>${escapeHtml(displayExerciseName(item.name))}</strong><span>${escapeHtml(normalizeMuscleCategory(item.primaryMuscles[0]))}${item.primaryMuscles.length?` · ${escapeHtml(item.primaryMuscles.join(", "))}`:""} · ${escapeHtml(item.equipment)}</span></div><div><button type="button" class="ghost-button" data-lab-open="${escapeHtml(item.id)}" aria-label="Profilo tecnico">ⓘ</button><button type="button" class="coach-library-arrow" data-library-profile="${escapeHtml(item.id)}" aria-label="${replacing?"Sostituisci":"Aggiungi"}">→</button></div></article>`).join("")||'<p class="micro-copy">Nessun risultato.</p>';
+      return items.slice(0,120).map((item)=>`<article data-library-item="${escapeHtml(item.id)}"><div class="coach-library-thumb"><span>▶</span><b>${escapeHtml(displayExerciseName(item.name).slice(0,2).toUpperCase())}</b></div><div><strong>${escapeHtml(displayExerciseName(item.name))}</strong><span>${escapeHtml(normalizeMuscleCategory(item.primaryMuscles[0]))}${item.primaryMuscles.length?` · ${escapeHtml(item.primaryMuscles.join(", "))}`:""} · ${escapeHtml(item.equipment)}</span></div><div><button type="button" class="ghost-button" data-lab-open="${escapeHtml(item.id)}" aria-label="Profilo tecnico">ⓘ</button><button type="button" class="coach-library-arrow" data-library-profile="${escapeHtml(item.id)}" aria-label="${replacing?"Sostituisci":"Aggiungi"}">→</button></div></article>`).join("")||'<p class="micro-copy">Nessun risultato.</p>';
     }
 
     function coachUiModalHtml() {
@@ -12247,7 +12316,7 @@
       if (type === "exercise-custom" || type === "exercise-details") {
         const exercise = type === "exercise-details" ? programRepository.getExerciseById(program?.id, sheet?.id, coachProgramUi.modalData.exerciseId) : null;
         const metadata = exercise?.metadata || {};
-        return `<div class="coach-modal-backdrop" data-coach-portal-modal><section class="coach-modal phase4-details-modal"><div class="row"><div><span class="section-eyebrow">DATI ESERCIZIO</span><h3>${type==="exercise-custom"?"Esercizio personalizzato":"Dettagli esercizio"}</h3></div>${close}</div><p class="micro-copy">I campi restano locali mentre scrivi. Analisi e archivio vengono aggiornati soltanto quando premi Salva dettagli.</p><fieldset class="coach-details-section"><legend>Essenziali · classificazione e filtri</legend><div class="form-grid"><label class="full">Nome<input id="exerciseModalName" value="${escapeHtml(exercise?.name||"")}"></label><label>Gruppo principale<select id="exerciseModalMuscle">${coachExerciseGroups().map((group)=>`<option ${normalizeMuscleCategory(exercise?.muscle||"Full body")===group?"selected":""}>${escapeHtml(group)}</option>`).join("")}</select></label><label>Muscoli secondari<input id="exerciseModalSecondary" value="${escapeHtml((metadata.secondaryMuscles||[]).join(", "))}" placeholder="Separati da virgola"></label><label>Attrezzatura<input id="exerciseModalEquipment" value="${escapeHtml(metadata.equipment||"")}"></label><label>Pattern di movimento<input id="exerciseModalPattern" value="${escapeHtml(metadata.pattern||"")}"></label><label>Tipo di esercizio<select id="exerciseModalType"><option value="">Da definire</option><option value="compound" ${metadata.exerciseType==="compound"?"selected":""}>Multiarticolare</option><option value="isolation" ${metadata.exerciseType==="isolation"?"selected":""}>Isolamento</option><option value="cardio" ${metadata.exerciseType==="cardio"?"selected":""}>Cardio</option><option value="mobility" ${metadata.exerciseType==="mobility"?"selected":""}>Mobilità</option></select></label></div></fieldset><fieldset class="coach-details-section"><legend>Avanzati · Coach AI</legend><div class="form-grid"><label>Stabilità richiesta<input id="exerciseModalStability" type="number" min="1" max="5" value="${escapeHtml(metadata.stability||"")}"></label><label>Caricabilità<input id="exerciseModalLoadability" type="number" min="1" max="5" value="${escapeHtml(metadata.loadability||"")}"></label><label>Richiesta sistemica<input id="exerciseModalSystemic" type="number" min="1" max="5" value="${escapeHtml(metadata.systemicDemand||"")}"></label><label>Richiesta articolare<input id="exerciseModalJoint" value="${escapeHtml(metadata.jointDemand||"")}" placeholder="Es. ginocchio 3/5"></label><label>Profilo di resistenza<input id="exerciseModalResistance" value="${escapeHtml(metadata.resistanceProfile||"")}"></label><label>ROM<input id="exerciseModalRom" value="${escapeHtml(metadata.rangeOfMotion||"")}"></label><label>Difficoltà tecnica<input id="exerciseModalDifficulty" type="number" min="1" max="5" value="${escapeHtml(metadata.technicalDifficulty||"")}"></label><label>Compatibilità progressioni<input id="exerciseModalCompatibility" value="${escapeHtml(metadata.progressionCompatibility||"")}"></label><label>Fatica locale<input id="exerciseModalLocalFatigue" type="number" min="1" max="5" value="${escapeHtml(metadata.localFatigue||"")}"></label><label class="full">Note<textarea id="exerciseModalNotes">${escapeHtml(exercise?.note||"")}</textarea></label><label><input id="exerciseModalMain" type="checkbox" ${metadata.mainLift?"checked":""}> Esercizio principale</label><label><input id="exerciseModalLocked" type="checkbox" ${metadata.locked?"checked":""}> Proteggi da modifiche</label></div></fieldset>${type==="exercise-details"?`<p class="micro-copy">ID stabile: ${escapeHtml(exercise?.id||"")} · aggiornato ${escapeHtml(exercise?.updatedAt||"n/d")}</p><button type="button" class="ghost-button" data-details-progression-open="${escapeHtml(exercise?.id||"")}">Apri progressione settimanale</button>${exerciseAnalysisHtml(exercise)}`:""}<div class="coach-modal-actions"><button class="ghost-button" data-coach-modal-close>Annulla</button><button class="gold-button" data-coach-modal-save>${type==="exercise-custom"?"Aggiungi":"Salva dettagli"}</button></div></section></div>`;
+        return `<div class="coach-modal-backdrop" data-coach-portal-modal><section class="coach-modal phase4-details-modal"><div class="row"><div><span class="section-eyebrow">SCHEDA TECNICA ESERCIZIO</span><h3>${type==="exercise-custom"?"Esercizio personalizzato":"Dettagli esercizio"}</h3><p class="micro-copy">Identità, biomeccanica e richiesta allenante in un’unica scheda professionale.</p></div>${close}</div><div class="exercise-detail-status"><span><b>1</b> Classifica</span><span><b>2</b> Descrivi il movimento</span><span><b>3</b> Valuta la richiesta</span></div><fieldset class="coach-details-section detail-identity"><legend>1 · Identità, muscoli e movimento</legend><div class="form-grid"><label class="full">Nome<input id="exerciseModalName" value="${escapeHtml(exercise?.name||"")}"></label><label>Gruppo principale<select id="exerciseModalMuscle">${coachExerciseGroups().map((group)=>`<option ${normalizeMuscleCategory(exercise?.muscle||"Full body")===group?"selected":""}>${escapeHtml(group)}</option>`).join("")}</select></label><label>Muscoli secondari<input id="exerciseModalSecondary" value="${escapeHtml((metadata.secondaryMuscles||[]).join(", "))}" placeholder="Separati da virgola"></label><label>Attrezzatura<input id="exerciseModalEquipment" value="${escapeHtml(metadata.equipment||"")}"></label><label>Pattern di movimento<input id="exerciseModalPattern" value="${escapeHtml(metadata.pattern||"")}"></label><label>Tipo di esercizio<select id="exerciseModalType"><option value="">Da definire</option><option value="compound" ${metadata.exerciseType==="compound"?"selected":""}>Multiarticolare</option><option value="isolation" ${metadata.exerciseType==="isolation"?"selected":""}>Isolamento</option><option value="cardio" ${metadata.exerciseType==="cardio"?"selected":""}>Cardio</option><option value="mobility" ${metadata.exerciseType==="mobility"?"selected":""}>Mobilità</option></select></label></div></fieldset><fieldset class="coach-details-section detail-analysis"><legend>2 · Richiesta allenante e programmazione</legend><div class="form-grid"><label>Stabilità richiesta<input id="exerciseModalStability" type="number" min="1" max="5" value="${escapeHtml(metadata.stability||"")}"></label><label>Caricabilità<input id="exerciseModalLoadability" type="number" min="1" max="5" value="${escapeHtml(metadata.loadability||"")}"></label><label>Richiesta sistemica<input id="exerciseModalSystemic" type="number" min="1" max="5" value="${escapeHtml(metadata.systemicDemand||"")}"></label><label>Richiesta articolare<input id="exerciseModalJoint" value="${escapeHtml(metadata.jointDemand||"")}" placeholder="Es. ginocchio 3/5"></label><label>Profilo di resistenza<input id="exerciseModalResistance" value="${escapeHtml(metadata.resistanceProfile||"")}"></label><label>ROM<input id="exerciseModalRom" value="${escapeHtml(metadata.rangeOfMotion||"")}"></label><label>Difficoltà tecnica<input id="exerciseModalDifficulty" type="number" min="1" max="5" value="${escapeHtml(metadata.technicalDifficulty||"")}"></label><label>Compatibilità progressioni<input id="exerciseModalCompatibility" value="${escapeHtml(metadata.progressionCompatibility||"")}"></label><label>Fatica locale<input id="exerciseModalLocalFatigue" type="number" min="1" max="5" value="${escapeHtml(metadata.localFatigue||"")}"></label><label class="full">Note<textarea id="exerciseModalNotes">${escapeHtml(exercise?.note||"")}</textarea></label><label><input id="exerciseModalMain" type="checkbox" ${metadata.mainLift?"checked":""}> Esercizio principale</label><label><input id="exerciseModalLocked" type="checkbox" ${metadata.locked?"checked":""}> Proteggi da modifiche</label></div></fieldset>${type==="exercise-details"?`<p class="micro-copy">ID stabile: ${escapeHtml(exercise?.id||"")} · aggiornato ${escapeHtml(exercise?.updatedAt||"n/d")}</p><button type="button" class="ghost-button" data-details-progression-open="${escapeHtml(exercise?.id||"")}">Apri progressione settimanale</button>${exerciseAnalysisHtml(exercise)}`:""}<div class="coach-modal-actions"><button class="ghost-button" data-coach-modal-close>Annulla</button><button class="gold-button" data-coach-modal-save>${type==="exercise-custom"?"Aggiungi":"Salva dettagli"}</button></div></section></div>`;
       }
       if (type === "progression-editor") {
         const progressionSheet = targetSheet || sheet;
@@ -12257,7 +12326,7 @@
         const templateId = coachProgramUi.modalData.templateId || progression.templateId || "maintenance";
         const weeks = coachProgramUi.modalData.weeks || progression.weeks || generateProgressionWeeks(ex, templateId, duration);
         const selectedTemplate=progressionTemplateById(templateId);
-        return `<div class="coach-modal-backdrop" data-coach-portal-modal><section class="coach-modal progression-modal"><span class="section-eyebrow">${escapeHtml(program?.name||"Programma")} · ${escapeHtml(progressionSheet?.name||progressionSheet?.code||"Giornata")}</span><h3>Progressione · ${escapeHtml(ex?.name||"Esercizio")}</h3><div class="coach-flow-note"><strong>Libreria progressioni salvate · ${progressionTemplates().length} disponibili</strong><span>Scegli un template e controlla l’anteprima. Le settimane che hai modificato manualmente non verranno cambiate, salvo tua conferma.</span></div><div class="form-grid"><label>Metodo di progressione<select id="progressionTemplateId">${progressionTemplates().map((t)=>`<option value="${escapeHtml(t.id)}" ${t.id===templateId?"selected":""}>${escapeHtml(t.name)}</option>`).join("")}</select></label><label>Quante settimane<input id="progressionDuration" type="number" min="1" value="${duration}"></label><label>Settimane modificate<select id="progressionApplyMode"><option value="empty-only">Mantieni le mie modifiche</option><option value="replace">Sostituisci anche le settimane modificate</option><option value="confirm-each">Chiedimi conferma per ogni settimana</option></select></label></div><div class="progression-rule-summary" data-progression-rule-summary><strong>${escapeHtml(selectedTemplate?.name||"")}</strong><span>${escapeHtml(selectedTemplate?.advancement||"")}</span><small>${escapeHtml((selectedTemplate?.compatibility||[]).join(", "))}</small></div><div class="progression-scroll"><table class="progression-table"><thead><tr><th>Settimana</th><th>Serie</th><th>Ripetizioni</th><th>RIR</th><th>RPE</th><th>Carico</th><th>Recupero</th><th>Tipo</th><th>Note</th></tr></thead><tbody data-progression-weeks-body>${progressionWeeksRowsHtml(weeks)}</tbody></table></div><p class="micro-copy">I template adattivi mostrano una previsione: i valori definitivi dipendono dai risultati realmente registrati.</p><div class="coach-modal-actions">${progression.templateId?`<button type="button" class="danger-button" data-progression-remove="${escapeHtml(ex?.id||"")}">Rimuovi progressione</button>`:""}${close}<button type="button" class="ghost-button" data-progression-generate>Rigenera anteprima</button><button type="button" class="gold-button" data-coach-modal-save>Conferma e applica</button></div></section></div>`;
+        return `<div class="coach-modal-backdrop" data-coach-portal-modal><section class="coach-modal progression-modal"><span class="section-eyebrow">${escapeHtml(program?.name||"Programma")} · ${escapeHtml(progressionSheet?.name||progressionSheet?.code||"Giornata")}</span><h3>Progressione · ${escapeHtml(ex?.name||"Esercizio")}</h3><div class="coach-flow-note"><strong>Libreria progressioni salvate · ${progressionTemplates().length} disponibili</strong><span>Scegli un template e controlla l’anteprima. Le settimane che hai modificato manualmente non verranno cambiate, salvo tua conferma.</span></div><div class="form-grid"><label>Metodo di progressione<select id="progressionTemplateId">${progressionTemplates().map((t)=>`<option value="${escapeHtml(t.id)}" ${t.id===templateId?"selected":""}>${escapeHtml(t.name)}</option>`).join("")}</select></label><label>Quante settimane<input id="progressionDuration" type="number" min="1" value="${duration}"></label><label>Settimane modificate<select id="progressionApplyMode"><option value="empty-only">Mantieni le mie modifiche</option><option value="replace">Sostituisci anche le settimane modificate</option><option value="confirm-each">Chiedimi conferma per ogni settimana</option></select></label></div><div class="progression-rule-summary" data-progression-rule-summary><strong>${escapeHtml(selectedTemplate?.name||"")}</strong><span>${escapeHtml(selectedTemplate?.advancement||"")}</span><small>${escapeHtml((selectedTemplate?.compatibility||[]).join(", "))}</small></div><div class="progression-scroll"><table class="progression-table"><thead><tr><th>Settimana</th><th>Serie</th><th>Ripetizioni</th><th>RIR</th><th>RPE</th><th>Carico</th><th>Recupero</th><th>Tipo</th><th>Note</th></tr></thead><tbody data-progression-weeks-body>${progressionWeeksRowsHtml(weeks)}</tbody></table></div><p class="micro-copy">I template adattivi mostrano una previsione: i valori definitivi dipendono dai risultati realmente registrati.</p><section class="progression-confirm-panel" data-progression-confirm-panel hidden aria-live="polite"></section><div class="coach-modal-actions">${progression.templateId?`<button type="button" class="danger-button" data-progression-remove="${escapeHtml(ex?.id||"")}">Rimuovi progressione</button>`:""}${close}<button type="button" class="ghost-button" data-progression-generate>Rigenera anteprima</button><button type="button" class="gold-button" data-coach-modal-save>Conferma e applica</button></div></section></div>`;
       }
       if (type === "exercise-transfer") {
         const programs = coachProgramsForUi();
@@ -12706,6 +12775,14 @@
       }).filter((row)=>row.essentialMissing.length||row.advancedMissing.length);
     }
 
+    const COACH_MISSING_FIELD_GUIDE={
+      "Nome":["Dettagli esercizio › Identità","identifica l’esercizio in ricerca, schede e storico"],"Gruppo principale":["Dettagli esercizio › Identità","rende coerenti filtri e volume per distretto"],"Muscoli secondari":["Dettagli esercizio › Muscoli","evita di sottostimare sovrapposizioni e fatica"],"Attrezzatura":["Dettagli esercizio › Identità","permette filtri e sostituzioni realmente compatibili"],"Pattern di movimento":["Dettagli esercizio › Movimento","aiuta a riconoscere ridondanze e distribuzione dei gesti"],"Tipo di esercizio":["Dettagli esercizio › Identità","distingue multiarticolari, isolamenti, cardio e mobilità"],"Stabilità richiesta":["Dettagli esercizio › Richiesta allenante","stima quanto supporto richiede il gesto"],"Caricabilità":["Dettagli esercizio › Richiesta allenante","orienta la compatibilità con le progressioni di carico"],"Richiesta sistemica":["Dettagli esercizio › Richiesta allenante","migliora la distribuzione della fatica tra le giornate"],"Richiesta articolare":["Dettagli esercizio › Richiesta allenante","segnala sovrapposizioni di stress articolare"],"Profilo di resistenza":["Dettagli esercizio › Biomeccanica","descrive dove il gesto tende a essere più impegnativo"],"ROM":["Dettagli esercizio › Biomeccanica","contestualizza tecnica e stimolo nel range usato"],"Difficoltà tecnica":["Dettagli esercizio › Richiesta allenante","aiuta a ordinare gli esercizi nella seduta"],"Compatibilità con progressioni":["Dettagli esercizio › Programmazione","evita di proporre metodi inadatti"],"Fatica locale":["Dettagli esercizio › Richiesta allenante","raffina il rapporto tra stimolo e recupero locale"]
+    };
+    function missingFieldGuideHtml(row={}) {
+      const essential=new Set(row.essentialMissing||[]),fields=[...(row.essentialMissing||[]),...(row.advancedMissing||[])];
+      return `<div class="missing-field-guide"><b>Manca:</b><ul>${fields.map((label)=>{const guide=COACH_MISSING_FIELD_GUIDE[label]||["Dettagli esercizio","completa l’analisi contestuale"];return `<li><span aria-hidden="true">○</span><div><strong>${escapeHtml(label)}</strong><small><b>Dove:</b> ${escapeHtml(guide[0])} · <b>Perché:</b> ${escapeHtml(guide[1])}</small></div><em>${essential.has(label)?"essenziale":"avanzato"}</em></li>`;}).join("")}</ul></div>`;
+    }
+
     function coachAiSuggestionHtml(suggestion) {
       const expanded = coachProgramUi.aiExpanded.has(suggestion.id);
       const alternatives = expanded ? `<div class="coach-ai-alternatives"><strong>Alternative disponibili:</strong>${suggestion.alternatives.length ? suggestion.alternatives.map((item) => `<button data-ai-alternative="${escapeHtml(item.name)}" data-ai-suggestion="${escapeHtml(suggestion.id)}">${escapeHtml(item.name)} · ${escapeHtml(item.group)}</button>`).join("") : "<span>Dati insufficienti per una raccomandazione precisa.</span>"}</div>` : "";
@@ -12732,7 +12809,7 @@
       const statusTab = coachProgramUi.aiStatusTab || "suggestions";
       const visible = statusTab === "applied" ? Object.values(ai.appliedRecords || {}).filter((item) => applied.has(item.id)).map((item) => ({ ...item, severity: item.severity || "info", confidence: item.confidence || "applicato", alternatives: item.alternatives || [], dataUsed: item.dataUsed || [], involvedExercises: item.involvedExercises || [] })) : statusTab === "ignored" ? Object.values(ai.ignoredRecords || {}).filter((item) => ignored.has(item.id)).map((item) => ({ ...item, severity: item.severity || "info", confidence: item.confidence || "salvato", problem: item.problem || "Puoi ripristinare questo controllo quando vuoi.", alternatives: item.alternatives || [], dataUsed: item.dataUsed || [], progression: item.progression || "", involvedExercises: item.involvedExercises || [] })) : filteredSuggestions.filter((item) => !applied.has(item.id));
       const ctx=coachAiContext(); const quality = coachAiQualityIssues();
-      const qualityBlock = quality.length ? `<section class="coach-ai-quality"><button type="button" data-ai-quality-toggle aria-expanded="${!!coachProgramUi.qualityExpanded}"><span>Informazioni da completare</span><b>${quality.length} esercizi</b><em>${coachProgramUi.qualityExpanded ? "−" : "+"}</em></button>${coachProgramUi.qualityExpanded ? `<div class="coach-ai-quality-body"><p>I dati essenziali migliorano classificazione e filtri; quelli avanzati affinano il Coach AI ma non bloccano l’analisi.</p><div class="coach-missing-list">${quality.map((row) => `<article><div class="row"><strong>${escapeHtml(displayExerciseName(row.exercise))}</strong><span class="chip">Analisi ${escapeHtml(row.analysisStatus)}</span></div>${row.essentialMissing.length?`<p><b>Essenziali:</b> ${escapeHtml(row.essentialMissing.join(", "))}</p>`:""}${row.advancedMissing.length?`<p><b>Avanzati:</b> ${escapeHtml(row.advancedMissing.join(", "))}</p>`:""}<div class="quick-actions"><button type="button" class="ghost-button" data-missing-toggle="${escapeHtml(row.id)}">Visualizza dati mancanti</button><button type="button" class="gold-button" data-exercise-action="details" data-sheet-id="${escapeHtml(row.sheetId||ctx.sheet?.id||"")}" data-exercise-id="${escapeHtml(row.id)}">Compila manualmente</button><button type="button" class="ghost-button" disabled title="Disponibile nella Fase 20">Proponi compilazione automatica · presto</button></div></article>`).join("")}</div></div>` : ""}</section>` : `<div class="coach-ai-complete">✓ Analisi disponibile · informazioni principali complete</div>`;
+      const qualityBlock = quality.length ? `<section class="coach-ai-quality"><button type="button" data-ai-quality-toggle aria-expanded="${!!coachProgramUi.qualityExpanded}"><span>Informazioni da completare</span><b>${quality.length} esercizi</b><em>${coachProgramUi.qualityExpanded ? "−" : "+"}</em></button>${coachProgramUi.qualityExpanded ? `<div class="coach-ai-quality-body"><p>I dati essenziali migliorano classificazione e filtri; quelli avanzati affinano il Coach AI ma non bloccano l’analisi.</p><div class="coach-missing-list">${quality.map((row) => `<article><div class="row"><strong>${escapeHtml(displayExerciseName(row.exercise))}</strong><span class="chip">Analisi ${escapeHtml(row.analysisStatus)}</span></div>${missingFieldGuideHtml(row)}<div class="quick-actions"><button type="button" class="ghost-button" data-missing-toggle="${escapeHtml(row.id)}">Visualizza dati mancanti</button><button type="button" class="gold-button" data-exercise-action="details" data-sheet-id="${escapeHtml(row.sheetId||ctx.sheet?.id||"")}" data-exercise-id="${escapeHtml(row.id)}">Compila manualmente</button><button type="button" class="ghost-button" disabled title="Disponibile nella Fase 20">Proponi compilazione automatica · presto</button></div></article>`).join("")}</div></div>` : ""}</section>` : `<div class="coach-ai-complete">✓ Analisi disponibile · informazioni principali complete</div>`;
       const programs=coachProgramsForUi(); const last=coachProgramUi.aiLastAnalysisAt?new Date(coachProgramUi.aiLastAnalysisAt).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"non ancora eseguita";
       const allSheets=ctx.program?programRepository.getSheets(ctx.program.id):[];
       const weekCount=Math.max(1,Number(ctx.program?.durationWeeks)||1);
@@ -14228,23 +14305,24 @@
         coachProgramUi.labQuery = labQuery.value;
         coachProgramUi.labPage = 1;
         clearTimeout(coachProgramUi.librarySearchTimer);
-        coachProgramUi.librarySearchTimer = setTimeout(render, 180);
+        coachProgramUi.librarySearchTimer = setTimeout(updateExerciseLabInPlace, 150);
       });
       document.querySelectorAll("[data-lab-filter]").forEach((field) => field.addEventListener("change", () => {
         coachProgramUi.labFilters = { ...(coachProgramUi.labFilters || {}), [field.dataset.labFilter]:field.value };
         coachProgramUi.labPage = 1;
-        render();
+        updateExerciseLabInPlace();
       }));
-      document.querySelectorAll("[data-lab-filter-toggle]").forEach((button)=>button.addEventListener("click",()=>{coachProgramUi.labFiltersOpen=!coachProgramUi.labFiltersOpen;render();}));
+      document.querySelectorAll("[data-lab-filter-toggle]").forEach((button)=>button.addEventListener("click",()=>{coachProgramUi.labFiltersOpen=!coachProgramUi.labFiltersOpen;document.querySelector(".exercise-lab-filters")?.classList.toggle("open",coachProgramUi.labFiltersOpen);}));
       document.querySelectorAll("[data-lab-reset]").forEach((button) => button.addEventListener("click", () => {
         coachProgramUi.labQuery = "";
         coachProgramUi.labFilters = { muscle:"", equipment:"", type:"", level:"", resistance:"", stimulus:"", stability:"", fatigue:"", progression:"", origin:"" };
         coachProgramUi.labPage = 1;
-        render();
+        if(labQuery)labQuery.value="";document.querySelectorAll("[data-lab-filter]").forEach((field)=>field.value="");updateExerciseLabInPlace();
       }));
-      document.querySelectorAll("[data-lab-more]").forEach((button) => button.addEventListener("click", () => { coachProgramUi.labPage = Number(coachProgramUi.labPage || 1) + 1; render(); }));
-      document.querySelectorAll("[data-lab-create]").forEach((button) => button.addEventListener("click", () => { openCoachModal("technical-exercise-edit", { exerciseId:"" }); render(); }));
-      document.querySelectorAll("[data-lab-open]").forEach((button) => button.addEventListener("click", () => { openCoachModal("technical-profile", { exerciseId:button.dataset.labOpen }); render(); }));
+      document.querySelectorAll("[data-lab-more]").forEach((button) => button.addEventListener("click", () => { coachProgramUi.labPage = Number(coachProgramUi.labPage || 1) + 1; updateExerciseLabInPlace(); }));
+      document.querySelectorAll("[data-lab-create]").forEach((button) => button.addEventListener("click", () => openCoachModalLocally("technical-exercise-edit", { exerciseId:"" })));
+      const labSection=document.querySelector(".exercise-lab");
+      if(labSection&&!labSection.dataset.openDelegated){labSection.dataset.openDelegated="1";labSection.addEventListener("click",(event)=>{const open=event.target.closest("[data-lab-open]");if(open)openCoachModalLocally("technical-profile",{exerciseId:open.dataset.labOpen});});}
       document.querySelectorAll("[data-lab-edit]").forEach((button) => button.addEventListener("click", () => { openCoachModal("technical-exercise-edit", { exerciseId:button.dataset.labEdit }); render(); }));
       document.querySelectorAll("[data-lab-analyze]").forEach((button) => button.addEventListener("click", () => {
         const profile = technicalExerciseLibrary().find((item) => item.id === button.dataset.labAnalyze);
@@ -15074,6 +15152,7 @@
     function renderCoachModalPortal() {
       const host = document.getElementById("coachModalPortalHost");
       if (!host) return;
+      const started=performance.now();
       if (activeScreen !== "coach" || !coachProgramUi.modal) {
         if (host.childElementCount) coachProgramUi.modalDiagnostics.unmounts += 1;
         host.replaceChildren();
@@ -15084,6 +15163,7 @@
       coachModalRenderingPortal = false;
       host.innerHTML = html;
       coachProgramUi.modalDiagnostics.mounts += 1;
+      const elapsed=Number((performance.now()-started).toFixed(2));coachProgramUi.modalDiagnostics.operationDurations.modalMount=elapsed;host.dataset.lastMountMs=String(elapsed);
     }
 
     function updateProgressionWeekFromInput(input) {
@@ -15112,6 +15192,7 @@
     }
 
     function updateProgressionPreviewInPlace(host) {
+      const started=performance.now();
       const {program}=ensureCoachProgramSelection();
       const sheet=programRepository.getSheetById(program?.id,coachProgramUi.modalData.sheetId||coachProgramUi.sheetId);
       const exercise=programRepository.getExerciseById(program?.id,sheet?.id,coachProgramUi.modalData.exerciseId);
@@ -15125,6 +15206,40 @@
       const template=progressionTemplateById(templateId),summary=host.querySelector("[data-progression-rule-summary]");
       if(summary) summary.innerHTML=`<strong>${escapeHtml(template?.name||"")}</strong><span>${escapeHtml(template?.advancement||"")}</span><small>${escapeHtml((template?.compatibility||[]).join(", "))}</small>`;
       coachProgramUi.modalDiagnostics.localPreviewUpdates += 1;
+      coachProgramUi.modalDiagnostics.operationDurations.progressionPreview=Number((performance.now()-started).toFixed(2));
+    }
+
+    function reconcileExerciseLibraryResults(list,items,replacing=false) {
+      const started=performance.now(),desired=items.slice(0,120),existing=new Map([...list.querySelectorAll("[data-library-item]")].map((node)=>[node.dataset.libraryItem,node]));
+      if(!desired.length){list.innerHTML='<p class="micro-copy">Nessun risultato.</p>';coachProgramUi.modalDiagnostics.libraryReconciles+=1;return;}
+      const fragment=document.createDocumentFragment(),template=document.createElement("template");
+      desired.forEach((item)=>{
+        let node=existing.get(String(item.id));
+        if(node)coachProgramUi.modalDiagnostics.libraryNodesReused+=1;
+        else{template.innerHTML=exerciseLibraryResultsHtml([item],replacing);node=template.content.firstElementChild;coachProgramUi.modalDiagnostics.libraryNodesCreated+=1;}
+        fragment.appendChild(node);
+      });
+      list.replaceChildren(fragment);
+      coachProgramUi.modalDiagnostics.libraryReconciles+=1;
+      coachProgramUi.modalDiagnostics.operationDurations.libraryReconcile=Number((performance.now()-started).toFixed(2));
+    }
+
+    function renderProgressionConfirmation(host) {
+      const confirmation=coachProgramUi.modalData.confirmation,panel=host.querySelector("[data-progression-confirm-panel]");
+      if(!panel||!confirmation)return;
+      const weekIndex=confirmation.indices[confirmation.cursor],existing=confirmation.existing[weekIndex],generated=confirmation.generated[weekIndex];
+      if(weekIndex==null){panel.hidden=true;return;}
+      panel.hidden=false;
+      panel.innerHTML=`<span class="section-eyebrow">SETTIMANA ${weekIndex+1} · MODIFICA MANUALE</span><h4>Cosa vuoi fare con questa settimana?</h4><div class="progression-confirm-compare"><p><b>Valori attuali</b><span>${escapeHtml(formatWeekPrescription(existing)||"Valori manuali")}</span></p><p><b>Nuova anteprima</b><span>${escapeHtml(formatWeekPrescription(generated)||"Nuovi valori")}</span></p></div><div class="coach-modal-actions"><button type="button" class="ghost-button" data-progression-confirm-choice="keep">Mantieni</button><button type="button" class="gold-button" data-progression-confirm-choice="replace">Sostituisci</button><button type="button" class="ghost-button" data-progression-confirm-choice="skip">Salta questa settimana</button></div><small>Scelta ${confirmation.cursor+1} di ${confirmation.indices.length}. “Salta” lascia la settimana esattamente com’è e non la include nelle sostituzioni.</small>`;
+    }
+
+    function beginProgressionConfirmation(host,current,weeks,existing) {
+      const indices=existing.map((week,index)=>week?.source==="manual"?index:-1).filter((index)=>index>=0);
+      if(!indices.length)return false;
+      coachProgramUi.modalData.confirmation={indices,cursor:0,decisions:{},existing:clone(existing),generated:clone(weeks)};
+      renderProgressionConfirmation(host);
+      host.querySelector("[data-coach-modal-save]")?.setAttribute("disabled","");
+      return true;
     }
 
     function bindLocallyRenderedCoachModal() {
@@ -15135,7 +15250,7 @@
       modalRoot.dataset.localBound="1";
       coachProgramUi.modalDiagnostics.listenerBinds += 1;
       host.querySelectorAll("[data-coach-modal-close]").forEach((button)=>button.addEventListener("click",()=>{closeCoachModal();renderCoachModalPortal();}));
-      host.querySelector("[data-coach-modal-save]")?.addEventListener("click",()=>{saveCoachUiModal();render();});
+      host.querySelector("[data-coach-modal-save]")?.addEventListener("click",()=>{saveCoachUiModal();if(!coachProgramUi.modal)render();});
       host.querySelector("[data-progression-remove]")?.addEventListener("click",(event)=>{
         const {program}=ensureCoachProgramSelection(),sheet=programRepository.getSheetById(program?.id,coachProgramUi.modalData.sheetId||coachProgramUi.sheetId),id=event.currentTarget.dataset.progressionRemove,current=programRepository.getExerciseById(program?.id,sheet?.id,id);
         if(!current)return;programRepository.updateExercise(program.id,sheet.id,id,{progression:{...(current.progression||{}),templateId:"",rule:null,weeks:[],manualWeeks:[]}},{immediate:true,forceLocked:true});closeCoachModal();showToast(`Progressione rimossa da ${current.name}.`);render();
@@ -15145,10 +15260,23 @@
       host.querySelector("#progressionTemplateId")?.addEventListener("change",()=>updateProgressionPreviewInPlace(host));
       host.querySelector("#progressionDuration")?.addEventListener("change",()=>updateProgressionPreviewInPlace(host));
       host.querySelector("[data-details-progression-open]")?.addEventListener("click",(event)=>openCoachModalLocally("progression-editor",{programId:coachProgramUi.programId,sheetId:coachProgramUi.modalData.sheetId||coachProgramUi.sheetId,exerciseId:event.currentTarget.dataset.detailsProgressionOpen}));
+      host.querySelector("[data-lab-edit]")?.addEventListener("click",(event)=>openCoachModalLocally("technical-exercise-edit",{exerciseId:event.currentTarget.dataset.labEdit}));
+      host.querySelector("[data-lab-analyze]")?.addEventListener("click",(event)=>{const profile=technicalExerciseLibrary().find((item)=>item.id===event.currentTarget.dataset.labAnalyze);if(!profile)return;const analyzed=upsertTechnicalExercise(analyzeTechnicalExercise(profile));openCoachModalLocally("technical-profile",{exerciseId:analyzed.id});showToast("Analisi Coach AI aggiornata.");});
+      host.querySelector("[data-lab-add-sheet]")?.addEventListener("click",(event)=>{const profile=technicalExerciseLibrary().find((item)=>item.id===event.currentTarget.dataset.labAddSheet),result=profile?addTechnicalExerciseToActiveSheet(profile):{ok:false};if(result.ok){closeCoachModal();render();showToast("Esercizio aggiunto alla scheda.");}});
+      host.querySelector("[data-lab-duplicate]")?.addEventListener("click",(event)=>{const profile=technicalExerciseLibrary().find((item)=>item.id===event.currentTarget.dataset.labDuplicate);if(!profile)return;const copy=upsertTechnicalExercise({...clone(profile),id:stableId("technical-custom",profile.name,Date.now()),name:`${profile.name} copia`,isCustom:true,origin:"custom"});openCoachModalLocally("technical-exercise-edit",{exerciseId:copy.id});});
+      host.querySelector("[data-lab-delete]")?.addEventListener("click",(event)=>openCoachModalLocally("technical-exercise-delete",{exerciseId:event.currentTarget.dataset.labDelete}));
+      host.addEventListener("click",(event)=>{
+        const choice=event.target.closest("[data-progression-confirm-choice]");if(!choice)return;
+        const confirmation=coachProgramUi.modalData.confirmation;if(!confirmation)return;
+        const weekIndex=confirmation.indices[confirmation.cursor];confirmation.decisions[weekIndex]=choice.dataset.progressionConfirmChoice;confirmation.cursor+=1;
+        if(confirmation.cursor<confirmation.indices.length)return renderProgressionConfirmation(host);
+        host.querySelector("[data-progression-confirm-panel]").hidden=true;
+        saveCoachUiModal();if(!coachProgramUi.modal)render();
+      });
       const updateLibraryResults=()=>{
         const list=host.querySelector(".technical-picker-list");if(!list)return;
         const replacing=!!coachProgramUi.modalData?.replaceExerciseId;
-        list.innerHTML=exerciseLibraryResultsHtml(exerciseLibraryFilteredItems(),replacing);
+        reconcileExerciseLibraryResults(list,exerciseLibraryFilteredItems(),replacing);
       };
       const search=host.querySelector("#exerciseLibrarySearch");
       search?.addEventListener("input",()=>{coachProgramUi.libraryQuery=search.value;clearTimeout(coachProgramUi.librarySearchTimer);coachProgramUi.librarySearchTimer=setTimeout(updateLibraryResults,120);});
@@ -15268,7 +15396,9 @@
       if(type==="progression-template-editor") {
         const draft=coachProgramUi.modalData.templateDraft||{},builtIn=!!draft.builtIn;
         const value=(id)=>document.getElementById(id)?.value.trim()||"";
-        const saved={...draft,id:builtIn?newEntityId("progression-template-override"):(draft.id||newEntityId("progression-template")),baseTemplateId:builtIn?draft.id:(draft.baseTemplateId||""),name:value("ptName"),description:value("ptNatural")||value("ptDescription"),goal:value("ptGoal"),suitableFor:value("ptSuitable"),compatibility:technicalStringList(value("ptCompatibility")),levels:technicalStringList(value("ptLevels")),durationPolicy:value("ptDuration")||"dynamic",prescription:value("ptPrescription"),advancement:value("ptAdvancement"),maintenance:value("ptMaintenance"),regression:value("ptRegression"),plateau:value("ptPlateau"),deload:value("ptDeload"),designNotes:value("ptMethod"),builtIn:false,userEditable:true,active:draft.active!==false,updatedAt:new Date().toISOString()};
+        const parameterIds={startSets:"ptStartSets",repMin:"ptRepMin",repMax:"ptRepMax",startRir:"ptStartRir",startRpe:"ptStartRpe",startLoad:"ptStartLoad",startRest:"ptStartRest",increment:"ptIncrement",setsIncrement:"ptSetsIncrement",maxSets:"ptMaxSets",rirStart:"ptRirStart",rirEnd:"ptRirEnd",backoffSets:"ptBackoffSets",backoffPercent:"ptBackoffPercent",restDecrement:"ptRestDecrement",minRest:"ptMinRest",reduction:"ptReduction",rirIncrease:"ptRirIncrease",deloadEvery:"ptDeloadEvery"};
+        const parameters={...(draft.parameters||{})};Object.entries(parameterIds).forEach(([key,id])=>{const raw=value(id);if(raw==="")delete parameters[key];else parameters[key]=Number(raw);});
+        const saved={...draft,id:builtIn?newEntityId("progression-template-override"):(draft.id||newEntityId("progression-template")),baseTemplateId:builtIn?draft.id:(draft.baseTemplateId||""),name:value("ptName"),description:value("ptNatural")||value("ptDescription"),goal:value("ptGoal"),suitableFor:value("ptSuitable"),compatibility:technicalStringList(value("ptCompatibility")),levels:technicalStringList(value("ptLevels")),durationPolicy:value("ptDuration")||"dynamic",rules:{...(draft.rules||{}),kind:value("ptRuleKind")||"custom"},parameters,mode:value("ptMode")||"adaptive",prescription:value("ptPrescription"),advancement:value("ptAdvancement"),maintenance:value("ptMaintenance"),regression:value("ptRegression"),plateau:value("ptPlateau"),deload:value("ptDeload"),designNotes:value("ptMethod"),builtIn:false,userEditable:true,active:draft.active!==false,updatedAt:new Date().toISOString()};
         if(!saved.name)return showToast("Inserisci il nome del template.");
         state.coach.progressionTemplates=state.coach.progressionTemplates||[];
         const key=saved.baseTemplateId||saved.id,index=state.coach.progressionTemplates.findIndex((item)=>(item.baseTemplateId||item.id)===key);
@@ -15405,14 +15535,20 @@
         const existing=(current.progression?.weeks||[]).slice(0,duration);
         let generated=weeks;
         if(mode==="empty-only") generated=generateProgressionWeeks(current,templateId,duration,{},existing).map((week,index)=>existing[index]?.source==="manual"?existing[index]:week);
-        if(mode==="confirm-each") generated=weeks.map((week,index)=>{
-          const manual=existing[index]?.source==="manual"?existing[index]:null;
-          if(!manual)return week;
-          return window.confirm(`Settimana ${index+1}: sostituire i valori che hai modificato manualmente?`)?week:manual;
-        });
+        if(mode==="confirm-each") {
+          const confirmation=coachProgramUi.modalData.confirmation,host=document.getElementById("coachModalPortalHost");
+          if(!confirmation&&beginProgressionConfirmation(host,current,weeks,existing))return;
+          generated=weeks.map((week,index)=>{
+            const manual=existing[index]?.source==="manual"?existing[index]:null,choice=confirmation?.decisions?.[index];
+            if(!manual)return week;
+            if(choice==="replace")return {...week,confirmationDecision:"replace"};
+            return {...manual,confirmationDecision:choice||"keep"};
+          });
+        }
         const manualWeeks = generated.filter((week) => week.source === "manual").map((week) => week.weekNumber);
+        const template=progressionTemplateById(templateId),rule={templateId,kind:template?.rules?.kind||"custom",parameters:clone(template?.parameters||{}),mode:template?.mode||"adaptive"};
         rememberExerciseState(program.id, targetSheet.id);
-        const result = programRepository.updateExercise(program.id, targetSheet.id, exerciseId, { progression: { ...(current.progression || {}), templateId, rule: { templateId, kind: progressionTemplateById(templateId)?.rules?.kind || "custom" }, weeks: generated, manualWeeks } }, { immediate: true, forceLocked: true });
+        const result = programRepository.updateExercise(program.id, targetSheet.id, exerciseId, { progression: { ...(current.progression || {}), templateId, rule, weeks: generated, manualWeeks,confirmationDecisions:clone(coachProgramUi.modalData.confirmation?.decisions||{}) } }, { immediate: true, forceLocked: true });
         if (!result.ok) return showToast("Progressione non valida: controlla i valori.");
         discardCoachDraft(program.id, targetSheet.id);
         coachProgramUi.highlightExerciseId=exerciseId;
