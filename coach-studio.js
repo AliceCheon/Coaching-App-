@@ -2,7 +2,7 @@
   "use strict";
 
   const ROUTES = Object.freeze([
-    "dashboard", "programs", "program", "library", "progressions", "ai",
+    "dashboard", "programs", "program", "athlete", "strategy", "library", "progressions", "ai",
     "questionnaires", "questionnaire", "statistics", "archive", "diagnostics",
     "settings", "legacy"
   ]);
