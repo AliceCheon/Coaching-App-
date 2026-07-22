@@ -1,8 +1,7 @@
-const CACHE_NAME = "atlas-app-v128-phase21.1-consolidation";
+const CACHE_NAME = "atlas-app-v129-phase22.0-master-library";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./atlas-coach-app.html",
   "./nutrizione/index.html",
   "./manifest.webmanifest",
   "./app-icon.png",
@@ -18,6 +17,7 @@ const APP_SHELL = [
   "./coach-studio.css",
   "./coach-program-editor-19.8.css",
   "./exercise-library-19.8.js",
+  "./master-exercise-library.js",
   "./athlete-context.js",
   "./coach-ai-engine-2.js",
   "./coach-studio.js",
