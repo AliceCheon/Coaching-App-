@@ -22,7 +22,7 @@
   <script src="decision-engine.js?v=v137-workout-pro-clarity"></script>
   <script src="coach-ai3-programming.js?v=v137-workout-pro-clarity"></script>
   <script type="module" src="programming-engine.js?v=v137-workout-pro-clarity"></script>
-  <script type="module" src="sync-reliability.js?v=v137-workout-pro-clarity"></script>
+  <script type="module" src="sync-reliability.js?v=v137-1-storage-hotfix"></script>
   <script src="coach-studio.js?v=v137-workout-pro-clarity"></script>
   <script defer src="workout-pro.js?v=v137-workout-pro-clarity"></script>
   <title>Barbell diva</title>
@@ -8318,7 +8318,15 @@
     function releaseStateWriteSpace() {
       const obsolete = releaseObsoleteLocalBackups();
       const automatic = releaseAutomaticBackupsForStateWrite();
-      return obsolete || automatic;
+      let auditReleased = false;
+      try {
+        const auditKey = `${STORE_KEY}.sync-audit.v1`;
+        if (localStorage.getItem(auditKey) != null) {
+          localStorage.removeItem(auditKey);
+          auditReleased = true;
+        }
+      } catch (error) {}
+      return obsolete || automatic || auditReleased;
     }
 
     function isStorageQuotaError(error) {
