@@ -1,8 +1,9 @@
-const CACHE_NAME = "atlas-app-v137-2-workout-pro-storage-rescue";
+const CACHE_NAME = "atlas-app-v138-photo-store";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./nutrizione/index.html",
+  "./photo-store.js",
   "./manifest.webmanifest",
   "./app-icon.png",
   "./app-icon-192.png",

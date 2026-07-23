@@ -7,24 +7,24 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v137.2-workout-pro-storage-rescue">
+  <link rel="manifest" href="manifest.webmanifest?v=v137-workout-pro-clarity">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="workout-pro.css?v=v137.2-workout-pro-storage-rescue">
-  <link rel="stylesheet" href="coach-studio.css?v=v137.2-workout-pro-storage-rescue">
-  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v137.2-workout-pro-storage-rescue">
-  <script src="exercise-library-19.8.js?v=v137.2-workout-pro-storage-rescue"></script>
-  <script src="master-exercise-library.js?v=v137.2-workout-pro-storage-rescue"></script>
-  <script src="athlete-context.js?v=v137.2-workout-pro-storage-rescue"></script>
-  <script src="coach-ai-engine-2.js?v=v137.2-workout-pro-storage-rescue"></script>
-  <script src="knowledge-graph.js?v=v137.2-workout-pro-storage-rescue"></script>
-  <script src="decision-rules.js?v=v137.2-workout-pro-storage-rescue"></script>
-  <script src="decision-engine.js?v=v137.2-workout-pro-storage-rescue"></script>
-  <script src="coach-ai3-programming.js?v=v137.2-workout-pro-storage-rescue"></script>
-  <script type="module" src="programming-engine.js?v=v137.2-workout-pro-storage-rescue"></script>
-  <script type="module" src="sync-reliability.js?v=v137.2-workout-pro-storage-rescue"></script>
-  <script src="coach-studio.js?v=v137.2-workout-pro-storage-rescue"></script>
-  <script defer src="workout-pro.js?v=v137.2-workout-pro-storage-rescue"></script>
+  <link rel="stylesheet" href="workout-pro.css?v=v137-workout-pro-clarity">
+  <link rel="stylesheet" href="coach-studio.css?v=v137-workout-pro-clarity">
+  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v137-workout-pro-clarity">
+  <script src="exercise-library-19.8.js?v=v137-workout-pro-clarity"></script>
+  <script src="master-exercise-library.js?v=v137-workout-pro-clarity"></script>
+  <script src="athlete-context.js?v=v137-workout-pro-clarity"></script>
+  <script src="coach-ai-engine-2.js?v=v137-workout-pro-clarity"></script>
+  <script src="knowledge-graph.js?v=v137-workout-pro-clarity"></script>
+  <script src="decision-rules.js?v=v137-workout-pro-clarity"></script>
+  <script src="decision-engine.js?v=v137-workout-pro-clarity"></script>
+  <script src="coach-ai3-programming.js?v=v137-workout-pro-clarity"></script>
+  <script type="module" src="programming-engine.js?v=v137-workout-pro-clarity"></script>
+  <script type="module" src="sync-reliability.js?v=v137-workout-pro-clarity"></script>
+  <script src="coach-studio.js?v=v137-workout-pro-clarity"></script>
+  <script defer src="workout-pro.js?v=v137-workout-pro-clarity"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4834,6 +4834,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="./photo-store.js?v=v138-photo-store"></script>
   <script src="./food-backup.js"></script>
   <script>
     const STORE_KEY = "alice-method-app.v8";
@@ -4841,7 +4842,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v137.2-workout-pro-storage-rescue";
+    const APP_BUILD = "v138-photo-store";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -6071,6 +6072,20 @@
     let recoveryBootError = null;
     let recoveryBootPayload = "";
     let state = loadState();
+
+    try { releaseObsoleteLocalBackups(); } catch (error) {}
+
+    (function hydrateNutritionPhotosOnBoot() {
+      const store = window.BarbellDivaPhotoStore;
+      const photos = state?.nutrition?.dashboard?.photos;
+      if (!store || !Array.isArray(photos) || !photos.length) return;
+      store.hydratePhotoList(photos).then((hydrated) => {
+        if (!state.nutrition?.dashboard) return;
+        state.nutrition.dashboard.photos = hydrated;
+        try { pushNutritionDashboardToFrame(); } catch (error) {}
+        try { if (typeof render === "function") render(); } catch (error) {}
+      });
+    })();
     state.training.date = todayInput();
     state.training.sessionName = "auto";
     hydrateStateModel(state);
@@ -8318,15 +8333,7 @@
     function releaseStateWriteSpace() {
       const obsolete = releaseObsoleteLocalBackups();
       const automatic = releaseAutomaticBackupsForStateWrite();
-      let technical = false;
-      try {
-        const auditKey = `${STORE_KEY}.sync-audit.v1`;
-        if (localStorage.getItem(auditKey) != null) {
-          localStorage.removeItem(auditKey);
-          technical = true;
-        }
-      } catch (error) {}
-      return obsolete || automatic || technical;
+      return obsolete || automatic;
     }
 
     function isStorageQuotaError(error) {
@@ -8339,12 +8346,20 @@
       return "Il browser non riesce a salvare i dati su questo dispositivo. I dati cloud non sono stati cancellati: controlla che il sito possa usare la memoria locale e riprova.";
     }
 
+    function localStorageSnapshotFor(snapshot) {
+      const photos = snapshot?.nutrition?.dashboard?.photos;
+      const store = window.BarbellDivaPhotoStore;
+      if (!store || !store.needsRedaction(photos)) return snapshot;
+      store.putPhotos(photos); // scrive/aggiorna le immagini pesanti in IndexedDB (non bloccante)
+      return { ...snapshot, nutrition: { ...snapshot.nutrition, dashboard: { ...snapshot.nutrition.dashboard, photos: store.redactPhotoList(photos) } } };
+    }
+
     function writeLocalStateSnapshot(snapshot, options = {}) {
-      const serialized = JSON.stringify(snapshot);
+      const serialized = JSON.stringify(localStorageSnapshotFor(snapshot));
       try {
         if (options.touch !== false) {
           snapshot.meta = { ...(snapshot.meta || {}), updatedAt: new Date().toISOString(), version: 73, schemaVersion: DATA_SCHEMA_VERSION };
-          localStorage.setItem(STORE_KEY, JSON.stringify(snapshot));
+          localStorage.setItem(STORE_KEY, JSON.stringify(localStorageSnapshotFor(snapshot)));
         } else {
           localStorage.setItem(STORE_KEY, serialized);
         }
@@ -8356,7 +8371,7 @@
       } catch (error) {
         if (isStorageQuotaError(error) && releaseStateWriteSpace()) {
           try {
-            localStorage.setItem(STORE_KEY, JSON.stringify(snapshot));
+            localStorage.setItem(STORE_KEY, JSON.stringify(localStorageSnapshotFor(snapshot)));
             lastPersistenceError = null;
             setPremiumSaveStatus(options.cloud !== false && cloudUser && state.profile.account?.syncReady ? "syncing" : "local", options.cloud !== false && cloudUser && state.profile.account?.syncReady ? "Sincronizzazione…" : "Salvato sul dispositivo");
             if (options.cloud !== false && snapshot === state && options.autoBackup !== false) scheduleAutomaticBackup();
@@ -8458,11 +8473,23 @@
       try { localStorage.setItem(BACKUP_HISTORY_KEY, serialized); return true; } catch (error) { return false; }
     }
 
+    function redactedEnvelopeForStorage(envelope) {
+      const store = window.BarbellDivaPhotoStore;
+      const photos = envelope?.payload?.nutrition?.dashboard?.photos;
+      if (!store || !store.needsRedaction(photos)) return envelope;
+      store.putPhotos(photos);
+      const payload = { ...envelope.payload, nutrition: { ...envelope.payload.nutrition, dashboard: { ...envelope.payload.nutrition.dashboard, photos: store.redactPhotoList(photos) } } };
+      const metadata = { ...envelope.metadata };
+      const checksum = backupChecksum({ metadata: { ...metadata, checksum: undefined }, payload });
+      return { ...envelope, metadata: { ...metadata, checksum }, payload };
+    }
+
     function storeBackupEnvelope(envelope) {
       const verified = verifyBackupEnvelope(envelope);
       if (!verified.ok) return verified;
-      const history = readBackupHistory().filter((item) => item.metadata?.id !== envelope.metadata.id);
-      history.unshift(envelope);
+      const envelopeForStorage = redactedEnvelopeForStorage(verified.envelope);
+      const history = readBackupHistory().filter((item) => item.metadata?.id !== envelopeForStorage.metadata.id);
+      history.unshift(envelopeForStorage);
       const limits = { automatic:MAX_AUTOMATIC_BACKUPS, "pre-update":3, "pre-restore":5 };
       const allowed = new Map(Object.entries(limits).map(([type, limit]) => [type, new Set(history.filter((item) => item.metadata?.type === type).slice(0, limit).map((item) => item.metadata.id))]));
       let bounded = history.filter((item) => !allowed.has(item.metadata?.type) || allowed.get(item.metadata.type).has(item.metadata.id));
@@ -8559,6 +8586,16 @@
         if (!safetyBackup.ok) return safetyBackup;
         if (!writeLocalStateSnapshot(next, { touch:true, cloud:false })) return { ok:false, error:"Ripristino annullato: impossibile salvare i dati verificati." };
         state = next; dataSafetyUi.restorePreview = null; recoveryBootError = null; recoveryBootPayload = ""; render();
+        const photoStore = window.BarbellDivaPhotoStore;
+        const restoredPhotos = state.nutrition?.dashboard?.photos;
+        if (photoStore && Array.isArray(restoredPhotos) && restoredPhotos.length) {
+          photoStore.hydratePhotoList(restoredPhotos).then((hydrated) => {
+            if (!state.nutrition?.dashboard) return;
+            state.nutrition.dashboard.photos = hydrated;
+            try { pushNutritionDashboardToFrame(); } catch (error) {}
+            render();
+          });
+        }
         return { ok:true, migration:verified.migration };
       } finally { dataSafetyRestoring = false; }
     }
