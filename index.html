@@ -7,24 +7,24 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v137-workout-pro-clarity">
+  <link rel="manifest" href="manifest.webmanifest?v=v139-sync-logbook-stability">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="workout-pro.css?v=v137-workout-pro-clarity">
-  <link rel="stylesheet" href="coach-studio.css?v=v137-workout-pro-clarity">
-  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v137-workout-pro-clarity">
-  <script src="exercise-library-19.8.js?v=v137-workout-pro-clarity"></script>
-  <script src="master-exercise-library.js?v=v137-workout-pro-clarity"></script>
-  <script src="athlete-context.js?v=v137-workout-pro-clarity"></script>
-  <script src="coach-ai-engine-2.js?v=v137-workout-pro-clarity"></script>
-  <script src="knowledge-graph.js?v=v137-workout-pro-clarity"></script>
-  <script src="decision-rules.js?v=v137-workout-pro-clarity"></script>
-  <script src="decision-engine.js?v=v137-workout-pro-clarity"></script>
-  <script src="coach-ai3-programming.js?v=v137-workout-pro-clarity"></script>
-  <script type="module" src="programming-engine.js?v=v137-workout-pro-clarity"></script>
-  <script type="module" src="sync-reliability.js?v=v137-workout-pro-clarity"></script>
-  <script src="coach-studio.js?v=v137-workout-pro-clarity"></script>
-  <script defer src="workout-pro.js?v=v137-workout-pro-clarity"></script>
+  <link rel="stylesheet" href="workout-pro.css?v=v139-sync-logbook-stability">
+  <link rel="stylesheet" href="coach-studio.css?v=v139-sync-logbook-stability">
+  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v139-sync-logbook-stability">
+  <script src="exercise-library-19.8.js?v=v139-sync-logbook-stability"></script>
+  <script src="master-exercise-library.js?v=v139-sync-logbook-stability"></script>
+  <script src="athlete-context.js?v=v139-sync-logbook-stability"></script>
+  <script src="coach-ai-engine-2.js?v=v139-sync-logbook-stability"></script>
+  <script src="knowledge-graph.js?v=v139-sync-logbook-stability"></script>
+  <script src="decision-rules.js?v=v139-sync-logbook-stability"></script>
+  <script src="decision-engine.js?v=v139-sync-logbook-stability"></script>
+  <script src="coach-ai3-programming.js?v=v139-sync-logbook-stability"></script>
+  <script type="module" src="programming-engine.js?v=v139-sync-logbook-stability"></script>
+  <script type="module" src="sync-reliability.js?v=v139-sync-logbook-stability"></script>
+  <script src="coach-studio.js?v=v139-sync-logbook-stability"></script>
+  <script defer src="workout-pro.js?v=v139-sync-logbook-stability"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4834,7 +4834,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="./photo-store.js?v=v138-photo-store"></script>
+  <script src="./photo-store.js?v=v139-sync-logbook-stability"></script>
   <script src="./food-backup.js"></script>
   <script>
     const STORE_KEY = "alice-method-app.v8";
@@ -4842,7 +4842,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v138-photo-store";
+    const APP_BUILD = "v139-sync-logbook-stability";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -5922,7 +5922,7 @@
       athleteIntelligence: {},
       masterExerciseLibrary: window.BarbellDivaMasterLibrary.bootstrapStore({}, { names:window.BARBELL_DIVA_EXERCISE_NAMES_19_8 || [], profiles:Object.entries(COACH_EXERCISE_LIBRARY||{}).flatMap(([group,rows])=>(rows||[]).map(row=>({...row,muscle:row.som||group,origin:"system"}))), programs:buildProgramsFromLegacy(PROGRAM_LIBRARY, []).map(consolidateLegacyWeeklyProgram) }),
       knowledgeEngine: { version:"23.0.0", lastSnapshotHash:"", cacheMeta:{hits:0,misses:0,invalidations:0}, eventLog:[], updatedAt:null },
-      coachAi3: { version:"3.1.0", history:[], ignorePreferences:{}, ignoreHistory:[], lastProposalAt:null, selectedProgramId:"", lastAnalysisByProgram:{}, lastSimulationByProgram:{} },
+      coachAi3: { version:"3.1.0", history:[], ignorePreferences:{}, ignoreHistory:[], resolvedPreferences:{}, lastProposalAt:null, selectedProgramId:"", lastAnalysisByProgram:{}, lastSimulationByProgram:{} },
       // Anche il primo avvio (senza un backup precedente) passa dalla stessa
       // normalizzazione usata dalla migrazione: la griglia non deve mai
       // ricevere le vecchie schede settimanali come celle vuote.
@@ -6163,7 +6163,7 @@
     let cloudSessionsUnsubscribe = null;
     let reliableSyncQueue = null;
     let reliableSyncTimer = null;
-    const reliableSyncUi = { status:"local", lastSuccess:"", lastError:"", remoteDevice:"", diagnostics:null, loading:false };
+    const reliableSyncUi = { status:"local", lastSuccess:"", lastError:"", remoteDevice:"", diagnostics:null, loading:false, resolving:false };
     let lastCloudWriteAt = "";
     let lastCloudSnapshotAt = "";
     let lastCloudError = "";
@@ -7442,7 +7442,7 @@
 
     function migrateV9ToV10(input = {}) {
       const migrated=clone(input||{});
-      migrated.coachAi3={version:"3.1.0",history:[],ignorePreferences:{},ignoreHistory:[],lastProposalAt:null,selectedProgramId:"",lastAnalysisByProgram:{},lastSimulationByProgram:{},...(migrated.coachAi3||{})};
+      migrated.coachAi3={version:"3.1.0",history:[],ignorePreferences:{},ignoreHistory:[],resolvedPreferences:{},lastProposalAt:null,selectedProgramId:"",lastAnalysisByProgram:{},lastSimulationByProgram:{},...(migrated.coachAi3||{})};
       migrated.coachAi3.history=Array.isArray(migrated.coachAi3.history)?migrated.coachAi3.history.slice(-500):[];
       migrated.meta={...(migrated.meta||{}),schemaVersion:10,coachAi3MigrationAt:new Date().toISOString(),coachAi3Version:"3.0.0"};
       return migrated;
@@ -7663,7 +7663,7 @@
         ...(target.knowledgeEngine || {})
       };
       target.knowledgeEngine.eventLog = Array.isArray(target.knowledgeEngine.eventLog) ? target.knowledgeEngine.eventLog.slice(-200) : [];
-      target.coachAi3={version:"3.1.0",history:[],ignorePreferences:{},ignoreHistory:[],lastProposalAt:null,selectedProgramId:"",lastAnalysisByProgram:{},lastSimulationByProgram:{},...(target.coachAi3||{})};
+      target.coachAi3={version:"3.1.0",history:[],ignorePreferences:{},ignoreHistory:[],resolvedPreferences:{},lastProposalAt:null,selectedProgramId:"",lastAnalysisByProgram:{},lastSimulationByProgram:{},...(target.coachAi3||{})};
       target.coachAi3.lastAnalysisByProgram=target.coachAi3.lastAnalysisByProgram&&typeof target.coachAi3.lastAnalysisByProgram==="object"?target.coachAi3.lastAnalysisByProgram:{};
       target.coachAi3.history=Array.isArray(target.coachAi3.history)?target.coachAi3.history.slice(-500):[];
       target.coach = target.coach || {};
@@ -7688,6 +7688,7 @@
       const workoutFDateCorrections = correctAliceWorkoutF16Jul2026(target);
       target.migrations.aliceWorkoutF16Jul2026Corrected = Number(target.migrations.aliceWorkoutF16Jul2026Corrected || 0) + workoutFDateCorrections;
       target.migrations.aliceWorkoutF16Jul2026 = 1;
+      target.training.sessions = deduplicateWorkoutSessions(target.training.sessions || []).sessions;
       if (!target.meta) target.meta = {};
       target.meta.schemaVersion = DATA_SCHEMA_VERSION;
       return target;
@@ -8162,6 +8163,121 @@
       return String(session.id || `${session.dateInput || session.date || ""}|${session.sessionCode || session.code || ""}|${session.source || "App"}`);
     }
 
+    function workoutSessionRecordedAt(session = {}) {
+      return Date.parse(session.startedAt || session.completedAt || session.journalSavedAt || session.savedAt || "") || 0;
+    }
+
+    function workoutExerciseFingerprint(exercise = {}) {
+      const identity = String(
+        exercise.sourceExerciseId || exercise.exerciseId || exercise.masterExerciseId ||
+        exercise.identityKey || normalizeExerciseName(exercise.name || exercise.exercise || "")
+      ).trim().toLowerCase();
+      const variant = String(exercise.variantRole || exercise.variant || exercise.progressionRole || "standard").trim().toLowerCase();
+      const setRows = Array.isArray(exercise.completedSets) ? exercise.completedSets
+        : Array.isArray(exercise.setValues) ? exercise.setValues
+        : Array.isArray(exercise.sets) ? exercise.sets
+        : [];
+      const sets = setRows.map((set) => {
+        if (set && typeof set === "object") {
+          return [
+            set.load ?? set.kg ?? set.weight ?? "",
+            set.reps ?? set.repetitions ?? "",
+            set.rir ?? "",
+            set.rpe ?? "",
+            set.side ?? "",
+            set.status ?? "",
+            set.notes ?? set.note ?? ""
+          ].map((value) => String(value ?? "").trim()).join(":");
+        }
+        return String(set ?? "").trim();
+      }).join(",");
+      const plannedSets = Array.isArray(exercise.sets)
+        ? exercise.sets.length
+        : exercise.setsCount ?? exercise.series ?? exercise.sets ?? "";
+      return [
+        identity,
+        variant,
+        String(plannedSets).trim(),
+        String(exercise.reps ?? exercise.repetitions ?? "").trim(),
+        String(exercise.kg ?? exercise.load ?? exercise.maxKg ?? "").trim(),
+        sets,
+        String(exercise.userNote || exercise.notes || exercise.note || "").trim()
+      ].join("~");
+    }
+
+    function workoutSessionContentFingerprint(session = {}) {
+      const date = String(session.dateInput || session.date || "").slice(0, 10);
+      const program = String(session.programId || session.phase || "").trim().toLowerCase();
+      const sheet = String(session.sheetId || logicalWorkoutCode(session.sessionCode || session.code || session.sessionName || "")).trim().toLowerCase();
+      const exercises = (Array.isArray(session.exercises) ? session.exercises : []).map(workoutExerciseFingerprint).join("||");
+      return [date, program, sheet, exercises].join("__");
+    }
+
+    function workoutSessionsAreDuplicate(left = {}, right = {}) {
+      if (left === right) return true;
+      if (String(left.id || "") && String(left.id) === String(right.id || "")) return true;
+      if (String(left.workoutProSessionId || "") && String(left.workoutProSessionId) === String(right.workoutProSessionId || "")) return true;
+      if (workoutSessionContentFingerprint(left) !== workoutSessionContentFingerprint(right)) return false;
+      const leftAt = workoutSessionRecordedAt(left), rightAt = workoutSessionRecordedAt(right);
+      if (leftAt && rightAt) return Math.abs(leftAt - rightAt) <= 10 * 60 * 1000;
+      return String(left.source || "App") === String(right.source || "App");
+    }
+
+    function workoutSessionQuality(session = {}) {
+      const exercises = Array.isArray(session.exercises) ? session.exercises : [];
+      const completedSets = exercises.reduce((total, exercise) => total + (
+        Array.isArray(exercise.completedSets) ? exercise.completedSets.length :
+        Array.isArray(exercise.setValues) ? exercise.setValues.filter(Boolean).length : 0
+      ), 0);
+      return completedSets * 10 + exercises.length * 5 +
+        (session.status === "completed" ? 8 : 0) +
+        (session.syncStatus === "synced" || session.cloudSyncedAt ? 4 : 0) +
+        (session.workoutProSessionId ? 3 : 0) +
+        (session.journalSavedAt ? 1 : 0);
+    }
+
+    function mergeWorkoutDuplicateRecords(left = {}, right = {}) {
+      const preferred = workoutSessionQuality(right) > workoutSessionQuality(left) ? right : left;
+      const secondary = preferred === left ? right : left;
+      const duplicateIds = [...new Set([
+        ...(Array.isArray(left.duplicateIds) ? left.duplicateIds : []),
+        ...(Array.isArray(right.duplicateIds) ? right.duplicateIds : []),
+        left.id,
+        right.id
+      ].filter(Boolean).map(String))];
+      return {
+        ...clone(secondary),
+        ...clone(preferred),
+        id: preferred.id || secondary.id,
+        startedAt: [left.startedAt, right.startedAt].filter(Boolean).sort()[0] || preferred.startedAt,
+        completedAt: [left.completedAt, right.completedAt].filter(Boolean).sort()[0] || preferred.completedAt,
+        duplicateIds
+      };
+    }
+
+    function deduplicateWorkoutSessions(rows = []) {
+      const sessions = [];
+      const duplicates = [];
+      (Array.isArray(rows) ? rows : []).filter(Boolean).forEach((candidate) => {
+        const index = sessions.findIndex((existing) => workoutSessionsAreDuplicate(existing, candidate));
+        if (index < 0) {
+          sessions.push(candidate);
+          return;
+        }
+        const previous = sessions[index];
+        const merged = mergeWorkoutDuplicateRecords(previous, candidate);
+        const removed = String(merged.id) === String(previous.id) ? candidate : previous;
+        sessions[index] = merged;
+        duplicates.push({ kept:merged, removed });
+      });
+      sessions.sort((a, b) => String(a.dateInput || a.date || "").localeCompare(String(b.dateInput || b.date || "")) || workoutSessionRecordedAt(a) - workoutSessionRecordedAt(b));
+      return { sessions, duplicates };
+    }
+
+    function visibleWorkoutSessions(targetState = state) {
+      return deduplicateWorkoutSessions(targetState.training?.sessions || []).sessions;
+    }
+
     function readWorkoutJournal() {
       try {
         const rows = JSON.parse(localStorage.getItem(WORKOUT_JOURNAL_KEY) || "[]");
@@ -8172,7 +8288,7 @@
     function persistWorkoutJournalSession(session) {
       if (!session) return false;
       const key = workoutSessionKey(session);
-      const next = readWorkoutJournal().filter((row) => workoutSessionKey(row) !== key);
+      const next = readWorkoutJournal().filter((row) => workoutSessionKey(row) !== key && !workoutSessionsAreDuplicate(row, session));
       next.push(clone(session));
       const bounded = next.slice(-120);
       try {
@@ -8237,6 +8353,31 @@
       } catch (error) { return []; }
     }
 
+    async function removeWorkoutJournalRecords(ids = []) {
+      const idSet = new Set((Array.isArray(ids) ? ids : [ids]).filter(Boolean).map(String));
+      if (!idSet.size) return 0;
+      const journal = readWorkoutJournal();
+      const retained = journal.filter((row) => !idSet.has(String(row.id || "")) && !idSet.has(workoutSessionKey(row)));
+      try { localStorage.setItem(WORKOUT_JOURNAL_KEY, JSON.stringify(retained.slice(-120))); } catch (error) {}
+      try {
+        const db = await openWorkoutJournalDb();
+        if (!db) return journal.length - retained.length;
+        await new Promise((resolve, reject) => {
+          const transaction = db.transaction(WORKOUT_DB_STORE, "readwrite");
+          const store = transaction.objectStore(WORKOUT_DB_STORE);
+          const request = store.getAll();
+          request.onsuccess = () => (request.result || []).forEach((row) => {
+            if (idSet.has(String(row.id || "")) || idSet.has(String(row.journalId || ""))) store.delete(row.journalId);
+          });
+          request.onerror = () => reject(request.error || new Error("Pulizia registro non riuscita"));
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error || new Error("Pulizia registro non riuscita"));
+        });
+        db.close();
+      } catch (error) {}
+      return journal.length - retained.length;
+    }
+
     async function persistWorkoutSessionDurably(session) {
       const localSaved = persistWorkoutJournalSession(session);
       const indexedSaved = await persistWorkoutJournalIndexedDb(session);
@@ -8265,8 +8406,10 @@
       if (!journal.length) return 0;
       if (!targetState.training) targetState.training = {};
       const before = Array.isArray(targetState.training.sessions) ? targetState.training.sessions.length : 0;
-      targetState.training.sessions = mergeRowsByKey(targetState.training.sessions || [], journal, workoutSessionKey)
-        .sort((a, b) => String(a.dateInput || a.date || "").localeCompare(String(b.dateInput || b.date || "")) || Number(a.id || 0) - Number(b.id || 0));
+      targetState.training.sessions = deduplicateWorkoutSessions([
+        ...(targetState.training.sessions || []),
+        ...journal
+      ]).sessions;
       return targetState.training.sessions.length - before;
     }
 
@@ -8350,7 +8493,12 @@
       const photos = snapshot?.nutrition?.dashboard?.photos;
       const store = window.BarbellDivaPhotoStore;
       if (!store || !store.needsRedaction(photos)) return snapshot;
-      store.putPhotos(photos); // scrive/aggiorna le immagini pesanti in IndexedDB (non bloccante)
+      const expected = photos.filter((photo) => store.hasImageData(photo)).length;
+      store.putPhotos(photos).then((saved) => {
+        if (saved >= expected) return;
+        lastPersistenceError = "Le foto non sono state archiviate tutte nella memoria dedicata. L'app continua a conservarle in questa sessione: esporta un backup prima di chiuderla e riprova.";
+        try { showToast(lastPersistenceError, "error"); } catch (error) {}
+      });
       return { ...snapshot, nutrition: { ...snapshot.nutrition, dashboard: { ...snapshot.nutrition.dashboard, photos: store.redactPhotoList(photos) } } };
     }
 
@@ -8525,6 +8673,32 @@
       return true;
     }
 
+    async function downloadCompleteBackupEnvelope(envelope, filename = "") {
+      const verified = verifyBackupEnvelope(envelope);
+      if (!verified.ok) { showToast(verified.error); return false; }
+      const store = window.BarbellDivaPhotoStore;
+      const photos = verified.envelope?.payload?.nutrition?.dashboard?.photos;
+      if (!store || !Array.isArray(photos) || !photos.length) return downloadBackupEnvelope(verified.envelope, filename);
+      const hydrated = await store.hydratePhotoList(photos);
+      const payload = {
+        ...verified.envelope.payload,
+        nutrition: {
+          ...verified.envelope.payload.nutrition,
+          dashboard: { ...verified.envelope.payload.nutrition.dashboard, photos: hydrated }
+        }
+      };
+      const metadata = { ...verified.envelope.metadata };
+      const completeEnvelope = {
+        ...verified.envelope,
+        metadata: {
+          ...metadata,
+          checksum: backupChecksum({ metadata:{ ...metadata, checksum:undefined }, payload })
+        },
+        payload
+      };
+      return downloadBackupEnvelope(completeEnvelope, filename);
+    }
+
     function backupProgramMatch(current = {}, incoming = {}) {
       if (current.id && incoming.id && String(current.id) === String(incoming.id)) return true;
       const currentCode = String(current.code || current.name || "").trim().toLowerCase();
@@ -8649,11 +8823,10 @@
       const merged = mergeState(mergeState(clone(baseState), clone(older)), clone(newer));
       merged.programs = mergeProgramCollections(older.programs || [], newer.programs || []);
       if (!merged.training) merged.training = {};
-      merged.training.sessions = mergeRowsByKey(
-        older.training?.sessions || [],
-        newer.training?.sessions || [],
-        (session) => session.id || `${session.dateInput || session.date}|${session.sessionCode}|${session.source || ""}`
-      ).sort((a, b) => String(a.dateInput || "").localeCompare(String(b.dateInput || "")) || Number(a.id || 0) - Number(b.id || 0));
+      merged.training.sessions = deduplicateWorkoutSessions([
+        ...(older.training?.sessions || []),
+        ...(newer.training?.sessions || [])
+      ]).sessions;
       if (!merged.nutrition) merged.nutrition = {};
       merged.nutrition.dashboard = mergeNutritionDashboard(
         older.nutrition?.dashboard || {},
@@ -9183,7 +9356,8 @@
         if (result.status === "conflict") { reliableSyncUi.status="conflict"; reliableSyncUi.lastError="La stessa seduta è stata modificata su due dispositivi."; return false; }
         if (result.value) sessions[index] = result.value;
       }
-      reliableSyncUi.remoteDevice = remote.deviceId || ""; state.training.exercises = buildExerciseIndex(allProgramSheets(), sessions); return true;
+      state.training.sessions = deduplicateWorkoutSessions(sessions).sessions;
+      reliableSyncUi.remoteDevice = remote.deviceId || ""; state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions); return true;
     }
 
     async function flushReliableSync(options = {}) {
@@ -9217,8 +9391,114 @@
       cloudSessionsUnsubscribe=collection.onSnapshot(snapshot=>{let changed=false;snapshot.docChanges().forEach(change=>{if(!["added","modified"].includes(change.type))return;const remote=change.doc.data()?.session||change.doc.data();if(remote?.deviceId===reliableDeviceId()&&(state.training.sessions||[]).some(item=>item.dataHash&&item.dataHash===remote.dataHash))return;changed=mergeReliableRemoteSession(remote)||changed;reliableSyncQueue?.audit("received-remote",{entityId:remote?.id,deviceId:remote?.deviceId||""});});if(changed){reliableSyncUi.lastSuccess=new Date().toISOString();refreshReliableSyncStatus();writeLocalStateSnapshot(state,{touch:false,cloud:false});render();}},error=>{reliableSyncUi.status="error";reliableSyncUi.lastError=cloudErrorText(error,"aggiornamento sedute");}); return true;
     }
 
+    function reliableDuplicateLabel(session = {}) {
+      const date = session.dateInput || session.date || "data non disponibile";
+      const sheet = session.sessionName || session.sessionCode || session.code || "Allenamento";
+      const volume = Number(session.total || session.totalVolume || 0);
+      return `${sheet} · ${date}${volume ? ` · ${Math.round(volume)} kg` : ""}`;
+    }
+
+    function reliableDuplicateDetails(session = {}) {
+      const exercises = Array.isArray(session.exercises) ? session.exercises : [];
+      const sets = exercises.reduce((total, exercise) => total + (
+        Array.isArray(exercise.completedSets) ? exercise.completedSets.length
+          : Array.isArray(exercise.setValues) ? exercise.setValues.length
+            : Number(exercise.setsCount || exercise.sets || 0)
+      ), 0);
+      const duration = Number(session.activeDurationSeconds || session.durationSeconds || 0);
+      return `${exercises.length} esercizi · ${sets} serie${duration ? ` · ${Math.round(duration / 60)} min` : ""}`;
+    }
+
+    async function deleteReliableCloudSessions(ids = []) {
+      const collection = reliableSessionsCollection();
+      const unique = [...new Set((Array.isArray(ids) ? ids : [ids]).filter(Boolean).map(String))];
+      if (!collection || !unique.length) return 0;
+      let removed = 0;
+      for (const id of unique) {
+        try {
+          reliableSyncQueue?.removeEntity?.(id);
+          await withTimeout(collection.doc(reliableSessionDocId(id)).delete(), 12000);
+          reliableSyncQueue?.audit("duplicate-removed-cloud", { entityId:id });
+          removed += 1;
+        } catch (error) {
+          reliableSyncUi.lastError = cloudErrorText(error, "rimozione doppione cloud");
+        }
+      }
+      return removed;
+    }
+
+    async function resolveReliableDuplicate(keepId, removeId) {
+      if (!removeId || reliableSyncUi.resolving) return;
+      reliableSyncUi.resolving = true;
+      render();
+      try {
+        state.training.sessions = (state.training.sessions || []).filter((session) => String(session.id) !== String(removeId));
+        state.training.sessions = deduplicateWorkoutSessions(state.training.sessions).sessions;
+        await removeWorkoutJournalRecords([removeId]);
+        await deleteReliableCloudSessions([removeId]);
+        state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
+        writeLocalStateSnapshot(state, { touch:true, cloud:false });
+        await saveCloudState();
+        showToast(`Doppione rimosso. Ho conservato ${reliableDuplicateLabel((state.training.sessions || []).find((row) => String(row.id) === String(keepId)) || {})}.`, "success");
+        await runReliableDiagnostics();
+      } catch (error) {
+        reliableSyncUi.lastError = cloudErrorText(error, "risoluzione doppione");
+      } finally {
+        reliableSyncUi.resolving = false;
+        render();
+      }
+    }
+
     async function runReliableDiagnostics(){
-      reliableSyncUi.loading=true;render();try{const collection=reliableSessionsCollection();if(!collection)throw new Error("Cloud non disponibile");const snapshot=await withTimeout(collection.get(),15000),remote=[];snapshot.forEach(doc=>remote.push(doc.data()?.session||doc.data()));const local=state.training.sessions||[],localIds=new Set(local.map(item=>String(item.id))),remoteIds=new Set(remote.map(item=>String(item.id)));const dedupe=window.BarbellDivaSyncEngine.deduplicateSessions([...local,...remote]);reliableSyncUi.diagnostics={onlyLocal:local.filter(item=>!remoteIds.has(String(item.id))).length,onlyCloud:remote.filter(item=>!localIds.has(String(item.id))).length,possibleDuplicates:dedupe.possibleDuplicates.length};reliableSyncUi.lastError="";}catch(error){reliableSyncUi.lastError=cloudErrorText(error,"diagnostica sedute");}finally{reliableSyncUi.loading=false;render();}
+      reliableSyncUi.loading=true;
+      render();
+      try {
+        const collection=reliableSessionsCollection();
+        if(!collection)throw new Error("Cloud non disponibile");
+        const snapshot=await withTimeout(collection.get(),15000),remote=[];
+        snapshot.forEach(doc=>remote.push(doc.data()?.session||doc.data()));
+        const local=state.training.sessions||[];
+        const remoteIdsBefore=new Set(remote.map(item=>String(item.id||"")));
+        const exact=deduplicateWorkoutSessions([...local,...remote]);
+        const removedIds=exact.duplicates
+          .filter(pair=>String(pair.removed?.id||"")&&String(pair.removed.id)!==String(pair.kept?.id||""))
+          .map(pair=>String(pair.removed.id));
+        state.training.sessions=exact.sessions.filter(row=>!removedIds.includes(String(row.id)));
+        if(removedIds.length){
+          await removeWorkoutJournalRecords(removedIds);
+          await deleteReliableCloudSessions(removedIds);
+          await saveCloudState();
+        }
+        const missingInCloud=state.training.sessions.filter(item=>String(item.id||"")&&!remoteIdsBefore.has(String(item.id)));
+        missingInCloud.forEach(queueReliableWorkoutSession);
+        const repairResult=missingInCloud.length ? await flushReliableSync({silent:true}) : {ok:true};
+        await saveCloudState();
+        state.training.exercises=buildExerciseIndex(allProgramSheets(),state.training.sessions);
+        writeLocalStateSnapshot(state,{touch:true,cloud:false});
+        const cleanedRemote=remote.filter(row=>!removedIds.includes(String(row.id)));
+        const localIds=new Set(state.training.sessions.map(item=>String(item.id)));
+        const remoteIds=new Set(cleanedRemote.map(item=>String(item.id)));
+        const possible=window.BarbellDivaSyncEngine.deduplicateSessions([...state.training.sessions,...cleanedRemote]).possibleDuplicates
+          .filter(pair=>!workoutSessionsAreDuplicate(pair.left,pair.right))
+          .map(pair=>({
+            left:{id:pair.left.id,label:reliableDuplicateLabel(pair.left),details:reliableDuplicateDetails(pair.left),completedAt:pair.left.completedAt||pair.left.startedAt||""},
+            right:{id:pair.right.id,label:reliableDuplicateLabel(pair.right),details:reliableDuplicateDetails(pair.right),completedAt:pair.right.completedAt||pair.right.startedAt||""}
+          }));
+        reliableSyncUi.diagnostics={
+          onlyLocal:repairResult.ok?0:state.training.sessions.filter(item=>!remoteIds.has(String(item.id))).length,
+          onlyCloud:cleanedRemote.filter(item=>!localIds.has(String(item.id))).length,
+          possibleDuplicates:possible.length,
+          cleanedDuplicates:removedIds.length,
+          pairs:possible
+        };
+        reliableSyncUi.lastError="";
+        reliableSyncQueue?.audit("duplicate-audit-complete",{removed:removedIds.length,possible:possible.length});
+      }catch(error){
+        reliableSyncUi.lastError=cloudErrorText(error,"diagnostica sedute");
+      }finally{
+        reliableSyncUi.loading=false;
+        render();
+      }
     }
 
     async function synchronizeReliableNow(){const result=await flushReliableSync({silent:false});startReliableSessionsRealtime();render();return result;}
@@ -10450,7 +10730,8 @@
 
     function reliableSyncPanelHtml(){
       initReliableSync();const stats=reliableSyncStats(),status=refreshReliableSyncStatus(),labels={synced:"Sincronizzato",syncing:"Sincronizzazione in corso",offline:"Offline: salvo in coda",error:"Cloud in attesa",conflict:"Conflitto da controllare",local:"Solo su questo dispositivo"},diag=reliableSyncUi.diagnostics;
-      return `<section class="card reliable-sync-card"><div class="row"><div><span class="section-eyebrow">PC + telefono</span><h3>Sincronizzazione sedute</h3></div><span class="chip">${escapeHtml(labels[status]||status)}</span></div><div class="training-context-grid"><div><strong>Ultimo successo</strong><p class="micro-copy">${reliableSyncUi.lastSuccess?escapeHtml(backupDateLabel(reliableSyncUi.lastSuccess)):"non ancora confermato"}</p></div><div><strong>In coda</strong><p class="micro-copy">${Number(stats.pending||0)+Number(stats.syncing||0)+Number(stats.failed||0)}</p></div><div><strong>Questo dispositivo</strong><p class="micro-copy">${escapeHtml(reliableDeviceId())}</p></div><div><strong>Ultimo dispositivo remoto</strong><p class="micro-copy">${escapeHtml(reliableSyncUi.remoteDevice||"nessuno")}</p></div></div>${reliableSyncUi.lastError?`<p class="sync-error">${escapeHtml(reliableSyncUi.lastError)}</p>`:""}<div class="quick-actions"><button class="gold-button" data-reliable-sync-now>Sincronizza ora</button><button class="ghost-button" data-reliable-sync-check>${reliableSyncUi.loading?"Controllo…":"Controlla sedute mancanti"}</button></div>${diag?`<div class="training-context-grid"><div><strong>${diag.onlyLocal}</strong><p class="micro-copy">solo su questo dispositivo</p></div><div><strong>${diag.onlyCloud}</strong><p class="micro-copy">solo nel cloud</p></div><div><strong>${diag.possibleDuplicates}</strong><p class="micro-copy">possibili doppioni da verificare</p></div></div>`:""}<details><summary>Registro tecnico</summary><div class="history">${(reliableSyncQueue?.auditLog?.()||[]).slice(-6).reverse().map(row=>`<div class="history-row"><span><strong>${escapeHtml(row.event)}</strong><small>${escapeHtml(backupDateLabel(row.at))}</small></span><small>${escapeHtml(row.entityId||"")}</small></div>`).join("")||'<p class="micro-copy">Nessuna operazione registrata.</p>'}</div></details></section>`;
+      const candidates=(diag?.pairs||[]).map((pair,index)=>`<article class="duplicate-resolution-card"><div><strong>Confronto ${index+1}</strong><p>${escapeHtml(pair.left.label)}</p><small>${escapeHtml(pair.left.details||"")} · ${escapeHtml(backupDateLabel(pair.left.completedAt))}</small></div><div><p>${escapeHtml(pair.right.label)}</p><small>${escapeHtml(pair.right.details||"")} · ${escapeHtml(backupDateLabel(pair.right.completedAt))}</small></div><div class="quick-actions"><button class="ghost-button" data-duplicate-keep="${escapeHtml(pair.left.id)}" data-duplicate-remove="${escapeHtml(pair.right.id)}">Mantieni la prima</button><button class="ghost-button" data-duplicate-keep="${escapeHtml(pair.right.id)}" data-duplicate-remove="${escapeHtml(pair.left.id)}">Mantieni la seconda</button></div></article>`).join("");
+      return `<section class="card reliable-sync-card"><div class="row"><div><span class="section-eyebrow">PC + telefono</span><h3>Sincronizzazione sedute</h3></div><span class="chip">${escapeHtml(labels[status]||status)}</span></div><div class="training-context-grid"><div><strong>Ultimo successo</strong><p class="micro-copy">${reliableSyncUi.lastSuccess?escapeHtml(backupDateLabel(reliableSyncUi.lastSuccess)):"non ancora confermato"}</p></div><div><strong>In coda</strong><p class="micro-copy">${Number(stats.pending||0)+Number(stats.syncing||0)+Number(stats.failed||0)}</p></div><div><strong>Questo dispositivo</strong><p class="micro-copy">${escapeHtml(reliableDeviceId())}</p></div><div><strong>Ultimo dispositivo remoto</strong><p class="micro-copy">${escapeHtml(reliableSyncUi.remoteDevice||"nessuno")}</p></div></div>${reliableSyncUi.lastError?`<p class="sync-error">${escapeHtml(reliableSyncUi.lastError)}</p>`:""}<div class="quick-actions"><button class="gold-button" data-reliable-sync-now>Sincronizza ora</button><button class="ghost-button" data-reliable-sync-check ${reliableSyncUi.loading||reliableSyncUi.resolving?"disabled":""}>${reliableSyncUi.loading?"Controllo in corso…":"Controlla e risolvi sedute"}</button></div>${diag?`<div class="training-context-grid"><div><strong>${diag.onlyLocal}</strong><p class="micro-copy">solo su questo dispositivo</p></div><div><strong>${diag.onlyCloud}</strong><p class="micro-copy">solo nel cloud</p></div><div><strong>${diag.possibleDuplicates}</strong><p class="micro-copy">confronti che richiedono la tua scelta</p></div></div>${diag.cleanedDuplicates?`<p class="sync-success">${diag.cleanedDuplicates} doppion${diag.cleanedDuplicates===1?"e identico rimosso":"i identici rimossi"} automaticamente da dispositivo e cloud.</p>`:""}${candidates?`<div class="duplicate-resolution-list"><h4>Sedute simili da confrontare</h4>${candidates}</div>`:""}${!diag.possibleDuplicates&&!diag.onlyLocal&&!diag.onlyCloud?'<p class="sync-success">Controllo completato: PC, telefono e Logbook sono allineati.</p>':""}`:""}<details><summary>Registro tecnico</summary><div class="history">${(reliableSyncQueue?.auditLog?.()||[]).slice(-6).reverse().map(row=>`<div class="history-row"><span><strong>${escapeHtml(row.event)}</strong><small>${escapeHtml(backupDateLabel(row.at))}</small></span><small>${escapeHtml(row.entityId||"")}</small></div>`).join("")||'<p class="micro-copy">Nessuna operazione registrata.</p>'}</div></details></section>`;
     }
 
     function settingsHtml() {
@@ -10851,7 +11132,7 @@
       const query = String(state.ui?.logbookSearch || "").trim().toLowerCase();
       const status = state.ui?.logbookStatus || "all";
       const sourceFilter = state.ui?.logbookSource || "all";
-      return (state.training.sessions || []).filter((session) => {
+      return visibleWorkoutSessions().filter((session) => {
         const completion = sessionCompletionState(session);
         if (status === "completed" && !completion.completed) return false;
         if (status === "draft" && !completion.draft) return false;
@@ -10878,7 +11159,7 @@
 
     function logbookHtml() {
       const sessions = logbookSessionsForUi();
-      const allSessions = state.training.sessions || [];
+      const allSessions = visibleWorkoutSessions();
       const volumeValues = allSessions.map(logbookSessionVolume).filter((value) => Number.isFinite(value));
       const totalVolume = volumeValues.reduce((sum, value) => sum + value, 0);
       const best = allSessions.reduce((max, session) => Math.max(max, ...(session.exercises || []).map((item) => Number(item.kg) || 0)), 0);
@@ -11330,8 +11611,14 @@
       return mode==="once"?`once:${fingerprint}:${item.id}`:`variant:${identity}`;
     }
     function coachAiApplyIgnorePreferences(result){
-      const preferences=state.coachAi3?.ignorePreferences||{},fingerprint=result.knowledgeFingerprint||"",hidden=new Set();
-      (result.insights||[]).forEach(item=>{if(preferences[coachAiIgnoreKey(item,"once",fingerprint)]||preferences[coachAiIgnoreKey(item,"variant",fingerprint)])hidden.add(item.id);});
+      const preferences=state.coachAi3?.ignorePreferences||{},resolved=state.coachAi3?.resolvedPreferences||{},fingerprint=result.knowledgeFingerprint||"",hidden=new Set();
+      const selectedProgram=programRepository.getProgramById(coachAiSelectedProgramId());
+      const currentProgramHash=selectedProgram&&window.BarbellDivaCoachAI3?.hash?window.BarbellDivaCoachAI3.hash(selectedProgram):"";
+      (result.insights||[]).forEach(item=>{
+        if(preferences[coachAiIgnoreKey(item,"once",fingerprint)]||preferences[coachAiIgnoreKey(item,"variant",fingerprint)])hidden.add(item.id);
+        const resolution=Object.values(resolved).find(entry=>entry.programId===item.programId&&entry.exerciseId===item.exerciseId&&entry.programFingerprint===currentProgramHash);
+        if(resolution)hidden.add(item.id);
+      });
       const unique=new Map(),general=[];
       (result.insights||[]).filter(item=>item.scope!=="diagnostics"&&!hidden.has(item.id)).forEach(item=>{const key=item.exerciseId||item.identityKey;if(!key){general.push(item);return;}const previous=unique.get(key);if(!previous){unique.set(key,item);return;}const keep=coachAiPriorityValue(item.priority)>coachAiPriorityValue(previous.priority)?item:previous,other=keep===item?previous:item;unique.set(key,{...keep,mergedCount:Number(previous.mergedCount||1)+Number(item.mergedCount||1),description:[keep.description,other.description].filter(Boolean).filter((value,index,array)=>array.indexOf(value)===index).join(" "),reason:[keep.reason,other.reason].filter(Boolean).filter((value,index,array)=>array.indexOf(value)===index).join(" "),data:[...(keep.data||[]),...(other.data||[])].filter((value,index,array)=>array.findIndex(candidate=>candidate.label===value.label&&String(candidate.value)===String(value.value))===index),actions:[...(keep.actions||[]),...(other.actions||[])].filter((value,index,array)=>array.findIndex(candidate=>candidate.type===value.type)===index)});});
       result.insights=[...unique.values(),...general];
@@ -13244,7 +13531,7 @@
       const filteredSuggestions = suggestions.filter(matchesFilter);
       const applied = new Set(ai.applied || []); const ignored = new Set(ai.ignored || []);
       const statusTab = coachProgramUi.aiStatusTab || "suggestions";
-      const visible = statusTab === "applied" ? Object.values(ai.appliedRecords || {}).filter((item) => applied.has(item.id)).map((item) => ({ ...item, severity: item.severity || "info", confidence: item.confidence || "applicato", alternatives: item.alternatives || [], dataUsed: item.dataUsed || [], involvedExercises: item.involvedExercises || [] })) : statusTab === "ignored" ? Object.values(ai.ignoredRecords || {}).filter((item) => ignored.has(item.id)).map((item) => ({ ...item, severity: item.severity || "info", confidence: item.confidence || "salvato", problem: item.problem || "Puoi ripristinare questo controllo quando vuoi.", alternatives: item.alternatives || [], dataUsed: item.dataUsed || [], progression: item.progression || "", involvedExercises: item.involvedExercises || [] })) : filteredSuggestions.filter((item) => !applied.has(item.id));
+      const visible = statusTab === "applied" ? Object.values(ai.appliedRecords || {}).filter((item) => applied.has(item.id)).map((item) => ({ ...item, severity: item.severity || "info", confidence: item.confidence || "applicato", alternatives: item.alternatives || [], dataUsed: item.dataUsed || [], involvedExercises: item.involvedExercises || [] })) : statusTab === "ignored" ? Object.values(ai.ignoredRecords || {}).filter((item) => ignored.has(item.id)).map((item) => ({ ...item, severity: item.severity || "info", confidence: item.confidence || "salvato", problem: item.problem || "Puoi ripristinare questo controllo quando vuoi.", alternatives: item.alternatives || [], dataUsed: item.dataUsed || [], progression: item.progression || "", involvedExercises: item.involvedExercises || [] })) : filteredSuggestions.filter((item) => !applied.has(item.id) && !ignored.has(item.id));
       const ctx=coachAiContext(); const quality = coachAiQualityIssues();
       const qualityBlock = quality.length ? `<section class="coach-ai-quality"><button type="button" data-ai-quality-toggle aria-expanded="${!!coachProgramUi.qualityExpanded}"><span>Informazioni da completare</span><b>${quality.length} esercizi</b><em>${coachProgramUi.qualityExpanded ? "−" : "+"}</em></button>${coachProgramUi.qualityExpanded ? `<div class="coach-ai-quality-body"><p>I dati essenziali migliorano classificazione e filtri; quelli avanzati affinano il Coach AI ma non bloccano l’analisi.</p><div class="coach-missing-list">${quality.map((row) => `<article><div class="row"><strong>${escapeHtml(displayExerciseName(row.exercise))}</strong><span class="chip">Analisi ${escapeHtml(row.analysisStatus)}</span></div>${missingFieldGuideHtml(row)}<div class="quick-actions"><button type="button" class="ghost-button" data-missing-toggle="${escapeHtml(row.id)}">Visualizza dati mancanti</button><button type="button" class="gold-button" data-exercise-action="details" data-sheet-id="${escapeHtml(row.sheetId||ctx.sheet?.id||"")}" data-exercise-id="${escapeHtml(row.id)}">Compila manualmente</button><button type="button" class="ghost-button" disabled title="Disponibile nella Fase 20">Proponi compilazione automatica · presto</button></div></article>`).join("")}</div></div>` : ""}</section>` : `<div class="coach-ai-complete">✓ Analisi disponibile · informazioni principali complete</div>`;
       const programs=coachProgramsForUi(); const last=coachProgramUi.aiLastAnalysisAt?new Date(coachProgramUi.aiLastAnalysisAt).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"non ancora eseguita";
@@ -13702,7 +13989,7 @@
         state.migrations.aliceWorkoutF16Jul2026Corrected = Number(state.migrations.aliceWorkoutF16Jul2026Corrected || 0) + renderedFDateCorrections;
         setTimeout(() => saveState({ cloud:false, immediate:true }), 0);
       }
-      const savedHere = state.training.sessions.filter((session) => session.source === "App" || Number(session.id) > 1000000000);
+      const savedHere = visibleWorkoutSessions().filter((session) => session.source === "App" || Number(session.id) > 1000000000);
       const recent = savedHere.slice().sort((a, b) => String(b.dateInput || "").localeCompare(String(a.dateInput || "")) || Number(b.id || 0) - Number(a.id || 0));
       const selectedCode = currentTrainingContext().session.code;
       const selectedCount = savedHere.filter((session) => session.sessionCode === selectedCode).length;
@@ -14070,7 +14357,42 @@
       document.querySelector("[data-ai3-preview-cancel]")?.addEventListener("click",()=>{coachProgramUi.ai3Preview=null;clearCoachAiFeedbackPortal();render();});
       // Le vecchie voci status:"rejected" vengono mostrate come Ignorata; le nuove usano lo stato esplicito ignored.
       document.querySelector("[data-ai3-preview-ignore]")?.addEventListener("click",()=>{const p=coachProgramUi.ai3Preview;if(!p)return;const insight=(coachAi2Cache.result?.insights||[]).find(item=>item.exerciseId===p.option.operations?.[0]?.exerciseId)||{id:p.proposal.id,programId:p.programId,sheetId:p.option.operations?.[0]?.sheetId,exerciseId:p.option.operations?.[0]?.exerciseId,title:p.proposal.title};coachAiStoreIgnore(insight,"once",p.programFingerprint);const snapshot=coachAi3Snapshot(p,"ignored");coachAi3HistoryRecord({...snapshot,proposalId:p.proposal.id,optionId:p.option.id,ignoredAt:new Date().toISOString()});coachProgramUi.ai3Preview=null;coachAi2Cache={fingerprint:"",result:null};clearCoachAiFeedbackPortal();saveState({immediate:true});showToast("Proposta ignorata per questa analisi.");render();});
-      document.querySelector("[data-ai3-preview-confirm]")?.addEventListener("click",()=>{const p=coachProgramUi.ai3Preview;if(!p)return;const current=programRepository.getProgramById(p.programId);if(!current)return showToast("Programma destinazione non trovato.");if(window.BarbellDivaCoachAI3.hash(current)!==p.programFingerprint){coachProgramUi.ai3Preview=null;clearCoachAiFeedbackPortal();showToast("Il programma è cambiato: riesegui la simulazione prima di applicare.");return render();}const result=programRepository.updateProgram(p.programId,{sheets:p.patched.after.sheets},{immediate:true});if(!result.ok)return showToast("La modifica non supera la validazione del programma.");coachProgramUi.ai3Undo={historyId:p.id,programId:p.programId,beforeProgram:p.patched.before,afterFingerprint:window.BarbellDivaCoachAI3.hash(result.value)};coachAi3HistoryRecord({id:p.id,programId:p.programId,proposalId:p.proposal.id,optionId:p.option.id,title:p.proposal.title,optionLabel:p.option.label,status:"accepted",createdAt:p.createdAt,acceptedAt:new Date().toISOString(),beforeFingerprint:p.programFingerprint,afterFingerprint:coachProgramUi.ai3Undo.afterFingerprint});const applied=coachAi3Snapshot(p,"accepted");state.coachAi3.lastSimulationByProgram=state.coachAi3.lastSimulationByProgram||{};state.coachAi3.lastSimulationByProgram[p.programId]=applied;coachProgramUi.ai3AppliedResult=applied;coachProgramUi.ai3Preview=null;coachAi2Cache={fingerprint:"",result:null};clearCoachAiFeedbackPortal();saveState({immediate:true});showToast("Modifica applicata e salvata. Il riepilogo mostra esattamente cosa è cambiato.");render();});
+      document.querySelector("[data-ai3-preview-confirm]")?.addEventListener("click",()=>{
+        const p=coachProgramUi.ai3Preview;
+        if(!p)return;
+        const current=programRepository.getProgramById(p.programId);
+        if(!current)return showToast("Programma destinazione non trovato.");
+        if(window.BarbellDivaCoachAI3.hash(current)!==p.programFingerprint){
+          coachProgramUi.ai3Preview=null;
+          clearCoachAiFeedbackPortal();
+          showToast("Il programma è cambiato: riesegui la simulazione prima di applicare.");
+          return render();
+        }
+        const result=programRepository.updateProgram(p.programId,{sheets:p.patched.after.sheets},{immediate:true});
+        if(!result.ok)return showToast("La modifica non supera la validazione del programma.");
+        coachProgramUi.ai3Undo={historyId:p.id,programId:p.programId,beforeProgram:p.patched.before,afterFingerprint:window.BarbellDivaCoachAI3.hash(result.value)};
+        state.coachAi3.resolvedPreferences=state.coachAi3.resolvedPreferences||{};
+        (p.option.operations||[]).forEach(operation=>{
+          state.coachAi3.resolvedPreferences[`${p.programId}|${operation.exerciseId}|${p.proposal.id}`]={
+            programId:p.programId,
+            exerciseId:operation.exerciseId||"",
+            proposalId:p.proposal.id,
+            programFingerprint:coachProgramUi.ai3Undo.afterFingerprint,
+            resolvedAt:new Date().toISOString()
+          };
+        });
+        coachAi3HistoryRecord({id:p.id,programId:p.programId,proposalId:p.proposal.id,optionId:p.option.id,title:p.proposal.title,optionLabel:p.option.label,status:"accepted",createdAt:p.createdAt,acceptedAt:new Date().toISOString(),beforeFingerprint:p.programFingerprint,afterFingerprint:coachProgramUi.ai3Undo.afterFingerprint});
+        const applied=coachAi3Snapshot(p,"accepted");
+        state.coachAi3.lastSimulationByProgram=state.coachAi3.lastSimulationByProgram||{};
+        state.coachAi3.lastSimulationByProgram[p.programId]=applied;
+        coachProgramUi.ai3AppliedResult=applied;
+        coachProgramUi.ai3Preview=null;
+        coachAi2Cache={fingerprint:"",result:null};
+        clearCoachAiFeedbackPortal();
+        saveState({immediate:true});
+        showToast("Modifica applicata e salvata. Il riepilogo mostra esattamente cosa è cambiato.");
+        render();
+      });
       document.querySelector("[data-ai3-applied-close]")?.addEventListener("click",()=>{coachProgramUi.ai3AppliedResult=null;clearCoachAiFeedbackPortal();render();});
       document.querySelector("[data-ai3-applied-open]")?.addEventListener("click",()=>{const snapshot=coachProgramUi.ai3AppliedResult;coachProgramUi.ai3AppliedResult=null;clearCoachAiFeedbackPortal();coachAiOpenChangedSheet(snapshot);});
       document.querySelector("[data-ai3-applied-undo]")?.addEventListener("click",()=>{const undoButton=document.querySelector("[data-ai3-undo]");coachProgramUi.ai3AppliedResult=null;clearCoachAiFeedbackPortal();undoButton?.click();});
@@ -14216,9 +14538,9 @@
       document.querySelector("[data-onboarding-skip]")?.addEventListener("click", () => { onboardingUi.force = false; state.ui.onboardingComplete = true; saveState(); closeModal("onboarding"); render(); });
       document.querySelector("[data-onboarding-back]")?.addEventListener("click", () => { onboardingUi.step = Math.max(0, onboardingUi.step - 1); render(); });
       document.querySelector("[data-onboarding-next]")?.addEventListener("click", () => { if (onboardingUi.step >= 3) { onboardingUi.force = false; state.ui.onboardingComplete = true; saveState(); closeModal("onboarding"); } else onboardingUi.step += 1; render(); });
-      document.querySelector("[data-backup-export]")?.addEventListener("click", () => {
+      document.querySelector("[data-backup-export]")?.addEventListener("click", async () => {
         const envelope = createBackupEnvelope("manual"); const saved = storeBackupEnvelope(envelope);
-        const downloaded = downloadBackupEnvelope(envelope);
+        const downloaded = await downloadCompleteBackupEnvelope(envelope);
         if (!downloaded) return;
         render();
         showToast(saved.ok ? "Backup completo esportato e verificato." : "Backup scaricato e verificato; lo spazio locale non consente di conservarne una seconda copia nell'app.");
@@ -14236,8 +14558,8 @@
         const record = readBackupHistory().find((item) => item.metadata?.id === button.dataset.backupHistoryRestore); if (!record) return showToast("Backup non trovato.");
         dataSafetyUi.restorePreview = record; openModal("backup-restore", { opener: button }); render();
       }));
-      document.querySelectorAll("[data-backup-history-export]").forEach((button) => button.addEventListener("click", () => {
-        const record = readBackupHistory().find((item) => item.metadata?.id === button.dataset.backupHistoryExport); if (record) downloadBackupEnvelope(record);
+      document.querySelectorAll("[data-backup-history-export]").forEach((button) => button.addEventListener("click", async () => {
+        const record = readBackupHistory().find((item) => item.metadata?.id === button.dataset.backupHistoryExport); if (record) await downloadCompleteBackupEnvelope(record);
       }));
       document.querySelectorAll("[data-backup-history-delete]").forEach((button) => button.addEventListener("click", () => {
         writeBackupHistory(readBackupHistory().filter((item) => item.metadata?.id !== button.dataset.backupHistoryDelete)); render(); showToast("Backup eliminato dalla cronologia locale.");
@@ -15166,6 +15488,9 @@
       if (downloadCloudLocal) downloadCloudLocal.addEventListener("click", downloadCloudToThisDevice);
       document.querySelector("[data-reliable-sync-now]")?.addEventListener("click", synchronizeReliableNow);
       document.querySelector("[data-reliable-sync-check]")?.addEventListener("click", runReliableDiagnostics);
+      document.querySelectorAll("[data-duplicate-keep][data-duplicate-remove]").forEach((button) => button.addEventListener("click", () => {
+        resolveReliableDuplicate(button.dataset.duplicateKeep, button.dataset.duplicateRemove);
+      }));
       document.querySelectorAll("[data-premium-error-action]").forEach((button) => button.addEventListener("click", () => {
         if (button.dataset.premiumErrorAction === "retry-cloud") downloadCloudToThisDevice();
         if (button.dataset.premiumErrorAction === "retry-local-storage") {
@@ -16252,10 +16577,10 @@
       render();
     }
 
-    function exportBackup() {
+    async function exportBackup() {
       const envelope = createBackupEnvelope("manual");
       const stored = storeBackupEnvelope(envelope);
-      const downloaded = downloadBackupEnvelope(envelope);
+      const downloaded = await downloadCompleteBackupEnvelope(envelope);
       if (!downloaded) return;
       showToast(stored.ok ? "Backup verificato esportato." : "Backup verificato scaricato; copia locale interna non creata per mancanza di spazio.");
     }
@@ -16363,23 +16688,12 @@
     }
 
     function sessionFingerprint(session) {
-      return [
-        session.dateInput || session.date,
-        session.sessionCode || "",
-        (session.exercises || []).map((exercise) => `${normalizeExerciseName(exercise.name)}:${historyLoadLabel(exercise)}:${exercise.userNote || ""}:${exercise.notes || ""}`).join("|")
-      ].join("__");
+      return workoutSessionContentFingerprint(session);
     }
 
     function mergeUniqueSessions(...lists) {
-      const seen = new Set();
-      const sessions = [];
-      lists.flat().filter(Boolean).forEach((session) => {
-        const key = sessionFingerprint(session);
-        if (seen.has(key)) return;
-        seen.add(key);
-        sessions.push(session);
-      });
-      return sessions.sort((a, b) => String(a.dateInput || a.date || "").localeCompare(String(b.dateInput || b.date || "")));
+      return deduplicateWorkoutSessions(lists.flat().filter(Boolean)).sessions
+        .sort((a, b) => String(a.dateInput || a.date || "").localeCompare(String(b.dateInput || b.date || "")));
     }
 
     function importBackup(file) {

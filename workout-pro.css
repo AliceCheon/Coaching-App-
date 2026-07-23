@@ -104,3 +104,21 @@ body[data-animation-mode="reduced"] .wp19-mascot-anchor{transition-duration:100m
 body[data-theme="light"] .wp19-overlay{background:#f7edf7}body[data-theme="light"] .wp19-exercise-card{background:linear-gradient(155deg,#fffafd,#f3e5f2);border-color:#dbaed1;box-shadow:0 18px 42px rgba(91,44,102,.16)}body[data-theme="light"] .wp19-stat{background:#fff8fc;border-color:#dfbdd8}body[data-theme="light"] .wp19-input,body[data-theme="light"] .wp19-textarea{background:#fff;border-color:#d5b4cf}body[data-theme="light"] .wp19-chip-btn,body[data-theme="light"] .wp19-details{background:#f1e2f1;border-color:#d8b7d2}body[data-theme="light"] .wp19-set-tab.is-pending{background:#eee1f1;border-color:#d4b5d5;color:#382640}body[data-theme="light"] .wp19-set-tab.is-active{background:linear-gradient(135deg,#ffd5eb,#e4c9ff);border-color:#c12d94;color:#2d1534}body[data-theme="light"] .wp19-set-tab.is-done{background:#d9f5e8;border-color:#58ae88;color:#174d38}body[data-theme="light"] .wp19-suggestion{background:#e7f5f4;border-color:#7bb7b0}body[data-theme="light"] .wp19-exercise-note{background:#f7e2f1;border-color:#db8fc2}
 body[data-theme="dark"] .wp19-overlay{background:#080714}body[data-theme="dark"] .wp19-exercise-card{background:linear-gradient(155deg,#251938,#171329);border-color:#63427b;box-shadow:0 22px 50px rgba(0,0,0,.42)}body[data-theme="dark"] .wp19-stat{background:#211733;border-color:#53366b}body[data-theme="dark"] .wp19-input,body[data-theme="dark"] .wp19-textarea{background:#120f22;border-color:#54386a}body[data-theme="dark"] .wp19-chip-btn,body[data-theme="dark"] .wp19-details{background:#271936;border-color:#58376f}body[data-theme="dark"] .wp19-set-tab.is-pending{background:#1b1529;border-color:#49345e;color:#d8c9e6}body[data-theme="dark"] .wp19-set-tab.is-active{background:linear-gradient(135deg,#5c214e,#422269);border-color:#ff62bd;color:#fff}body[data-theme="dark"] .wp19-set-tab.is-done{background:#17382f;border-color:#55c69a;color:#bff6df}body[data-theme="dark"] .wp19-suggestion{background:#172b3b;border-color:#4f8790}body[data-theme="dark"] .wp19-exercise-note{background:#31172d;border-color:#913b75}
 @media(max-width:620px){.wp19-pro-mode .wp19-set-tabs{margin:1px 0 2px}.wp19-pro-mode .wp19-set-tab{flex-basis:96px;min-height:52px;padding:6px 8px;border-radius:12px}.wp19-pro-mode .wp19-set-tab strong{font-size:.76rem}.wp19-pro-mode .wp19-set-tab span{font-size:.62rem}}
+
+/* v139 - contrasto stato serie e testi leggibili su telefono. */
+.wp19-last-execution{font-weight:800;line-height:1.45}
+body[data-theme="light"] .wp19-last-execution{background:#fff3d4;border-color:#d49a20;color:#573900}
+body[data-theme="dark"] .wp19-last-execution{background:#33270f;border-color:#d6a441;color:#ffe8a9}
+body[data-theme="light"] .wp19-set-tab.is-pending{background:linear-gradient(145deg,#e9d9ed,#f4e9f5);border:2px solid #b894bd;color:#33213a}
+body[data-theme="light"] .wp19-set-tab.is-active{background:linear-gradient(135deg,#ffabd5,#cfa9ff);border:2px solid #9d1d78;box-shadow:0 0 0 3px rgba(157,29,120,.15),0 10px 25px rgba(118,43,131,.22)}
+body[data-theme="light"] .wp19-set-tab.is-done{background:linear-gradient(135deg,#bfead6,#d9f8e8);border:2px solid #318365;color:#123e2e}
+body[data-theme="dark"] .wp19-set-tab.is-pending{background:linear-gradient(145deg,#181125,#282038);border:2px solid #59426d;color:#e1d5ed}
+body[data-theme="dark"] .wp19-set-tab.is-active{background:linear-gradient(135deg,#8d285f,#5f2d91);border:2px solid #ff7fc9;box-shadow:0 0 0 3px rgba(255,98,189,.18),0 12px 28px rgba(0,0,0,.45)}
+body[data-theme="dark"] .wp19-set-tab.is-done{background:linear-gradient(135deg,#14513f,#1f6a53);border:2px solid #72e3b7;color:#e1fff3}
+.wp19-set-tab.is-done strong::before{content:"✓ ";font-weight:950}
+.wp19-set-tab.is-active strong::before{content:"▶ ";font-size:.7em}
+@media(max-width:620px){
+  .wp19-pro-mode .wp19-set-tab{min-height:58px}
+  .wp19-pro-mode .wp19-set-tab strong{font-size:.82rem}
+  .wp19-pro-mode .wp19-set-tab span{font-size:.66rem}
+}
