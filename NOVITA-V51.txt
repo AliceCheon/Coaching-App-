@@ -35,4 +35,4 @@ VELOCITA E STILE
 AGGIORNAMENTO
 - Cache PWA aggiornata ad atlas-app-v51.
 - Dopo la pubblicazione, aprire una volta l'app con ?v=51 per forzare l'aggiornamento
-  sui dispositivi che conservano ancora la vecchia versione.
+  sui dispositivi che conservano ancora la vecchia versione. zao
