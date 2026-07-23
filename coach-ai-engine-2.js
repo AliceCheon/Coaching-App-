@@ -1,6 +1,6 @@
 (function(root,factory){const api=factory();if(typeof module==="object"&&module.exports)module.exports=api;root.BarbellDivaCoachAI2=api;})(typeof globalThis!=="undefined"?globalThis:window,function(){
   "use strict";
-  const VERSION="2.2.0-master-library";
+  const VERSION="2.3.0-history-identity";
   const DEFAULT_CONFIG={secondarySetWeight:.5,performanceWindow:5,stallTolerancePct:2,scoreWeights:{goalAlignment:14,priorityAlignment:12,volume:12,frequency:10,blockCoherence:10,nutritionContext:8,exerciseOrder:8,patternBalance:8,fatigueManagement:8,limitations:5,progression:5}};
   const list=v=>Array.isArray(v)?v:[],num=v=>v!==""&&v!=null&&Number.isFinite(Number(v))?Number(v):null,clone=v=>JSON.parse(JSON.stringify(v));
   const norm=v=>String(v||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[_-]+/g," ").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
@@ -17,10 +17,32 @@
   function inferPattern(exercise){return norm(exercise.masterRecord?.patterns?.[0]?.name||"unclassified");}
   function isCompound(exercise){return norm(exercise.masterRecord?.identity?.type)==="compound";}
   function dateValue(value){const parsed=Date.parse(value||"");return Number.isFinite(parsed)?parsed:0;}
-  function matchesExercise(programExercise,logged,session={}){const sourceId=String(logged.sourceExerciseId||logged.programExerciseId||logged.exerciseId||""),programId=String(logged.programId||session.programId||""),sheetId=String(logged.sheetId||session.sheetId||"");if(sourceId)return sourceId===String(programExercise.id)&&(programId?programId===String(programExercise.programId):true)&&(sheetId?sheetId===String(programExercise.sheetId):true);if(programId&&programId!==String(programExercise.programId))return false;if(sheetId&&sheetId!==String(programExercise.sheetId))return false;const a=norm(programExercise.name),b=norm(logged.name||logged.exerciseName);if(!a||!b||a!==b)return false;return !programExercise.ambiguousName||Boolean(sheetId);}
+  function matchesExercise(programExercise,logged,session={}){
+    const sourceId=String(logged.sourceExerciseId||logged.programExerciseId||logged.exerciseId||"");
+    if(sourceId&&sourceId===String(programExercise.id))return true;
+    const masterId=String(logged.masterExerciseId||logged.metadata?.masterExerciseId||"");
+    if(masterId&&programExercise.masterRecord?.id&&masterId===String(programExercise.masterRecord.id)){
+      return variantRole(logged)===programExercise.variantRole;
+    }
+    const a=norm(programExercise.name),b=norm(logged.name||logged.exerciseName);
+    if(!a||!b||a!==b)return false;
+    const loggedRole=variantRole(logged);
+    if(programExercise.ambiguousName)return loggedRole===programExercise.variantRole;
+    return true;
+  }
   function numericValues(values){return list(values).map(num).filter(v=>v!=null)}
   function maxReps(value){const hits=String(value||"").match(/\d+(?:[.,]\d+)?/g);return hits?.length?Math.max(...hits.map(v=>Number(v.replace(",",".")))):null;}
-  function historyPoint(session,logged){const loads=numericValues(logged.setValues||logged.loads||logged.kgValues);const load=Math.max(0,...loads,num(logged.maxKg),num(logged.kg),num(logged.load),0)||null;const reps=maxReps(logged.reps||logged.valueReps||logged.repValues);const sets=num(logged.sets)||loads.length||null;const volume=num(logged.volume)??(load!=null&&reps!=null&&sets!=null?Math.round(load*reps*sets):null);const e1rm=load!=null&&reps!=null?Number((load*(1+Math.min(reps,15)/30)).toFixed(1)):null;return{date:session.dateInput||session.date||session.completedAt||"",timestamp:dateValue(session.dateInput||session.date||session.completedAt),load,reps,sets,volume,e1rm,rir:num(logged.rir),rpe:num(logged.rpe),source:"real",sessionId:session.id||""};}
+  function historyPoint(session,logged){
+    const completed=list(logged.completedSets).filter(set=>set&&set.kind!=="warmup");
+    const loads=numericValues(completed.length?completed.map(set=>set.kg??set.load):logged.setValues||logged.loads||logged.kgValues);
+    const completedReps=numericValues(completed.map(set=>set.reps));
+    const load=Math.max(0,...loads,num(logged.maxKg),num(logged.kg),num(logged.load),0)||null;
+    const reps=completedReps.length?Math.max(...completedReps):maxReps(logged.reps||logged.valueReps||logged.repValues);
+    const sets=completed.length||num(logged.sets)||loads.length||null;
+    const volume=num(logged.volume)??(completed.length?Math.round(completed.reduce((sum,set)=>sum+(num(set.kg??set.load)||0)*(num(set.reps)||0),0)):(load!=null&&reps!=null&&sets!=null?Math.round(load*reps*sets):null));
+    const e1rm=load!=null&&reps!=null?Number((load*(1+Math.min(reps,15)/30)).toFixed(1)):null;
+    return{date:session.dateInput||session.date||session.completedAt||"",timestamp:dateValue(session.dateInput||session.date||session.completedAt),load,reps,sets,volume,e1rm,rir:num(logged.rir),rpe:num(logged.rpe),source:"real",sessionId:session.id||""};
+  }
   function exerciseHistory(exercise,sessions=[]){return list(sessions).flatMap(session=>list(session.exercises).filter(logged=>matchesExercise(exercise,logged,session)).map(logged=>({...historyPoint(session,logged),identityKey:exercise.identityKey,programId:exercise.programId,sheetId:exercise.sheetId,exerciseId:exercise.id,variantRole:exercise.variantRole}))).sort((a,b)=>a.timestamp-b.timestamp);}
   function percentChange(first,last){return first&&last?Number(((last-first)/first*100).toFixed(1)):null;}
   function exerciseTrend(points=[],windowSize=5,tolerance=2){const window=list(points).slice(-windowSize),metric=window.map(p=>p.e1rm??p.load??p.volume).filter(v=>v!=null);if(metric.length<3)return{status:"insufficient",confidence:"bassa",changePct:null,points:window,reason:"Servono almeno tre rilevazioni reali confrontabili."};const changePct=percentChange(metric[0],metric.at(-1));let rises=0,falls=0;for(let i=1;i<metric.length;i++){if(metric[i]>metric[i-1]*1.01)rises++;if(metric[i]<metric[i-1]*.99)falls++;}const stableFour=metric.length>=4&&Math.abs(changePct)<=tolerance;const status=falls>=3?"regression":stableFour?"stalled":changePct>=3&&rises>=2?"improving":changePct<=-3?"declining":"stable";return{status,confidence:metric.length>=5?"alta":"media",changePct,points:window,reason:`Confronto su ${metric.length} rilevazioni reali: ${changePct==null?"variazione non calcolabile":`${changePct}%`}.`};}

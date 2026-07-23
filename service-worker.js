@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v138-photo-store";
+const CACHE_NAME = "atlas-app-v139-sync-logbook-stability";
 const APP_SHELL = [
   "./",
   "./index.html",
