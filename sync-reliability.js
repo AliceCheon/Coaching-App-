@@ -13,23 +13,19 @@ export function normalizeSyncSession(session={},context={}){
 export function createSyncOperation(session,context={}){const entity=normalizeSyncSession(session,context);const createdAt=context.now||new Date().toISOString();return{operationId:text(context.operationId||`op-${entity.id}-${entity.revision}`),entityId:entity.id,entityType:"workoutSession",operationType:"upsert",payload:entity,createdAt,attempts:0,lastAttemptAt:null,status:"pending",error:"",deviceId:entity.deviceId,revision:entity.revision,dataHash:entity.dataHash};}
 
 export function createPersistentSyncQueue({storage=null,key="barbell-diva.sync-queue.v1",auditKey="barbell-diva.sync-audit.v1",now=()=>new Date().toISOString()}={}){
-  const AUDIT_LIMIT=40;
-  let memory=[];let auditMemory=[];
-  const read=(target,fallback)=>{try{const parsed=JSON.parse(storage?.getItem(target)||"null");return Array.isArray(parsed)?parsed:fallback;}catch{return fallback;}};
-  const write=(target,value)=>{if(storage)storage.setItem(target,JSON.stringify(value));};
-  const writeAudit=value=>{
-    auditMemory=clone(value).slice(-AUDIT_LIMIT);
-    if(!storage)return true;
-    try{storage.setItem(auditKey,JSON.stringify(auditMemory));return true;}catch(error){
-      // L'audit è diagnostica ricostruibile: non deve mai bloccare logbook o sincronizzazione.
-      try{storage.removeItem(auditKey);}catch{}
-      try{const compact=auditMemory.slice(-10);storage.setItem(auditKey,JSON.stringify(compact));auditMemory=compact;return true;}catch{}
+  let memory=[];let auditMemory=[];const read=(target,fallback)=>{try{const parsed=JSON.parse(storage?.getItem(target)||"null");return Array.isArray(parsed)?parsed:fallback;}catch{return fallback;}};const write=(target,value)=>{
+  if(!storage)return true;
+  try{storage.setItem(target,JSON.stringify(value));return true;}
+  catch(error){
+    // I registri tecnici non devono mai bloccare il salvataggio dei workout.
+    if(target===auditKey){
+      try{storage.removeItem(auditKey);}catch(cleanupError){}
       return false;
     }
-  };
-  // Compatta subito eventuali audit ereditati dalle versioni precedenti.
-  if(storage){const existing=read(auditKey,[]);if(existing.length>AUDIT_LIMIT)writeAudit(existing.slice(-AUDIT_LIMIT));}
-  const list=()=>clone(storage?read(key,[]):memory);const save=rows=>{memory=clone(rows);write(key,rows);return clone(rows);};const audit=(event,details={})=>{const row={id:`audit-${dataHash([event,details,now()])}`,at:now(),event,...clone(details)};const rows=(storage?read(auditKey,[]):auditMemory).concat(row).slice(-AUDIT_LIMIT);writeAudit(rows);return row;};
+    throw error;
+  }
+};
+  const list=()=>clone(storage?read(key,[]):memory);const save=rows=>{memory=clone(rows);write(key,rows);return clone(rows);};const audit=(event,details={})=>{const row={id:`audit-${dataHash([event,details,now()])}`,at:now(),event,...clone(details)};const rows=(storage?read(auditKey,[]):auditMemory).concat(row).slice(-40);auditMemory=rows;write(auditKey,rows);return row;};
   const enqueue=operation=>{const rows=list();const index=rows.findIndex(row=>row.entityId===operation.entityId&&row.operationType===operation.operationType&&!['synced'].includes(row.status));if(index>=0){const previous=rows[index];rows[index]={...clone(operation),operationId:previous.operationId,createdAt:previous.createdAt,attempts:previous.attempts,status:"pending",error:""};}else rows.push(clone(operation));save(rows);audit("queued",{operationId:(index>=0?rows[index]:operation).operationId,entityId:operation.entityId});return clone(index>=0?rows[index]:operation);};
   const patch=(operationId,changes)=>{const rows=list();const index=rows.findIndex(row=>row.operationId===operationId);if(index<0)return null;rows[index]={...rows[index],...clone(changes)};save(rows);audit(`operation-${rows[index].status}`,{operationId,entityId:rows[index].entityId,error:rows[index].error||""});return clone(rows[index]);};
   return Object.freeze({list,enqueue,markSyncing:id=>{const row=list().find(x=>x.operationId===id);return patch(id,{status:"syncing",attempts:Number(row?.attempts||0)+1,lastAttemptAt:now(),error:""});},markSynced:id=>patch(id,{status:"synced",lastAttemptAt:now(),error:""}),markFailed:(id,error)=>patch(id,{status:"failed",lastAttemptAt:now(),error:text(error)}),markConflict:(id,error)=>patch(id,{status:"conflict",lastAttemptAt:now(),error:text(error)}),pending:()=>list().filter(row=>["pending","failed","syncing"].includes(row.status)),removeSynced:()=>save(list().filter(row=>row.status!=="synced")),stats:()=>{const rows=list();return{total:rows.length,pending:rows.filter(x=>x.status==="pending").length,syncing:rows.filter(x=>x.status==="syncing").length,synced:rows.filter(x=>x.status==="synced").length,failed:rows.filter(x=>x.status==="failed").length,conflict:rows.filter(x=>x.status==="conflict").length};},audit:(event,details)=>audit(event,details),auditLog:()=>clone(storage?read(auditKey,[]):auditMemory)});

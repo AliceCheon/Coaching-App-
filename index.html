@@ -7,24 +7,24 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v137-workout-pro-clarity">
+  <link rel="manifest" href="manifest.webmanifest?v=v137.2-workout-pro-storage-rescue">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="workout-pro.css?v=v137-workout-pro-clarity">
-  <link rel="stylesheet" href="coach-studio.css?v=v137-workout-pro-clarity">
-  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v137-workout-pro-clarity">
-  <script src="exercise-library-19.8.js?v=v137-workout-pro-clarity"></script>
-  <script src="master-exercise-library.js?v=v137-workout-pro-clarity"></script>
-  <script src="athlete-context.js?v=v137-workout-pro-clarity"></script>
-  <script src="coach-ai-engine-2.js?v=v137-workout-pro-clarity"></script>
-  <script src="knowledge-graph.js?v=v137-workout-pro-clarity"></script>
-  <script src="decision-rules.js?v=v137-workout-pro-clarity"></script>
-  <script src="decision-engine.js?v=v137-workout-pro-clarity"></script>
-  <script src="coach-ai3-programming.js?v=v137-workout-pro-clarity"></script>
-  <script type="module" src="programming-engine.js?v=v137-workout-pro-clarity"></script>
-  <script type="module" src="sync-reliability.js?v=v137-1-storage-hotfix"></script>
-  <script src="coach-studio.js?v=v137-workout-pro-clarity"></script>
-  <script defer src="workout-pro.js?v=v137-workout-pro-clarity"></script>
+  <link rel="stylesheet" href="workout-pro.css?v=v137.2-workout-pro-storage-rescue">
+  <link rel="stylesheet" href="coach-studio.css?v=v137.2-workout-pro-storage-rescue">
+  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v137.2-workout-pro-storage-rescue">
+  <script src="exercise-library-19.8.js?v=v137.2-workout-pro-storage-rescue"></script>
+  <script src="master-exercise-library.js?v=v137.2-workout-pro-storage-rescue"></script>
+  <script src="athlete-context.js?v=v137.2-workout-pro-storage-rescue"></script>
+  <script src="coach-ai-engine-2.js?v=v137.2-workout-pro-storage-rescue"></script>
+  <script src="knowledge-graph.js?v=v137.2-workout-pro-storage-rescue"></script>
+  <script src="decision-rules.js?v=v137.2-workout-pro-storage-rescue"></script>
+  <script src="decision-engine.js?v=v137.2-workout-pro-storage-rescue"></script>
+  <script src="coach-ai3-programming.js?v=v137.2-workout-pro-storage-rescue"></script>
+  <script type="module" src="programming-engine.js?v=v137.2-workout-pro-storage-rescue"></script>
+  <script type="module" src="sync-reliability.js?v=v137.2-workout-pro-storage-rescue"></script>
+  <script src="coach-studio.js?v=v137.2-workout-pro-storage-rescue"></script>
+  <script defer src="workout-pro.js?v=v137.2-workout-pro-storage-rescue"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4841,7 +4841,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v137-workout-pro-clarity";
+    const APP_BUILD = "v137.2-workout-pro-storage-rescue";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -8318,15 +8318,15 @@
     function releaseStateWriteSpace() {
       const obsolete = releaseObsoleteLocalBackups();
       const automatic = releaseAutomaticBackupsForStateWrite();
-      let auditReleased = false;
+      let technical = false;
       try {
         const auditKey = `${STORE_KEY}.sync-audit.v1`;
         if (localStorage.getItem(auditKey) != null) {
           localStorage.removeItem(auditKey);
-          auditReleased = true;
+          technical = true;
         }
       } catch (error) {}
-      return obsolete || automatic || auditReleased;
+      return obsolete || automatic || technical;
     }
 
     function isStorageQuotaError(error) {
