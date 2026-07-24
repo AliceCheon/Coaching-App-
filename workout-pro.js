@@ -37,6 +37,12 @@
     const safe = Math.max(0, Math.floor(Number(seconds) || 0));
     return `${String(Math.floor(safe / 60)).padStart(2,"0")}:${String(safe % 60).padStart(2,"0")}`;
   };
+  /**
+ * Calculate elapsed workout time, accounting for pauses.
+ * @param {Object} [session] - Workout session object
+ * @param {boolean} [total=false] - If true, return total elapsed including paused time
+ * @returns {number} - Elapsed seconds
+ */
   const elapsedSeconds = (session=active(), total=false) => {
     if (!session?.startedAt) return 0;
     const end = session.completedAt ? Date.parse(session.completedAt) : Date.now();
@@ -45,13 +51,34 @@
     const paused = Number(session.elapsedTime?.pausedSeconds || 0) + (session.status === "paused" && session.pausedAt ? Math.max(0,(Date.now()-Date.parse(session.pausedAt))/1000) : 0);
     return Math.max(0, Math.floor(totalSeconds - paused));
   };
+  /**
+ * Get the currently active exercise in the workout.
+ * @param {Object} [session] - Workout session object
+ * @returns {Object|null} - Current exercise or null
+ */
   const currentExercise = (session=active()) => session?.exercises?.find((item) => item.id === session.currentExerciseId) || session?.exercises?.find((item) => !item.skipped && item.sets.some((set) => !set.completed && !set.skipped)) || session?.exercises?.[0] || null;
+  /**
+ * Get the current set for the active exercise.
+ * @param {Object} [session] - Workout session object
+ * @param {Object} [exercise] - Exercise object
+ * @returns {Object|null} - Current set or null
+ */
   const currentSet = (session=active(), exercise=currentExercise(session)) => exercise?.sets?.find((item) => item.id === session.currentSetId) || exercise?.sets?.find((item) => !item.completed && !item.skipped) || exercise?.sets?.at(-1) || null;
   const workingSets = (exercise) => (exercise?.sets || []).filter((set) => set.kind === "working");
   const completedSets = (session=active()) => (session?.exercises || []).flatMap((exercise) => exercise.sets || []).filter((set) => set.completed);
   const completedWorkingSets = (session=active()) => completedSets(session).filter((set) => set.kind === "working");
   const allWorkingSets = (session=active()) => (session?.exercises || []).flatMap((exercise) => exercise.sets || []).filter((set) => set.kind === "working");
+  /**
+ * Calculate total volume (load × reps) for completed working sets.
+ * @param {Object} [session] - Workout session object
+ * @returns {number} - Total volume
+ */
   const volume = (session=active()) => completedWorkingSets(session).reduce((sum,set) => sum + (Number(set.load)||0) * (Number(set.reps)||0), 0);
+  /**
+ * Show a toast notification to the user.
+ * @param {string} message - Message to display
+ * @returns {void}
+ */
   const notify = (message) => {
     let node = document.getElementById("wp19Toast");
     if (!node) { node=document.createElement("div"); node.id="wp19Toast"; node.className="wp19-toast"; document.body.appendChild(node); }
