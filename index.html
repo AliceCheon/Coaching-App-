@@ -7,24 +7,26 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v141-logbook-suggestion-fixes">
+  <link rel="manifest" href="manifest.webmanifest?v=v142-improvements">
   <link rel="icon" href="app-icon-192.png" type="image/png">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="workout-pro.css?v=v141-logbook-suggestion-fixes">
-  <link rel="stylesheet" href="coach-studio.css?v=v141-logbook-suggestion-fixes">
-  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v141-logbook-suggestion-fixes">
-  <script src="exercise-library-19.8.js?v=v141-logbook-suggestion-fixes"></script>
-  <script src="master-exercise-library.js?v=v141-logbook-suggestion-fixes"></script>
-  <script src="athlete-context.js?v=v141-logbook-suggestion-fixes"></script>
-  <script src="coach-ai-engine-2.js?v=v141-logbook-suggestion-fixes"></script>
-  <script src="knowledge-graph.js?v=v141-logbook-suggestion-fixes"></script>
-  <script src="decision-rules.js?v=v141-logbook-suggestion-fixes"></script>
-  <script src="decision-engine.js?v=v141-logbook-suggestion-fixes"></script>
-  <script src="coach-ai3-programming.js?v=v141-logbook-suggestion-fixes"></script>
-  <script type="module" src="programming-engine.js?v=v141-logbook-suggestion-fixes"></script>
-  <script type="module" src="sync-reliability.js?v=v141-logbook-suggestion-fixes"></script>
-  <script src="coach-studio.js?v=v141-logbook-suggestion-fixes"></script>
-  <script defer src="workout-pro.js?v=v141-logbook-suggestion-fixes"></script>
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <!-- Preload critical font for faster text rendering -->
+  <link rel="preload" href="atlas-nunito-sans.ttf" as="font" type="font/truetype" crossorigin="crossorigin" fetchpriority="high">
+  <link rel="stylesheet" href="workout-pro.css?v=v142-improvements">
+  <link rel="stylesheet" href="coach-studio.css?v=v142-improvements">
+  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v142-improvements">
+  <script src="exercise-library-19.8.js?v=v142-improvements"></script>
+  <script src="master-exercise-library.js?v=v142-improvements"></script>
+  <script src="athlete-context.js?v=v142-improvements"></script>
+  <script src="coach-ai-engine-2.js?v=v142-improvements"></script>
+  <script src="knowledge-graph.js?v=v142-improvements"></script>
+  <script src="decision-rules.js?v=v142-improvements"></script>
+  <script src="decision-engine.js?v=v142-improvements"></script>
+  <script src="coach-ai3-programming.js?v=v142-improvements"></script>
+  <script type="module" src="programming-engine.js?v=v142-improvements"></script>
+  <script type="module" src="sync-reliability.js?v=v142-improvements"></script>
+  <script src="coach-studio.js?v=v142-improvements"></script>
+  <script defer src="workout-pro.js?v=v142-improvements"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4839,7 +4841,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="./photo-store.js?v=v141-logbook-suggestion-fixes"></script>
+  <script src="./photo-store.js?v=v142-improvements"></script>
   <script src="./food-backup.js"></script>
   <script>
     const STORE_KEY = "alice-method-app.v8";
@@ -4847,7 +4849,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v142-sync-workout-fixes";
+    const APP_BUILD = "v142-improvements";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
