@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v142-sync-workout-fixes";
+const CACHE_NAME = "atlas-app-v142-improvements";
 const APP_SHELL = [
   "./",
   "./index.html",
