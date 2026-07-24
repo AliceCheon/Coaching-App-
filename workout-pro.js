@@ -28,6 +28,11 @@
     if (!Number.isFinite(result) || result < (options.min ?? 0) || result > (options.max ?? 10000)) return null;
     return Math.round(result * 100) / 100;
   };
+  /**
+ * Format seconds into MM:SS display format.
+ * @param {number} seconds - Total seconds to format
+ * @returns {string} - Formatted time string (MM:SS)
+ */
   const formatClock = (seconds) => {
     const safe = Math.max(0, Math.floor(Number(seconds) || 0));
     return `${String(Math.floor(safe / 60)).padStart(2,"0")}:${String(safe % 60).padStart(2,"0")}`;
