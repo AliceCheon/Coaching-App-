@@ -7,24 +7,24 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v139-sync-logbook-stability">
+  <link rel="manifest" href="manifest.webmanifest?v=v140-coach-performance">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="workout-pro.css?v=v139-sync-logbook-stability">
-  <link rel="stylesheet" href="coach-studio.css?v=v139-sync-logbook-stability">
-  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v139-sync-logbook-stability">
-  <script src="exercise-library-19.8.js?v=v139-sync-logbook-stability"></script>
-  <script src="master-exercise-library.js?v=v139-sync-logbook-stability"></script>
-  <script src="athlete-context.js?v=v139-sync-logbook-stability"></script>
-  <script src="coach-ai-engine-2.js?v=v139-sync-logbook-stability"></script>
-  <script src="knowledge-graph.js?v=v139-sync-logbook-stability"></script>
-  <script src="decision-rules.js?v=v139-sync-logbook-stability"></script>
-  <script src="decision-engine.js?v=v139-sync-logbook-stability"></script>
-  <script src="coach-ai3-programming.js?v=v139-sync-logbook-stability"></script>
-  <script type="module" src="programming-engine.js?v=v139-sync-logbook-stability"></script>
-  <script type="module" src="sync-reliability.js?v=v139-sync-logbook-stability"></script>
-  <script src="coach-studio.js?v=v139-sync-logbook-stability"></script>
-  <script defer src="workout-pro.js?v=v139-sync-logbook-stability"></script>
+  <link rel="stylesheet" href="workout-pro.css?v=v140-coach-performance">
+  <link rel="stylesheet" href="coach-studio.css?v=v140-coach-performance">
+  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v140-coach-performance">
+  <script src="exercise-library-19.8.js?v=v140-coach-performance"></script>
+  <script src="master-exercise-library.js?v=v140-coach-performance"></script>
+  <script src="athlete-context.js?v=v140-coach-performance"></script>
+  <script src="coach-ai-engine-2.js?v=v140-coach-performance"></script>
+  <script src="knowledge-graph.js?v=v140-coach-performance"></script>
+  <script src="decision-rules.js?v=v140-coach-performance"></script>
+  <script src="decision-engine.js?v=v140-coach-performance"></script>
+  <script src="coach-ai3-programming.js?v=v140-coach-performance"></script>
+  <script type="module" src="programming-engine.js?v=v140-coach-performance"></script>
+  <script type="module" src="sync-reliability.js?v=v140-coach-performance"></script>
+  <script src="coach-studio.js?v=v140-coach-performance"></script>
+  <script defer src="workout-pro.js?v=v140-coach-performance"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4834,7 +4834,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="./photo-store.js?v=v139-sync-logbook-stability"></script>
+  <script src="./photo-store.js?v=v140-coach-performance"></script>
   <script src="./food-backup.js"></script>
   <script>
     const STORE_KEY = "alice-method-app.v8";
@@ -4842,7 +4842,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v139-sync-logbook-stability";
+    const APP_BUILD = "v140-coach-performance";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -7880,9 +7880,32 @@
       return { ok, value, errors, warnings };
     }
 
+    const programModelCache = new WeakMap();
+
+    function normalizeAndValidateProgramCached(program, index) {
+      const cached = programModelCache.get(program);
+      if (cached) return cached;
+      const normalized = normalizeProgramModel(program, index);
+      const validation = validateProgramModel(normalized, `programs.${index}`);
+      const entry = { normalized, errors: validation.errors, warnings: validation.warnings };
+      programModelCache.set(program, entry);
+      programModelCache.set(normalized, entry);
+      return entry;
+    }
+
     function commitProgramCollection(programs, options = {}) {
-      const normalized = (programs || []).map(normalizeProgramModel);
-      const validation = validateProgramCollection(normalized);
+      const entries = (programs || []).map((program, index) => normalizeAndValidateProgramCached(program, index));
+      const normalized = entries.map((entry) => entry.normalized);
+      const errors = [];
+      const warnings = [];
+      const ids = new Set();
+      entries.forEach((entry, index) => {
+        errors.push(...entry.errors);
+        warnings.push(...entry.warnings);
+        if (ids.has(entry.normalized.id)) errors.push(validationIssue(`programs.${index}.id`, "duplicate", "ID programma duplicato.", entry.normalized.id));
+        ids.add(entry.normalized.id);
+      });
+      const validation = { valid: !errors.length, value: normalized, errors, warnings };
       state.programs = normalized;
       invalidateTechnicalLibraryCache();
       state.meta = {
