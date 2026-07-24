@@ -1161,6 +1161,8 @@
     .workout-entry { border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.025); overflow:hidden; }
     .workout-entry summary { cursor:pointer; list-style:none; padding:14px; display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; }
     .workout-entry summary::-webkit-details-marker { display:none; }
+    .logbook-delete-button { border:1px solid rgba(255,110,125,.45); border-radius:10px; background:rgba(255,75,110,.12); color:#ff9caf; min-width:34px; min-height:34px; cursor:pointer; }
+    .logbook-delete-button:hover { background:rgba(255,75,110,.28); color:#fff; }
     .workout-code { min-width:46px; text-align:center; border-radius:12px; padding:8px; color:#1c1020; background:linear-gradient(135deg,var(--gold-2),var(--pink)); font-weight:950; }
     .workout-title strong,.workout-title small { display:block; }
     .workout-title small { color:var(--muted); margin-top:3px; }
@@ -4845,7 +4847,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v141-logbook-suggestion-fixes";
+    const APP_BUILD = "v142-sync-workout-fixes";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -14636,6 +14638,22 @@
           reader.readAsText(file);
         });
       }
+      const renderedHistory = [...document.querySelectorAll(".workout-entry")];
+      const renderedSessions = visibleWorkoutSessions().filter((session) => session.source === "App" || Number(session.id) > 1000000000).slice().sort((a, b) => String(b.dateInput || "").localeCompare(String(a.dateInput || "")) || Number(b.id || 0) - Number(a.id || 0));
+      renderedHistory.forEach((entry, index) => {
+        const session = renderedSessions[index];
+        const summary = entry.querySelector("summary");
+        if (session && summary && !summary.querySelector("[data-logbook-delete-session]")) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "logbook-delete-button";
+          button.dataset.logbookDeleteSession = String(session.id);
+          button.title = "Elimina seduta";
+          button.setAttribute("aria-label", `Elimina ${session.sessionName || session.sessionCode || "seduta"}`);
+          button.textContent = "🗑";
+          summary.appendChild(button);
+        }
+      });
       document.querySelectorAll("[data-logbook-delete-session]").forEach((button) => {
         button.addEventListener("click", () => {
           const targetId = button.dataset.logbookDeleteSession;
