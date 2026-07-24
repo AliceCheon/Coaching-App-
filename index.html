@@ -4755,7 +4755,6 @@
         <button class="rail-dot" data-jump="progress" title="Analisi progressi" aria-label="Analisi progressi"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 3 5-7"/></svg><span>Analisi progressi</span></button>
         <button class="rail-dot" data-jump="logbook" title="Logbook" aria-label="Logbook"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M5 4h14v16H5z"/><path d="M8 2v4M16 2v4M8 10h8M8 14h5"/></svg><span>Logbook</span></button>
         <button class="rail-dot" data-bottom="coach" title="Coach Studio" aria-label="Coach Studio"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M7 16h10"/><path d="M9 3h6"/></svg><span>Coach Studio</span></button>
-        <button class="rail-dot" data-jump="nutrition" title="Nutrizione" aria-label="Nutrizione"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19c5-9 9-14 16-14"/><path d="M5 5c5 2 8 6 9 12"/><path d="M4 19c7 1 13-2 16-14"/></svg><span>Nutrizione</span></button>
         <button class="rail-dot" data-bottom="quiz" title="Check-in" aria-label="Check-in"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Check-in</span></button>
         <button class="rail-dot" data-jump="settings" title="Impostazioni" aria-label="Impostazioni"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg><span>Impostazioni</span></button>
         <button class="rail-dot diva-rail-toggle" data-global-diva-toggle title="Nascondi Diva Bot" aria-label="Nascondi Diva Bot" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="5" y="7" width="14" height="11" rx="4"/><path d="M12 7V4M9 12h.01M15 12h.01M9 16c2 1 4 1 6 0"/></svg><span>Diva Bot</span></button>
@@ -11246,15 +11245,7 @@
     function nutritionHtml() {
       return `
         <div class="hero-title">
-          <h2>Dashboard <span>nutrizione</span></h2>
-          <p>Piano nutrizionale, semaforo bulk, pliche, circonferenze, foto progressi e backup alimentazione.</p>
-        </div>
-        <section class="card">
-          <div class="row">
-            <h3>Dashboard alimentazione</h3>
-            <a class="ghost-button" href="./nutrizione/index.html" target="_blank" rel="noopener">Apri completa</a>
-          </div>
-          <iframe class="nutrition-frame" src="./nutrizione/index.html?v=55" title="Dashboard nutrizione"></iframe>
+         
         </section>
       `;
     }
