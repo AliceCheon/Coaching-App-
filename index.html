@@ -7,24 +7,24 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v140-coach-performance">
+  <link rel="manifest" href="manifest.webmanifest?v=v141-logbook-suggestion-fixes">
   <link rel="icon" href="app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="workout-pro.css?v=v140-coach-performance">
-  <link rel="stylesheet" href="coach-studio.css?v=v140-coach-performance">
-  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v140-coach-performance">
-  <script src="exercise-library-19.8.js?v=v140-coach-performance"></script>
-  <script src="master-exercise-library.js?v=v140-coach-performance"></script>
-  <script src="athlete-context.js?v=v140-coach-performance"></script>
-  <script src="coach-ai-engine-2.js?v=v140-coach-performance"></script>
-  <script src="knowledge-graph.js?v=v140-coach-performance"></script>
-  <script src="decision-rules.js?v=v140-coach-performance"></script>
-  <script src="decision-engine.js?v=v140-coach-performance"></script>
-  <script src="coach-ai3-programming.js?v=v140-coach-performance"></script>
-  <script type="module" src="programming-engine.js?v=v140-coach-performance"></script>
-  <script type="module" src="sync-reliability.js?v=v140-coach-performance"></script>
-  <script src="coach-studio.js?v=v140-coach-performance"></script>
-  <script defer src="workout-pro.js?v=v140-coach-performance"></script>
+  <link rel="stylesheet" href="workout-pro.css?v=v141-logbook-suggestion-fixes">
+  <link rel="stylesheet" href="coach-studio.css?v=v141-logbook-suggestion-fixes">
+  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v141-logbook-suggestion-fixes">
+  <script src="exercise-library-19.8.js?v=v141-logbook-suggestion-fixes"></script>
+  <script src="master-exercise-library.js?v=v141-logbook-suggestion-fixes"></script>
+  <script src="athlete-context.js?v=v141-logbook-suggestion-fixes"></script>
+  <script src="coach-ai-engine-2.js?v=v141-logbook-suggestion-fixes"></script>
+  <script src="knowledge-graph.js?v=v141-logbook-suggestion-fixes"></script>
+  <script src="decision-rules.js?v=v141-logbook-suggestion-fixes"></script>
+  <script src="decision-engine.js?v=v141-logbook-suggestion-fixes"></script>
+  <script src="coach-ai3-programming.js?v=v141-logbook-suggestion-fixes"></script>
+  <script type="module" src="programming-engine.js?v=v141-logbook-suggestion-fixes"></script>
+  <script type="module" src="sync-reliability.js?v=v141-logbook-suggestion-fixes"></script>
+  <script src="coach-studio.js?v=v141-logbook-suggestion-fixes"></script>
+  <script defer src="workout-pro.js?v=v141-logbook-suggestion-fixes"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -3404,6 +3404,9 @@
     .phase11-logbook-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
     .phase11-log-card { padding:18px; border-left:3px solid var(--pink); }
     .phase11-log-card h3 { margin:4px 0; }
+    .phase11-log-card-actions { display:flex; align-items:center; gap:10px; }
+    .phase11-log-delete { background:transparent; border:1px solid rgba(255,255,255,0.14); border-radius:10px; width:32px; height:32px; font-size:15px; line-height:1; cursor:pointer; opacity:0.75; transition:opacity .15s ease, background .15s ease, border-color .15s ease; }
+    .phase11-log-delete:hover, .phase11-log-delete:focus-visible { opacity:1; background:rgba(255,90,90,0.14); border-color:rgba(255,90,90,0.4); }
     .phase11-log-meta { display:flex; gap:8px; flex-wrap:wrap; color:var(--text-secondary); font-size:.78rem; }
     .phase11-log-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:14px 0; }
     .phase11-log-stats div { padding:9px; border-radius:10px; background:rgba(255,255,255,.045); }
@@ -4834,7 +4837,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="./photo-store.js?v=v140-coach-performance"></script>
+  <script src="./photo-store.js?v=v141-logbook-suggestion-fixes"></script>
   <script src="./food-backup.js"></script>
   <script>
     const STORE_KEY = "alice-method-app.v8";
@@ -4842,7 +4845,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v140-coach-performance";
+    const APP_BUILD = "v141-logbook-suggestion-fixes";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",
@@ -8281,7 +8284,7 @@
     function deduplicateWorkoutSessions(rows = []) {
       const sessions = [];
       const duplicates = [];
-      (Array.isArray(rows) ? rows : []).filter(Boolean).forEach((candidate) => {
+      (Array.isArray(rows) ? rows : []).filter(Boolean).filter((row) => !row.deletedAt).forEach((candidate) => {
         const index = sessions.findIndex((existing) => workoutSessionsAreDuplicate(existing, candidate));
         if (index < 0) {
           sessions.push(candidate);
@@ -11183,14 +11186,11 @@
     function logbookHtml() {
       const sessions = logbookSessionsForUi();
       const allSessions = visibleWorkoutSessions();
-      const volumeValues = allSessions.map(logbookSessionVolume).filter((value) => Number.isFinite(value));
-      const totalVolume = volumeValues.reduce((sum, value) => sum + value, 0);
       const best = allSessions.reduce((max, session) => Math.max(max, ...(session.exercises || []).map((item) => Number(item.kg) || 0)), 0);
       return `<div class="phase11-logbook">
         <section class="phase11-hero card"><div><span class="section-eyebrow">Storico allenamenti</span><h2>Il tuo <span>Logbook</span></h2><p>Rivedi sedute, carichi e progressi senza perdere il filo.</p></div><button class="gold-button" data-screen-target="training">Nuovo workout</button></section>
         <section class="phase11-summary-grid">
           ${dashboardSummaryCard(iconSvg("workout", "Sedute"), "Sedute", allSessions.length, "salvate", colors.green)}
-          ${dashboardSummaryCard(iconSvg("volume", "Volume totale"), "Volume totale", volumeValues.length ? `${Math.round(totalVolume)} kg` : "—", volumeValues.length ? "registrato o stimato dalla scheda" : "Dati insufficienti", colors.violet)}
           ${dashboardSummaryCard(iconSvg("latest", "Carico top"), "Carico top", best ? `${best} kg` : "—", best ? "miglior dato" : "Nessun carico", colors.gold)}
         </section>
           <section class="card phase11-logbook-toolbar"><label>Cerca nel logbook<input id="phase11LogbookSearch" type="search" placeholder="Esercizio, scheda o data" value="${escapeHtml(state.ui?.logbookSearch || "")}" /></label><label>Mostra<select id="phase11LogbookStatus"><option value="all" ${!state.ui?.logbookStatus || state.ui.logbookStatus === "all" ? "selected" : ""}>Tutte le sedute</option><option value="completed" ${state.ui?.logbookStatus === "completed" ? "selected" : ""}>Completate</option><option value="draft" ${state.ui?.logbookStatus === "draft" ? "selected" : ""}>In bozza</option></select></label><label>Fonte<select id="phase11LogbookSource"><option value="all">Tutte le fonti</option>${["App","Excel","Alice Logbook","Backup Alice 14/07/2026","Cloud","Storico Excel"].map((source) => `<option value="${escapeHtml(source)}" ${state.ui?.logbookSource === source ? "selected" : ""}>${escapeHtml(source)}</option>`).join("")}</select></label><button type="button" class="ghost-button" id="importAliceLogbookButton">Importa dati Alice Logbook</button><input id="importAliceLogbookFile" type="file" accept="application/json" hidden /></section>
@@ -11198,10 +11198,8 @@
           const date = formatDateLabel(session.dateInput || session.date || "");
           const exercises = session.exercises || [];
           const completion = sessionCompletionState(session);
-          const volume = logbookSessionVolume(session);
           const setCount = exercises.reduce((n, item) => n + sessionExerciseSetCount(item, session), 0);
-          const volumeInfo = sessionVolumeInfo(session);
-          return `<article class="phase11-log-card card"><div class="row"><div><span class="section-eyebrow">${escapeHtml(date)}</span><h3>${escapeHtml(session.sessionName || session.name || session.sessionCode || "Allenamento")}</h3></div><span class="status-badge">${escapeHtml(completion.label)}</span></div><div class="phase11-log-meta"><span>${escapeHtml(session.sessionCode || "Seduta")}</span><span>•</span><span>${escapeHtml(session.phase || "Programma")}</span><span>•</span><span>Fonte: ${escapeHtml(session.source || "App")}</span><span>•</span><span>${exercises.length} esercizi</span></div><div class="phase11-log-stats"><div><strong>${volume == null ? "—" : `${Math.round(volume)} kg`}</strong><span>${volume == null ? "Dati insufficienti" : (volumeInfo.estimated ? "volume stimato dalla scheda" : "volume kg × reps")}</span></div><div><strong>${setCount || "—"}</strong><span>serie registrate</span></div><div><strong>${escapeHtml(session.week ? `S${session.week}` : "—")}</strong><span>settimana</span></div></div><details class="phase11-log-exercises"><summary>Dettagli seduta</summary><ul>${exercises.length ? exercises.map((item) => { const sets = item.completedSets || item.sets || []; const values = Array.isArray(sets) ? sets.map((set) => `${set.kg ?? set.load ?? "—"} kg${set.reps ? ` × ${set.reps}` : ""}`).join(" · ") : (item.value || ""); return `<li><strong>${escapeHtml(displayExerciseName(item.name || item.exerciseName || "Esercizio"))}</strong> · ${escapeHtml(values || "valori non disponibili")}${item.averageKg ? ` · media ${escapeHtml(item.averageKg)}` : ""}${item.userNote ? `<br><small>${escapeHtml(item.userNote)}</small>` : ""}</li>`; }).join("") : "<li>Nessun esercizio registrato</li>"}</ul>${volume == null ? `<p class="micro-copy">Servono almeno carico e ripetizioni della scheda per stimare il volume.</p>` : ""}</details></article>`;
+          return `<article class="phase11-log-card card"><div class="row"><div><span class="section-eyebrow">${escapeHtml(date)}</span><h3>${escapeHtml(session.sessionName || session.name || session.sessionCode || "Allenamento")}</h3></div><div class="phase11-log-card-actions"><span class="status-badge">${escapeHtml(completion.label)}</span><button type="button" class="phase11-log-delete" title="Elimina questa seduta" aria-label="Elimina questa seduta" data-logbook-delete-session="${escapeHtml(String(session.id))}">🗑️</button></div></div><div class="phase11-log-meta"><span>${escapeHtml(session.sessionCode || "Seduta")}</span><span>•</span><span>${escapeHtml(session.phase || "Programma")}</span><span>•</span><span>Fonte: ${escapeHtml(session.source || "App")}</span><span>•</span><span>${exercises.length} esercizi</span></div><div class="phase11-log-stats"><div><strong>${setCount || "—"}</strong><span>serie registrate</span></div><div><strong>${escapeHtml(session.week ? `S${session.week}` : "—")}</strong><span>settimana</span></div></div><details class="phase11-log-exercises"><summary>Dettagli seduta</summary><ul>${exercises.length ? exercises.map((item) => { const sets = item.completedSets || item.sets || []; const values = Array.isArray(sets) ? sets.map((set) => `${set.kg ?? set.load ?? "—"} kg${set.reps ? ` × ${set.reps}` : ""}`).join(" · ") : (item.value || ""); return `<li><strong>${escapeHtml(displayExerciseName(item.name || item.exerciseName || "Esercizio"))}</strong> · ${escapeHtml(values || "valori non disponibili")}${item.averageKg ? ` · media ${escapeHtml(item.averageKg)}` : ""}${item.userNote ? `<br><small>${escapeHtml(item.userNote)}</small>` : ""}</li>`; }).join("") : "<li>Nessun esercizio registrato</li>"}</ul></details></article>`;
         }).join("") : emptyStateHtml({ title:"Nessuna seduta trovata", description:"Modifica i filtri oppure completa un workout per iniziare lo storico.", actionLabel:"Nuovo workout", action:"training", icon:"◦" })}</section>
       </div>`;
     }
@@ -14638,6 +14636,21 @@
           reader.readAsText(file);
         });
       }
+      document.querySelectorAll("[data-logbook-delete-session]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const targetId = button.dataset.logbookDeleteSession;
+          const shown = visibleWorkoutSessions().find((row) => String(row.id) === String(targetId));
+          if (!shown) return;
+          const idsToRemove = new Set([String(shown.id), ...(Array.isArray(shown.duplicateIds) ? shown.duplicateIds.map(String) : [])]);
+          const label = shown.sessionName || shown.name || shown.sessionCode || "questa seduta";
+          if (!confirm(`Eliminare "${label}" dal Logbook? Puoi sempre ripristinarla da un backup se cambi idea.`)) return;
+          const now = new Date().toISOString();
+          state.training.sessions = (state.training.sessions || []).map((row) => idsToRemove.has(String(row.id)) ? { ...row, deletedAt: now } : row);
+          saveState({ immediate: true });
+          render();
+          showToast("Seduta eliminata dal Logbook.");
+        });
+      });
       document.querySelectorAll("[data-bottom-target]").forEach((button) => {
         button.addEventListener("click", () => setBottom(button.dataset.bottomTarget));
       });

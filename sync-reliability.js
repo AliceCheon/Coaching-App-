@@ -1,71 +1,29 @@
-const CACHE_NAME = "atlas-app-v141-logbook-suggestion-fixes";
-const APP_SHELL = [
-  "./",
-  "./index.html",
-  "./nutrizione/index.html",
-  "./photo-store.js",
-  "./manifest.webmanifest",
-  "./app-icon.png",
-  "./app-icon-192.png",
-  "./app-icon-512.png",
-  "./apple-touch-icon.png",
-  "./coach-mascot.svg",
-  "./dashboard-alimentazione-backup-2026-07-15.json",
-  "./food-backup.js",
-  "./atlas-nunito-sans.ttf",
-  "./workout-pro.css",
-  "./workout-pro.js",
-  "./coach-studio.css",
-  "./coach-program-editor-19.8.css",
-  "./exercise-library-19.8.js",
-  "./master-exercise-library.js",
-  "./athlete-context.js",
-  "./coach-ai-engine-2.js",
-  "./knowledge-graph.js",
-  "./decision-rules.js",
-  "./decision-engine.js",
-  "./coach-ai3-programming.js",
-  "./coach-studio.js",
-  "./sync-reliability.js",
-  "./programming-engine.js"
-];
+/* Barbell Diva v116 - reliable sync primitives. Pure except for injected storage. */
+export const SYNC_ENGINE_VERSION = "19.2.2-dedup";
+export const SYNC_STATUSES = Object.freeze(["pending","syncing","synced","failed","conflict"]);
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      Promise.all(APP_SHELL.map((url) => cache.add(url).catch(() => null)))
-    )
-  );
-  self.skipWaiting();
-});
+const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+const text = value => String(value ?? "");
+export function stableStringify(value){if(value===null||typeof value!=="object")return JSON.stringify(value);if(Array.isArray(value))return`[${value.map(stableStringify).join(",")}]`;return`{${Object.keys(value).sort().map(key=>`${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;}
+export function dataHash(value){const input=stableStringify(value);let hash=2166136261;for(let i=0;i<input.length;i++){hash^=input.charCodeAt(i);hash=Math.imul(hash,16777619);}return`sync-${(hash>>>0).toString(16).padStart(8,"0")}`;}
+export function stableEntityId(session={}){if(session.id!==undefined&&session.id!==null&&text(session.id))return text(session.id);return`session-${dataHash({programId:session.programId||"",workoutId:session.workoutId||session.sheetId||"",plannedWeek:session.plannedWeek??session.week??null,dateInput:session.dateInput||"",startedAt:session.startedAt||"",exercises:session.exercises||[]})}`;}
+export function normalizeSyncSession(session={},context={}){
+  const now=context.now||new Date().toISOString();const entity=clone(session);entity.id=stableEntityId(entity);entity.userId=text(context.userId||entity.userId);entity.programId=text(entity.programId);entity.workoutId=text(entity.workoutId||entity.sheetId);entity.plannedWeek=Number(entity.plannedWeek??entity.week)||null;entity.actualWeek=Number(entity.actualWeek??entity.week)||null;entity.loadedPrescriptionWeek=Number(entity.loadedPrescriptionWeek??entity.actualWeek??entity.plannedWeek)||null;entity.startedAt=entity.startedAt||entity.createdAt||now;entity.completedAt=entity.completedAt||now;entity.createdAt=entity.createdAt||entity.startedAt||now;entity.updatedAt=now;entity.deviceId=text(context.deviceId||entity.deviceId||"unknown-device");entity.revision=Math.max(1,Number(entity.revision)||1);entity.syncStatus=context.syncStatus||entity.syncStatus||"pending";entity.source=entity.source||context.source||"App";entity.prescriptionSource=entity.prescriptionSource||"programmed";entity.manualOverrides=Array.isArray(entity.manualOverrides)?entity.manualOverrides:[];entity.progressionAdvanceConfirmed=entity.progressionAdvanceConfirmed??null;const withoutHash={...entity};for(const key of["dataHash","syncStatus","cloudSyncedAt","updatedAt","deviceId","userId","revision"])delete withoutHash[key];entity.dataHash=dataHash(withoutHash);return entity;
+}
+export function createSyncOperation(session,context={}){const entity=normalizeSyncSession(session,context);const createdAt=context.now||new Date().toISOString();return{operationId:text(context.operationId||`op-${entity.id}-${entity.revision}`),entityId:entity.id,entityType:"workoutSession",operationType:"upsert",payload:entity,createdAt,attempts:0,lastAttemptAt:null,status:"pending",error:"",deviceId:entity.deviceId,revision:entity.revision,dataHash:entity.dataHash};}
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
-    )
-  );
-  self.clients.claim();
-});
+export function createPersistentSyncQueue({storage=null,key="barbell-diva.sync-queue.v1",auditKey="barbell-diva.sync-audit.v1",now=()=>new Date().toISOString()}={}){
+  let memory=[];let auditMemory=[];const read=(target,fallback)=>{try{const parsed=JSON.parse(storage?.getItem(target)||"null");return Array.isArray(parsed)?parsed:fallback;}catch{return fallback;}};const write=(target,value)=>{if(storage)storage.setItem(target,JSON.stringify(value));};
+  const list=()=>clone(storage?read(key,[]):memory);const save=rows=>{memory=clone(rows);write(key,rows);return clone(rows);};const audit=(event,details={})=>{const row={id:`audit-${dataHash([event,details,now()])}`,at:now(),event,...clone(details)};const rows=(storage?read(auditKey,[]):auditMemory).concat(row).slice(-300);auditMemory=rows;write(auditKey,rows);return row;};
+  const enqueue=operation=>{const rows=list();const index=rows.findIndex(row=>row.entityId===operation.entityId&&row.operationType===operation.operationType&&!['synced'].includes(row.status));if(index>=0){const previous=rows[index];rows[index]={...clone(operation),operationId:previous.operationId,createdAt:previous.createdAt,attempts:previous.attempts,status:"pending",error:""};}else rows.push(clone(operation));save(rows);audit("queued",{operationId:(index>=0?rows[index]:operation).operationId,entityId:operation.entityId});return clone(index>=0?rows[index]:operation);};
+  const patch=(operationId,changes)=>{const rows=list();const index=rows.findIndex(row=>row.operationId===operationId);if(index<0)return null;rows[index]={...rows[index],...clone(changes)};save(rows);audit(`operation-${rows[index].status}`,{operationId,entityId:rows[index].entityId,error:rows[index].error||""});return clone(rows[index]);};
+  return Object.freeze({list,enqueue,markSyncing:id=>{const row=list().find(x=>x.operationId===id);return patch(id,{status:"syncing",attempts:Number(row?.attempts||0)+1,lastAttemptAt:now(),error:""});},markSynced:id=>patch(id,{status:"synced",lastAttemptAt:now(),error:""}),markFailed:(id,error)=>patch(id,{status:"failed",lastAttemptAt:now(),error:text(error)}),markConflict:(id,error)=>patch(id,{status:"conflict",lastAttemptAt:now(),error:text(error)}),pending:()=>list().filter(row=>["pending","failed","syncing"].includes(row.status)),removeSynced:()=>save(list().filter(row=>row.status!=="synced")),removeEntity:id=>{const entityId=text(id);const before=list();const after=before.filter(row=>text(row.entityId)!==entityId);save(after);audit("entity-removed",{entityId,operationsRemoved:before.length-after.length});return before.length-after.length;},stats:()=>{const rows=list();return{total:rows.length,pending:rows.filter(x=>x.status==="pending").length,syncing:rows.filter(x=>x.status==="syncing").length,synced:rows.filter(x=>x.status==="synced").length,failed:rows.filter(x=>x.status==="failed").length,conflict:rows.filter(x=>x.status==="conflict").length};},audit:(event,details)=>audit(event,details),auditLog:()=>clone(storage?read(auditKey,[]):auditMemory)});
+}
 
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  const isHtml = event.request.mode === "navigate" || event.request.destination === "document" || new URL(event.request.url).pathname.endsWith(".html");
-  if (isHtml) {
-    event.respondWith(
-      fetch(event.request, { cache: "no-store" }).then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        return response;
-      }).catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html")))
-    );
-    return;
-  }
-  event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-      return response;
-    }))
-  );
-});
+export function classifySessionPair(left={},right={}){if(text(left.id)&&text(left.id)===text(right.id))return left.dataHash&&left.dataHash===right.dataHash?"certainDuplicate":"sameEntityDifferentVersion";const sameProgram=text(left.programId)===text(right.programId),codeA=text(left.sessionCode||left.workoutId||left.sheetId).trim().toLowerCase(),codeB=text(right.sessionCode||right.workoutId||right.sheetId).trim().toLowerCase(),sameWorkout=!!codeA&&codeA===codeB,sameWeek=Number(left.actualWeek??left.week)===Number(right.actualWeek??right.week);const timeA=Date.parse(left.startedAt||left.completedAt||left.dateInput||0)||0,timeB=Date.parse(right.startedAt||right.completedAt||right.dateInput||0)||0;const close=Math.abs(timeA-timeB)<=2*60*60*1000;if(left.dataHash&&left.dataHash===right.dataHash)return"certainDuplicate";return sameProgram&&sameWorkout&&sameWeek&&close?"possibleDuplicate":"differentSessions";}
+export function deduplicateSessions(sessions=[]){const accepted=[];const certain=[];const possible=[];for(const candidate of sessions){const exact=accepted.find(item=>classifySessionPair(item,candidate)==="certainDuplicate");if(exact){certain.push({kept:exact,rejected:candidate});continue;}const maybe=accepted.find(item=>classifySessionPair(item,candidate)==="possibleDuplicate");if(maybe)possible.push({left:maybe,right:candidate});accepted.push(candidate);}return{sessions:clone(accepted),certainDuplicates:clone(certain),possibleDuplicates:clone(possible)};}
+export function reconcileSessionVersions(local={},remote={}){const classification=classifySessionPair(local,remote);if(classification==="certainDuplicate")return{status:"merged",value:clone(Number(remote.revision||0)>Number(local.revision||0)?remote:local),classification};if(classification==="differentSessions"||classification==="possibleDuplicate")return{status:"separate",value:null,classification,versions:[clone(local),clone(remote)]};const localRevision=Number(local.revision)||0,remoteRevision=Number(remote.revision)||0;if(local.dataHash===remote.dataHash)return{status:"merged",value:clone(localRevision>=remoteRevision?local:remote),classification};if(localRevision!==remoteRevision)return{status:"merged",value:clone(localRevision>remoteRevision?local:remote),classification,warnings:["Versione con revisione maggiore conservata; l'altra resta nell'audit."]};return{status:"conflict",value:null,classification,versions:[clone(local),clone(remote)],reason:"Stesso record e revisione, contenuti differenti."};}
+
+const api=Object.freeze({SYNC_ENGINE_VERSION,SYNC_STATUSES,stableStringify,dataHash,stableEntityId,normalizeSyncSession,createSyncOperation,createPersistentSyncQueue,classifySessionPair,deduplicateSessions,reconcileSessionVersions});
+if(typeof window!=="undefined"){window.BarbellDivaSyncEngine=api;document.documentElement.dataset.syncEngine=SYNC_ENGINE_VERSION;window.dispatchEvent(new CustomEvent("barbell-diva:sync-engine-ready"));}
+export default api;
