@@ -13,6 +13,14 @@
   const uid = (prefix="id") => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
   const iso = () => new Date().toISOString();
   const active = () => state.training.activeWorkout || null;
+  /**
+ * Parse a numeric value from input, with optional min/max validation.
+ * @param {*} value - The value to parse
+ * @param {Object} options - Configuration options
+ * @param {number} [options.min=0] - Minimum allowed value
+ * @param {number} [options.max=10000] - Maximum allowed value
+ * @returns {number|null} - Parsed number or null if invalid
+ */
   const parseNumber = (value, options={}) => {
     const text = String(value ?? "").trim().replace(",", ".");
     if (!text) return null;
