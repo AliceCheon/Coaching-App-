@@ -44,6 +44,7 @@ body[data-theme="light"] .coach-studio-sidebar,body[data-theme="light"] .coach-s
 .coach-editor-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
 .coach-editor-layout.reference-open,.coach-editor-layout.ai-open{grid-template-columns:minmax(0,1fr) minmax(320px,390px)}
 .coach-editor-side{position:sticky;top:124px;display:grid;gap:12px;max-height:calc(100dvh - 155px);overflow:auto}
+.coach-editor-side.is-closing{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 .coach-reference-panel,.coach-live-volume{border:1px solid var(--border);border-radius:18px;background:var(--surface);padding:14px}
 .coach-reference-panel h3,.coach-live-volume h3{margin:0 0 9px}.coach-reference-panel select{width:100%;margin-bottom:12px}
 .coach-reference-sheet{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}.coach-reference-sheet summary{cursor:pointer;font-weight:850}.coach-reference-exercise{display:grid;grid-template-columns:1fr auto;gap:4px;padding:8px 0;border-bottom:1px solid color-mix(in srgb,var(--border) 60%,transparent);font-size:.72rem}.coach-reference-exercise small{grid-column:1/-1;color:var(--text-muted)}
