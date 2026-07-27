@@ -1,40 +1,18 @@
-{
-  "file": "..\\atlas-coach-app-v98-pre-performance.html",
-  "bytes": 1202356,
-  "localStorageWritesDuringLoad": 0,
-  "measurements": [
-    {
-      "name": "technicalExerciseLibrary",
-      "iterations": 30,
-      "totalMs": 1753.213,
-      "averageMs": 58.44
-    },
-    {
-      "name": "technicalProfileCounts",
-      "iterations": 30,
-      "totalMs": 1568.544,
-      "averageMs": 52.285
-    },
-    {
-      "name": "trainingHtml",
-      "iterations": 20,
-      "totalMs": 152.012,
-      "averageMs": 7.601,
-      "nodes": 409
-    },
-    {
-      "name": "coachHtml",
-      "iterations": 8,
-      "totalMs": 5170.169,
-      "averageMs": 646.271,
-      "nodes": 3477
-    },
-    {
-      "name": "exerciseLabHtml",
-      "iterations": 20,
-      "totalMs": 3189.499,
-      "averageMs": 159.475,
-      "nodes": 688
-    }
-  ]
-}
+// Configurazione minima condivisa della build v144.
+(function (root) {
+  root.BarbellDivaV144Config = Object.freeze({
+    build: "v144",
+    cache: "atlas-app-v144",
+    backupAutomaticLimit: 5,
+    legacyModulesRemoved: ["nutrizione", "workout-pro"],
+    firebase: Object.freeze({
+      apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
+      authDomain: "barbell-diva.firebaseapp.com",
+      projectId: "barbell-diva",
+      storageBucket: "barbell-diva.firebasestorage.app",
+      messagingSenderId: "411536425865",
+      appId: "1:411536425865:web:17bcd9f10b6ba1a9b49758",
+      measurementId: "G-FNKXLKQFT8"
+    })
+  });
+})(typeof window !== "undefined" ? window : globalThis);
