@@ -1,17 +1,37 @@
-# Changelog — Fase 19.1
+param([int]$Port = 8767)
 
-Build: `v113-phase19.1` · schema dati: `5` invariato · cache PWA: `atlas-app-v113-phase19.1`.
+$appRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$serverScript = Join-Path $appRoot 'Barbell-Diva-Server.ps1'
+$appUrl = "http://127.0.0.1:$Port/index.html?v=115-phase20a"
 
-- Sostituito il renderer condiviso con un dispatcher reale: `renderWorkoutMode`, `renderProMode`, `renderCompactMode`, `renderQuickMode` e `renderFreeMode`.
-- Pro mostra una sola serie operativa alla volta.
-- Compatta mostra tutte le serie dell'esercizio corrente, con input e completamento per riga e anteprima dei prossimi esercizi.
-- Rapida mostra tutti gli esercizi e tutte le serie con i soli controlli essenziali.
-- Libera permette sessioni anche vuote, ricerca/aggiunta/rimozione/riordino esercizi, aggiunta/rimozione serie e creazione di gruppi.
-- Il passaggio Pro/Compatta/Rapida conserva lo stesso identificatore di sessione, i valori inseriti e i timer. La vista Libera è consentita soltanto per una sessione nata in modalità Libera.
-- Diva Bot usa avatar, stato, personalità e reazioni già esistenti, ma viene montata in un livello overlay separato durante Workout Pro.
-- Aggiunti trascinamento e posizione persistente del bot, limiti allo schermo e adattamento a tastiera e pannelli inferiori.
-- Impedito il salto del bot durante il completamento o il ridisegno di una serie.
-- Aggiornati HTML, JavaScript, CSS, manifest e service worker alla build v113.
-- Aggiunta una suite DOM comportamentale eseguibile nel browser per viewport mobile e desktop.
+function Test-BarbellDivaPort {
+  param([int]$TargetPort)
+  $client = [System.Net.Sockets.TcpClient]::new()
+  try {
+    $task = $client.ConnectAsync('127.0.0.1', $TargetPort)
+    return $task.Wait(350) -and $client.Connected
+  } catch {
+    return $false
+  } finally {
+    $client.Dispose()
+  }
+}
 
-Nessuna migrazione aggiuntiva: backup v4 e dati schema 5 restano compatibili.
+if (-not (Test-BarbellDivaPort -TargetPort $Port)) {
+  $arguments = @(
+    '-NoProfile',
+    '-ExecutionPolicy', 'Bypass',
+    '-File', ('"{0}"' -f $serverScript),
+    '-Root', ('"{0}"' -f $appRoot),
+    '-Port', $Port
+  )
+  Start-Process -FilePath 'powershell.exe' -ArgumentList $arguments -WindowStyle Hidden
+  $ready = $false
+  for ($attempt = 0; $attempt -lt 30; $attempt += 1) {
+    Start-Sleep -Milliseconds 100
+    if (Test-BarbellDivaPort -TargetPort $Port) { $ready = $true; break }
+  }
+  if (-not $ready) { throw "Barbell Diva non è riuscita ad avviare il server locale sulla porta $Port." }
+}
+
+Start-Process $appUrl

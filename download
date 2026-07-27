@@ -1,39 +1,39 @@
 {
-  "file": "..\\atlas-coach-app-v98-pre-performance.html",
-  "bytes": 1202356,
+  "file": "..\\atlas-coach-app.html",
+  "bytes": 1205530,
   "localStorageWritesDuringLoad": 0,
   "measurements": [
     {
       "name": "technicalExerciseLibrary",
       "iterations": 30,
-      "totalMs": 1753.213,
-      "averageMs": 58.44
+      "totalMs": 0.056,
+      "averageMs": 0.002
     },
     {
       "name": "technicalProfileCounts",
       "iterations": 30,
-      "totalMs": 1568.544,
-      "averageMs": 52.285
+      "totalMs": 0.012,
+      "averageMs": 0
     },
     {
       "name": "trainingHtml",
       "iterations": 20,
-      "totalMs": 152.012,
-      "averageMs": 7.601,
+      "totalMs": 182.033,
+      "averageMs": 9.102,
       "nodes": 409
     },
     {
       "name": "coachHtml",
       "iterations": 8,
-      "totalMs": 5170.169,
-      "averageMs": 646.271,
+      "totalMs": 225.732,
+      "averageMs": 28.217,
       "nodes": 3477
     },
     {
       "name": "exerciseLabHtml",
       "iterations": 20,
-      "totalMs": 3189.499,
-      "averageMs": 159.475,
+      "totalMs": 156.06,
+      "averageMs": 7.803,
       "nodes": 688
     }
   ]
