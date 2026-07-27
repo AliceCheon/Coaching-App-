@@ -1,65 +1,10600 @@
-param(
-  [Parameter(Mandatory = $true)][string]$Root,
-  [int]$Port = 8767
-)
+﻿<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08050d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="app-icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <title>Barbell diva</title>
+  <style>
+    @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
+    :root {
+      color-scheme: dark;
+      --bg-main: #17101F;
+      --bg-secondary: #21152C;
+      --surface: #2B1B38;
+      --surface-raised: #352145;
+      --pink-primary: #FF4FA3;
+      --pink-hot: #FF2D95;
+      --purple-primary: #A855F7;
+      --lavender: #C9A7FF;
+      --pink-soft: #FFB8DC;
+      --text-primary: #FFF7FC;
+      --text-secondary: #D8C6DD;
+      --border-soft: rgba(201, 167, 255, .28);
+      --bg: var(--bg-main);
+      --phone: var(--bg-secondary);
+      --card: var(--surface);
+      --card-2: var(--surface-raised);
+      --line: var(--border-soft);
+      --line-soft: rgba(255, 255, 255, .08);
+      --text: var(--text-primary);
+      --muted: var(--text-secondary);
+      --dim: #89708d;
+      --gold: var(--pink-primary);
+      --gold-2: var(--lavender);
+      --gold-3: var(--purple-primary);
+      --green: #69e6b0;
+      --blue: #a990ff;
+      --red: #ff6e7d;
+      --orange: #ff9b49;
+      --success: #69e6b0;
+      --warning: #ffb454;
+      --danger: #ff6e7d;
+      --info: #a990ff;
+      --violet: var(--purple-primary);
+      --shadow: 0 22px 70px rgba(45, 18, 67, .36);
+      font-family: "Atlas Nunito", "Nunito Sans", ui-rounded, system-ui, sans-serif;
+    }
 
-$rootPath = [System.IO.Path]::GetFullPath($Root).TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
-$mimeTypes = @{
-  '.html' = 'text/html; charset=utf-8'
-  '.js' = 'text/javascript; charset=utf-8'
-  '.mjs' = 'text/javascript; charset=utf-8'
-  '.css' = 'text/css; charset=utf-8'
-  '.json' = 'application/json; charset=utf-8'
-  '.webmanifest' = 'application/manifest+json; charset=utf-8'
-  '.svg' = 'image/svg+xml'
-  '.png' = 'image/png'
-  '.jpg' = 'image/jpeg'
-  '.jpeg' = 'image/jpeg'
-  '.webp' = 'image/webp'
-  '.ico' = 'image/x-icon'
-}
+    body[data-theme="light"] {
+      color-scheme: light;
+      --bg: #fff7fb;
+      --phone: #fffafd;
+      --card: #ffffff;
+      --card-2: #fff0f8;
+      --line: rgba(218, 80, 151, .22);
+      --line-soft: rgba(94, 47, 78, .12);
+      --text: #241421;
+      --muted: #7a6675;
+      --dim: #9c8394;
+      --shadow: 0 22px 70px rgba(203, 67, 138, .16);
+    }
 
-$listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
-$listener.Start()
+    body[data-theme="light"] .coach-command,
+    body[data-theme="light"] .coach-program-panel,
+    body[data-theme="light"] .athlete-view-panel,
+    body[data-theme="light"] .coach-builder-strip,
+    body[data-theme="light"] .feedback-board,
+    body[data-theme="light"] .coach-section {
+      background: linear-gradient(180deg, #ffffff, #fff2f8);
+      border-color: rgba(218,80,151,.22);
+      color: var(--text);
+    }
 
-try {
-  while ($true) {
-    $client = $listener.AcceptTcpClient()
-    try {
-      $stream = $client.GetStream()
-      $reader = [System.IO.StreamReader]::new($stream, [System.Text.Encoding]::ASCII, $false, 8192, $true)
-      $requestLine = $reader.ReadLine()
-      if ([string]::IsNullOrWhiteSpace($requestLine)) { continue }
-      while (($header = $reader.ReadLine()) -ne $null -and $header -ne '') { }
+    body[data-theme="light"] .coach-create-grid,
+    body[data-theme="light"] .created-sheet-preview,
+    body[data-theme="light"] .coach-program-scroll,
+    body[data-theme="light"] .reference-row,
+    body[data-theme="light"] .builder-preview,
+    body[data-theme="light"] .coach-tile,
+    body[data-theme="light"] .feedback-metric {
+      background: #ffffff;
+      border-color: rgba(94,47,78,.14);
+      color: var(--text);
+    }
 
-      $parts = $requestLine.Split(' ')
-      $requestTarget = if ($parts.Count -ge 2) { $parts[1] } else { '/' }
-      $pathOnly = $requestTarget.Split('?')[0]
-      $relativePath = [System.Uri]::UnescapeDataString($pathOnly).TrimStart('/').Replace('/', [System.IO.Path]::DirectorySeparatorChar)
-      if ([string]::IsNullOrWhiteSpace($relativePath)) { $relativePath = 'index.html' }
-      $candidate = [System.IO.Path]::GetFullPath((Join-Path $rootPath $relativePath))
+    body[data-theme="light"] .coach-create-table th,
+    body[data-theme="light"] .coach-program-table th {
+      background: #fff0f8;
+      color: #9f2e69;
+      border-color: rgba(218,80,151,.18);
+    }
 
-      if (-not $candidate.StartsWith($rootPath, [System.StringComparison]::OrdinalIgnoreCase) -or -not (Test-Path -LiteralPath $candidate -PathType Leaf)) {
-        $body = [System.Text.Encoding]::UTF8.GetBytes('404 - File non trovato')
-        $status = '404 Not Found'
-        $contentType = 'text/plain; charset=utf-8'
-      } else {
-        $body = [System.IO.File]::ReadAllBytes($candidate)
-        $status = '200 OK'
-        $extension = [System.IO.Path]::GetExtension($candidate).ToLowerInvariant()
-        $contentType = if ($mimeTypes.ContainsKey($extension)) { $mimeTypes[$extension] } else { 'application/octet-stream' }
+    body[data-theme="light"] .coach-create-table td,
+    body[data-theme="light"] .coach-program-table td {
+      border-color: rgba(94,47,78,.10);
+      color: var(--text);
+    }
+
+    body[data-theme="light"] .coach-create-table input,
+    body[data-theme="light"] .coach-create-table select,
+    body[data-theme="light"] .coach-create-table textarea,
+    body[data-theme="light"] .coach-program-table input,
+    body[data-theme="light"] .coach-program-table select,
+    body[data-theme="light"] .coach-program-table textarea,
+    body[data-theme="light"] .athlete-view-select {
+      background: #fffafd;
+      border-color: rgba(94,47,78,.18);
+      color: #241421;
+    }
+
+    body[data-theme="light"] .athlete-card {
+      background: linear-gradient(135deg, #eef8ff, #fff4fb);
+      border-color: rgba(72,148,191,.22);
+      color: #241421;
+    }
+
+    body[data-theme="light"] .athlete-card h4,
+    body[data-theme="light"] .reference-row strong,
+    body[data-theme="light"] .coach-tile strong {
+      color: #241421;
+    }
+
+    body[data-theme="light"] .athlete-note {
+      background: #fff7df;
+      border-color: rgba(189,121,20,.26);
+      color: #4b3212;
+    }
+
+    body[data-theme="light"] .rm-pill {
+      background: #eafaf1;
+      border-color: rgba(31,142,84,.28);
+      color: #137444;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding-bottom: env(safe-area-inset-bottom);
+      background:
+        linear-gradient(135deg, rgba(255,111,203,.16), transparent 34%),
+        linear-gradient(225deg, rgba(169,144,255,.16), transparent 42%),
+        linear-gradient(180deg, rgba(255,255,255,.035), transparent 24%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .stage {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+      align-items: stretch;
+      justify-content: stretch;
+      padding: 22px;
+    }
+
+    .desktop-rail {
+      display: none;
+      height: calc(100vh - 44px);
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(43,27,56,.96), rgba(33,21,44,.96));
+      box-shadow: var(--shadow);
+      align-content: start;
+      justify-items: center;
+      gap: 12px;
+      padding: 12px 8px;
+    }
+
+    .rail-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: #120817;
+      background: linear-gradient(135deg, var(--gold-2), var(--gold));
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .rail-dot {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+    }
+
+    .rail-dot.active {
+      color: var(--gold-2);
+      background: rgba(255,111,203,.11);
+      border-color: rgba(255,111,203,.32);
+    }
+
+    .phone-shell {
+      width: 100%;
+      min-width: 0;
+      border-radius: 24px;
+      padding: 0;
+      background: rgba(8, 5, 13, .78);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .desktop-only {
+      display: block;
+    }
+
+    .phone {
+      height: calc(100dvh - 44px);
+      min-height: 680px;
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 52% 0%, rgba(255,111,203,.18), transparent 28%),
+        var(--phone);
+      border: 1px solid rgba(255,255,255,.08);
+      overflow: hidden;
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .phone-status {
+      height: 44px;
+      padding: 14px 22px 0;
+      display: none;
+      grid-template-columns: 1fr 82px 1fr;
+      align-items: center;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .notch {
+      height: 28px;
+      border-radius: 999px;
+      background: #000;
+    }
+
+    .status-icons {
+      justify-self: end;
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .battery {
+      width: 24px;
+      height: 12px;
+      border: 1px solid var(--muted);
+      border-radius: 4px;
+      position: relative;
+    }
+
+    .battery::after {
+      content: "";
+      position: absolute;
+      right: -4px;
+      top: 3px;
+      width: 2px;
+      height: 5px;
+      border-radius: 0 2px 2px 0;
+      background: var(--muted);
+    }
+
+    .battery span {
+      display: block;
+      width: 72%;
+      height: 100%;
+      border-radius: 3px;
+      background: var(--gold-2);
+    }
+
+    .app-header {
+      padding: 4px 22px 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,111,203,.16);
+    }
+
+    .app-header h1 {
+      margin: 0;
+      font-size: 1.04rem;
+      letter-spacing: 0;
+    }
+
+    .app-header p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: .76rem;
+    }
+
+    .round-actions {
+      display: inline-flex;
+      gap: 8px;
+    }
+
+    .round-button {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(255,111,203,.16);
+      color: var(--gold-2);
+      border: 1px solid rgba(255,111,203,.24);
+      font-weight: 800;
+    }
+
+    .top-tabs {
+      display: grid;
+      padding: 14px 22px 8px;
+      grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+      gap: 8px;
+    }
+
+    .top-tab {
+      min-height: 40px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.02);
+      color: var(--muted);
+      border: 1px solid var(--line-soft);
+      font-weight: 800;
+      font-size: .83rem;
+    }
+
+    .top-tab.active {
+      color: #120817;
+      background: linear-gradient(135deg, var(--gold-2), var(--gold));
+      border-color: transparent;
+      box-shadow: 0 0 30px rgba(255,111,203,.22);
+    }
+
+    .screen {
+      min-height: 0;
+      overflow: auto;
+      padding: 18px 28px 32px;
+      position: relative;
+      z-index: 1;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,111,203,.34) transparent;
+    }
+
+    .screen::-webkit-scrollbar { width: 6px; }
+    .screen::-webkit-scrollbar-thumb {
+      background: rgba(255,111,203,.34);
+      border-radius: 99px;
+    }
+
+    .bottom-nav {
+      position: absolute;
+      display: none;
+      left: 18px;
+      top: 96px;
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      width: 68px;
+      border-radius: 18px;
+      background: rgba(20, 16, 6, .94);
+      border: 1px solid rgba(255,111,203,.18);
+      grid-template-columns: 1fr;
+      grid-auto-rows: minmax(54px, max-content);
+      align-items: center;
+      box-shadow: 0 -12px 40px rgba(0,0,0,.32);
+      backdrop-filter: blur(10px);
+      z-index: 80;
+      pointer-events: auto;
+      touch-action: manipulation;
+      transform: translateZ(0);
+    }
+
+    .nav-button {
+      min-height: 54px;
+      display: grid;
+      place-items: center;
+      gap: 3px;
+      background: transparent;
+      color: var(--dim);
+      font-size: .62rem;
+      text-transform: uppercase;
+      font-weight: 800;
+      position: relative;
+      z-index: 2;
+      touch-action: manipulation;
+    }
+
+    .nav-button svg, .rail-dot svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+    }
+
+    .nav-button.active {
+      color: var(--gold-2);
+    }
+
+    .hero-title {
+      margin: 10px 0 12px;
+    }
+
+    .daily-boost {
+      margin: 10px 0 14px;
+      border: 1px solid rgba(255,111,203,.36);
+      border-radius: 18px;
+      padding: 14px 16px;
+      background:
+        radial-gradient(circle at top right, rgba(179,136,255,.22), transparent 40%),
+        linear-gradient(135deg, rgba(255,111,203,.22), rgba(179,136,255,.13)),
+        rgba(28,12,32,.9);
+      box-shadow: 0 18px 48px rgba(255,111,203,.14);
+    }
+
+    .daily-boost span {
+      display: block;
+      color: #f4d7ff;
+      font-size: .72rem;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .daily-boost strong {
+      display: block;
+      margin-top: 5px;
+      color: #fff8ff;
+      font-size: clamp(1.55rem, 3vw, 2.8rem);
+      line-height: 1.04;
+      font-weight: 950;
+    }
+
+    .daily-face {
+      display: inline-grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      margin-left: 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(255,111,203,.28), rgba(179,136,255,.2));
+      border: 1px solid rgba(255,255,255,.16);
+      vertical-align: middle;
+      font-size: 1.15rem;
+    }
+
+    .hero-title h2 {
+      margin: 0;
+      font-size: 1.55rem;
+      line-height: 1.08;
+      letter-spacing: -.025em;
+    }
+
+    .hero-title span {
+      color: var(--gold-2);
+      font-style: italic;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 600;
+    }
+
+    .hero-title p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: .86rem;
+    }
+
+    .card {
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,111,203,.075), rgba(179,136,255,.04) 180px), color-mix(in srgb, var(--card) 88%, #ffffff 12%);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.22);
+    }
+
+    .card.slim {
+      padding: 13px 14px;
+    }
+
+    .card h3 {
+      margin: 0 0 7px;
+      font-size: 1rem;
+      font-weight: 950;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: .82rem;
+    }
+
+    .alert {
+      border-color: rgba(255,111,203,.45);
+      background: rgba(91, 64, 11, .34);
+    }
+
+    .alert h3 {
+      color: var(--gold-2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .metric-card {
+      min-height: 112px;
+      display: grid;
+      align-content: center;
+      gap: 8px;
+    }
+
+    .metric-card .label {
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: .68rem;
+      font-weight: 850;
+      letter-spacing: .04em;
+    }
+
+    .metric-card strong {
+      font-size: 1.7rem;
+      line-height: 1;
+    }
+
+    .metric-card small {
+      color: var(--muted);
+      font-size: .72rem;
+    }
+
+
+    .mission-card {
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top right, rgba(255,111,203,.2), transparent 34%),
+        linear-gradient(180deg, rgba(216,164,255,.08), transparent 180px),
+        var(--card);
+    }
+
+    .mission-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .mission-head span {
+      display: block;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: .68rem;
+      font-weight: 850;
+      letter-spacing: .04em;
+      margin-bottom: 5px;
+    }
+
+    .mission-head h3 {
+      margin: 0;
+      font-size: 1.18rem;
+    }
+
+    .mission-pill {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      border: 1px solid rgba(105,230,176,.34);
+      background: rgba(105,230,176,.12);
+      color: var(--green);
+      padding: 7px 10px;
+      font-size: .72rem;
+      font-weight: 900;
+    }
+
+    .mission-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 9px;
+      margin-bottom: 12px;
+    }
+
+    .mission-stat {
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      background: rgba(255,255,255,.035);
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .mission-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: .66rem;
+      text-transform: uppercase;
+      font-weight: 850;
+      letter-spacing: .04em;
+      margin-bottom: 6px;
+    }
+
+    .mission-stat strong {
+      display: block;
+      font-size: 1.05rem;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    .mission-focus {
+      border-top: 1px solid var(--line-soft);
+      padding-top: 12px;
+    }
+
+    .mission-focus strong {
+      color: var(--text);
+    }
+    .gold-button, .ghost-button, .danger-button {
+      min-height: 38px;
+      border-radius: 10px;
+      padding: 9px 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 850;
+      font-size: .82rem;
+    }
+
+    .gold-button {
+      background: linear-gradient(135deg, var(--gold-2), var(--gold));
+      color: #120817;
+    }
+
+    .ghost-button {
+      background: rgba(255,255,255,.035);
+      border: 1px solid var(--line);
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .danger-button {
+      background: rgba(255,110,125,.12);
+      border: 1px solid rgba(255,110,125,.28);
+      color: var(--red);
+    }
+
+    .section-eyebrow {
+      margin: 18px 0 10px;
+      color: var(--gold-2);
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      font-size: .68rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-eyebrow::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--gold-2);
+    }
+
+    .choice-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .choice {
+      min-height: 39px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: rgba(255,111,203,.08);
+      color: var(--text);
+      font-weight: 800;
+      font-size: .8rem;
+    }
+
+    .choice.active {
+      color: #120817;
+      background: linear-gradient(135deg, var(--gold-2), var(--gold));
+      border-color: transparent;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: .75rem;
+      margin: 0;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      min-height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.24);
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 86px;
+      resize: vertical;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--gold-2);
+      box-shadow: 0 0 0 3px rgba(255,111,203,.14);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    .session-panel {
+      display: grid;
+      gap: 12px;
+    }
+
+    .session-note {
+      border-radius: 12px;
+      border: 1px solid var(--line-soft);
+      background: rgba(255,255,255,.025);
+      color: var(--muted);
+      padding: 10px 12px;
+      font-size: .78rem;
+      line-height: 1.45;
+    }
+
+    .quick-feeling {
+      display: grid;
+      gap: 8px;
+    }
+
+    .quick-feeling > span,
+    .micro-copy {
+      color: var(--muted);
+      font-size: .76rem;
+      line-height: 1.45;
+    }
+
+    .micro-copy {
+      margin: 10px 0 0;
+    }
+
+    .exercise-card {
+      display: grid;
+      gap: 12px;
+    }
+
+    .workout-entry {
+      --exercise-accent: var(--gold-2);
+      position: relative;
+      overflow: hidden;
+      padding: 0;
+      border-color: color-mix(in srgb, var(--exercise-accent) 42%, transparent);
+      background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--exercise-accent) 20%, transparent), transparent 44%),
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.025)),
+        var(--card);
+    }
+
+    .workout-entry::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: var(--exercise-accent);
+      opacity: .95;
+    }
+
+    .workout-toggle {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      min-height: 112px;
+      padding: 18px 18px 18px 22px;
+      border: 0;
+      color: var(--text);
+      background: transparent;
+      display: grid;
+      grid-template-columns: 12px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 13px;
+      text-align: left;
+    }
+
+    .workout-toggle-stripe {
+      align-self: stretch;
+      border-radius: 999px;
+      background: var(--exercise-accent);
+      box-shadow: 0 0 24px color-mix(in srgb, var(--exercise-accent) 54%, transparent);
+    }
+
+    .workout-toggle-main {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .workout-toggle-main h3 {
+      font-size: 1.05rem;
+      line-height: 1.18;
+      overflow-wrap: anywhere;
+    }
+
+    .workout-toggle-main small {
+      color: rgba(255,255,255,.74);
+      font-weight: 850;
+      line-height: 1.35;
+    }
+
+    .workout-toggle-badges {
+      display: grid;
+      gap: 7px;
+      justify-items: end;
+    }
+
+    .workout-mini-badge {
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0 10px;
+      background: rgba(0,0,0,.24);
+      color: #fff;
+      font-size: .7rem;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .workout-toggle-icon {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--exercise-accent) 24%, rgba(0,0,0,.24));
+      border: 1px solid color-mix(in srgb, var(--exercise-accent) 42%, transparent);
+      color: #fff;
+      font-weight: 950;
+    }
+
+    .workout-details {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 12px;
+      margin: 0 12px 12px;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(10,7,14,.42);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+
+    .save-success {
+      margin-top: 12px;
+      padding: 13px 14px;
+      border: 1px solid rgba(105,230,176,.42);
+      border-radius: 16px;
+      background: rgba(105,230,176,.1);
+      color: #caffea;
+      font-weight: 850;
+      line-height: 1.4;
+    }
+
+    body[data-theme="light"] .save-success {
+      color: #176746;
+      background: rgba(45,180,120,.1);
+    }
+
+    .exercise-head {
+      display: grid;
+      gap: 8px;
+    }
+
+    .exercise-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .target-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .target-box {
+      border-radius: 12px;
+      border: 1px solid var(--line-soft);
+      background: rgba(255,255,255,.025);
+      padding: 10px;
+    }
+
+    .target-box span {
+      display: block;
+      color: var(--muted);
+      font-size: .66rem;
+      text-transform: uppercase;
+      font-weight: 850;
+      margin-bottom: 4px;
+    }
+
+    .target-box strong {
+      font-size: .9rem;
+      color: var(--text);
+    }
+
+    .exercise-notes {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: .78rem;
+      line-height: 1.45;
+    }
+
+    .exercise-notes strong {
+      color: var(--gold-2);
+      font-weight: 850;
+    }
+
+    .set-log {
+      display: grid;
+      gap: 9px;
+    }
+
+    .set-log-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 9px;
+    }
+
+    .set-input-card {
+      border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--exercise-accent, var(--gold-2)) 28%, transparent);
+      background: rgba(255,255,255,.045);
+      padding: 10px;
+      gap: 7px;
+    }
+
+    .set-input-card span {
+      color: var(--text);
+      font-size: .75rem;
+      font-weight: 900;
+    }
+
+    .set-input-card small {
+      color: var(--muted);
+      font-size: .68rem;
+      font-weight: 750;
+    }
+
+    .set-input-card input {
+      min-height: 42px;
+      padding: 9px 10px;
+      margin-top: 2px;
+      font-size: .94rem;
+      font-weight: 900;
+      background: rgba(255,255,255,.07);
+    }
+
+    .exercise-note-box,
+    .recent-note-box {
+      border-radius: 13px;
+      border: 1px solid var(--line-soft);
+      background: rgba(255,255,255,.035);
+      padding: 10px;
+      display: grid;
+      gap: 7px;
+    }
+
+    .exercise-note-box span,
+    .recent-note-box span {
+      color: var(--muted);
+      font-size: .68rem;
+      text-transform: uppercase;
+      font-weight: 900;
+      letter-spacing: .04em;
+    }
+
+    .exercise-note-box textarea {
+      min-height: 76px;
+      background: rgba(0,0,0,.22);
+    }
+
+    .recent-note-box {
+      border-color: color-mix(in srgb, var(--exercise-accent, var(--gold-2)) 30%, transparent);
+      background: color-mix(in srgb, var(--exercise-accent, var(--gold-2)) 8%, transparent);
+    }
+
+    .recent-note-row {
+      color: var(--text);
+      font-size: .78rem;
+      line-height: 1.4;
+      padding-top: 7px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .recent-note-row:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .recent-note-row strong {
+      color: var(--gold-2);
+      display: block;
+      font-size: .7rem;
+      margin-bottom: 2px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      border-radius: 999px;
+      background: rgba(255,111,203,.11);
+      border: 1px solid var(--line);
+      color: var(--gold-2);
+      padding: 6px 9px;
+      font-size: .72rem;
+      font-weight: 800;
+    }
+
+    .history {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .history-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      color: var(--muted);
+      border-top: 1px solid var(--line-soft);
+      padding-top: 8px;
+      font-size: .78rem;
+    }
+
+    .workout-archive { display:grid; gap:10px; margin-top:12px; }
+    .workout-entry { border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.025); overflow:hidden; }
+    .workout-entry summary { cursor:pointer; list-style:none; padding:14px; display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; }
+    .workout-entry summary::-webkit-details-marker { display:none; }
+    .workout-code { min-width:46px; text-align:center; border-radius:12px; padding:8px; color:#1c1020; background:linear-gradient(135deg,var(--gold-2),var(--pink)); font-weight:950; }
+    .workout-title strong,.workout-title small { display:block; }
+    .workout-title small { color:var(--muted); margin-top:3px; }
+    .sync-badge { color:#baffdf; background:rgba(54,211,153,.13); border:1px solid rgba(54,211,153,.35); border-radius:999px; padding:6px 9px; font-size:.7rem; font-weight:900; }
+    .workout-entry-body { border-top:1px solid var(--line-soft); padding:4px 14px 14px; }
+    .workout-exercise-row { display:grid; grid-template-columns:1fr auto; gap:12px; padding:9px 0; border-bottom:1px solid var(--line-soft); font-size:.78rem; }
+    @media(max-width:560px){.workout-entry summary{grid-template-columns:auto 1fr}.sync-badge{grid-column:2;justify-self:start}.workout-exercise-row{grid-template-columns:1fr}}
+
+    .account-card {
+      overflow: hidden;
+      position: relative;
+      background:
+        radial-gradient(circle at 92% 6%, rgba(255,111,203,.18), transparent 32%),
+        linear-gradient(135deg, rgba(255,111,203,.10), rgba(216,164,255,.06)),
+        var(--panel);
+    }
+
+    .account-card::after {
+      content: "";
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      right: -48px;
+      bottom: -58px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,111,203,.25);
+      pointer-events: none;
+    }
+
+    .account-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: .82rem;
+      line-height: 1.35;
+    }
+
+    .account-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      flex: 0 0 auto;
+      background: linear-gradient(135deg, var(--pink), var(--violet));
+      color: #160c18;
+      font-weight: 950;
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 0 22px rgba(255,111,203,.18);
+    }
+
+    .account-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .account-status strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+
+    .account-actions {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .google-button {
+      min-height: 42px;
+      border: 0;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #f7c0df, #ff6fcb);
+      color: #170a17;
+      font-weight: 950;
+      cursor: pointer;
+      box-shadow: 0 14px 30px rgba(255,111,203,.2);
+    }
+
+    .login-gate {
+      min-height: calc(100dvh - 180px);
+      display: grid;
+      place-items: center;
+      padding: 24px 0;
+    }
+
+    .login-panel {
+      width: min(460px, 100%);
+      border: 1px solid rgba(255,111,203,.22);
+      border-radius: 28px;
+      padding: 26px;
+      background:
+        radial-gradient(circle at 84% 0%, rgba(255,111,203,.22), transparent 36%),
+        linear-gradient(145deg, rgba(40,22,43,.96), rgba(14,8,18,.98));
+      box-shadow: 0 26px 90px rgba(0,0,0,.42), 0 0 40px rgba(255,111,203,.08);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-panel::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -78px auto;
+      width: 190px;
+      height: 190px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,111,203,.22);
+      pointer-events: none;
+    }
+
+    .login-icon {
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 16px;
+      border-radius: 26px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #f7a8cf, #bb5f8a);
+      color: #2a1024;
+      font-size: 2rem;
+      font-weight: 950;
+      border: 1px solid rgba(255,255,255,.22);
+      box-shadow: 0 18px 48px rgba(255,111,203,.22);
+    }
+
+    .login-panel h2 {
+      margin: 0;
+      font-size: clamp(1.9rem, 8vw, 3.2rem);
+      line-height: .95;
+      letter-spacing: 0;
+    }
+
+    .login-panel p {
+      margin: 12px auto 0;
+      max-width: 34ch;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .login-panel .google-button {
+      width: 100%;
+      min-height: 52px;
+      margin-top: 20px;
+      font-size: .95rem;
+    }
+
+    .login-small {
+      display: block;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: .76rem;
+      line-height: 1.45;
+    }
+
+    .signal-note {
+      margin-top: 12px;
+      border: 1px solid rgba(216,164,255,.18);
+      border-radius: 14px;
+      background: rgba(216,164,255,.07);
+      padding: 11px;
+      color: var(--muted);
+      font-size: .78rem;
+      line-height: 1.45;
+    }
+
+    .signal-note strong {
+      color: var(--text);
+    }
+
+    .signal-legend {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .signal-legend-item {
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: rgba(255,255,255,.035);
+      padding: 9px;
+      color: var(--muted);
+      font-size: .72rem;
+      line-height: 1.35;
+    }
+
+    .signal-legend-item strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 3px;
+      font-size: .74rem;
+    }
+
+    .checkin-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, .9fr) minmax(320px, 1.1fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .checkin-status-card {
+      position: relative;
+      overflow: hidden;
+      border-color: rgba(216,164,255,.2);
+      background:
+        radial-gradient(circle at 88% 10%, rgba(216,164,255,.13), transparent 34%),
+        linear-gradient(135deg, rgba(20,13,27,.98), rgba(40,25,49,.92)),
+        var(--panel);
+    }
+
+    .traffic-hero {
+      display: grid;
+      grid-template-columns: 74px 1fr;
+      gap: 14px;
+      align-items: center;
+      border-radius: 18px;
+      padding: 16px;
+      margin-top: 12px;
+      color: #130d18;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--traffic-color, var(--green)) 78%, white), color-mix(in srgb, var(--traffic-color, var(--green)) 38%, white));
+      box-shadow: 0 18px 42px color-mix(in srgb, var(--traffic-color, var(--green)) 18%, transparent);
+    }
+
+    .traffic-hero-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: rgba(20,13,27,.88);
+      color: color-mix(in srgb, var(--traffic-color, var(--green)) 78%, white);
+      font-size: 1.8rem;
+      font-weight: 950;
+    }
+
+    .traffic-hero strong {
+      display: block;
+      font-size: clamp(1.8rem, 6vw, 2.7rem);
+      line-height: .95;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .traffic-hero span {
+      display: block;
+      margin-top: 5px;
+      font-weight: 750;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border-radius: 999px;
+      padding: 8px 11px;
+      border: 1px solid color-mix(in srgb, var(--status-color, var(--green)) 40%, transparent);
+      background: color-mix(in srgb, var(--status-color, var(--green)) 14%, transparent);
+      color: var(--status-color, var(--green));
+      font-size: .78rem;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .status-pill::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: currentColor;
+      box-shadow: 0 0 16px currentColor;
+    }
+
+    .signal-source-grid {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .signal-source {
+      display: grid;
+      grid-template-columns: 38px 1fr 20px;
+      gap: 12px;
+      align-items: center;
+      border-radius: 16px;
+      border: 1px solid rgba(216,164,255,.18);
+      background: linear-gradient(135deg, rgba(255,255,255,.055), rgba(216,164,255,.045));
+      padding: 12px;
+      color: var(--muted);
+      font-size: .84rem;
+    }
+
+    .signal-source i {
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: color-mix(in srgb, var(--dot, var(--green)) 16%, rgba(255,255,255,.06));
+      border: 1px solid color-mix(in srgb, var(--dot, var(--green)) 42%, transparent);
+      color: var(--dot, var(--green));
+      box-shadow: 0 0 18px color-mix(in srgb, var(--dot, var(--green)) 16%, transparent);
+      font-style: normal;
+      font-weight: 950;
+    }
+
+    .signal-source strong {
+      color: var(--text);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .signal-source span:last-child {
+      color: var(--pink-2);
+      font-size: 1.6rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .checkin-form-card {
+      background:
+        radial-gradient(circle at 10% 0%, rgba(169,144,255,.13), transparent 32%),
+        var(--panel);
+    }
+
+    .checkin-slider-grid {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .checkin-slider {
+      --accent: var(--pink);
+      border: 1px solid color-mix(in srgb, var(--accent) 34%, rgba(255,255,255,.12));
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 42%),
+        linear-gradient(135deg, rgba(255,255,255,.06), rgba(216,164,255,.045));
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .checkin-slider-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 15px;
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 13%, rgba(255,255,255,.04));
+      border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+      font-size: 1.45rem;
+      font-weight: 950;
+    }
+
+    .checkin-slider-main {
+      min-width: 0;
+    }
+
+    .checkin-slider-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--text);
+      font-size: .86rem;
+      font-weight: 900;
+    }
+
+    .checkin-scale {
+      --active-pos: 3;
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .checkin-scale::before {
+      content: "";
+      position: absolute;
+      left: 9%;
+      right: 9%;
+      top: 50%;
+      height: 3px;
+      transform: translateY(-50%);
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent) calc((var(--active-pos) - 1) * 25%), rgba(255,255,255,.18) 0);
+      pointer-events: none;
+    }
+
+    .checkin-option {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      min-height: 34px;
+      border-radius: 999px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 900;
+      cursor: pointer;
+      pointer-events: auto;
+      touch-action: manipulation;
+      user-select: none;
+    }
+
+    .checkin-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .checkin-option.active,
+    .checkin-option:has(input:checked) {
+      background: color-mix(in srgb, var(--accent) 22%, rgba(20,13,27,.9));
+      outline: 4px solid color-mix(in srgb, var(--accent) 62%, transparent);
+      color: var(--text);
+      box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+
+    .coach-result {
+      margin-top: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(105,230,176,.2);
+      background: rgba(105,230,176,.07);
+      padding: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .coach-result strong {
+      color: var(--text);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .volume-grid {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .volume-block {
+      border-radius: 14px;
+      border: 1px solid var(--line-soft);
+      background: rgba(255,255,255,.025);
+      padding: 12px;
+      display: grid;
+      gap: 9px;
+    }
+
+    .volume-block h4 {
+      margin: 0;
+      font-size: .9rem;
+    }
+
+    .volume-row {
+      display: grid;
+      grid-template-columns: 92px 1fr 42px;
+      gap: 9px;
+      align-items: center;
+      color: var(--muted);
+      font-size: .72rem;
+    }
+
+    .phase-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .phase-wheel {
+      position: relative;
+      min-height: 292px;
+      margin-top: 14px;
+      display: grid;
+      place-items: center;
+    }
+
+    .phase-wheel::before {
+      content: "";
+      position: absolute;
+      width: min(72%, 260px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 1px solid rgba(216, 164, 255, .28);
+      background:
+        radial-gradient(circle, rgba(255,111,203,.12), transparent 58%),
+        conic-gradient(from -72deg, rgba(255,111,203,.28), rgba(216,164,255,.18), rgba(125,63,178,.2), rgba(255,111,203,.28));
+      box-shadow: inset 0 0 36px rgba(216,164,255,.08), 0 0 28px rgba(255,111,203,.08);
+    }
+
+    .phase-center {
+      position: relative;
+      z-index: 2;
+      width: 118px;
+      height: 118px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 16px;
+      color: var(--text);
+      font-weight: 900;
+      font-size: .78rem;
+      border: 1px solid var(--line);
+      background: rgba(8, 5, 13, .86);
+    }
+
+    .phase-node {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 124px;
+      min-height: 68px;
+      transform:
+        rotate(calc(var(--i) * 72deg - 90deg))
+        translate(118px)
+        rotate(calc((var(--i) * -72deg) + 90deg))
+        translate(-50%, -50%);
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(18, 13, 24, .92);
+      padding: 9px;
+      display: grid;
+      gap: 4px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.2);
+    }
+
+    .phase-node.current {
+      border-color: rgba(255,111,203,.9);
+      box-shadow: 0 0 0 1px rgba(255,111,203,.28), 0 16px 36px rgba(255,111,203,.12);
+    }
+
+    .phase-node strong {
+      font-size: .72rem;
+      color: var(--gold-2);
+    }
+
+    .phase-node span,
+    .phase-node small {
+      color: var(--muted);
+      font-size: .64rem;
+      line-height: 1.25;
+    }
+
+    .score-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .score-card {
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      padding: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .score-card::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 2px;
+      background: var(--accent, var(--gold-2));
+    }
+
+    .score-card h3 {
+      margin: 0 0 7px;
+      font-size: .94rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .score-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: .79rem;
+    }
+
+    .score-number {
+      color: var(--accent, var(--gold-2));
+      font-weight: 900;
+    }
+
+    .priority-tree {
+      display: grid;
+      gap: 14px;
+    }
+
+    .priority {
+      display: grid;
+      grid-template-columns: 46px 1fr;
+      gap: 14px;
+      align-items: center;
+      font-size: 1.05rem;
+      font-weight: 900;
+    }
+
+    .priority span:first-child {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      border: 1px solid currentColor;
+      background: rgba(255,255,255,.025);
+    }
+
+    .context-toggle {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .toggle-group {
+      display: inline-flex;
+      gap: 6px;
+      padding: 4px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--line);
+    }
+
+    .toggle-group button {
+      min-height: 30px;
+      min-width: 48px;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font-size: .7rem;
+      font-weight: 900;
+    }
+
+    .toggle-group button.active {
+      background: rgba(255,111,203,.18);
+      color: var(--gold-2);
+    }
+
+    .mini-bars {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 90px 1fr 42px;
+      gap: 9px;
+      align-items: center;
+      color: var(--muted);
+      font-size: .74rem;
+    }
+
+    .bar-track {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: var(--w, 0%);
+      background: var(--c, var(--gold-2));
+      border-radius: inherit;
+    }
+
+    .mode-banner {
+      border-radius: 16px;
+      border: 1px solid rgba(255,111,203,.26);
+      background:
+        linear-gradient(135deg, rgba(255,111,203,.16), rgba(216,164,255,.08)),
+        rgba(255,255,255,.025);
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .coach-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .coach-layout-grid {
+      display: grid;
+      grid-template-columns: minmax(0, .95fr) minmax(320px, 1.05fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .coach-builder-panel,
+    .coach-reference-panel {
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(255,255,255,.025);
+    }
+
+    .coach-reference-panel {
+      position: sticky;
+      top: 14px;
+    }
+
+    .coach-command {
+      border: 1px solid rgba(105,230,176,.32);
+      border-radius: 16px;
+      background:
+        linear-gradient(135deg, rgba(105,230,176,.12), rgba(169,144,255,.08)),
+        rgba(255,255,255,.025);
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .coach-command-top,
+    .coach-control-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .theme-switcher {
+      display: inline-grid;
+      grid-template-columns: auto auto auto;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--line-soft);
+      border-radius: 999px;
+      background: rgba(255,255,255,.035);
+      padding: 5px;
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .theme-choice {
+      min-height: 30px;
+      border-radius: 999px;
+      padding: 0 12px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 900;
+    }
+
+    .theme-choice.active {
+      background: linear-gradient(135deg, var(--gold-2), var(--gold));
+      color: #120817;
+    }
+
+    .coach-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 0 0 14px;
+    }
+
+    .coach-tab-button,
+    .view-toggle-button {
+      min-height: 34px;
+      border-radius: 10px;
+      border: 1px solid var(--line-soft);
+      background: rgba(255,255,255,.035);
+      color: var(--muted);
+      padding: 0 12px;
+      font-size: .72rem;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .coach-tab-button.active,
+    .view-toggle-button.active {
+      background: linear-gradient(135deg, var(--gold-2), var(--gold));
+      color: #120817;
+      border-color: transparent;
+    }
+
+    .coach-workbench {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(360px, .85fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .coach-workbench.no-athlete {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .coach-workbench.athlete-compact {
+      grid-template-columns: minmax(0, 1fr) 280px;
+    }
+
+    .coach-workbench.athlete-wide {
+      grid-template-columns: minmax(0, .95fr) minmax(420px, .72fr);
+    }
+
+    .coach-workbench.athlete-bottom {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .coach-workbench.athlete-bottom .athlete-view-panel {
+      position: static;
+      max-height: 460px;
+    }
+
+    .athlete-layout-controls {
+      display: inline-flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .athlete-layout-button {
+      min-height: 32px;
+      border-radius: 999px;
+      border: 1px solid var(--line-soft);
+      background: rgba(255,255,255,.035);
+      color: var(--muted);
+      padding: 0 10px;
+      font-size: .72rem;
+      font-weight: 900;
+    }
+
+    .athlete-layout-button.active {
+      background: rgba(139,201,255,.14);
+      border-color: rgba(139,201,255,.34);
+      color: #cfeaff;
+    }
+
+    .coach-program-panel,
+    .athlete-view-panel,
+    .coach-builder-strip,
+    .feedback-board {
+      border: 1px solid rgba(255,111,203,.32);
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at top right, rgba(179,136,255,.18), transparent 42%),
+        linear-gradient(180deg, rgba(41,19,49,.96), rgba(13,6,16,.96));
+      box-shadow: 0 28px 90px rgba(0,0,0,.5), 0 0 0 1px rgba(255,111,203,.08) inset;
+    }
+
+    .coach-program-panel,
+    .athlete-view-panel {
+      overflow: hidden;
+    }
+
+    .coach-program-panel > .form-grid {
+      padding: 12px;
+      background: rgba(255,111,203,.045);
+      border-bottom: 1px solid rgba(255,111,203,.13);
+    }
+
+    .panel-head {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,111,203,.16);
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .coach-program-scroll {
+      overflow: auto;
+      max-height: min(760px, calc(100dvh - 220px));
+      background: rgba(7,3,9,.5);
+    }
+
+    .coach-program-table {
+      width: 100%;
+      min-width: 1180px;
+      border-collapse: collapse;
+    }
+
+    .coach-program-table th,
+    .coach-program-table td {
+      border-bottom: 1px solid rgba(255,111,203,.105);
+      border-right: 1px solid rgba(179,136,255,.06);
+      padding: 8px;
+      vertical-align: top;
+      text-align: left;
+      font-size: .74rem;
+    }
+
+    .coach-program-table th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #281430;
+      color: #f4d7ff;
+      text-transform: uppercase;
+      font-size: .66rem;
+      letter-spacing: 0;
+    }
+
+    .coach-program-table tr:hover td {
+      background: rgba(255,111,203,.105);
+    }
+
+    .coach-program-table input,
+    .coach-program-table select,
+    .coach-program-table textarea {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid rgba(179,136,255,.28);
+      background: rgba(32,15,39,.94);
+      color: var(--text);
+      padding: 8px;
+      font-size: .76rem;
+    }
+
+    .coach-program-table select option {
+      background: #24112c;
+      color: #fff8ff;
+    }
+
+    .coach-program-table textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .coach-program-table th:nth-child(2),
+    .coach-program-table td:nth-child(2) {
+      min-width: 160px;
+    }
+
+    .coach-program-table th:nth-child(3),
+    .coach-program-table td:nth-child(3) {
+      min-width: 290px;
+    }
+
+    .coach-program-table th:nth-child(4),
+    .coach-program-table td:nth-child(4) {
+      min-width: 260px;
+    }
+
+    .coach-program-table th:nth-child(9),
+    .coach-program-table td:nth-child(9) {
+      min-width: 210px;
+    }
+
+    .program-manager {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .program-header-card {
+      border: 1px solid rgba(255,111,203,.32);
+      border-radius: 18px;
+      padding: 14px;
+      background: radial-gradient(circle at top right, rgba(179,136,255,.2), transparent 42%), linear-gradient(135deg, rgba(255,111,203,.12), rgba(20,9,26,.96));
+      box-shadow: 0 20px 60px rgba(0,0,0,.32);
+    }
+    .program-picker-row, .program-summary-row, .sheet-navigation-head, .sheet-tab-actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+    }
+    .program-picker-row, .sheet-navigation-head { justify-content: space-between; }
+    .program-picker-row select { min-width: min(100%, 310px); }
+    .program-summary-row { margin-top: 12px; }
+    .program-summary-item {
+      min-width: 112px;
+      flex: 1 1 112px;
+      border: 1px solid rgba(179,136,255,.18);
+      border-radius: 13px;
+      padding: 9px 10px;
+      background: rgba(255,255,255,.035);
+    }
+    .program-summary-item span { display:block; color:var(--muted); font-size:.66rem; font-weight:900; text-transform:uppercase; }
+    .program-summary-item strong { display:block; margin-top:3px; color:var(--text); font-size:.86rem; }
+    .program-status {
+      display:inline-flex;
+      align-items:center;
+      min-height:28px;
+      padding:0 10px;
+      border-radius:999px;
+      font-size:.68rem;
+      font-weight:950;
+      text-transform:uppercase;
+      background:rgba(255,111,203,.13);
+      border:1px solid rgba(255,111,203,.28);
+      color:#ffd5f2;
+    }
+    .program-status.active { background:rgba(105,230,176,.13); border-color:rgba(105,230,176,.32); color:#bdf8dc; }
+    .program-status.archived { background:rgba(255,255,255,.06); border-color:var(--line-soft); color:var(--muted); }
+    .sheet-navigation {
+      border: 1px solid rgba(179,136,255,.24);
+      border-radius: 17px;
+      padding: 10px;
+      background: rgba(20,9,26,.86);
+      min-width: 0;
+    }
+    .sheet-navigation-head { margin-bottom:8px; }
+    .sheet-tabs-shell {
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto auto;
+      align-items:stretch;
+      gap:7px;
+      min-width:0;
+    }
+    .sheet-scroll-button {
+      width:38px;
+      min-width:38px;
+      border-radius:12px;
+      border:1px solid rgba(179,136,255,.22);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      font-size:1.1rem;
+      font-weight:950;
+    }
+    .program-sheet-tabs {
+      display:flex;
+      gap:8px;
+      min-width:0;
+      overflow-x:auto;
+      overscroll-behavior-inline:contain;
+      scroll-snap-type:x proximity;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(255,111,203,.45) transparent;
+      touch-action:pan-x;
+      padding:2px 1px 7px;
+    }
+    .program-sheet-tab {
+      position:relative;
+      flex:0 0 auto;
+      min-width:138px;
+      max-width:220px;
+      min-height:58px;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:7px;
+      align-items:center;
+      scroll-snap-align:start;
+      border:1px solid rgba(179,136,255,.2);
+      border-radius:13px;
+      padding:8px 8px 8px 11px;
+      background:rgba(255,255,255,.035);
+      color:var(--text);
+      text-align:left;
+    }
+    .program-sheet-tab.active {
+      border-color:rgba(255,111,203,.72);
+      background:linear-gradient(135deg,rgba(255,111,203,.22),rgba(179,136,255,.15));
+      box-shadow:0 0 0 2px rgba(255,111,203,.1);
+    }
+    .program-sheet-tab.archived { opacity:.62; }
+    .program-sheet-tab-copy { min-width:0; }
+    .program-sheet-tab strong, .program-sheet-tab small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .program-sheet-tab strong { font-size:.78rem; }
+    .program-sheet-tab small { margin-top:3px; color:var(--muted); font-size:.65rem; }
+    .sheet-dirty-dot { color:var(--gold-2); }
+    .sheet-tab-menu {
+      width:29px;
+      height:29px;
+      border-radius:9px;
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      font-weight:950;
+    }
+    .sheet-add-button {
+      flex:0 0 auto;
+      white-space:nowrap;
+      min-height:58px;
+      border-radius:13px;
+      padding:0 13px;
+      background:linear-gradient(135deg,var(--gold-2),var(--gold));
+      color:#120817;
+      font-weight:950;
+    }
+    .all-sheets-button { min-height:58px; white-space:nowrap; }
+    .all-sheets-panel, .sheet-context-menu {
+      margin-top:9px;
+      border:1px solid rgba(255,111,203,.25);
+      border-radius:14px;
+      padding:10px;
+      background:rgba(30,13,37,.98);
+    }
+    .all-sheets-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+      gap:7px;
+      max-height:310px;
+      overflow:auto;
+      margin-top:9px;
+    }
+    .all-sheet-choice {
+      min-height:42px;
+      border:1px solid rgba(179,136,255,.2);
+      border-radius:11px;
+      padding:7px 10px;
+      background:rgba(255,255,255,.035);
+      color:var(--text);
+      text-align:left;
+    }
+    .all-sheet-choice.active { border-color:var(--gold-2); background:rgba(255,111,203,.13); }
+    .sheet-context-actions { display:flex; flex-wrap:wrap; gap:7px; }
+    .sheet-context-actions button { min-height:36px; }
+    .program-empty-state, .sheet-empty-state {
+      border:1px dashed rgba(255,111,203,.38);
+      border-radius:16px;
+      padding:24px 16px;
+      text-align:center;
+      background:rgba(255,111,203,.055);
+      margin-bottom:14px;
+    }
+    .program-empty-state h3, .sheet-empty-state h3 { margin:0 0 7px; }
+    .program-empty-state p, .sheet-empty-state p { margin:0 0 13px; color:var(--muted); }
+    .coach-modal-backdrop {
+      position:fixed;
+      inset:0;
+      z-index:1500;
+      display:grid;
+      place-items:center;
+      padding:18px;
+      background:rgba(4,1,6,.78);
+      backdrop-filter:blur(8px);
+    }
+    .coach-modal {
+      width:min(620px,100%);
+      max-height:min(88vh,780px);
+      overflow:auto;
+      border:1px solid rgba(255,111,203,.4);
+      border-radius:20px;
+      padding:16px;
+      background:linear-gradient(180deg,#2c1535,#130817);
+      box-shadow:0 32px 100px rgba(0,0,0,.65);
+    }
+    .coach-modal h3 { margin:0; }
+    .coach-modal-actions { display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; margin-top:14px; }
+    @media (max-width: 700px) {
+      .sheet-tabs-shell { grid-template-columns:minmax(0,1fr) auto; }
+      .sheet-scroll-button { display:none; }
+      .all-sheets-button { min-height:52px; padding:0 10px; }
+      .sheet-add-button { position:sticky; right:0; min-width:52px; min-height:52px; padding:0 12px; z-index:3; }
+      .program-sheet-tab { min-width:150px; }
+      .program-picker-row select { width:100%; }
+      .program-picker-row > div { width:100%; }
+      .program-picker-row .ghost-button { flex:1 1 auto; }
+      .all-sheets-grid { grid-template-columns:1fr; }
+    }
+
+    .coach-builder-strip {
+      padding: 12px;
+      margin-bottom: 14px;
+      background: linear-gradient(135deg, rgba(255,111,203,.18), rgba(179,136,255,.12));
+    }
+
+    .excel-builder {
+      background:
+        radial-gradient(circle at top right, rgba(179,136,255,.18), transparent 36%),
+        linear-gradient(180deg, rgba(43,20,53,.97), rgba(18,8,23,.98)),
+        rgba(255,111,203,.08);
+    }
+
+    .builder-desktop-grid {
+      display: grid;
+      grid-template-columns: minmax(330px, .82fr) minmax(620px, 1.18fr);
+      gap: 14px;
+      margin-top: 12px;
+      align-items: start;
+    }
+
+    .builder-input-panel,
+    .builder-weeks-panel {
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      background: rgba(255,255,255,.04);
+      padding: 12px;
+    }
+
+    .builder-row-fields {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .builder-weeks-panel h3 {
+      margin: 0 0 10px;
+    }
+
+    .builder-week-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 9px;
+    }
+
+    .builder-live-summary {
+      margin-top: 12px;
+      border: 1px solid rgba(139,201,255,.22);
+      border-radius: 14px;
+      background: rgba(139,201,255,.08);
+      padding: 12px;
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+    }
+
+    .builder-live-summary strong {
+      color: var(--text);
+    }
+
+    .builder-excel-preview {
+      max-width: 100%;
+    }
+
+    .builder-excel-table {
+      min-width: 1320px;
+    }
+
+    .builder-excel-table tr {
+      border-left: 4px solid var(--exercise-accent, var(--gold-2));
+    }
+
+    .week-pill {
+      display: inline-block;
+      min-width: 74px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.11);
+      background: rgba(255,255,255,.05);
+      padding: 7px;
+      color: var(--text);
+      font-weight: 850;
+      line-height: 1.2;
+    }
+
+    .builder-v24-shell {
+      border: 1px solid rgba(255,111,203,.24);
+      border-radius: 14px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top right, rgba(179,136,255,.16), transparent 34%),
+        rgba(255,111,203,.055);
+    }
+
+    .builder-v24-head {
+      display: grid;
+      grid-template-columns: 1.1fr .7fr .9fr .8fr 1fr;
+      gap: 10px;
+      padding: 12px;
+      background: linear-gradient(135deg, rgba(255,111,203,.2), rgba(179,136,255,.13));
+      border-bottom: 1px solid rgba(255,111,203,.13);
+    }
+
+    .builder-v24-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,111,203,.13);
+      background: rgba(179,136,255,.08);
+    }
+
+    .builder-v24-toolbar span {
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 800;
+    }
+
+    .builder-v24-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .mini-button {
+      min-height: 34px;
+      border-radius: 8px;
+      padding: 0 10px;
+      background: rgba(255,255,255,.075);
+      border: 1px solid rgba(255,255,255,.14);
+      color: var(--text);
+      font-size: .74rem;
+      font-weight: 850;
+    }
+
+    .builder-v24-scroll {
+      overflow: auto;
+      background: rgba(7,3,9,.52);
+    }
+
+    .builder-v24-table {
+      width: 100%;
+      min-width: 1280px;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .builder-v24-table th,
+    .builder-v24-table td {
+      border-bottom: 1px solid rgba(255,111,203,.105);
+      border-right: 1px solid rgba(179,136,255,.06);
+      padding: 8px 7px;
+      text-align: left;
+      vertical-align: top;
+      font-size: .72rem;
+    }
+
+    .builder-v24-table th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #281430;
+      color: #f4d7ff;
+      text-transform: uppercase;
+      font-size: .62rem;
+      font-weight: 950;
+    }
+
+    .builder-v24-table select,
+    .builder-v24-table input,
+    .builder-v24-table textarea,
+    .builder-v24-head select,
+    .builder-v24-head input {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid rgba(179,136,255,.26);
+      background: rgba(32,15,39,.94);
+      color: var(--text);
+      padding: 8px;
+      font-size: .76rem;
+    }
+
+    .builder-v24-table textarea {
+      min-height: 58px;
+      resize: vertical;
+    }
+
+    .builder-v24-table select option,
+    .builder-v24-head select option {
+      background: #24112c;
+      color: #fff8ff;
+    }
+
+    .builder-v24-table tbody tr:nth-child(even) td,
+    .coach-program-table tbody tr:nth-child(even) td {
+      background: rgba(255,111,203,.035);
+    }
+
+    .builder-v24-table tbody tr:hover td {
+      background: rgba(255,111,203,.11);
+    }
+
+    .builder-v24-table .col-group { width: 126px; }
+    .builder-v24-table .col-exercise { width: 250px; }
+    .builder-v24-table .col-notes { width: 292px; }
+    .builder-v24-table .col-som { width: 142px; }
+    .builder-v24-table .col-small { width: 68px; }
+    .builder-v24-table .col-week { width: 68px; }
+
+    .builder-row-tools {
+      display: grid;
+      gap: 6px;
+    }
+
+    .builder-row-tools .micro-copy {
+      font-size: .66rem;
+    }
+
+    .builder-stimulus-flags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 7px;
+    }
+
+    .builder-stimulus-flags span {
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      padding: 4px 6px;
+      color: #eedcff;
+      background: rgba(255,255,255,.055);
+      font-size: .62rem;
+      font-weight: 850;
+    }
+
+    .builder-v24-live {
+      display: grid;
+      grid-template-columns: minmax(260px, .9fr) minmax(320px, 1.1fr);
+      gap: 12px;
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+      background: linear-gradient(135deg, rgba(216,164,255,.12), rgba(139,201,255,.06));
+    }
+
+    .builder-v24-feedback,
+    .builder-v24-volume {
+      border: 1px solid rgba(216,164,255,.16);
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+      padding: 12px;
+    }
+
+    .builder-v24-volume-rows {
+      display: grid;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .builder-v24-volume-row {
+      display: grid;
+      grid-template-columns: 112px 1fr 46px;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: .72rem;
+    }
+
+    .builder-v24-volume-bar {
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.09);
+      overflow: hidden;
+    }
+
+    .builder-v24-volume-bar span {
+      display: block;
+      height: 100%;
+      width: var(--w, 0%);
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), var(--gold-2));
+    }
+
+    .builder-add-row td {
+      background: rgba(216,164,255,.04);
+      border-bottom-style: dashed;
+    }
+
+    .builder-add-row-button {
+      width: 100%;
+      min-height: 34px;
+      border-radius: 8px;
+      border: 1px dashed rgba(216,164,255,.42);
+      background: rgba(216,164,255,.08);
+      color: #f1e2ff;
+      font-weight: 900;
+    }
+
+    .coach-create-grid {
+      overflow: auto;
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      background: rgba(4,4,12,.32);
+    }
+
+    .coach-create-table {
+      width: 100%;
+      min-width: 1020px;
+      border-collapse: collapse;
+    }
+
+    .coach-create-table th,
+    .coach-create-table td {
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      border-right: 1px solid rgba(255,255,255,.045);
+      padding: 8px;
+      vertical-align: top;
+      text-align: left;
+      font-size: .74rem;
+    }
+
+    .coach-create-table th {
+      background: rgba(9,8,18,.96);
+      color: #84d8ff;
+      text-transform: uppercase;
+      font-size: .66rem;
+      font-weight: 950;
+    }
+
+    .coach-create-table input,
+    .coach-create-table select,
+    .coach-create-table textarea {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid rgba(169,144,255,.18);
+      background: rgba(4,4,12,.52);
+      color: var(--text);
+      padding: 8px;
+      font-size: .76rem;
+    }
+
+    .coach-create-table textarea {
+      min-height: 82px;
+      resize: vertical;
+    }
+
+    .created-sheet-preview {
+      margin-top: 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      overflow: auto;
+      background: rgba(255,255,255,.02);
+    }
+
+    .athlete-view-panel {
+      position: sticky;
+      top: 12px;
+      max-height: min(820px, calc(100dvh - 170px));
+      overflow: auto;
+    }
+
+    .athlete-tabs,
+    .week-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 0 12px 12px;
+    }
+
+    .athlete-view-select {
+      min-width: 240px;
+      border-radius: 10px;
+      border: 1px solid var(--line-soft);
+      background: rgba(4,4,12,.52);
+      color: var(--text);
+      padding: 9px 10px;
+      font-size: .78rem;
+      font-weight: 800;
+    }
+
+    .athlete-tab,
+    .week-tab {
+      min-height: 34px;
+      border-radius: 10px;
+      border: 1px solid var(--line-soft);
+      background: rgba(255,255,255,.035);
+      color: var(--muted);
+      padding: 0 12px;
+      font-weight: 900;
+    }
+
+    .athlete-tab.active,
+    .week-tab.active {
+      background: #ffbd70;
+      color: #1c0b10;
+      border-color: transparent;
+    }
+
+    .athlete-cards {
+      display: grid;
+      gap: 10px;
+      padding: 0 12px 12px;
+    }
+
+    .athlete-card {
+      border: 1px solid rgba(101,232,255,.24);
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(74,151,188,.42), rgba(26,48,82,.52));
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .athlete-card-head {
+      display: grid;
+      grid-template-columns: 42px 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .exercise-letter {
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      background: rgba(101,232,255,.25);
+      color: #ffd087;
+      font-weight: 950;
+      border: 1px solid rgba(101,232,255,.32);
+    }
+
+    .athlete-card h4 {
+      margin: 0;
+      font-size: 1rem;
+      color: #f6fbff;
+    }
+
+    .rm-pill {
+      border-radius: 999px;
+      border: 1px solid rgba(105,230,176,.52);
+      background: rgba(105,230,176,.18);
+      color: #8dffc8;
+      padding: 6px 9px;
+      font-size: .7rem;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .set-pill {
+      justify-self: start;
+      border-radius: 999px;
+      background: rgba(169,144,255,.18);
+      border: 1px solid rgba(169,144,255,.28);
+      color: #ffd087;
+      padding: 5px 9px;
+      font-size: .72rem;
+      font-weight: 900;
+    }
+
+    .athlete-note {
+      border: 1px solid rgba(255,208,135,.35);
+      border-radius: 11px;
+      background: rgba(255,208,135,.14);
+      color: #fff5df;
+      padding: 8px 10px;
+      font-size: .78rem;
+      line-height: 1.35;
+    }
+
+    .feedback-board {
+      padding: 12px;
+      margin-top: 14px;
+      background: linear-gradient(135deg, rgba(255,111,126,.10), rgba(169,144,255,.07));
+    }
+
+    .feedback-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+    .feedback-metric {
+      border-radius: 12px;
+      border: 1px solid var(--line-soft);
+      background: rgba(255,255,255,.03);
+      padding: 10px;
+    }
+
+    .feedback-metric span {
+      display: block;
+      color: var(--muted);
+      font-size: .64rem;
+      text-transform: uppercase;
+      font-weight: 900;
+    }
+
+    .feedback-metric strong {
+      display: block;
+      margin-top: 5px;
+      font-size: 1.08rem;
+      color: var(--gold-2);
+    }
+
+    .reference-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .reference-row {
+      border-radius: 12px;
+      border: 1px solid var(--line-soft);
+      padding: 10px;
+      background: rgba(255,255,255,.025);
+      color: var(--muted);
+      font-size: .8rem;
+      line-height: 1.45;
+    }
+
+    .reference-row strong {
+      color: var(--text);
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .exercise-card {
+      border-left: 4px solid var(--gold-2);
+    }
+
+    .exercise-card + .exercise-card {
+      margin-top: 18px;
+    }
+
+    .exercise-title h3,
+    .coach-section-title,
+    .coach-edit-row h4 {
+      text-transform: uppercase;
+      font-weight: 950;
+      color: var(--gold-2);
+    }
+
+    .exercise-divider {
+      height: 1px;
+      margin: 12px 0;
+      background: linear-gradient(90deg, transparent, var(--line), transparent);
+    }
+
+    .copy-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .copy-kg {
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
+      border: 1px solid var(--line);
+      background: rgba(255,111,203,.12);
+      color: var(--gold-2);
+      font-weight: 950;
+    }
+
+    .logbook-note {
+      grid-column: 1 / -1;
+      margin-top: 10px;
+      border: 1px solid rgba(105,230,176,.28);
+      background: rgba(105,230,176,.08);
+      border-radius: 12px;
+      padding: 10px;
+      color: var(--text);
+      font-size: .8rem;
+      line-height: 1.45;
+    }
+
+    .coach-section {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 14px;
+      background: linear-gradient(135deg, rgba(216,164,255,.08), rgba(255,111,203,.04));
+    }
+
+    .coach-section-title {
+      margin: 0 0 12px;
+      color: var(--green);
+      letter-spacing: 0;
+    }
+
+    .coach-edit-row {
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: rgba(255,255,255,.025);
+    }
+
+    .coach-edit-row > div {
+      display: grid;
+      grid-template-columns: 1.15fr .7fr .55fr .65fr .7fr;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .nutrition-frame {
+      width: 100%;
+      min-height: min(720px, calc(100dvh - 180px));
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--card);
+    }
+
+    .coach-tile {
+      border-radius: 14px;
+      border: 1px solid var(--line-soft);
+      background: rgba(255,255,255,.025);
+      padding: 12px;
+      display: grid;
+      gap: 6px;
+      min-height: 92px;
+    }
+
+    .coach-tile strong {
+      color: var(--text);
+      font-size: 1.25rem;
+    }
+
+    .coach-tile span,
+    .builder-preview,
+    .feedback-text {
+      color: var(--muted);
+      font-size: .76rem;
+      line-height: 1.45;
+    }
+
+    .builder-preview {
+      border-radius: 12px;
+      border: 1px dashed rgba(216,164,255,.24);
+      padding: 10px;
+      background: rgba(255,255,255,.02);
+    }
+
+    .timer-panel {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+      border-radius: 14px;
+      border: 1px solid var(--line-soft);
+      background: rgba(255,255,255,.025);
+      padding: 10px;
+    }
+
+    .timer-panel strong {
+      font-size: 1.55rem;
+      color: var(--gold-2);
+    }
+
+    .coach-only {
+      display: none;
+    }
+
+    body.coach-mode .top-tab.coach-only {
+      display: block;
+    }
+
+    body.coach-mode .nav-button.coach-only {
+      display: grid;
+    }
+
+    body.coach-mode .ghost-button.coach-only,
+    body.coach-mode .coach-only:not(.top-tab):not(.nav-button) {
+      display: inline-flex;
+    }
+
+    body:not(.coach-mode) .coach-only {
+      display: none;
+    }
+
+    .exercise-timer strong {
+      font-size: .86rem;
+      color: var(--text);
+    }
+
+    .exercise-timer small {
+      color: var(--gold-2);
+      font-weight: 900;
+      font-size: 1rem;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 190px;
+    }
+
+    .empty-chart {
+      min-height: 184px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed rgba(255,255,255,.12);
+      border-radius: 14px;
+      background: rgba(255,255,255,.025);
+      font-size: .82rem;
+      padding: 18px;
+    }
+
+    .engine-panel {
+      align-self: center;
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      background: rgba(12, 12, 11, .78);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      max-height: min(800px, calc(100vh - 56px));
+      overflow: auto;
+    }
+
+    .engine-panel h2 {
+      margin: 0;
+      font-size: 1.62rem;
+      line-height: 1.08;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .engine-panel h2 span {
+      color: var(--gold-2);
+      font-style: italic;
+    }
+
+    .engine-panel > p {
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 10px 0 18px;
+      font-size: .9rem;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translate(-50%, 18px);
+      border-radius: 999px;
+      background: #171511;
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 10px 14px;
+      font-size: .84rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: .2s ease;
+      z-index: 40;
+      box-shadow: var(--shadow);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .phase4-exercise-table { min-width: 1780px; }
+    .phase4-exercise-table th { white-space: nowrap; }
+    .phase4-exercise-table td { min-width: 92px; vertical-align: top; }
+    .phase4-exercise-table td:nth-child(2) { min-width: 210px; }
+    .phase4-exercise-table td:nth-child(11) { min-width: 210px; }
+    .phase4-exercise-row { border-left: 4px solid var(--exercise-accent); }
+    .phase4-exercise-row.selected td { background: rgba(255,111,203,.09); }
+    .phase4-exercise-row.locked { opacity: .82; }
+    .phase4-order-cell { display: grid; grid-template-columns: auto auto 48px; align-items:center; gap:5px; }
+    .phase4-order-cell input[type="checkbox"] { width:18px; height:18px; }
+    .drag-handle, .phase4-row-actions button, .rest-presets button, .phase4-bulk-toolbar button { border:1px solid var(--line-soft); background:rgba(255,255,255,.04); color:var(--text); border-radius:8px; min-height:30px; cursor:pointer; }
+    .drag-handle { font-size:1.25rem; cursor:grab; }
+    .order-input { width:48px !important; }
+    .exercise-name-cell { display:grid; gap:6px; }
+    .phase4-badge { display:inline-flex; width:max-content; border:1px solid var(--line-soft); border-radius:999px; padding:3px 7px; font-size:.66rem; color:var(--muted); }
+    .phase4-badge.main { color:var(--gold-2); border-color:rgba(255,111,203,.45); }
+    .rest-field, .load-field { display:grid; grid-template-columns:minmax(62px,1fr) auto; gap:5px; align-items:center; }
+    .rest-presets { display:flex; flex-wrap:wrap; gap:3px; margin-top:5px; }
+    .rest-presets button { min-height:23px; padding:2px 5px; font-size:.64rem; }
+    .phase4-row-actions { display:grid; grid-template-columns:repeat(2,minmax(54px,1fr)); gap:5px; min-width:150px; }
+    .phase4-row-actions button { padding:5px; font-size:.68rem; }
+    .phase4-toolbar { position:sticky; left:0; z-index:3; }
+    .save-indicator { font-weight:800; }
+    .save-indicator.saved { color:var(--green); }
+    .save-indicator.dirty, .save-indicator.saving { color:var(--gold-2); }
+    .save-indicator.error { color:var(--red); }
+    .tempo-legacy { border-color:rgba(255,155,73,.75) !important; box-shadow:0 0 0 1px rgba(255,155,73,.22); }
+    .phase4-bulk-toolbar { position:sticky; top:0; left:0; z-index:5; display:flex; align-items:center; flex-wrap:wrap; gap:7px; padding:10px; border:1px solid rgba(255,111,203,.36); border-radius:12px; background:#17131a; }
+    .phase4-bulk-toolbar button { padding:6px 10px; }
+    .phase4-library-modal, .phase4-details-modal { width:min(760px,calc(100vw - 28px)); max-height:88vh; overflow:auto; }
+    .progression-modal { width:min(1180px,calc(100vw - 28px)); max-height:90vh; overflow:auto; }
+    .progression-scroll { overflow:auto; margin-top:14px; border:1px solid var(--border-soft); border-radius:12px; }
+    .progression-table { min-width:980px; width:100%; border-collapse:collapse; }
+    .progression-table th, .progression-table td { padding:8px; border-bottom:1px solid var(--border-soft); text-align:left; white-space:nowrap; }
+    .progression-table th:first-child, .progression-table td:first-child { position:sticky; left:0; background:var(--surface); z-index:1; }
+    .progression-table input, .progression-table select { width:100%; min-width:76px; }
+    .phase4-library-filters { display:grid; grid-template-columns:2fr 1fr; gap:8px; margin:12px 0; }
+    .phase4-library-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; max-height:52vh; overflow:auto; margin-bottom:10px; }
+    .phase4-library-list button { text-align:left; display:grid; gap:4px; border:1px solid var(--line-soft); border-radius:12px; padding:10px; background:rgba(255,255,255,.03); color:var(--text); }
+    .phase4-library-list span { color:var(--muted); font-size:.72rem; }
+    .phone, .engine-panel, .card, .coach-builder-strip, .program-header-card, .sheet-navigation, .coach-command, .coach-section, .coach-program-panel, .athlete-view-panel, .feedback-board, .coach-modal { background: linear-gradient(145deg, rgba(53,33,69,.96), rgba(43,27,56,.97)); }
+    .program-header-card, .sheet-navigation, .coach-builder-strip, .coach-command, .coach-section, .coach-program-panel, .athlete-view-panel, .feedback-board { border-color: var(--border-soft); box-shadow: 0 14px 40px rgba(20,8,30,.22); }
+    .coach-section-title, .hero-title h2, .program-header-card h2 { background: linear-gradient(100deg, var(--pink-soft), var(--lavender) 70%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .gold-button, .program-sheet-tab.active .program-sheet-tab-copy, .sheet-tab-actions .gold-button { background: linear-gradient(110deg, var(--pink-hot), var(--purple-primary)); border-color: rgba(255,184,220,.52); box-shadow: 0 8px 22px rgba(255,45,149,.2); }
+    input, select, textarea { background: rgba(33,21,44,.92); border-color: var(--border-soft); color: var(--text-primary); }
+    input::placeholder, textarea::placeholder { color: #c9b1d0; opacity: .9; }
+    input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--pink-soft); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(168,85,247,.2); }
+    button:disabled, input:disabled, select:disabled, textarea:disabled { opacity: .52; cursor: not-allowed; }
+    .chip, .phase4-badge { border-color: rgba(201,167,255,.42); background: rgba(168,85,247,.12); }
+    .coach-ai-panel { margin-top:14px; border:1px solid rgba(255,184,220,.38); border-radius:18px; padding:15px; background: linear-gradient(145deg, rgba(53,33,69,.98), rgba(43,27,56,.98)); }
+    .coach-ai-toolbar, .coach-ai-filters { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+    .coach-ai-filters { margin:10px 0 12px; }
+    .coach-ai-filter { border:1px solid var(--border-soft); border-radius:999px; padding:6px 10px; background:rgba(33,21,44,.8); color:var(--text-secondary); }
+    .coach-ai-filter.active { color:var(--text-primary); border-color:var(--pink-soft); background:linear-gradient(110deg,rgba(255,45,149,.25),rgba(168,85,247,.25)); }
+    .coach-ai-card { border:1px solid rgba(201,167,255,.25); border-left:4px solid var(--purple-primary); border-radius:15px; padding:12px; margin-top:9px; background:rgba(33,21,44,.78); }
+    .coach-ai-card.critical { border-left-color:var(--danger,#ff6e7d); }
+    .coach-ai-card.improve { border-left-color:var(--pink-primary); }
+    .coach-ai-card h4 { margin:0; color:var(--pink-soft); }
+    .coach-ai-meta, .coach-ai-data, .coach-ai-actions, .coach-ai-alternatives { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-top:8px; }
+    .coach-ai-data { color:var(--text-secondary); font-size:.75rem; }
+    .coach-ai-actions button, .coach-ai-alternatives button { border:1px solid var(--border-soft); border-radius:8px; padding:6px 9px; background:rgba(168,85,247,.12); color:var(--text-primary); }
+    .coach-ai-actions .apply { background:linear-gradient(110deg,var(--pink-hot),var(--purple-primary)); }
+    .coach-ai-empty { color:var(--text-secondary); border:1px dashed var(--border-soft); border-radius:12px; padding:12px; }
+
+    /* Fase 7 · Premium UI layer: solo presentazione, nessuna logica dati. */
+    .premium-coach-layout { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:18px; align-items:start; }
+    .coach-main-column { min-width:0; }
+    .coach-ai-sidebar { position:sticky; top:18px; border:1px solid rgba(255,184,220,.30); border-radius:22px; padding:12px; background:linear-gradient(160deg,rgba(38,22,58,.98),rgba(18,11,31,.98)); box-shadow:0 22px 50px rgba(10,4,22,.42); overflow:hidden; max-height:calc(100dvh - 36px); display:flex; flex-direction:column; }
+    .coach-ai-sidebar-head { display:flex; align-items:center; gap:10px; padding:4px 4px 12px; border-bottom:1px solid rgba(201,167,255,.18); }
+    .coach-avatar { width:42px; height:42px; border-radius:14px; padding:4px; background:linear-gradient(135deg,var(--pink-hot),var(--purple-primary)); box-shadow:0 8px 20px rgba(255,45,149,.26); flex:none; }
+    .coach-avatar img { width:100%; height:100%; object-fit:cover; border-radius:10px; }
+    .coach-mascot-button { position:relative; padding:0; background:transparent; flex:none; }
+    .coach-mascot-button:focus-visible { outline:2px solid var(--pink-soft); outline-offset:4px; border-radius:14px; }
+    .coach-mascot-badge { position:absolute; top:-5px; right:-6px; min-width:18px; height:18px; padding:0 5px; display:grid; place-items:center; border-radius:999px; background:#ff3d91; color:white; font-size:.62rem; font-weight:900; border:2px solid #24142f; }
+    .coach-ai-sidebar-head strong { display:block; font-size:.98rem; }
+    .coach-ai-sidebar-head span { display:block; color:var(--text-secondary); font-size:.72rem; margin-top:2px; }
+    .coach-ai-switch { margin-left:auto; position:relative; width:38px; height:22px; display:block; }
+    .coach-ai-switch input { opacity:0; width:0; height:0; }
+    .coach-ai-switch span { position:absolute; inset:0; border-radius:999px; background:rgba(201,167,255,.22); transition:.22s ease; }
+    .coach-ai-switch span::after { content:""; position:absolute; width:16px; height:16px; left:3px; top:3px; border-radius:50%; background:#f8eafa; transition:.22s ease; }
+    .coach-ai-switch input:checked + span { background:linear-gradient(90deg,var(--pink-hot),var(--purple-primary)); }
+    .coach-ai-switch input:checked + span::after { transform:translateX(16px); }
+    .coach-muscle-card { margin:12px 0 4px; overflow:hidden; border:1px solid rgba(201,167,255,.22); border-radius:16px; background:linear-gradient(160deg,rgba(168,85,247,.15),rgba(255,45,149,.08)); }
+    .coach-muscle-card img { display:block; width:100%; height:145px; object-fit:cover; object-position:center 42%; opacity:.92; }
+    .coach-muscle-card div { padding:9px 11px 11px; }
+    .coach-muscle-card strong { display:block; color:var(--pink-soft); font-size:.82rem; }
+    .coach-muscle-card span { display:block; margin-top:3px; color:var(--text-secondary); font-size:.7rem; line-height:1.35; }
+    .coach-ai-sidebar .coach-ai-panel { margin:12px 0 0; padding:0; border:0; background:transparent; }
+    .coach-ai-sidebar .coach-ai-panel { min-height:0; overflow:hidden; display:flex; flex-direction:column; }
+    .coach-ai-scroll-area { min-height:0; overflow-y:auto; overflow-x:hidden; display:grid; gap:8px; padding-right:3px; scrollbar-width:thin; }
+    .coach-ai-footer { flex:none; padding-top:8px; }
+    .coach-ai-drawer-close { display:none; margin-left:auto; border:1px solid rgba(255,184,220,.25); border-radius:9px; background:transparent; color:var(--text-primary); font-size:1.1rem; width:32px; height:32px; }
+    .coach-ai-sidebar-head .coach-mascot-button { display:none; }
+    .coach-ai-floating { display:grid; place-items:center; position:fixed; right:28px; bottom:28px; width:92px; height:92px; padding:5px; border-radius:28px; border:1px solid rgba(255,184,220,.52); background:linear-gradient(135deg,#ff3d91,#8d3dff); box-shadow:0 16px 34px rgba(12,3,26,.52); z-index:70; }
+    .coach-ai-floating .coach-avatar { width:82px; height:82px; padding:4px; }
+    .coach-ai-floating .coach-mascot-badge { position:absolute; top:-6px; right:-6px; min-width:24px; height:24px; padding:0 6px; display:grid; place-items:center; border-radius:999px; background:#ff3d91; color:#fff; font-size:.72rem; font-weight:800; box-shadow:0 4px 12px rgba(12,3,26,.45); }
+    .coach-ai-floating::after { content:"Coach AI"; position:absolute; right:0; bottom:-24px; padding:3px 7px; border-radius:8px; background:rgba(27,14,42,.94); color:#ffd7ee; font-size:.65rem; white-space:nowrap; opacity:.86; }
+    .advanced-volume-card { margin:12px 0 16px; padding:12px; border:1px solid rgba(201,167,255,.22); border-radius:14px; background:rgba(24,13,39,.55); }
+    .advanced-volume-card h4 { margin:0; color:var(--pink-soft); }
+    .advanced-volume-table-wrap { overflow:auto; margin-top:10px; }
+    .advanced-volume-table { width:100%; min-width:620px; border-collapse:collapse; font-size:.76rem; }
+    .advanced-volume-table th, .advanced-volume-table td { padding:7px 8px; border-bottom:1px solid rgba(201,167,255,.13); text-align:left; }
+    .advanced-volume-table th { color:var(--text-secondary); font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; }
+    .workout-progress-head { display:flex; justify-content:space-between; margin-top:14px; color:var(--text-secondary); font-size:.76rem; }
+    .workout-progress-head span { color:var(--pink-soft); font-weight:800; }
+    .workout-progress { height:7px; margin:7px 0 4px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; }
+    .workout-progress span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--pink),var(--violet)); transition:width .25s ease; }
+    .phase11-dashboard { display:grid; gap:16px; }
+    .phase11-hero { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:22px; background:linear-gradient(125deg,rgba(71,31,91,.82),rgba(25,13,43,.95)); border-color:rgba(255,184,220,.32); }
+    .phase11-hero h2 { margin:5px 0 6px; font-size:clamp(1.5rem,3vw,2.1rem); }
+    .phase11-hero p { margin:4px 0; }
+    .phase11-summary-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; }
+    .phase11-summary-card { display:flex; align-items:center; gap:10px; padding:13px; border-top:2px solid var(--summary-accent); }
+    .phase11-summary-card > div { min-width:0; }
+    .phase11-summary-card span:not(.summary-icon), .phase11-summary-card strong, .phase11-summary-card small { display:block; }
+    .phase11-summary-card span:not(.summary-icon) { color:var(--text-secondary); font-size:.68rem; }
+    .phase11-summary-card strong { margin:3px 0; font-size:1.1rem; color:var(--summary-accent); }
+    .phase11-summary-card small { color:var(--text-secondary); font-size:.65rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .summary-icon { display:grid; place-items:center; width:34px; height:34px; flex:none; border-radius:11px; color:var(--summary-accent); background:color-mix(in srgb,var(--summary-accent) 18%,transparent); font-size:1.1rem; }
+    .phase11-main-grid { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(260px,.8fr); gap:16px; }
+    .phase11-main-grid > div, .phase11-side { display:grid; gap:16px; align-content:start; }
+    .phase11-today { padding:20px; }
+    .phase11-today h3 { margin:4px 0; }
+    .status-badge { padding:6px 9px; border-radius:999px; color:#b8ffd9; background:rgba(105,230,176,.12); font-size:.72rem; }
+    .phase11-progress { height:7px; margin:16px 0; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; }
+    .phase11-progress span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--pink),var(--violet)); }
+    .quick-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .quick-action { display:flex; justify-content:space-between; align-items:center; width:100%; margin-top:8px; padding:11px 12px; border:1px solid rgba(201,167,255,.18); border-radius:11px; background:rgba(255,255,255,.035); color:var(--text-primary); text-align:left; cursor:pointer; }
+    .quick-action:hover { border-color:rgba(255,184,220,.52); background:rgba(255,61,145,.08); }
+    .phase11-chart-card { padding:18px; }
+    .phase11-bars { height:150px; display:flex; align-items:end; justify-content:space-around; gap:10px; padding:14px 8px 0; border-bottom:1px solid rgba(201,167,255,.18); }
+    .phase11-bar-col { display:flex; flex:1; height:100%; flex-direction:column; align-items:center; justify-content:end; gap:6px; }
+    .phase11-bar-col span { display:block; width:min(30px,70%); min-height:8px; border-radius:9px 9px 2px 2px; background:linear-gradient(180deg,var(--pink),var(--violet)); }
+    .phase11-bar-col small { color:var(--text-secondary); font-size:.66rem; }
+    .phase11-logbook { display:grid; gap:16px; }
+    .phase11-logbook-toolbar { display:flex; align-items:end; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .phase11-logbook-toolbar label { display:grid; gap:6px; min-width:210px; flex:1; }
+    .phase11-logbook-toolbar input, .phase11-logbook-toolbar select { width:100%; }
+    .phase11-logbook-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .phase11-log-card { padding:18px; border-left:3px solid var(--pink); }
+    .phase11-log-card h3 { margin:4px 0; }
+    .phase11-log-meta { display:flex; gap:8px; flex-wrap:wrap; color:var(--text-secondary); font-size:.78rem; }
+    .phase11-log-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:14px 0; }
+    .phase11-log-stats div { padding:9px; border-radius:10px; background:rgba(255,255,255,.045); }
+    .phase11-log-stats strong, .phase11-log-stats span { display:block; }
+    .phase11-log-stats span { color:var(--text-secondary); font-size:.68rem; }
+    .phase11-log-exercises { margin-top:10px; border-top:1px solid rgba(201,167,255,.14); padding-top:10px; }
+    .phase11-log-exercises summary { cursor:pointer; color:var(--pink); font-size:.8rem; }
+    .phase11-log-exercises ul { margin:8px 0 0 18px; padding:0; color:var(--text-secondary); font-size:.78rem; }
+    .phase11-log-empty { padding:28px; text-align:center; color:var(--text-secondary); }
+    .exercise-analysis { margin-top:16px; padding:14px; border:1px solid rgba(201,167,255,.2); border-radius:14px; background:rgba(23,13,38,.62); }
+    .analysis-tier { color:#ffd166; font-weight:800; border:1px solid currentColor; border-radius:999px; padding:4px 9px; }
+    .analysis-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; margin:12px 0; }
+    .analysis-grid span, .analysis-joints span { padding:7px 8px; border-radius:8px; font-size:.75rem; background:rgba(255,255,255,.06); }
+    .analysis-stimulus { color:#ff8fcf; } .analysis-stability { color:#8ed8ff; } .analysis-fatigue { color:#ffad7a; } .analysis-progression { color:#a8f2bd; }
+    .analysis-joints { display:flex; gap:6px; flex-wrap:wrap; } .analysis-confidence { display:block; margin-top:10px; color:var(--text-secondary); }
+    .comparison-grid { display:grid; grid-template-columns:repeat(4,minmax(180px,1fr)); gap:10px; margin-top:14px; overflow-x:auto; }
+    .comparison-card { display:grid; gap:7px; min-width:180px; padding:12px; border:1px solid rgba(201,167,255,.2); border-radius:12px; background:rgba(255,255,255,.04); }
+    .comparison-card span { color:var(--text-secondary); font-size:.75rem; }
+    @media(max-width:600px){ .analysis-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+    @media(max-width:700px){ .phase11-logbook-grid{grid-template-columns:1fr;} .phase11-logbook-toolbar label{min-width:100%;} .phase11-log-stats{grid-template-columns:repeat(3,minmax(0,1fr));} }
+    @media(max-width:900px){ .phase11-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr));} .phase11-main-grid{grid-template-columns:1fr;} }
+    @media(max-width:560px){ .phase11-hero{align-items:flex-start; flex-direction:column; padding:17px;} .phase11-hero .gold-button{width:100%;} .phase11-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));} .phase11-summary-card{padding:10px;} .phase11-main-grid{gap:12px;} .quick-actions > button{flex:1; min-width:130px;} }
+    .coach-ai-quality { border:1px solid rgba(255,197,96,.28); border-radius:12px; background:rgba(255,197,96,.06); }
+    .coach-ai-quality > button { width:100%; display:flex; align-items:center; gap:8px; padding:9px 10px; color:var(--text-primary); background:transparent; border:0; text-align:left; }
+    .coach-ai-quality > button b { margin-left:auto; color:#ffd276; }
+    .coach-ai-quality > button em { font-style:normal; color:#ffd276; font-size:1rem; }
+    .coach-ai-quality-body { padding:0 10px 10px; color:var(--text-secondary); font-size:.74rem; }
+    .coach-ai-quality-body ul { list-style:none; padding:0; margin:7px 0 0; display:grid; gap:5px; }
+    .coach-ai-quality-body li { display:flex; align-items:center; gap:7px; }
+    .coach-ai-quality-body li span { flex:1; }
+    .coach-ai-quality-body li button { border:1px solid rgba(255,197,96,.3); border-radius:7px; padding:4px 7px; background:rgba(255,197,96,.1); color:#ffe4a8; font-size:.68rem; }
+    .progression-table tr.coach-week-selected { background:rgba(255,61,145,.16); outline:2px solid rgba(255,184,220,.65); outline-offset:-2px; }
+    .coach-mascot-button .coach-avatar { width:60px; height:60px; }
+    .coach-ai-popover .coach-avatar { width:96px; height:96px; }
+    .coach-ai-detail-modal .coach-avatar { width:62px; height:62px; }
+    .coach-mascot-inline-fallback { width:100%; height:100%; display:none; }
+    .coach-avatar.mascot-failed .coach-mascot-inline-fallback { display:block; }
+    .coach-avatar.mascot-failed img { display:none; }
+    .coach-ai-sidebar .coach-ai-panel > .row { align-items:flex-start; }
+    .coach-ai-sidebar .coach-ai-panel > .row .coach-ai-toolbar { display:none; }
+    .coach-ai-sidebar .coach-section-title { font-size:.88rem; letter-spacing:.08em; }
+    .coach-ai-sidebar .coach-ai-card { padding:13px; border-radius:16px; transition:transform .22s ease, border-color .22s ease, box-shadow .22s ease; }
+    .coach-ai-sidebar .coach-ai-card.critical { border-left-color:#ff4f73; }
+    .coach-ai-sidebar .coach-ai-card.improve { border-left-color:#f3a6ff; }
+    .coach-ai-sidebar .coach-ai-card .chip { color:#ffd7ee; }
+    .coach-ai-collapsed-copy { margin:8px 0 0; color:var(--text-secondary); font-size:.76rem; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .coach-ai-expanded { animation:premiumFadeIn .18s ease both; }
+    .coach-ai-sidebar .coach-ai-card:hover { transform:translateY(-2px); border-color:rgba(255,184,220,.58); box-shadow:0 12px 26px rgba(8,3,18,.35); }
+    .coach-ai-sidebar .coach-ai-card h4 { font-size:.88rem; }
+    .coach-ai-sidebar .coach-ai-card p { font-size:.76rem; line-height:1.45; }
+    .coach-ai-sidebar .coach-ai-actions button { min-height:34px; }
+    .coach-ai-actions button { min-width:max-content; flex-shrink:0; white-space:normal; word-break:normal; overflow-wrap:normal; line-height:1.2; }
+    .coach-ai-sidebar .coach-ai-actions .apply { flex:1; }
+    .coach-ai-sidebar .coach-ai-filters { overflow:auto; flex-wrap:nowrap; padding-bottom:3px; scrollbar-width:thin; }
+    .coach-ai-sidebar .coach-ai-filter { white-space:nowrap; font-size:.7rem; }
+    .coach-ai-status-tabs { display:flex; gap:5px; margin:10px 0; border-bottom:1px solid rgba(201,167,255,.16); padding-bottom:7px; }
+    .coach-ai-status-tabs button { flex:1; min-width:0; padding:7px 5px; border-radius:9px; background:transparent; color:var(--text-secondary); font-size:.72rem; }
+    .coach-ai-status-tabs button.active { color:#fff; background:linear-gradient(110deg,rgba(255,45,149,.30),rgba(168,85,247,.28)); }
+    .coach-ai-all-button { width:100%; margin-top:10px; padding:9px; border-radius:10px; color:var(--pink-soft); background:rgba(168,85,247,.14); border:1px solid rgba(201,167,255,.22); }
+    .coach-ai-card, .coach-ai-card * { min-width:0; overflow-wrap:anywhere; }
+    .coach-ai-card.critical { border-left-color:#e83f67; }
+    .coach-ai-card.improve { border-left-color:#ff4fa3; }
+    .coach-ai-card.info { border-left-color:#6ecbff; }
+    .coach-ai-involved { margin-top:10px; padding:9px; border-radius:11px; background:rgba(168,85,247,.08); }
+    .coach-ai-involved ul { list-style:none; margin:7px 0 0; padding:0; display:grid; gap:5px; }
+    .coach-ai-involved li { display:flex; justify-content:space-between; gap:8px; padding:6px 0; border-bottom:1px solid rgba(201,167,255,.12); font-size:.76rem; }
+    .coach-ai-involved li span { color:var(--text-secondary); font-size:.68rem; text-align:right; }
+    .coach-ai-close { width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,.08); color:var(--text-secondary); font-size:1.1rem; }
+    .coach-view-switch { display:flex; gap:4px; padding:3px; border:1px solid var(--border-soft); border-radius:10px; background:rgba(20,10,30,.55); }
+    .coach-view-switch button { padding:6px 9px; border-radius:7px; background:transparent; color:var(--text-secondary); font-size:.72rem; }
+    .coach-view-switch button.active { color:#fff; background:linear-gradient(110deg,var(--pink-hot),var(--purple-primary)); }
+    .coach-compact-hidden { display:none; }
+    .coach-weeks-view { margin:0 0 14px; border:1px solid var(--border-soft); border-radius:15px; overflow:hidden; background:rgba(19,10,31,.55); }
+    .coach-weeks-caption { display:flex; justify-content:space-between; gap:10px; padding:11px 13px; color:var(--text-secondary); font-size:.76rem; }
+    .coach-weeks-caption strong { color:var(--pink-soft); font-size:.88rem; }
+    .coach-weeks-scroll { max-width:100%; overflow:auto; }
+    .coach-weeks-grid { min-width:max-content; width:100%; border-collapse:separate; border-spacing:0; }
+    .coach-weeks-grid th, .coach-weeks-grid td { padding:3px; border-top:1px solid rgba(201,167,255,.14); border-right:1px solid rgba(201,167,255,.10); vertical-align:top; }
+    .coach-weeks-grid thead th { position:sticky; top:0; z-index:3; background:#24152f; color:var(--pink-soft); font-size:.7rem; text-align:center; }
+    .coach-weeks-grid thead tr:nth-child(2) th { top:30px; font-size:.62rem; color:var(--text-secondary); }
+    .coach-weeks-grid tbody th { text-align:left; background:#24152f; }
+    .coach-weeks-grid .week-fixed-order, .coach-weeks-grid .week-row-order { position:sticky; left:0; z-index:5; min-width:38px; width:38px; background:#24152f; }
+    .coach-weeks-grid .week-fixed-exercise, .coach-weeks-grid .week-row-exercise { position:sticky; left:38px; z-index:5; min-width:170px; background:#24152f; }
+    .coach-weeks-grid .week-fixed-group, .coach-weeks-grid .week-row-group { min-width:110px; background:#24152f; }
+    .coach-weeks-grid .week-fixed-notes, .coach-weeks-grid .week-row-notes { min-width:180px; background:#24152f; }
+    .coach-weeks-grid .week-fixed-note2, .coach-weeks-grid .week-row-note2 { min-width:175px; width:175px; background:#24152f; }
+    .coach-weeks-grid thead .week-fixed-order, .coach-weeks-grid thead .week-fixed-exercise, .coach-weeks-grid thead .week-fixed-group, .coach-weeks-grid thead .week-fixed-notes { z-index:7; }
+    .coach-weeks-grid tbody th span, .coach-weeks-grid tbody th small { display:block; overflow-wrap:anywhere; }
+    .coach-weeks-grid textarea, .week-inline-input { box-sizing:border-box; padding:2px; border:1px solid rgba(201,167,255,.18); border-radius:4px; background:rgba(16,9,28,.72); color:var(--text-primary); font-size:.72rem; height:30px; }
+    .coach-weeks-grid textarea { min-height:40px; height:42px; resize:vertical; line-height:1.25; overflow-wrap:anywhere; white-space:pre-wrap; }
+    .coach-weeks-grid tbody tr { background:rgba(255,255,255,.018); transition:background .18s ease; }
+    .coach-weeks-grid tbody tr:nth-child(even) { background:rgba(168,85,247,.035); }
+    .coach-weeks-grid tbody tr:hover { background:rgba(255,61,145,.095); }
+    .coach-weeks-grid td:focus-within, .coach-weeks-grid textarea:focus, .coach-weeks-grid input:focus { outline:2px solid rgba(255,184,220,.72); outline-offset:-2px; border-color:rgba(255,184,220,.72); }
+    .coach-weeks-grid .week-set { width:42px; min-width:42px; }
+    .coach-weeks-grid .week-reps { width:58px; min-width:58px; }
+    .coach-weeks-grid .week-rir { width:48px; min-width:48px; }
+    .coach-weeks-grid .week-inline-input { width:100%; text-align:center; }
+    .coach-weeks-grid .week-odd { background:rgba(95,45,112,.22); }
+    .coach-weeks-grid .week-even { background:rgba(77,51,132,.18); }
+    .coach-weeks-grid .week-deload { box-shadow:inset 0 0 0 2px rgba(255,197,96,.5); }
+    .coach-weeks-grid .week-manual { box-shadow:inset 0 0 0 2px rgba(255,105,189,.45); }
+    .coach-week-cell { min-width:82px; min-height:76px; display:grid; align-content:center; gap:3px; padding:7px; border:1px solid rgba(201,167,255,.20); border-radius:10px; background:rgba(168,85,247,.10); color:var(--text-primary); text-align:left; }
+    .coach-week-cell:hover, .coach-week-cell:focus-visible { border-color:var(--pink-primary); background:rgba(255,45,149,.16); }
+    .coach-week-cell small { color:var(--text-secondary); font-size:.66rem; }
+    .coach-week-cell em { width:max-content; padding:2px 5px; border-radius:999px; background:rgba(105,230,176,.12); color:var(--success); font-size:.58rem; font-style:normal; }
+    .coach-week-cell.manual em { background:rgba(255,180,84,.16); color:var(--warning); }
+    .coach-week-cell.deload { border-color:rgba(255,180,84,.50); }
+    .coach-week-cell.empty { opacity:.65; }
+    .coach-mobile-week-picker { display:none; align-items:center; gap:5px; color:var(--text-secondary); font-size:.7rem; }
+    .coach-ai-count { display:inline-grid; place-items:center; min-width:22px; height:22px; padding:0 6px; border-radius:999px; background:linear-gradient(135deg,var(--pink-hot),var(--purple-primary)); color:#fff; font-size:.7rem; vertical-align:middle; }
+    .coach-ai-detail-modal { width:min(760px,calc(100vw - 28px)); max-height:88vh; overflow:auto; }
+    .coach-ai-popover { position:fixed; right:28px; bottom:28px; z-index:35; width:min(360px,calc(100vw - 32px)); display:flex; gap:10px; padding:14px; border:1px solid rgba(255,184,220,.42); border-radius:18px; background:linear-gradient(145deg,rgba(53,33,69,.98),rgba(27,14,42,.98)); box-shadow:0 22px 60px rgba(9,3,18,.52); animation:premiumRise .24s ease both; }
+    .coach-ai-popover strong { display:block; margin-top:5px; }
+    .coach-ai-popover p { margin:7px 0 10px; color:var(--text-secondary); font-size:.78rem; line-height:1.4; }
+    .coach-ai-popover .gold-button, .coach-ai-popover .ghost-button { min-height:32px; padding:6px 10px; }
+    .coach-detail-heading { display:flex; align-items:center; gap:12px; }
+    .coach-detail-heading h3 { margin:5px 0 0; }
+    .coach-detail-lead { font-size:1rem; color:var(--text-primary); line-height:1.55; }
+    .coach-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .coach-detail-grid .reference-row { margin:0; }
+    .coach-alternative-grid { display:grid; gap:8px; margin-top:14px; }
+    .coach-alternative-grid > strong { color:var(--pink-soft); }
+    .coach-alternative-grid button { display:flex; align-items:center; gap:10px; text-align:left; padding:8px; border:1px solid var(--border-soft); border-radius:13px; background:rgba(168,85,247,.10); color:var(--text-primary); }
+    .coach-alternative-grid button img { width:38px; height:38px; border-radius:10px; object-fit:cover; }
+    .coach-alternative-grid button span { display:grid; gap:2px; flex:1; }
+    .coach-alternative-grid button small { color:var(--text-secondary); }
+    .coach-alternative-grid button em { font-style:normal; font-size:.72rem; color:var(--pink-soft); }
+    .premium-coach-layout .coach-builder-strip { border-radius:24px; box-shadow:0 22px 55px rgba(10,4,22,.28); }
+    .premium-coach-layout .program-header-card, .premium-coach-layout .sheet-navigation { border-radius:20px; }
+    .premium-coach-layout .gold-button, .premium-coach-layout .sheet-add-button { transition:transform .2s ease, box-shadow .2s ease, filter .2s ease; }
+    .premium-coach-layout .gold-button:hover, .premium-coach-layout .sheet-add-button:hover { transform:translateY(-1px); filter:brightness(1.08); box-shadow:0 12px 28px rgba(255,45,149,.28); }
+    .premium-coach-layout .phase4-exercise-row { transition:background .2s ease, transform .2s ease; }
+    .premium-coach-layout .phase4-exercise-row:hover { background:rgba(168,85,247,.08); }
+    .premium-coach-layout .phase4-badge { transition:transform .18s ease, background .18s ease; }
+    .premium-coach-layout .phase4-badge:hover { transform:scale(1.03); background:rgba(255,45,149,.18); }
+    .coach-modal-backdrop { animation:premiumFadeIn .2s ease both; }
+    .coach-modal { animation:premiumRise .24s ease both; }
+    @keyframes premiumFadeIn { from{opacity:0} to{opacity:1} }
+    @keyframes premiumRise { from{opacity:0;transform:translateY(10px) scale(.985)} to{opacity:1;transform:none} }
+
+    @media (max-width: 980px) {
+      .stage {
+        grid-template-columns: 1fr;
+        padding: 0;
+        min-height: 100vh;
       }
 
-      $headers = "HTTP/1.1 $status`r`nContent-Type: $contentType`r`nContent-Length: $($body.Length)`r`nCache-Control: no-cache`r`nConnection: close`r`n`r`n"
-      $headerBytes = [System.Text.Encoding]::ASCII.GetBytes($headers)
-      $stream.Write($headerBytes, 0, $headerBytes.Length)
-      $stream.Write($body, 0, $body.Length)
-      $stream.Flush()
-    } catch {
-    } finally {
-      $client.Dispose()
+      .desktop-rail, .engine-panel {
+        display: none;
+      }
+
+      .desktop-only,
+      .coach-nav,
+      .coach-tab,
+      #modeButton {
+        display: none !important;
+      }
+
+      .phone-shell {
+        width: 100%;
+        max-width: none;
+        min-height: 100vh;
+        border-radius: 0;
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+      }
+
+      .phone {
+        min-height: 100vh;
+        min-height: 100dvh;
+        height: 100dvh;
+        border-radius: 0;
+        border: 0;
+        grid-template-rows: auto auto 1fr;
+      }
+
+      .phone-status {
+        display: grid;
+      }
+
+      .top-tabs {
+        display: none;
+      }
+
+      .bottom-nav {
+        position: fixed;
+        display: grid;
+        left: 18px;
+        right: 18px;
+        top: auto;
+        bottom: calc(10px + env(safe-area-inset-bottom));
+        width: auto;
+        min-height: 64px;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-auto-rows: 1fr;
+        padding: 6px;
+        border-radius: 22px;
+        z-index: 999;
+        pointer-events: auto;
+      }
+
+      .bottom-nav .coach-nav {
+        display: none !important;
+      }
+
+      .screen {
+        padding-bottom: calc(118px + env(safe-area-inset-bottom));
+      }
+
+      .checkin-grid {
+        grid-template-columns: 1fr;
+      }
     }
-  }
-} finally {
-  $listener.Stop()
-}
+
+    @media (max-width: 430px) {
+      .phone-status, .app-header, .top-tabs, .screen {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .bottom-nav {
+        position: fixed;
+        display: grid;
+        left: 10px;
+        right: 10px;
+        top: auto;
+        bottom: calc(8px + env(safe-area-inset-bottom));
+        width: auto;
+        min-height: 62px;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-auto-rows: 1fr;
+        border-radius: 20px;
+        padding: 5px;
+        z-index: 999;
+      }
+
+      .bottom-nav .coach-nav {
+        display: none !important;
+      }
+
+      .nav-button {
+        min-height: 52px;
+        font-size: .58rem;
+        border-radius: 16px;
+      }
+
+      .screen {
+        padding-left: 16px;
+        padding-right: 16px;
+        padding-bottom: calc(112px + env(safe-area-inset-bottom));
+      }
+
+      .form-grid, .grid-2, .target-grid, .set-log-grid, .coach-grid, .coach-layout-grid, .coach-workbench, .feedback-metrics, .checkin-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .signal-legend {
+        grid-template-columns: 1fr;
+      }
+
+      .builder-desktop-grid,
+      .builder-row-fields,
+      .builder-week-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .set-input-card {
+        grid-template-columns: 1fr;
+        padding: 12px;
+      }
+
+      .workout-toggle {
+        min-height: 116px;
+        grid-template-columns: 10px minmax(0, 1fr);
+        padding: 16px 14px 16px 16px;
+      }
+
+      .workout-toggle-badges {
+        grid-column: 2;
+        display: flex;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .workout-details {
+        margin: 0 8px 10px;
+        padding: 12px;
+      }
+
+      .copy-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 42px;
+        gap: 8px;
+      }
+
+      .set-input-card input {
+        min-height: 48px;
+        font-size: 1rem;
+      }
+
+      .athlete-view-panel {
+        position: static;
+        max-height: none;
+      }
+
+      .coach-edit-row > div {
+        grid-template-columns: 1fr !important;
+      }
+
+      .phase-wheel {
+        min-height: auto;
+        display: grid;
+        gap: 8px;
+        place-items: stretch;
+      }
+
+      .phase-wheel::before,
+      .phase-center {
+        display: none;
+      }
+
+      .phase-node {
+        position: static;
+        width: auto;
+        min-height: 0;
+        transform: none;
+      }
+
+      .builder-v24-scroll { overflow:visible; }
+      .phase4-exercise-table { min-width:0; width:100%; display:block; }
+      .phase4-exercise-table thead { display:none; }
+      .phase4-exercise-table tbody { display:grid; gap:12px; }
+      .phase4-exercise-table tr.phase4-exercise-row { display:grid; width:100%; border:1px solid var(--line-soft); border-left:5px solid var(--exercise-accent); border-radius:16px; overflow:hidden; background:rgba(255,255,255,.025); }
+      .phase4-exercise-table tr.phase4-exercise-row td { display:grid; grid-template-columns:108px minmax(0,1fr); gap:8px; align-items:start; min-width:0; width:auto; border:0; border-bottom:1px solid rgba(255,255,255,.055); padding:10px; }
+      .phase4-exercise-table tr.phase4-exercise-row td::before { content:attr(data-label); color:var(--muted); font-size:.68rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em; padding-top:10px; }
+      .phase4-exercise-table .phase4-order-cell { grid-template-columns:108px auto auto 54px; }
+      .phase4-exercise-table .phase4-order-cell::before { padding-top:5px; }
+      .phase4-exercise-table input, .phase4-exercise-table select, .phase4-exercise-table textarea { width:100%; min-width:0; }
+      .phase4-row-actions { min-width:0; grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .builder-add-row { display:block; }
+      .builder-add-row td { display:block !important; width:100% !important; }
+      .phase4-library-filters, .phase4-library-list { grid-template-columns:1fr; }
+      .phase4-bulk-toolbar { bottom:86px; top:auto; }
+      .builder-v24-head { grid-template-columns:1fr; }
+      .premium-coach-layout { grid-template-columns:1fr; }
+      .coach-ai-sidebar { position:fixed; inset:0 0 0 auto; top:0; width:min(94vw,420px); max-height:none; border-radius:22px 0 0 22px; transform:translateX(110%); transition:transform .24s ease; z-index:80; order:2; }
+      .coach-ai-sidebar.open { transform:translateX(0); }
+      .coach-ai-sidebar .coach-ai-drawer-close { display:block; }
+      .coach-ai-floating { right:16px; bottom:18px; width:68px; height:68px; border-radius:20px; }
+      .coach-ai-floating .coach-avatar { width:60px; height:60px; padding:3px; }
+      .coach-ai-floating::after { display:none; }
+      body.ai-drawer-open { overflow:hidden; }
+      .coach-detail-grid { grid-template-columns:1fr; }
+      .coach-ai-popover { right:16px; bottom:84px; }
+      .coach-ai-sidebar .coach-ai-card { padding:11px; }
+      .coach-ai-sidebar .coach-ai-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .coach-ai-sidebar .coach-ai-actions .apply { grid-column:1/-1; }
+      .coach-ai-sidebar .coach-ai-actions button { width:100%; min-width:0; }
+      .coach-ai-sidebar .coach-ai-filters { margin-bottom:8px; }
+      .coach-mobile-week-picker { display:flex; }
+      .coach-weeks-caption { align-items:flex-start; flex-wrap:wrap; }
+      .coach-weeks-grid th:first-child, .coach-weeks-grid tbody th { min-width:145px; }
+      .coach-weeks-grid .week-fixed-notes, .coach-weeks-grid .week-row-notes, .coach-weeks-grid .week-fixed-note2, .coach-weeks-grid .week-row-note2, .coach-weeks-grid .week-fixed-recovery, .coach-weeks-grid .week-row-recovery { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <aside class="desktop-rail" aria-label="Colonnina desktop">
+      <div class="rail-logo">A</div>
+      <button class="rail-dot active" data-jump="dashboard" title="Dashboard" aria-label="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z"/></svg>
+      </button>
+      <button class="rail-dot" data-jump="training" title="Allenamento" aria-label="Allenamento">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 6v12M18 6v12M3 10v4M21 10v4M6 12h12"/></svg>
+      </button>
+      <button class="rail-dot" data-jump="progress" title="Progressioni" aria-label="Progressioni">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 3 5-7"/></svg>
+      </button>
+      <button class="rail-dot" data-bottom="coach" title="Coach" aria-label="Coach">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M7 16h10"/><path d="M9 3h6"/></svg>
+      </button>
+      <button class="rail-dot" data-jump="nutrition" title="Nutrizione" aria-label="Nutrizione">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19c5-9 9-14 16-14"/><path d="M5 5c5 2 8 6 9 12"/><path d="M4 19c7 1 13-2 16-14"/></svg>
+      </button>
+      <button class="rail-dot" data-bottom="quiz" title="Check-in" aria-label="Check-in">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </button>
+    </aside>
+
+    <section class="phone-shell" aria-label="Barbell diva">
+      <div class="phone">
+        <div class="phone-status">
+          <span>9:41</span>
+          <div class="notch" aria-hidden="true"></div>
+          <div class="status-icons"><span>LTE</span><div class="battery"><span></span></div></div>
+        </div>
+
+        <header class="app-header">
+          <div>
+            <h1 id="appTitle">Barbell diva</h1>
+            <p id="appSubtitle">Lift. Slay. Repeat.</p>
+          </div>
+          <div class="round-actions">
+            <button class="round-button" id="modeButton" title="Coach" aria-label="Coach">PIN</button>
+            <button class="round-button" id="themeButton" title="Tema" aria-label="Tema">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 7.5A9 9 0 1 1 12 3Z"/></svg>
+            </button>
+            <button class="round-button" id="helpButton" title="Guida" aria-label="Guida">?</button>
+          </div>
+        </header>
+
+        <div class="top-tabs" aria-label="Sezioni principali">
+          <button class="top-tab active" data-screen="dashboard">Dashboard</button>
+          <button class="top-tab" data-screen="training">Allenamento</button>
+          <button class="top-tab" data-screen="progress">Progressioni</button>
+          <button class="top-tab" data-screen="logbook">Logbook</button>
+          <button class="top-tab coach-tab" data-screen="coach">Coach</button>
+          <button class="top-tab" data-screen="nutrition">Nutrizione</button>
+          <button class="top-tab" data-screen="quiz">Check-in</button>
+        </div>
+
+        <main class="screen" id="screen"></main>
+
+        <nav class="bottom-nav" aria-label="Navigazione app">
+          <button class="nav-button active" data-bottom="home">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+            Home
+          </button>
+          <button class="nav-button" data-bottom="workout">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 6v12M18 6v12M3 10v4M21 10v4M6 12h12"/></svg>
+            Workout
+          </button>
+          <button class="nav-button" data-bottom="progress">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 3 5-7"/></svg>
+            Trend
+          </button>
+          <button class="nav-button coach-nav" data-bottom="coach">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M7 16h10"/><path d="M9 3h6"/></svg>
+            Coach
+          </button>
+          <button class="nav-button" data-bottom="nutrition">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19c5-9 9-14 16-14"/><path d="M5 5c5 2 8 6 9 12"/><path d="M4 19c7 1 13-2 16-14"/></svg>
+            Food
+          </button>
+          <button class="nav-button" data-bottom="quiz">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Check
+          </button>
+        </nav>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script>
+    const STORE_KEY = "alice-method-app.v8";
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
+      authDomain: "barbell-diva.firebaseapp.com",
+      projectId: "barbell-diva",
+      storageBucket: "barbell-diva.firebasestorage.app",
+      messagingSenderId: "411536425865",
+      appId: "1:411536425865:web:17bcd9f10b6ba1a9b49758",
+      measurementId: "G-FNKXLKQFT8"
+    };
+    const CLOUD_COLLECTION = "barbellDivaAccounts";
+    const APP_NAME = "Barbell diva";
+    const DIVA_QUOTES = [
+      "?? Lift. Slay. Repeat.",
+      "?? Built to Slay.",
+      "?? Bitch, lift heavier.",
+      "?? Pretty isn't weak.",
+      "??? Heavy is the standard.",
+      "? Earn your mirror check.",
+      "?? Lift like they doubted you.",
+      "?? Strong is the new pretty.",
+      "?? Leave your excuses at the door.",
+      "?? Your PR won't hit itself.",
+      "?? Hot girls hit PRs.",
+      "?? Too pretty to lift light.",
+      "?? Lift first. Cry later.",
+      "?? Pretty is the aesthetic. Heavy is the mindset.",
+      "?? Bitch, you better be lifting.",
+      "?? Respectfully... add more weight.",
+      "?? If the ponytail is still perfect, you have reps left.",
+      "?? Being iconic is progressive overload.",
+      "?? Who needs a prince when you can deadlift?",
+      "?? Bitch, you better be coaching."
+    ];
+
+    const OPENING_QUOTE = DIVA_QUOTES[Math.floor(Math.random() * DIVA_QUOTES.length)];
+    const colors = {
+      gold: "#ff6fcb",
+      green: "#69e6b0",
+      blue: "#a990ff",
+      red: "#ff6e7d",
+      orange: "#ff9b49",
+      violet: "#d8a4ff",
+      pink: "#ff6fcb"
+    };
+
+    const BIOMECHANICS_KNOWLEDGE_BASE = {
+      version: "1.0.0", reviewedAt: "2026-07-14", reviewedBy: "Regole Barbell Diva",
+      methodProfile: "Barbell Diva", sources: ["Libreria interna Barbell Diva; revisione tecnica locale"], rules: [], exceptions: [], notes: "Le richieste articolari non equivalgono automaticamente a pericolosita.",
+      aliases: { "leg curl": ["leg curl", "leg curl sdraiato", "leg curl seated"], "leg extension": ["leg extension"], rdl: ["rdl", "romanian deadlift", "stacco rumeno"], "hip thrust": ["hip thrust"], "glute bridge": ["glute bridge", "ponte glutei"], "leg press": ["leg press", "pressa"], pendulum: ["pendulum", "pendulum squat"], "lat machine": ["lat machine", "lat pulldown"], pullover: ["pullover"], "chest press": ["chest press"], croci: ["croci", "fly"], abductor: ["abductor", "hip abduction"], adductor: ["adductor", "hip adduction"], "lateral raise": ["alzate laterali", "lateral raise"] },
+      exercises: {
+        "leg curl": { exerciseType:"isolation", movementPattern:"knee-flexion", jointActions:["knee flexion"], primaryMuscles:["femorali"], secondaryMuscles:[], resistanceProfile:"constant", lengthenedBias:"high", shortenedBias:"medium", stability:4, technicalDifficulty:2, systemicFatigue:2, localFatigue:3, jointDemand:{lumbar:1,knee:2,hip:1,shoulder:1,elbow:1,wrist:1}, loadability:3, progressionEase:4, setupComplexity:2, stimulusToFatigue:4, unilateral:false, supported:true, compound:false, machineBased:true, confidence:"high" },
+        "leg extension": { exerciseType:"isolation", movementPattern:"knee-extension", jointActions:["knee extension"], primaryMuscles:["quadricipiti"], secondaryMuscles:[], resistanceProfile:"variable", lengthenedBias:"medium", shortenedBias:"high", stability:4, technicalDifficulty:2, systemicFatigue:2, localFatigue:3, jointDemand:{lumbar:1,knee:3,hip:1,shoulder:1,elbow:1,wrist:1}, loadability:3, progressionEase:4, setupComplexity:2, stimulusToFatigue:4, unilateral:false, supported:true, compound:false, machineBased:true, confidence:"high" },
+        rdl: { exerciseType:"compound", movementPattern:"hip-hinge", jointActions:["hip extension","hip hinge","eccentric hip control"], primaryMuscles:["femorali","glutei"], secondaryMuscles:["erettori spinali"], resistanceProfile:"ascending", lengthenedBias:"high", shortenedBias:"low", stability:3, technicalDifficulty:4, systemicFatigue:4, localFatigue:4, jointDemand:{lumbar:4,knee:2,hip:4,shoulder:2,elbow:1,wrist:2}, loadability:5, progressionEase:4, setupComplexity:3, stimulusToFatigue:4, unilateral:false, supported:false, compound:true, machineBased:false, confidence:"high" },
+        "hip thrust": { exerciseType:"compound", movementPattern:"hip-extension", jointActions:["hip extension"], primaryMuscles:["glutei"], secondaryMuscles:["femorali"], resistanceProfile:"ascending", lengthenedBias:"low", shortenedBias:"high", stability:4, technicalDifficulty:2, systemicFatigue:2, localFatigue:4, jointDemand:{lumbar:2,knee:1,hip:3,shoulder:1,elbow:1,wrist:1}, loadability:5, progressionEase:5, setupComplexity:3, stimulusToFatigue:5, unilateral:false, supported:true, compound:true, machineBased:false, confidence:"high" },
+        "glute bridge": { exerciseType:"compound", movementPattern:"hip-extension", jointActions:["hip extension"], primaryMuscles:["glutei"], secondaryMuscles:[], resistanceProfile:"ascending", lengthenedBias:"low", shortenedBias:"high", stability:5, technicalDifficulty:1, systemicFatigue:1, localFatigue:4, jointDemand:{lumbar:1,knee:1,hip:2,shoulder:1,elbow:1,wrist:1}, loadability:3, progressionEase:4, setupComplexity:1, stimulusToFatigue:4, unilateral:false, supported:true, compound:true, machineBased:false, confidence:"medium" },
+        "leg press": { exerciseType:"compound", movementPattern:"squat-knee-dominant", jointActions:["knee extension","hip extension"], primaryMuscles:["quadricipiti","glutei"], secondaryMuscles:["femorali"], resistanceProfile:"constant", lengthenedBias:"medium", shortenedBias:"medium", stability:5, technicalDifficulty:2, systemicFatigue:3, localFatigue:4, jointDemand:{lumbar:2,knee:3,hip:3,shoulder:1,elbow:1,wrist:1}, loadability:5, progressionEase:5, setupComplexity:2, stimulusToFatigue:4, unilateral:false, supported:true, compound:true, machineBased:true, confidence:"high" },
+        pendulum: { exerciseType:"compound", movementPattern:"squat-knee-dominant", jointActions:["knee extension","hip extension"], primaryMuscles:["quadricipiti","glutei"], secondaryMuscles:[], resistanceProfile:"bell-shaped", lengthenedBias:"high", shortenedBias:"medium", stability:4, technicalDifficulty:3, systemicFatigue:4, localFatigue:4, jointDemand:{lumbar:2,knee:4,hip:3,shoulder:1,elbow:1,wrist:1}, loadability:4, progressionEase:4, setupComplexity:3, stimulusToFatigue:4, unilateral:false, supported:true, compound:true, machineBased:true, confidence:"medium" },
+        "lat machine": { exerciseType:"compound", movementPattern:"vertical-pull", jointActions:["shoulder adduction","elbow flexion"], primaryMuscles:["dorsali"], secondaryMuscles:["bicipiti"], resistanceProfile:"constant", lengthenedBias:"medium", shortenedBias:"medium", stability:4, technicalDifficulty:2, systemicFatigue:2, localFatigue:3, jointDemand:{lumbar:1,knee:1,hip:1,shoulder:3,elbow:2,wrist:2}, loadability:4, progressionEase:4, setupComplexity:2, stimulusToFatigue:4, unilateral:false, supported:true, compound:true, machineBased:true, confidence:"high" },
+        pullover: { exerciseType:"isolation", movementPattern:"shoulder-extension", jointActions:["shoulder extension"], primaryMuscles:["dorsali"], secondaryMuscles:["pettorali"], resistanceProfile:"variable", lengthenedBias:"high", shortenedBias:"medium", stability:3, technicalDifficulty:3, systemicFatigue:2, localFatigue:3, jointDemand:{lumbar:2,knee:1,hip:1,shoulder:3,elbow:1,wrist:1}, loadability:3, progressionEase:3, setupComplexity:2, stimulusToFatigue:3, unilateral:false, supported:true, compound:false, machineBased:false, confidence:"medium" },
+        "chest press": { exerciseType:"compound", movementPattern:"horizontal-press", jointActions:["shoulder horizontal adduction","elbow extension"], primaryMuscles:["pettorali"], secondaryMuscles:["tricipiti"], resistanceProfile:"constant", lengthenedBias:"medium", shortenedBias:"medium", stability:5, technicalDifficulty:2, systemicFatigue:2, localFatigue:3, jointDemand:{lumbar:1,knee:1,hip:1,shoulder:3,elbow:2,wrist:2}, loadability:4, progressionEase:4, setupComplexity:2, stimulusToFatigue:4, unilateral:false, supported:true, compound:true, machineBased:true, confidence:"high" },
+        croci: { exerciseType:"isolation", movementPattern:"horizontal-adduction", jointActions:["shoulder horizontal adduction"], primaryMuscles:["pettorali"], secondaryMuscles:[], resistanceProfile:"variable", lengthenedBias:"high", shortenedBias:"high", stability:3, technicalDifficulty:3, systemicFatigue:1, localFatigue:3, jointDemand:{lumbar:1,knee:1,hip:1,shoulder:4,elbow:1,wrist:1}, loadability:2, progressionEase:3, setupComplexity:2, stimulusToFatigue:3, unilateral:false, supported:false, compound:false, machineBased:false, confidence:"medium" },
+        abductor: { exerciseType:"isolation", movementPattern:"hip-abduction", jointActions:["hip abduction"], primaryMuscles:["glutei"], secondaryMuscles:[], resistanceProfile:"constant", lengthenedBias:"medium", shortenedBias:"high", stability:5, technicalDifficulty:1, systemicFatigue:1, localFatigue:3, jointDemand:{lumbar:1,knee:1,hip:2,shoulder:1,elbow:1,wrist:1}, loadability:3, progressionEase:4, setupComplexity:1, stimulusToFatigue:4, unilateral:false, supported:true, compound:false, machineBased:true, confidence:"high" },
+        adductor: { exerciseType:"isolation", movementPattern:"hip-adduction", jointActions:["hip adduction"], primaryMuscles:["adduttori"], secondaryMuscles:[], resistanceProfile:"constant", lengthenedBias:"high", shortenedBias:"medium", stability:5, technicalDifficulty:1, systemicFatigue:1, localFatigue:3, jointDemand:{lumbar:1,knee:1,hip:2,shoulder:1,elbow:1,wrist:1}, loadability:3, progressionEase:4, setupComplexity:1, stimulusToFatigue:4, unilateral:false, supported:true, compound:false, machineBased:true, confidence:"high" },
+        "lateral raise": { exerciseType:"isolation", movementPattern:"shoulder-abduction", jointActions:["shoulder abduction"], primaryMuscles:["deltoidi laterali"], secondaryMuscles:[], resistanceProfile:"variable", lengthenedBias:"medium", shortenedBias:"high", stability:3, technicalDifficulty:2, systemicFatigue:1, localFatigue:3, jointDemand:{lumbar:1,knee:1,hip:1,shoulder:3,elbow:1,wrist:2}, loadability:2, progressionEase:3, setupComplexity:1, stimulusToFatigue:4, unilateral:false, supported:false, compound:false, machineBased:false, confidence:"medium" }
+      }
+    };
+
+    const EXERCISE_ALIASES = {
+      "calf machine": ["Calf"],
+      "leg curls": ["Leg curl"],
+      "leg curls singolo": ["Leg curl singolo"],
+      "hyperstension con cuscinetto": ["Hyperextension"],
+      "leg extension singola": ["Leg extension sing."],
+      "leg extension": ["Leg extension"],
+      "military al multypower panca70": ["Military press", "Military", "Military al multipower"],
+      "military press": ["Military_al_multypower_panca70°", "Military al multipower"],
+      "lento avanti machine": ["Lento avanti"],
+      "push up": ["push up"],
+      "alzate laterali cavo basso cavigliera polso": ["Alzate laterali cavo basso"],
+      "face pull": ["face pull"],
+      "curls martello panca": ["Curls", "Curl"],
+      "tricipiti cavo alto in corda": ["Push down"],
+      "hip thrust": ["Hip thurst"],
+      "hip trust mono": ["Hip thurst"],
+      "bulgaro focus glutei": ["Bulgaro"],
+      "pressa45 piedi alti schienale chiuso": ["pressa mono"],
+      "stacco rdl": ["Stacco_RDL"],
+      "stacco mono gamba": ["Stacco mono"],
+      "lat machine triangolo": ["Lat triangolo"],
+      "lat machine": ["Lat machine", "lat larga"],
+      "row machine panatta": ["row machine"],
+      "pulley sbarra presa larga supina": ["Pulley", "pulley"],
+      "pull down corda": ["Pull down"],
+      "pull down sbarra": ["pulldown sbarra", "pulldown"],
+      "alzate laterali macchinario": ["alz.laterali macchinario"],
+      "crunch obliqui": ["crunch_obliqui"],
+      "cardio tapins corsa": ["Cardio"]
+    };
+
+    const PROGRAM_LIBRARY = [{"code":"B1-A1","day":1,"letter":"A","week":1,"name":"Scheda A1","phase":"B program 1","focus":"Glutei, Femorali","note":"B program 1 - Scheda A, settimana 1","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"3","reps":"15","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"3 sec di tenuta","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Contrai l\u0027addome, fai perno con la schiena, esplodi e tieni","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"12","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Con i manubri","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Leg_extension","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"3","reps":"15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Aumenta carico ogni settimana, quando tiri unisci le scapole e porta il petto verso il soffitto","today":"","ref":""},{"name":"French_press_manubri","muscle":"Tricipiti","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Fallo sdraiata/o a terra, appoggia i manubri per 2\u0027\u0027 sul pavimento, poi esplodi distendendo","today":"","ref":""}]},{"code":"B1-A2","day":2,"letter":"A","week":2,"name":"Scheda A2","phase":"B program 1","focus":"Glutei, Femorali","note":"B program 1 - Scheda A, settimana 2","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"3","reps":"12","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"3 sec di tenuta","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Contrai l\u0027addome, fai perno con la schiena, esplodi e tieni","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"12","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Con i manubri","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Leg_extension","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"3","reps":"15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Aumenta carico ogni settimana, quando tiri unisci le scapole e porta il petto verso il soffitto","today":"","ref":""},{"name":"French_press_manubri","muscle":"Tricipiti","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Fallo sdraiata/o a terra, appoggia i manubri per 2\u0027\u0027 sul pavimento, poi esplodi distendendo","today":"","ref":""}]},{"code":"B1-A3","day":3,"letter":"A","week":3,"name":"Scheda A3","phase":"B program 1","focus":"Glutei, Femorali","note":"B program 1 - Scheda A, settimana 3","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"3","reps":"10","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"3 sec di tenuta","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Contrai l\u0027addome, fai perno con la schiena, esplodi e tieni","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"10","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Con i manubri","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Leg_extension","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"3","reps":"12","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Aumenta carico ogni settimana, quando tiri unisci le scapole e porta il petto verso il soffitto","today":"","ref":""},{"name":"French_press_manubri","muscle":"Tricipiti","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Fallo sdraiata/o a terra, appoggia i manubri per 2\u0027\u0027 sul pavimento, poi esplodi distendendo","today":"","ref":""}]},{"code":"B1-A4","day":4,"letter":"A","week":4,"name":"Scheda A4","phase":"B program 1","focus":"Glutei, Femorali","note":"B program 1 - Scheda A, settimana 4","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"2","reps":"10","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"3 sec di tenuta","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Contrai l\u0027addome, fai perno con la schiena, esplodi e tieni","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"2","reps":"10","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Con i manubri","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"2","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Leg_extension","muscle":"Quadricipiti","sets":"2","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"2","reps":"12","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Aumenta carico ogni settimana, quando tiri unisci le scapole e porta il petto verso il soffitto","today":"","ref":""},{"name":"French_press_manubri","muscle":"Tricipiti","sets":"3","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Fallo sdraiata/o a terra, appoggia i manubri per 2\u0027\u0027 sul pavimento, poi esplodi distendendo","today":"","ref":""}]},{"code":"B1-A5","day":5,"letter":"A","week":5,"name":"Scheda A5","phase":"B program 1","focus":"Glutei, Femorali","note":"B program 1 - Scheda A, settimana 5","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"4","reps":"10","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"3 sec di tenuta","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Contrai l\u0027addome, fai perno con la schiena, esplodi e tieni","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"10","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Con i manubri","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Leg_extension","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"4","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Aumenta carico ogni settimana, quando tiri unisci le scapole e porta il petto verso il soffitto","today":"","ref":""},{"name":"French_press_manubri","muscle":"Tricipiti","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Fallo sdraiata/o a terra, appoggia i manubri per 2\u0027\u0027 sul pavimento, poi esplodi distendendo","today":"","ref":""}]},{"code":"B1-A6","day":6,"letter":"A","week":6,"name":"Scheda A6","phase":"B program 1","focus":"Glutei, Femorali","note":"B program 1 - Scheda A, settimana 6","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"4","reps":"10","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"3 sec di tenuta","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Contrai l\u0027addome, fai perno con la schiena, esplodi e tieni","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"10","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Con i manubri","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Leg_extension","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"4","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Aumenta carico ogni settimana, quando tiri unisci le scapole e porta il petto verso il soffitto","today":"","ref":""},{"name":"French_press_manubri","muscle":"Tricipiti","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Fallo sdraiata/o a terra, appoggia i manubri per 2\u0027\u0027 sul pavimento, poi esplodi distendendo","today":"","ref":""}]},{"code":"B1-A7","day":7,"letter":"A","week":7,"name":"Scheda A7","phase":"B program 1","focus":"Glutei, Femorali","note":"B program 1 - Scheda A, settimana 7","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"2","reps":"8","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"3 sec di tenuta","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Contrai l\u0027addome, fai perno con la schiena, esplodi e tieni","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"2","reps":"10","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Con i manubri","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Leg_extension","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"2","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Aumenta carico ogni settimana, quando tiri unisci le scapole e porta il petto verso il soffitto","today":"","ref":""},{"name":"French_press_manubri","muscle":"Tricipiti","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Fallo sdraiata/o a terra, appoggia i manubri per 2\u0027\u0027 sul pavimento, poi esplodi distendendo","today":"","ref":""}]},{"code":"B1-A8","day":8,"letter":"A","week":8,"name":"Scheda A8","phase":"B program 1","focus":"Glutei, Femorali","note":"B program 1 - Scheda A, settimana 8","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"1","reps":"Test 8 RM","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"3 sec di tenuta","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Contrai l\u0027addome, fai perno con la schiena, esplodi e tieni","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"1","reps":"Test 10 RM","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Con i manubri","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"2","reps":"12-15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Leg_extension","muscle":"Quadricipiti","sets":"2","reps":"12-15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"1","reps":"test 12rm","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Aumenta carico ogni settimana, quando tiri unisci le scapole e porta il petto verso il soffitto","today":"","ref":""},{"name":"French_press_manubri","muscle":"Tricipiti","sets":"3","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Fallo sdraiata/o a terra, appoggia i manubri per 2\u0027\u0027 sul pavimento, poi esplodi distendendo","today":"","ref":""}]},{"code":"B1-B1","day":1,"letter":"B","week":1,"name":"Scheda B1","phase":"B program 1","focus":"Spalle, Femorali, Centro schiena","note":"B program 1 - Scheda B, settimana 1","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"15","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"movimento fluido","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Gomiti avanti, petto alto, noce tra le scapole","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"12","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo le pelvi contro il pad","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Abbraccia un peso da usare come sovraccarico","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"3","reps":"15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recupero tra le braccia, incrementa il carico ongi volta che riesci nel rispetto della tecnica","note":"Dividi il movimento in 2 tempi, contrazione dorso e poi tiri, spalla lontana dall\u0027orecchio","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Quando apri la schiena non si contrae, immagina di spingere il piede verso il terreno","note":"Focus gluteo parte bassa (abduzioni) Esegui l\u0027esercizio in retroversione di bacino","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie movimento controllato","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Usa la corda Braccia piegate","today":"","ref":""}]},{"code":"B1-B2","day":2,"letter":"B","week":2,"name":"Scheda B2","phase":"B program 1","focus":"Spalle, Femorali, Centro schiena","note":"B program 1 - Scheda B, settimana 2","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"12","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"movimento fluido","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Gomiti avanti, petto alto, noce tra le scapole","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"12","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo le pelvi contro il pad","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Abbraccia un peso da usare come sovraccarico","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"3","reps":"15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recupero tra le braccia, incrementa il carico ongi volta che riesci nel rispetto della tecnica","note":"Dividi il movimento in 2 tempi, contrazione dorso e poi tiri, spalla lontana dall\u0027orecchio","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Quando apri la schiena non si contrae, immagina di spingere il piede verso il terreno","note":"Focus gluteo parte bassa (abduzioni) Esegui l\u0027esercizio in retroversione di bacino","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie movimento controllato","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Usa la corda Braccia piegate","today":"","ref":""}]},{"code":"B1-B3","day":3,"letter":"B","week":3,"name":"Scheda B3","phase":"B program 1","focus":"Spalle, Femorali, Centro schiena","note":"B program 1 - Scheda B, settimana 3","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"10","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"movimento fluido","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Gomiti avanti, petto alto, noce tra le scapole","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo le pelvi contro il pad","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Abbraccia un peso da usare come sovraccarico","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"3","reps":"12","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recupero tra le braccia, incrementa il carico ongi volta che riesci nel rispetto della tecnica","note":"Dividi il movimento in 2 tempi, contrazione dorso e poi tiri, spalla lontana dall\u0027orecchio","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Quando apri la schiena non si contrae, immagina di spingere il piede verso il terreno","note":"Focus gluteo parte bassa (abduzioni) Esegui l\u0027esercizio in retroversione di bacino","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie movimento controllato","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Usa la corda Braccia piegate","today":"","ref":""}]},{"code":"B1-B4","day":4,"letter":"B","week":4,"name":"Scheda B4","phase":"B program 1","focus":"Spalle, Femorali, Centro schiena","note":"B program 1 - Scheda B, settimana 4","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"2","reps":"10","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"movimento fluido","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Gomiti avanti, petto alto, noce tra le scapole","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"2","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo le pelvi contro il pad","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Abbraccia un peso da usare come sovraccarico","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"2","reps":"12","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recupero tra le braccia, incrementa il carico ongi volta che riesci nel rispetto della tecnica","note":"Dividi il movimento in 2 tempi, contrazione dorso e poi tiri, spalla lontana dall\u0027orecchio","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"3","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Quando apri la schiena non si contrae, immagina di spingere il piede verso il terreno","note":"Focus gluteo parte bassa (abduzioni) Esegui l\u0027esercizio in retroversione di bacino","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"2","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie movimento controllato","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"2","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Usa la corda Braccia piegate","today":"","ref":""}]},{"code":"B1-B5","day":5,"letter":"B","week":5,"name":"Scheda B5","phase":"B program 1","focus":"Spalle, Femorali, Centro schiena","note":"B program 1 - Scheda B, settimana 5","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"4","reps":"10","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"movimento fluido","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Gomiti avanti, petto alto, noce tra le scapole","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo le pelvi contro il pad","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Abbraccia un peso da usare come sovraccarico","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"4","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recupero tra le braccia, incrementa il carico ongi volta che riesci nel rispetto della tecnica","note":"Dividi il movimento in 2 tempi, contrazione dorso e poi tiri, spalla lontana dall\u0027orecchio","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Quando apri la schiena non si contrae, immagina di spingere il piede verso il terreno","note":"Focus gluteo parte bassa (abduzioni) Esegui l\u0027esercizio in retroversione di bacino","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie movimento controllato","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Usa la corda Braccia piegate","today":"","ref":""}]},{"code":"B1-B6","day":6,"letter":"B","week":6,"name":"Scheda B6","phase":"B program 1","focus":"Spalle, Femorali, Centro schiena","note":"B program 1 - Scheda B, settimana 6","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"4","reps":"10","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"movimento fluido","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Gomiti avanti, petto alto, noce tra le scapole","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo le pelvi contro il pad","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Abbraccia un peso da usare come sovraccarico","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"4","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recupero tra le braccia, incrementa il carico ongi volta che riesci nel rispetto della tecnica","note":"Dividi il movimento in 2 tempi, contrazione dorso e poi tiri, spalla lontana dall\u0027orecchio","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Quando apri la schiena non si contrae, immagina di spingere il piede verso il terreno","note":"Focus gluteo parte bassa (abduzioni) Esegui l\u0027esercizio in retroversione di bacino","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie movimento controllato","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Usa la corda Braccia piegate","today":"","ref":""}]},{"code":"B1-B7","day":7,"letter":"B","week":7,"name":"Scheda B7","phase":"B program 1","focus":"Spalle, Femorali, Centro schiena","note":"B program 1 - Scheda B, settimana 7","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"2","reps":"8","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"movimento fluido","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Gomiti avanti, petto alto, noce tra le scapole","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"2","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo le pelvi contro il pad","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Abbraccia un peso da usare come sovraccarico","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"2","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recupero tra le braccia, incrementa il carico ongi volta che riesci nel rispetto della tecnica","note":"Dividi il movimento in 2 tempi, contrazione dorso e poi tiri, spalla lontana dall\u0027orecchio","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Quando apri la schiena non si contrae, immagina di spingere il piede verso il terreno","note":"Focus gluteo parte bassa (abduzioni) Esegui l\u0027esercizio in retroversione di bacino","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie movimento controllato","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Usa la corda Braccia piegate","today":"","ref":""}]},{"code":"B1-B8","day":8,"letter":"B","week":8,"name":"Scheda B8","phase":"B program 1","focus":"Spalle, Femorali, Centro schiena","note":"B program 1 - Scheda B, settimana 8","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"1","reps":"Test 8 RM","rir":"","rest":"2\u0027 di recupero","warmup":"--","tempo":"movimento fluido","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Gomiti avanti, petto alto, noce tra le scapole","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"1","reps":"Test 10 RM","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo le pelvi contro il pad","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Abbraccia un peso da usare come sovraccarico","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"1","reps":"test 12rm","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recupero tra le braccia, incrementa il carico ongi volta che riesci nel rispetto della tecnica","note":"Dividi il movimento in 2 tempi, contrazione dorso e poi tiri, spalla lontana dall\u0027orecchio","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"1","reps":"Test 10 RM","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Quando apri la schiena non si contrae, immagina di spingere il piede verso il terreno","note":"Focus gluteo parte bassa (abduzioni) Esegui l\u0027esercizio in retroversione di bacino","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"2","reps":"12-15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie movimento controllato","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"2","reps":"12-15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Usa la corda Braccia piegate","today":"","ref":""}]},{"code":"B1-C1","day":1,"letter":"C","week":1,"name":"Scheda C1","phase":"B program 1","focus":"Dorsali, Spalle, Tricipiti","note":"B program 1 - Scheda C, settimana 1","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"1","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare almeno 1 trazione usa la tabella in fondo Parti dallo step della tabella in base al tuo risultato es. se hai fatto 3 reps parti dallo step 3 e fai sempre 5 serie (3,2,2,1,1). Se chiudi lo step, la settimana dopo passi a quello successivo","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"3","reps":"12","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, per aumentare il peso puoi usare anche delle cavigliere","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo panca inclinata 70Â°, petto aperto, gomiti a 45Â°, guarda il video","today":"","ref":""},{"name":"Push_up","muscle":"Tricipiti","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"ogni 2 settimane abbassa di 1 buco","note":"Trova un\u0027inclinazione che ti permette agilmente una decina di reps.","today":"","ref":""},{"name":"sai giÃ  fare 10 push up a terra?","muscle":"","sets":"3","reps":"x max","rir":"","rest":"","warmup":"--","tempo":"","note":"Se sei giÃ  capace di fare 10 push up a terra allora rallenta bene le esecuzioni e usa questa progressione","today":"","ref":""},{"name":"RDL_focus_Gluteo","muscle":"Glutei","sets":"3","reps":"12","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec. Fermo 1 sec e poi esplosivo/a","note":"Mentre scendi piega le ginocchia Incrementa ogni settimana, parti leggero/a","today":"","ref":""},{"name":"Hip_Thrust_statico","muscle":"Glutei","sets":"4","reps":"30\u0027\u0027","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto (attenzione, non Ã¨ un restare in posizione, ma un continuare a spingere contraendo i glutei)","note":"usa un carico che ti permette agilmente 30\u0027\u0027 di statica ogni settimana aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Parti lenta e poi spingi forte e veloce, rom corto. Piede a martello","note":"Parti con il cavo alzato per partire con il gluteo in allungamento Immagina di spingere la gamba che lavora verso il basso","today":"","ref":""},{"name":"Calf_machine","muscle":"Polpacci","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in basso 2 sec Fermo in alto 2 sec","note":"Schiaccia bene l\u0027alluce a terra e Sali fino in fondo","today":"","ref":""},{"name":"Ab_Roll","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se vuoi puoi farlo in jumps set con il calf e risparmiare tempo","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B1-C2","day":2,"letter":"C","week":2,"name":"Scheda C2","phase":"B program 1","focus":"Dorsali, Spalle, Tricipiti","note":"B program 1 - Scheda C, settimana 2","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"5","reps":"","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare almeno 1 trazione usa la tabella in fondo Parti dallo step della tabella in base al tuo risultato es. se hai fatto 3 reps parti dallo step 3 e fai sempre 5 serie (3,2,2,1,1). Se chiudi lo step, la settimana dopo passi a quello successivo","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"3","reps":"12","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, per aumentare il peso puoi usare anche delle cavigliere","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo panca inclinata 70Â°, petto aperto, gomiti a 45Â°, guarda il video","today":"","ref":""},{"name":"Push_up","muscle":"Tricipiti","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"ogni 2 settimane abbassa di 1 buco","note":"Trova un\u0027inclinazione che ti permette agilmente una decina di reps.","today":"","ref":""},{"name":"sai giÃ  fare 10 push up a terra?","muscle":"","sets":"3","reps":"x ma x","rir":"","rest":"","warmup":"--","tempo":"","note":"Se sei giÃ  capace di fare 10 push up a terra allora rallenta bene le esecuzioni e usa questa progressione","today":"","ref":""},{"name":"RDL_focus_Gluteo","muscle":"Glutei","sets":"3","reps":"12","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec. Fermo 1 sec e poi esplosivo/a","note":"Mentre scendi piega le ginocchia Incrementa ogni settimana, parti leggero/a","today":"","ref":""},{"name":"Hip_Thrust_statico","muscle":"Glutei","sets":"4","reps":"35\u0027\u0027","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto (attenzione, non Ã¨ un restare in posizione, ma un continuare a spingere contraendo i glutei)","note":"usa un carico che ti permette agilmente 30\u0027\u0027 di statica ogni settimana aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Parti lenta e poi spingi forte e veloce, rom corto. Piede a martello","note":"Parti con il cavo alzato per partire con il gluteo in allungamento Immagina di spingere la gamba che lavora verso il basso","today":"","ref":""},{"name":"Calf_machine","muscle":"Polpacci","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in basso 2 sec Fermo in alto 2 sec","note":"Schiaccia bene l\u0027alluce a terra e Sali fino in fondo","today":"","ref":""},{"name":"Ab_Roll","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se vuoi puoi farlo in jumps set con il calf e risparmiare tempo","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B1-C3","day":3,"letter":"C","week":3,"name":"Scheda C3","phase":"B program 1","focus":"Dorsali, Spalle, Tricipiti","note":"B program 1 - Scheda C, settimana 3","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"5","reps":"","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare almeno 1 trazione usa la tabella in fondo Parti dallo step della tabella in base al tuo risultato es. se hai fatto 3 reps parti dallo step 3 e fai sempre 5 serie (3,2,2,1,1). Se chiudi lo step, la settimana dopo passi a quello successivo","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, per aumentare il peso puoi usare anche delle cavigliere","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo panca inclinata 70Â°, petto aperto, gomiti a 45Â°, guarda il video","today":"","ref":""},{"name":"Push_up","muscle":"Tricipiti","sets":"4","reps":"10-8","rir":"meno 1 buco","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"ogni 2 settimane abbassa di 1 buco","note":"Trova un\u0027inclinazione che ti permette agilmente una decina di reps.","today":"","ref":""},{"name":"sai giÃ  fare 10 push up a terra?","muscle":"","sets":"4","reps":"x max","rir":"","rest":"","warmup":"--","tempo":"","note":"Se sei giÃ  capace di fare 10 push up a terra allora rallenta bene le esecuzioni e usa questa progressione","today":"","ref":""},{"name":"RDL_focus_Gluteo","muscle":"Glutei","sets":"3","reps":"10","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec. Fermo 1 sec e poi esplosivo/a","note":"Mentre scendi piega le ginocchia Incrementa ogni settimana, parti leggero/a","today":"","ref":""},{"name":"Hip_Thrust_statico","muscle":"Glutei","sets":"4","reps":"40\u0027\u0027","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto (attenzione, non Ã¨ un restare in posizione, ma un continuare a spingere contraendo i glutei)","note":"usa un carico che ti permette agilmente 30\u0027\u0027 di statica ogni settimana aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Parti lenta e poi spingi forte e veloce, rom corto. Piede a martello","note":"Parti con il cavo alzato per partire con il gluteo in allungamento Immagina di spingere la gamba che lavora verso il basso","today":"","ref":""},{"name":"Calf_machine","muscle":"Polpacci","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in basso 2 sec Fermo in alto 2 sec","note":"Schiaccia bene l\u0027alluce a terra e Sali fino in fondo","today":"","ref":""},{"name":"Ab_Roll","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se vuoi puoi farlo in jumps set con il calf e risparmiare tempo","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B1-C4","day":4,"letter":"C","week":4,"name":"Scheda C4","phase":"B program 1","focus":"Dorsali, Spalle, Tricipiti","note":"B program 1 - Scheda C, settimana 4","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"5","reps":"","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare almeno 1 trazione usa la tabella in fondo Parti dallo step della tabella in base al tuo risultato es. se hai fatto 3 reps parti dallo step 3 e fai sempre 5 serie (3,2,2,1,1). Se chiudi lo step, la settimana dopo passi a quello successivo","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"2","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, per aumentare il peso puoi usare anche delle cavigliere","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo panca inclinata 70Â°, petto aperto, gomiti a 45Â°, guarda il video","today":"","ref":""},{"name":"Push_up","muscle":"Tricipiti","sets":"3","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"ogni 2 settimane abbassa di 1 buco","note":"Trova un\u0027inclinazione che ti permette agilmente una decina di reps.","today":"","ref":""},{"name":"sai giÃ  fare 10 push up a terra?","muscle":"","sets":"2","reps":"x max","rir":"","rest":"","warmup":"--","tempo":"","note":"Se sei giÃ  capace di fare 10 push up a terra allora rallenta bene le esecuzioni e usa questa progressione","today":"","ref":""},{"name":"RDL_focus_Gluteo","muscle":"Glutei","sets":"2","reps":"10","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec. Fermo 1 sec e poi esplosivo/a","note":"Mentre scendi piega le ginocchia Incrementa ogni settimana, parti leggero/a","today":"","ref":""},{"name":"Hip_Thrust_statico","muscle":"Glutei","sets":"2","reps":"40\u0027\u0027","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto (attenzione, non Ã¨ un restare in posizione, ma un continuare a spingere contraendo i glutei)","note":"usa un carico che ti permette agilmente 30\u0027\u0027 di statica ogni settimana aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"3","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Parti lenta e poi spingi forte e veloce, rom corto. Piede a martello","note":"Parti con il cavo alzato per partire con il gluteo in allungamento Immagina di spingere la gamba che lavora verso il basso","today":"","ref":""},{"name":"Calf_machine","muscle":"Polpacci","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in basso 2 sec Fermo in alto 2 sec","note":"Schiaccia bene l\u0027alluce a terra e Sali fino in fondo","today":"","ref":""},{"name":"Ab_Roll","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se vuoi puoi farlo in jumps set con il calf e risparmiare tempo","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B1-C5","day":5,"letter":"C","week":5,"name":"Scheda C5","phase":"B program 1","focus":"Dorsali, Spalle, Tricipiti","note":"B program 1 - Scheda C, settimana 5","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"5","reps":"","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare almeno 1 trazione usa la tabella in fondo Parti dallo step della tabella in base al tuo risultato es. se hai fatto 3 reps parti dallo step 3 e fai sempre 5 serie (3,2,2,1,1). Se chiudi lo step, la settimana dopo passi a quello successivo","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, per aumentare il peso puoi usare anche delle cavigliere","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo panca inclinata 70Â°, petto aperto, gomiti a 45Â°, guarda il video","today":"","ref":""},{"name":"Push_up","muscle":"Tricipiti","sets":"4","reps":"10-8","rir":"meno 1 buco","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"ogni 2 settimane abbassa di 1 buco","note":"Trova un\u0027inclinazione che ti permette agilmente una decina di reps.","today":"","ref":""},{"name":"sai giÃ  fare 10 push up a terra?","muscle":"","sets":"3","reps":"x max","rir":"","rest":"","warmup":"--","tempo":"","note":"Se sei giÃ  capace di fare 10 push up a terra allora rallenta bene le esecuzioni e usa questa progressione","today":"","ref":""},{"name":"RDL_focus_Gluteo","muscle":"Glutei","sets":"3","reps":"10","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec. Fermo 1 sec e poi esplosivo/a","note":"Mentre scendi piega le ginocchia Incrementa ogni settimana, parti leggero/a","today":"","ref":""},{"name":"Hip_Thrust_statico","muscle":"Glutei","sets":"4","reps":"45\u0027\u0027","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto (attenzione, non Ã¨ un restare in posizione, ma un continuare a spingere contraendo i glutei)","note":"usa un carico che ti permette agilmente 30\u0027\u0027 di statica ogni settimana aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Parti lenta e poi spingi forte e veloce, rom corto. Piede a martello","note":"Parti con il cavo alzato per partire con il gluteo in allungamento Immagina di spingere la gamba che lavora verso il basso","today":"","ref":""},{"name":"Calf_machine","muscle":"Polpacci","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in basso 2 sec Fermo in alto 2 sec","note":"Schiaccia bene l\u0027alluce a terra e Sali fino in fondo","today":"","ref":""},{"name":"Ab_Roll","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se vuoi puoi farlo in jumps set con il calf e risparmiare tempo","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B1-C6","day":6,"letter":"C","week":6,"name":"Scheda C6","phase":"B program 1","focus":"Dorsali, Spalle, Tricipiti","note":"B program 1 - Scheda C, settimana 6","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"5","reps":"","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare almeno 1 trazione usa la tabella in fondo Parti dallo step della tabella in base al tuo risultato es. se hai fatto 3 reps parti dallo step 3 e fai sempre 5 serie (3,2,2,1,1). Se chiudi lo step, la settimana dopo passi a quello successivo","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, per aumentare il peso puoi usare anche delle cavigliere","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo panca inclinata 70Â°, petto aperto, gomiti a 45Â°, guarda il video","today":"","ref":""},{"name":"Push_up","muscle":"Tricipiti","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"ogni 2 settimane abbassa di 1 buco","note":"Trova un\u0027inclinazione che ti permette agilmente una decina di reps.","today":"","ref":""},{"name":"sai giÃ  fare 10 push up a terra?","muscle":"","sets":"3","reps":"x max","rir":"","rest":"","warmup":"--","tempo":"","note":"Se sei giÃ  capace di fare 10 push up a terra allora rallenta bene le esecuzioni e usa questa progressione","today":"","ref":""},{"name":"RDL_focus_Gluteo","muscle":"Glutei","sets":"3","reps":"10","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec. Fermo 1 sec e poi esplosivo/a","note":"Mentre scendi piega le ginocchia Incrementa ogni settimana, parti leggero/a","today":"","ref":""},{"name":"Hip_Thrust_statico","muscle":"Glutei","sets":"4","reps":"50\u0027\u0027","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto (attenzione, non Ã¨ un restare in posizione, ma un continuare a spingere contraendo i glutei)","note":"usa un carico che ti permette agilmente 30\u0027\u0027 di statica ogni settimana aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Parti lenta e poi spingi forte e veloce, rom corto. Piede a martello","note":"Parti con il cavo alzato per partire con il gluteo in allungamento Immagina di spingere la gamba che lavora verso il basso","today":"","ref":""},{"name":"Calf_machine","muscle":"Polpacci","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in basso 2 sec Fermo in alto 2 sec","note":"Schiaccia bene l\u0027alluce a terra e Sali fino in fondo","today":"","ref":""},{"name":"Ab_Roll","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se vuoi puoi farlo in jumps set con il calf e risparmiare tempo","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B1-C7","day":7,"letter":"C","week":7,"name":"Scheda C7","phase":"B program 1","focus":"Dorsali, Spalle, Tricipiti","note":"B program 1 - Scheda C, settimana 7","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"5","reps":"","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare almeno 1 trazione usa la tabella in fondo Parti dallo step della tabella in base al tuo risultato es. se hai fatto 3 reps parti dallo step 3 e fai sempre 5 serie (3,2,2,1,1). Se chiudi lo step, la settimana dopo passi a quello successivo","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"2","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, per aumentare il peso puoi usare anche delle cavigliere","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo panca inclinata 70Â°, petto aperto, gomiti a 45Â°, guarda il video","today":"","ref":""},{"name":"Push_up","muscle":"Tricipiti","sets":"4","reps":"10-8","rir":"meno 1 buco","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"ogni 2 settimane abbassa di 1 buco","note":"Trova un\u0027inclinazione che ti permette agilmente una decina di reps.","today":"","ref":""},{"name":"sai giÃ  fare 10 push up a terra?","muscle":"","sets":"4","reps":"x max","rir":"","rest":"","warmup":"--","tempo":"","note":"Se sei giÃ  capace di fare 10 push up a terra allora rallenta bene le esecuzioni e usa questa progressione","today":"","ref":""},{"name":"RDL_focus_Gluteo","muscle":"Glutei","sets":"2","reps":"10","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec. Fermo 1 sec e poi esplosivo/a","note":"Mentre scendi piega le ginocchia Incrementa ogni settimana, parti leggero/a","today":"","ref":""},{"name":"Hip_Thrust_statico","muscle":"Glutei","sets":"2","reps":"55\u0027\u0027","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto (attenzione, non Ã¨ un restare in posizione, ma un continuare a spingere contraendo i glutei)","note":"usa un carico che ti permette agilmente 30\u0027\u0027 di statica ogni settimana aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"2","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Parti lenta e poi spingi forte e veloce, rom corto. Piede a martello","note":"Parti con il cavo alzato per partire con il gluteo in allungamento Immagina di spingere la gamba che lavora verso il basso","today":"","ref":""},{"name":"Calf_machine","muscle":"Polpacci","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in basso 2 sec Fermo in alto 2 sec","note":"Schiaccia bene l\u0027alluce a terra e Sali fino in fondo","today":"","ref":""},{"name":"Ab_Roll","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se vuoi puoi farlo in jumps set con il calf e risparmiare tempo","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B1-C8","day":8,"letter":"C","week":8,"name":"Scheda C8","phase":"B program 1","focus":"Dorsali, Spalle, Tricipiti","note":"B program 1 - Scheda C, settimana 8","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"1","reps":"Max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare almeno 1 trazione usa la tabella in fondo Parti dallo step della tabella in base al tuo risultato es. se hai fatto 3 reps parti dallo step 3 e fai sempre 5 serie (3,2,2,1,1). Se chiudi lo step, la settimana dopo passi a quello successivo","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"1","reps":"Test 10 RM","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, per aumentare il peso puoi usare anche delle cavigliere","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo panca inclinata 70Â°, petto aperto, gomiti a 45Â°, guarda il video","today":"","ref":""},{"name":"Push_up","muscle":"Tricipiti","sets":"3","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"ogni 2 settimane abbassa di 1 buco","note":"Trova un\u0027inclinazione che ti permette agilmente una decina di reps.","today":"","ref":""},{"name":"sai giÃ  fare 10 push up a terra?","muscle":"","sets":"2","reps":"x max","rir":"","rest":"","warmup":"--","tempo":"","note":"Se sei giÃ  capace di fare 10 push up a terra allora rallenta bene le esecuzioni e usa questa progressione","today":"","ref":""},{"name":"RDL_focus_Gluteo","muscle":"Glutei","sets":"1","reps":"Test 10 RM","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec. Fermo 1 sec e poi esplosivo/a","note":"Mentre scendi piega le ginocchia Incrementa ogni settimana, parti leggero/a","today":"","ref":""},{"name":"Hip_Thrust_statico","muscle":"Glutei","sets":"1","reps":"max tempo","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto (attenzione, non Ã¨ un restare in posizione, ma un continuare a spingere contraendo i glutei)","note":"usa un carico che ti permette agilmente 30\u0027\u0027 di statica ogni settimana aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"1","reps":"Test 10 RM","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Parti lenta e poi spingi forte e veloce, rom corto. Piede a martello","note":"Parti con il cavo alzato per partire con il gluteo in allungamento Immagina di spingere la gamba che lavora verso il basso","today":"","ref":""},{"name":"Calf_machine","muscle":"Polpacci","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in basso 2 sec Fermo in alto 2 sec","note":"Schiaccia bene l\u0027alluce a terra e Sali fino in fondo","today":"","ref":""},{"name":"Ab_Roll","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se vuoi puoi farlo in jumps set con il calf e risparmiare tempo","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B1-D1","day":1,"letter":"D","week":1,"name":"Scheda D1","phase":"B program 1","focus":"Attivazione, Glutei, Dorsali","note":"B program 1 - Scheda D, settimana 1","exercises":[{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25- 35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ã¨ un esercizio di pre-attivazione ad alte reps, fai recuperi brevi quando cedi e riparti subito","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"3","reps":"15","rir":"","rest":"2\u0027","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Piedi larghezza anche e dritti, alti sulla pedana, frena in 3 sec la discesa caricando l\u0027anca","today":"","ref":""},{"name":"Lat_Machine_supina","muscle":"Dorsali","sets":"3","reps":"12","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Pensa a spingere qualcosa sotto il gomito, spalle lontane dalle orecchie","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"30","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste, non leggere le serie in giallo (servono solo per calcolare il volume), leggi solo i colpi da fare","today":"","ref":""},{"name":"Goblet_squat","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"B","note":"fallo con i talloni rialzati In base al tuo livello, poi farlo con un peso in mano o al multy power","today":"","ref":""},{"name":"Rotazioni_cavo_medio","muscle":"Glutei","sets":"4","reps":"10-8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Movimeto diviso in 2 parti: porti in linea le pelvi usando la gamba a terra (spingendo forte a terra); poi apro la gamba in aria verso l\u0027esterno --\u003e","note":"Usa gancetto per fare bicipiti singoli e mettilo sotto il ginocchio La gamba che lavora Ã¨ quella a terra, la cavigliera ce l\u0027ha l\u0027altra gamba (che sta a 90 gradi)","today":"","ref":""},{"name":"Curl_manubri","muscle":"Bicipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B1-D2","day":2,"letter":"D","week":2,"name":"Scheda D2","phase":"B program 1","focus":"Attivazione, Glutei, Dorsali","note":"B program 1 - Scheda D, settimana 2","exercises":[{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25- 35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ã¨ un esercizio di pre-attivazione ad alte reps, fai recuperi brevi quando cedi e riparti subito","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"3","reps":"12","rir":"","rest":"2\u0027","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Piedi larghezza anche e dritti, alti sulla pedana, frena in 3 sec la discesa caricando l\u0027anca","today":"","ref":""},{"name":"Lat_Machine_supina","muscle":"Dorsali","sets":"3","reps":"12","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Pensa a spingere qualcosa sotto il gomito, spalle lontane dalle orecchie","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"35","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste, non leggere le serie in giallo (servono solo per calcolare il volume), leggi solo i colpi da fare","today":"","ref":""},{"name":"Goblet_squat","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"B","note":"fallo con i talloni rialzati In base al tuo livello, poi farlo con un peso in mano o al multy power","today":"","ref":""},{"name":"Rotazioni_cavo_medio","muscle":"Glutei","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Movimeto diviso in 2 parti: porti in linea le pelvi usando la gamba a terra (spingendo forte a terra); poi apro la gamba in aria verso l\u0027esterno --\u003e","note":"Usa gancetto per fare bicipiti singoli e mettilo sotto il ginocchio La gamba che lavora Ã¨ quella a terra, la cavigliera ce l\u0027ha l\u0027altra gamba (che sta a 90 gradi)","today":"","ref":""},{"name":"Curl_manubri","muscle":"Bicipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B1-D3","day":3,"letter":"D","week":3,"name":"Scheda D3","phase":"B program 1","focus":"Attivazione, Glutei, Dorsali","note":"B program 1 - Scheda D, settimana 3","exercises":[{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25- 35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ã¨ un esercizio di pre-attivazione ad alte reps, fai recuperi brevi quando cedi e riparti subito","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"3","reps":"10","rir":"","rest":"2\u0027","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Piedi larghezza anche e dritti, alti sulla pedana, frena in 3 sec la discesa caricando l\u0027anca","today":"","ref":""},{"name":"Lat_Machine_supina","muscle":"Dorsali","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Pensa a spingere qualcosa sotto il gomito, spalle lontane dalle orecchie","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"4","reps":"40","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste, non leggere le serie in giallo (servono solo per calcolare il volume), leggi solo i colpi da fare","today":"","ref":""},{"name":"Goblet_squat","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"B","note":"fallo con i talloni rialzati In base al tuo livello, poi farlo con un peso in mano o al multy power","today":"","ref":""},{"name":"Rotazioni_cavo_medio","muscle":"Glutei","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Movimeto diviso in 2 parti: porti in linea le pelvi usando la gamba a terra (spingendo forte a terra); poi apro la gamba in aria verso l\u0027esterno --\u003e","note":"Usa gancetto per fare bicipiti singoli e mettilo sotto il ginocchio La gamba che lavora Ã¨ quella a terra, la cavigliera ce l\u0027ha l\u0027altra gamba (che sta a 90 gradi)","today":"","ref":""},{"name":"Curl_manubri","muscle":"Bicipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B1-D4","day":4,"letter":"D","week":4,"name":"Scheda D4","phase":"B program 1","focus":"Attivazione, Glutei, Dorsali","note":"B program 1 - Scheda D, settimana 4","exercises":[{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25- 35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ã¨ un esercizio di pre-attivazione ad alte reps, fai recuperi brevi quando cedi e riparti subito","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"10","rir":"","rest":"2\u0027","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Piedi larghezza anche e dritti, alti sulla pedana, frena in 3 sec la discesa caricando l\u0027anca","today":"","ref":""},{"name":"Lat_Machine_supina","muscle":"Dorsali","sets":"2","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Pensa a spingere qualcosa sotto il gomito, spalle lontane dalle orecchie","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"2","reps":"20","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste, non leggere le serie in giallo (servono solo per calcolare il volume), leggi solo i colpi da fare","today":"","ref":""},{"name":"Goblet_squat","muscle":"Quadricipiti","sets":"2","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"B","note":"fallo con i talloni rialzati In base al tuo livello, poi farlo con un peso in mano o al multy power","today":"","ref":""},{"name":"Rotazioni_cavo_medio","muscle":"Glutei","sets":"3","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Movimeto diviso in 2 parti: porti in linea le pelvi usando la gamba a terra (spingendo forte a terra); poi apro la gamba in aria verso l\u0027esterno --\u003e","note":"Usa gancetto per fare bicipiti singoli e mettilo sotto il ginocchio La gamba che lavora Ã¨ quella a terra, la cavigliera ce l\u0027ha l\u0027altra gamba (che sta a 90 gradi)","today":"","ref":""},{"name":"Curl_manubri","muscle":"Bicipiti","sets":"3","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B1-D5","day":5,"letter":"D","week":5,"name":"Scheda D5","phase":"B program 1","focus":"Attivazione, Glutei, Dorsali","note":"B program 1 - Scheda D, settimana 5","exercises":[{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25- 35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ã¨ un esercizio di pre-attivazione ad alte reps, fai recuperi brevi quando cedi e riparti subito","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"4","reps":"10","rir":"","rest":"2\u0027","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Piedi larghezza anche e dritti, alti sulla pedana, frena in 3 sec la discesa caricando l\u0027anca","today":"","ref":""},{"name":"Lat_Machine_supina","muscle":"Dorsali","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Pensa a spingere qualcosa sotto il gomito, spalle lontane dalle orecchie","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"4","reps":"45","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste, non leggere le serie in giallo (servono solo per calcolare il volume), leggi solo i colpi da fare","today":"","ref":""},{"name":"Goblet_squat","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"B","note":"fallo con i talloni rialzati In base al tuo livello, poi farlo con un peso in mano o al multy power","today":"","ref":""},{"name":"Rotazioni_cavo_medio","muscle":"Glutei","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Movimeto diviso in 2 parti: porti in linea le pelvi usando la gamba a terra (spingendo forte a terra); poi apro la gamba in aria verso l\u0027esterno --\u003e","note":"Usa gancetto per fare bicipiti singoli e mettilo sotto il ginocchio La gamba che lavora Ã¨ quella a terra, la cavigliera ce l\u0027ha l\u0027altra gamba (che sta a 90 gradi)","today":"","ref":""},{"name":"Curl_manubri","muscle":"Bicipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B1-D6","day":6,"letter":"D","week":6,"name":"Scheda D6","phase":"B program 1","focus":"Attivazione, Glutei, Dorsali","note":"B program 1 - Scheda D, settimana 6","exercises":[{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25- 35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ã¨ un esercizio di pre-attivazione ad alte reps, fai recuperi brevi quando cedi e riparti subito","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"4","reps":"10","rir":"","rest":"2\u0027","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Piedi larghezza anche e dritti, alti sulla pedana, frena in 3 sec la discesa caricando l\u0027anca","today":"","ref":""},{"name":"Lat_Machine_supina","muscle":"Dorsali","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Pensa a spingere qualcosa sotto il gomito, spalle lontane dalle orecchie","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"5","reps":"50","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste, non leggere le serie in giallo (servono solo per calcolare il volume), leggi solo i colpi da fare","today":"","ref":""},{"name":"Goblet_squat","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"B","note":"fallo con i talloni rialzati In base al tuo livello, poi farlo con un peso in mano o al multy power","today":"","ref":""},{"name":"Rotazioni_cavo_medio","muscle":"Glutei","sets":"4","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Movimeto diviso in 2 parti: porti in linea le pelvi usando la gamba a terra (spingendo forte a terra); poi apro la gamba in aria verso l\u0027esterno --\u003e","note":"Usa gancetto per fare bicipiti singoli e mettilo sotto il ginocchio La gamba che lavora Ã¨ quella a terra, la cavigliera ce l\u0027ha l\u0027altra gamba (che sta a 90 gradi)","today":"","ref":""},{"name":"Curl_manubri","muscle":"Bicipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B1-D7","day":7,"letter":"D","week":7,"name":"Scheda D7","phase":"B program 1","focus":"Attivazione, Glutei, Dorsali","note":"B program 1 - Scheda D, settimana 7","exercises":[{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25- 35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ã¨ un esercizio di pre-attivazione ad alte reps, fai recuperi brevi quando cedi e riparti subito","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"8","rir":"","rest":"2\u0027","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Piedi larghezza anche e dritti, alti sulla pedana, frena in 3 sec la discesa caricando l\u0027anca","today":"","ref":""},{"name":"Lat_Machine_supina","muscle":"Dorsali","sets":"2","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Pensa a spingere qualcosa sotto il gomito, spalle lontane dalle orecchie","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"35","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste, non leggere le serie in giallo (servono solo per calcolare il volume), leggi solo i colpi da fare","today":"","ref":""},{"name":"Goblet_squat","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"B","note":"fallo con i talloni rialzati In base al tuo livello, poi farlo con un peso in mano o al multy power","today":"","ref":""},{"name":"Rotazioni_cavo_medio","muscle":"Glutei","sets":"3","reps":"10- 8","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Movimeto diviso in 2 parti: porti in linea le pelvi usando la gamba a terra (spingendo forte a terra); poi apro la gamba in aria verso l\u0027esterno --\u003e","note":"Usa gancetto per fare bicipiti singoli e mettilo sotto il ginocchio La gamba che lavora Ã¨ quella a terra, la cavigliera ce l\u0027ha l\u0027altra gamba (che sta a 90 gradi)","today":"","ref":""},{"name":"Curl_manubri","muscle":"Bicipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B1-D8","day":8,"letter":"D","week":8,"name":"Scheda D8","phase":"B program 1","focus":"Attivazione, Glutei, Dorsali","note":"B program 1 - Scheda D, settimana 8","exercises":[{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25-35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ã¨ un esercizio di pre-attivazione ad alte reps, fai recuperi brevi quando cedi e riparti subito","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"1","reps":"Test 8 RM","rir":"","rest":"2\u0027","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Parti con un carico super gestibile, ogni settimana cerca di aumentarlo Piedi larghezza anche e dritti, alti sulla pedana, frena in 3 sec la discesa caricando l\u0027anca","today":"","ref":""},{"name":"Lat_Machine_supina","muscle":"Dorsali","sets":"1","reps":"Test 10 RM","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Parti con un carico super gestibile, ogni 2 settimane cerca di aumentarlo Pensa a spingere qualcosa sotto il gomito, spalle lontane dalle orecchie","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"2","reps":"20","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste, non leggere le serie in giallo (servono solo per calcolare il volume), leggi solo i colpi da fare","today":"","ref":""},{"name":"Goblet_squat","muscle":"Quadricipiti","sets":"2","reps":"12-15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"B","note":"fallo con i talloni rialzati In base al tuo livello, poi farlo con un peso in mano o al multy power","today":"","ref":""},{"name":"Rotazioni_cavo_medio","muscle":"Glutei","sets":"3","reps":"10-8\u0027","rir":"","rest":"1\u002730\"","warmup":"--","tempo":"Movimeto diviso in 2 parti: porti in linea le pelvi usando la gamba a terra (spingendo forte a terra); poi apro la gamba in aria verso l\u0027esterno --\u003e","note":"Usa gancetto per fare bicipiti singoli e mettilo sotto il ginocchio La gamba che lavora Ã¨ quella a terra, la cavigliera ce l\u0027ha l\u0027altra gamba (che sta a 90 gradi)","today":"","ref":""},{"name":"Curl_manubri","muscle":"Bicipiti","sets":"3","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B2-A1","day":1,"letter":"A","week":1,"name":"Scheda A1","phase":"B program 2","focus":"Glutei, Femorali","note":"B program 2 - Scheda A, settimana 1","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"2","reps":"5","rir":"","rest":"2","warmup":"--","tempo":"tieni 3 sec, NO retroversione di bacino","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"1","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"3 sec di tenuta","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"RDL_Belt_machine","muscle":"Femorali","sets":"4","reps":"6","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa 2\u0027\u0027 con fermo in basso, NON piegare le ginocchia, il femore Ã¨ fermo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Hack_Squat_con_elastico","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"focus quads Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25- 35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ora diventa un escercizo di Pump finale","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Curls_panca_scoot","muscle":"Bicipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B2-A2","day":2,"letter":"A","week":2,"name":"Scheda A2","phase":"B program 2","focus":"Glutei, Femorali","note":"B program 2 - Scheda A, settimana 2","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"2","reps":"5","rir":"","rest":"2","warmup":"--","tempo":"tieni 3 sec, NO retroversione di bacino","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"2","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"3 sec di tenuta","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"RDL_Belt_machine","muscle":"Femorali","sets":"3","reps":"7","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa 2\u0027\u0027 con fermo in basso, NON piegare le ginocchia, il femore Ã¨ fermo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Hack_Squat_con_elastico","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"focus quads Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25- 35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ora diventa un escercizo di Pump finale","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Curls_panca_scoot","muscle":"Bicipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B2-A3","day":3,"letter":"A","week":3,"name":"Scheda A3","phase":"B program 2","focus":"Glutei, Femorali","note":"B program 2 - Scheda A, settimana 3","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"2","reps":"5","rir":"","rest":"2","warmup":"--","tempo":"tieni 3 sec, NO retroversione di bacino","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"3","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"3 sec di tenuta","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"RDL_Belt_machine","muscle":"Femorali","sets":"2","reps":"7","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa 2\u0027\u0027 con fermo in basso, NON piegare le ginocchia, il femore Ã¨ fermo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Hack_Squat_con_elastico","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"focus quads Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25- 35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ora diventa un escercizo di Pump finale","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Curls_panca_scoot","muscle":"Bicipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B2-A4","day":4,"letter":"A","week":4,"name":"Scheda A4","phase":"B program 2","focus":"Glutei, Femorali","note":"B program 2 - Scheda A, settimana 4","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"1","reps":"4","rir":"","rest":"2","warmup":"--","tempo":"tieni 3 sec, NO retroversione di bacino","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"1","reps":"8","rir":"","rest":"2","warmup":"--","tempo":"3 sec di tenuta","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"RDL_Belt_machine","muscle":"Femorali","sets":"2","reps":"7","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa 2\u0027\u0027 con fermo in basso, NON piegare le ginocchia, il femore Ã¨ fermo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"2","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Hack_Squat_con_elastico","muscle":"Quadricipiti","sets":"2","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"focus quads Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25- 35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ora diventa un escercizo di Pump finale","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Curls_panca_scoot","muscle":"Bicipiti","sets":"3","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B2-A5","day":5,"letter":"A","week":5,"name":"Scheda A5","phase":"B program 2","focus":"Glutei, Femorali","note":"B program 2 - Scheda A, settimana 5","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"2","reps":"6","rir":"","rest":"2","warmup":"--","tempo":"tieni 3 sec, NO retroversione di bacino","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"3","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"3 sec di tenuta","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"RDL_Belt_machine","muscle":"Femorali","sets":"3","reps":"8","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa 2\u0027\u0027 con fermo in basso, NON piegare le ginocchia, il femore Ã¨ fermo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Hack_Squat_con_elastico","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"focus quads Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25- 35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ora diventa un escercizo di Pump finale","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Curls_panca_scoot","muscle":"Bicipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B2-A6","day":6,"letter":"A","week":6,"name":"Scheda A6","phase":"B program 2","focus":"Glutei, Femorali","note":"B program 2 - Scheda A, settimana 6","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"2","reps":"6","rir":"","rest":"2","warmup":"--","tempo":"tieni 3 sec, NO retroversione di bacino","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"2","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"3 sec di tenuta","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"RDL_Belt_machine","muscle":"Femorali","sets":"3","reps":"8","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa 2\u0027\u0027 con fermo in basso, NON piegare le ginocchia, il femore Ã¨ fermo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Hack_Squat_con_elastico","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"focus quads Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25- 35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ora diventa un escercizo di Pump finale","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Curls_panca_scoot","muscle":"Bicipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B2-A7","day":7,"letter":"A","week":7,"name":"Scheda A7","phase":"B program 2","focus":"Glutei, Femorali","note":"B program 2 - Scheda A, settimana 7","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"1","reps":"6","rir":"","rest":"2","warmup":"--","tempo":"tieni 3 sec, NO retroversione di bacino","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"1","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"3 sec di tenuta","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"RDL_Belt_machine","muscle":"Femorali","sets":"2","reps":"8","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa 2\u0027\u0027 con fermo in basso, NON piegare le ginocchia, il femore Ã¨ fermo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Hack_Squat_con_elastico","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"focus quads Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25- 35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ora diventa un escercizo di Pump finale","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Curls_panca_scoot","muscle":"Bicipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"4","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B2-A8","day":8,"letter":"A","week":8,"name":"Scheda A8","phase":"B program 2","focus":"Glutei, Femorali","note":"B program 2 - Scheda A, settimana 8","exercises":[{"name":"Hip_Thrust","muscle":"Glutei","sets":"1","reps":"Test 8 RM","rir":"","rest":"2","warmup":"--","tempo":"tieni 3 sec, NO retroversione di bacino","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"","reps":"no","rir":"","rest":"2","warmup":"--","tempo":"3 sec di tenuta","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"RDL_Belt_machine","muscle":"Femorali","sets":"1","reps":"Test 10 RM","rir":"","rest":"1\u002745\u0027\u0027","warmup":"--","tempo":"Discesa 2\u0027\u0027 con fermo in basso, NON piegare le ginocchia, il femore Ã¨ fermo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Leg_curls_seduta","muscle":"Femorali","sets":"2","reps":"12-15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata, 2 sec di fermo in allungamento, 2 sec di eccentrica","note":"Non muovere il bacino movimento molto lento e controllato","today":"","ref":""},{"name":"Hack_Squat_con_elastico","muscle":"Quadricipiti","sets":"2","reps":"12-15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"focus quads Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crab_walk_con_elastico","muscle":"Attivazione","sets":"2","reps":"25-35","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Ora diventa un escercizo di Pump finale","note":"Porta il bacino indietro attivando la zona lombare Non collassare con le ginocchia verso l\u0027interno, usa elastico tra i piedi","today":"","ref":""},{"name":"Curls_panca_scoot","muscle":"Bicipiti","sets":"3","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"Ã¨ un circuito braccia senza recupero","note":"Puoi scegliere un esercizio per bicipiti che vuoi","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"12-8","rir":"","rest":"1-0-1","warmup":"--","tempo":"","note":"Puoi scegliere un esercizio per tricipiti che vuoi","today":"","ref":""}]},{"code":"B2-B1","day":1,"letter":"B","week":1,"name":"Scheda B1","phase":"B program 2","focus":"Dorsali, Centro schiena","note":"B program 2 - Scheda B, settimana 1","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"5","reps":"","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare le trazioni e hai usato la tabella, allora continua su questa riga Il vecchio programma terminava con un test per max reps, riprendi da\" settimana 1\" dallo step (guardando la tabella) in base al test fatto. In \"settimana 4\" fai uno scarico senza trazioni","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"4","reps":"6","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recuper tra le braccia, ricorda sempre i 2 tempi del movimento","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pulley_triangolo","muscle":"Centro schiena","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crunch_machine","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B2-B2","day":2,"letter":"B","week":2,"name":"Scheda B2","phase":"B program 2","focus":"Dorsali, Centro schiena","note":"B program 2 - Scheda B, settimana 2","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"5","reps":"","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare le trazioni e hai usato la tabella, allora continua su questa riga Il vecchio programma terminava con un test per max reps, riprendi da\" settimana 1\" dallo step (guardando la tabella) in base al test fatto. In \"settimana 4\" fai uno scarico senza trazioni","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"3","reps":"7","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recuper tra le braccia, ricorda sempre i 2 tempi del movimento","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pulley_triangolo","muscle":"Centro schiena","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crunch_machine","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B2-B3","day":3,"letter":"B","week":3,"name":"Scheda B3","phase":"B program 2","focus":"Dorsali, Centro schiena","note":"B program 2 - Scheda B, settimana 3","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"5","reps":"","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare le trazioni e hai usato la tabella, allora continua su questa riga Il vecchio programma terminava con un test per max reps, riprendi da\" settimana 1\" dallo step (guardando la tabella) in base al test fatto. In \"settimana 4\" fai uno scarico senza trazioni","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"2","reps":"7","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recuper tra le braccia, ricorda sempre i 2 tempi del movimento","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pulley_triangolo","muscle":"Centro schiena","sets":"3","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crunch_machine","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B2-B4","day":4,"letter":"B","week":4,"name":"Scheda B4","phase":"B program 2","focus":"Dorsali, Centro schiena","note":"B program 2 - Scheda B, settimana 4","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"no","reps":"","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare le trazioni e hai usato la tabella, allora continua su questa riga Il vecchio programma terminava con un test per max reps, riprendi da\" settimana 1\" dallo step (guardando la tabella) in base al test fatto. In \"settimana 4\" fai uno scarico senza trazioni","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"2","reps":"7","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"2","reps":"8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recuper tra le braccia, ricorda sempre i 2 tempi del movimento","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pulley_triangolo","muscle":"Centro schiena","sets":"2","reps":"8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"2","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crunch_machine","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B2-B5","day":5,"letter":"B","week":5,"name":"Scheda B5","phase":"B program 2","focus":"Dorsali, Centro schiena","note":"B program 2 - Scheda B, settimana 5","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"5","reps":"","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare le trazioni e hai usato la tabella, allora continua su questa riga Il vecchio programma terminava con un test per max reps, riprendi da\" settimana 1\" dallo step (guardando la tabella) in base al test fatto. In \"settimana 4\" fai uno scarico senza trazioni","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"3","reps":"8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"4","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recuper tra le braccia, ricorda sempre i 2 tempi del movimento","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pulley_triangolo","muscle":"Centro schiena","sets":"4","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crunch_machine","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B2-B6","day":6,"letter":"B","week":6,"name":"Scheda B6","phase":"B program 2","focus":"Dorsali, Centro schiena","note":"B program 2 - Scheda B, settimana 6","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"5","reps":"","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare le trazioni e hai usato la tabella, allora continua su questa riga Il vecchio programma terminava con un test per max reps, riprendi da\" settimana 1\" dallo step (guardando la tabella) in base al test fatto. In \"settimana 4\" fai uno scarico senza trazioni","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"3","reps":"8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"4","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recuper tra le braccia, ricorda sempre i 2 tempi del movimento","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pulley_triangolo","muscle":"Centro schiena","sets":"4","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crunch_machine","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B2-B7","day":7,"letter":"B","week":7,"name":"Scheda B7","phase":"B program 2","focus":"Dorsali, Centro schiena","note":"B program 2 - Scheda B, settimana 7","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"5","reps":"","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare le trazioni e hai usato la tabella, allora continua su questa riga Il vecchio programma terminava con un test per max reps, riprendi da\" settimana 1\" dallo step (guardando la tabella) in base al test fatto. In \"settimana 4\" fai uno scarico senza trazioni","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"2","reps":"8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"2","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recuper tra le braccia, ricorda sempre i 2 tempi del movimento","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pulley_triangolo","muscle":"Centro schiena","sets":"2","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crunch_machine","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B2-B8","day":8,"letter":"B","week":8,"name":"Scheda B8","phase":"B program 2","focus":"Dorsali, Centro schiena","note":"B program 2 - Scheda B, settimana 8","exercises":[{"name":"Trazioni_neutre","muscle":"Dorsali","sets":"1","reps":"Max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Se sai fare le trazioni e hai usato la tabella, allora continua su questa riga Il vecchio programma terminava con un test per max reps, riprendi da\" settimana 1\" dallo step (guardando la tabella) in base al test fatto. In \"settimana 4\" fai uno scarico senza trazioni","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"1","reps":"Test 10 RM","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, non distendere completamente in alto e mantieni la contrazione mentre sali","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Rematore__Dead_Stop","muscle":"Centro schiena","sets":"1","reps":"test 12rm","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"No recuper tra le braccia, ricorda sempre i 2 tempi del movimento","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pulley_triangolo","muscle":"Centro schiena","sets":"1","reps":"test 12rm","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido","note":"Nel vecchio programma hai trovato il carico dei 12 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"2","reps":"12-15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"2 sec di tirata - 1 sec di contrazione -2 sec di eccentrica","note":"Se riesci cerca di incrementare il carico rispetto al programma precedente o nel corso delle settimane","today":"","ref":""},{"name":"Crunch_machine","muscle":"Addominali","sets":"4","reps":"max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"Puoi usare un esercizio d\u0027addome che vuoi","today":"","ref":""}]},{"code":"B2-C1","day":1,"letter":"C","week":1,"name":"Scheda C1","phase":"B program 2","focus":"Spalle","note":"B program 2 - Scheda C, settimana 1","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"2","reps":"5","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a , prova a mettere elastico sottile per aumentare profilo di resistenza","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"1","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"4","reps":"5","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, non distendere completamente le braccia","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"2","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie, apri il petto per stabilizzare la spalla immagina di spingere il peso lateralmente e in basso","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"30","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste. Apri il petto ad ogni rep","today":"","ref":""},{"name":"Se sai fare giÃ  10 push up o sei arrivato a terra segui questa riga e quella sotto","muscle":"","sets":"1","reps":"x max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"","today":"","ref":""}]},{"code":"B2-C2","day":2,"letter":"C","week":2,"name":"Scheda C2","phase":"B program 2","focus":"Spalle","note":"B program 2 - Scheda C, settimana 2","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"2","reps":"5","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a , prova a mettere elastico sottile per aumentare profilo di resistenza","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"2","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"4","reps":"5","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, non distendere completamente le braccia","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"2","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie, apri il petto per stabilizzare la spalla immagina di spingere il peso lateralmente e in basso","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"35","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste. Apri il petto ad ogni rep","today":"","ref":""},{"name":"Se sai fare giÃ  10 push up o sei arrivato a terra segui questa riga e quella sotto","muscle":"","sets":"1","reps":"x max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"","today":"","ref":""}]},{"code":"B2-C3","day":3,"letter":"C","week":3,"name":"Scheda C3","phase":"B program 2","focus":"Spalle","note":"B program 2 - Scheda C, settimana 3","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"2","reps":"5","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a , prova a mettere elastico sottile per aumentare profilo di resistenza","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"3","reps":"6","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, non distendere completamente le braccia","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"2","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie, apri il petto per stabilizzare la spalla immagina di spingere il peso lateralmente e in basso","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"4","reps":"40","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste. Apri il petto ad ogni rep","today":"","ref":""},{"name":"Se sai fare giÃ  10 push up o sei arrivato a terra segui questa riga e quella sotto","muscle":"","sets":"1","reps":"x max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"","today":"","ref":""}]},{"code":"B2-C4","day":4,"letter":"C","week":4,"name":"Scheda C4","phase":"B program 2","focus":"Spalle","note":"B program 2 - Scheda C, settimana 4","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"1","reps":"4","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a , prova a mettere elastico sottile per aumentare profilo di resistenza","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"1","reps":"8","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"2","reps":"6","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, non distendere completamente le braccia","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"1","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie, apri il petto per stabilizzare la spalla immagina di spingere il peso lateralmente e in basso","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"2","reps":"20","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste. Apri il petto ad ogni rep","today":"","ref":""},{"name":"Se sai fare giÃ  10 push up o sei arrivato a terra segui questa riga e quella sotto","muscle":"","sets":"1","reps":"x max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"","today":"","ref":""}]},{"code":"B2-C5","day":5,"letter":"C","week":5,"name":"Scheda C5","phase":"B program 2","focus":"Spalle","note":"B program 2 - Scheda C, settimana 5","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"2","reps":"6","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a , prova a mettere elastico sottile per aumentare profilo di resistenza","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"3","reps":"8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, non distendere completamente le braccia","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"2","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie, apri il petto per stabilizzare la spalla immagina di spingere il peso lateralmente e in basso","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"4","reps":"45","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste. Apri il petto ad ogni rep","today":"","ref":""},{"name":"Se sai fare giÃ  10 push up o sei arrivato a terra segui questa riga e quella sotto","muscle":"","sets":"1","reps":"x max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"","today":"","ref":""}]},{"code":"B2-C6","day":6,"letter":"C","week":6,"name":"Scheda C6","phase":"B program 2","focus":"Spalle","note":"B program 2 - Scheda C, settimana 6","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"2","reps":"6","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a , prova a mettere elastico sottile per aumentare profilo di resistenza","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"2","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"3","reps":"8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, non distendere completamente le braccia","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"2","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie, apri il petto per stabilizzare la spalla immagina di spingere il peso lateralmente e in basso","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"5","reps":"50","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste. Apri il petto ad ogni rep","today":"","ref":""},{"name":"Se sai fare giÃ  10 push up o sei arrivato a terra segui questa riga e quella sotto","muscle":"","sets":"1","reps":"x max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"","today":"","ref":""}]},{"code":"B2-C7","day":7,"letter":"C","week":7,"name":"Scheda C7","phase":"B program 2","focus":"Spalle","note":"B program 2 - Scheda C, settimana 7","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"1","reps":"6","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a , prova a mettere elastico sottile per aumentare profilo di resistenza","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"1","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"2","reps":"8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, non distendere completamente le braccia","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"2","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie, apri il petto per stabilizzare la spalla immagina di spingere il peso lateralmente e in basso","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"35","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste. Apri il petto ad ogni rep","today":"","ref":""},{"name":"Se sai fare giÃ  10 push up o sei arrivato a terra segui questa riga e quella sotto","muscle":"","sets":"1","reps":"x max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"","today":"","ref":""}]},{"code":"B2-C8","day":8,"letter":"C","week":8,"name":"Scheda C8","phase":"B program 2","focus":"Spalle","note":"B program 2 - Scheda C, settimana 8","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"1","reps":"Test 8 RM","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a , prova a mettere elastico sottile per aumentare profilo di resistenza","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"","reps":"no","rir":"","rest":"2","warmup":"--","tempo":"Eccentrica controllata e poi esplosivo/a","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Lento_avanti_manubri","muscle":"Spalle","sets":"1","reps":"Test 10 RM","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Movimento fluido senza rimbalzi con controllo, non distendere completamente le braccia","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Alzate_laterali","muscle":"Spalle","sets":"2","reps":"10-8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"cerca di frenare l\u0027eccentrica","note":"spalle lontane dalle orecchie, apri il petto per stabilizzare la spalla immagina di spingere il peso lateralmente e in basso","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"2","reps":"20","rir":"","rest":"alterna","warmup":"--","tempo":"","note":"usa un carico che ti permette una decina di reps quando cedi cambi braccio, continui ad alternare finchÃ¨ non chiudi le reps richieste. Apri il petto ad ogni rep","today":"","ref":""},{"name":"Se sai fare giÃ  10 push up o sei arrivato a terra segui questa riga e quella sotto","muscle":"","sets":"1","reps":"x max","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"","note":"","today":"","ref":""}]},{"code":"B2-D1","day":1,"letter":"D","week":1,"name":"Scheda D1","phase":"B program 2","focus":"Glutei","note":"B program 2 - Scheda D, settimana 1","exercises":[{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"5","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"1","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"4","reps":"5","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"4","reps":"50\u0027\u0027","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se nel test del max tempo, per ogni 10 secondi in cui hai superato il minuto aggiungi 5kg (esempio ) test max tempo 80\u0027\u0027 = +10kg","note":"cerca di continuare la progressione aggiungendo secondi ogni 2 settimane aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"2","reps":"8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, spingo e fermo 1 sec","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 10 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"1","reps":"15","rir":"","rest":"","warmup":"--","tempo":"","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"Se riesci aumenta il carico almeno di 1 serie nel corso delle settimane","today":"","ref":""}]},{"code":"B2-D2","day":2,"letter":"D","week":2,"name":"Scheda D2","phase":"B program 2","focus":"Glutei","note":"B program 2 - Scheda D, settimana 2","exercises":[{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"5","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"4","reps":"5","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"4","reps":"50\u0027\u0027","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se nel test del max tempo, per ogni 10 secondi in cui hai superato il minuto aggiungi 5kg (esempio ) test max tempo 80\u0027\u0027 = +10kg","note":"cerca di continuare la progressione aggiungendo secondi ogni 2 settimane aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"2","reps":"8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, spingo e fermo 1 sec","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 10 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"2","reps":"15","rir":"","rest":"","warmup":"--","tempo":"","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"Se riesci aumenta il carico almeno di 1 serie nel corso delle settimane","today":"","ref":""}]},{"code":"B2-D3","day":3,"letter":"D","week":3,"name":"Scheda D3","phase":"B program 2","focus":"Glutei","note":"B program 2 - Scheda D, settimana 3","exercises":[{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"5","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"3","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"6","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"4","reps":"55\u0027\u0027","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se nel test del max tempo, per ogni 10 secondi in cui hai superato il minuto aggiungi 5kg (esempio ) test max tempo 80\u0027\u0027 = +10kg","note":"cerca di continuare la progressione aggiungendo secondi ogni 2 settimane aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"2","reps":"8","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, spingo e fermo 1 sec","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 10 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"3","reps":"15","rir":"","rest":"","warmup":"--","tempo":"","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"Se riesci aumenta il carico almeno di 1 serie nel corso delle settimane","today":"","ref":""}]},{"code":"B2-D4","day":4,"letter":"D","week":4,"name":"Scheda D4","phase":"B program 2","focus":"Glutei","note":"B program 2 - Scheda D, settimana 4","exercises":[{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"1","reps":"4","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"1","reps":"8","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"2","reps":"6","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"3","reps":"40\u0027\u0027","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se nel test del max tempo, per ogni 10 secondi in cui hai superato il minuto aggiungi 5kg (esempio ) test max tempo 80\u0027\u0027 = +10kg","note":"cerca di continuare la progressione aggiungendo secondi ogni 2 settimane aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"1","reps":"6","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, spingo e fermo 1 sec","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 10 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"1","reps":"10","rir":"","rest":"","warmup":"--","tempo":"","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"2","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"Se riesci aumenta il carico almeno di 1 serie nel corso delle settimane","today":"","ref":""}]},{"code":"B2-D5","day":5,"letter":"D","week":5,"name":"Scheda D5","phase":"B program 2","focus":"Glutei","note":"B program 2 - Scheda D, settimana 5","exercises":[{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"6","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"3","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"8","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"4","reps":"60\u0027\u0027","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se nel test del max tempo, per ogni 10 secondi in cui hai superato il minuto aggiungi 5kg (esempio ) test max tempo 80\u0027\u0027 = +10kg","note":"cerca di continuare la progressione aggiungendo secondi ogni 2 settimane aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"2","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, spingo e fermo 1 sec","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 10 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"3","reps":"15","rir":"","rest":"","warmup":"--","tempo":"","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"Se riesci aumenta il carico almeno di 1 serie nel corso delle settimane","today":"","ref":""}]},{"code":"B2-D6","day":6,"letter":"D","week":6,"name":"Scheda D6","phase":"B program 2","focus":"Glutei","note":"B program 2 - Scheda D, settimana 6","exercises":[{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"6","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"8","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"4","reps":"50\u0027\u0027","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se nel test del max tempo, per ogni 10 secondi in cui hai superato il minuto aggiungi 5kg (esempio ) test max tempo 80\u0027\u0027 = +10kg","note":"cerca di continuare la progressione aggiungendo secondi ogni 2 settimane aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"2","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, spingo e fermo 1 sec","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 10 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"2","reps":"15","rir":"","rest":"","warmup":"--","tempo":"","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"Se riesci aumenta il carico almeno di 1 serie nel corso delle settimane","today":"","ref":""}]},{"code":"B2-D7","day":7,"letter":"D","week":7,"name":"Scheda D7","phase":"B program 2","focus":"Glutei","note":"B program 2 - Scheda D, settimana 7","exercises":[{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"1","reps":"6","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"1","reps":"10","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"2","reps":"8","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"2","reps":"55\u0027\u0027","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se nel test del max tempo, per ogni 10 secondi in cui hai superato il minuto aggiungi 5kg (esempio ) test max tempo 80\u0027\u0027 = +10kg","note":"cerca di continuare la progressione aggiungendo secondi ogni 2 settimane aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"1","reps":"10","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, spingo e fermo 1 sec","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 10 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"1","reps":"15","rir":"","rest":"","warmup":"--","tempo":"","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"12- 15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"Se riesci aumenta il carico almeno di 1 serie nel corso delle settimane","today":"","ref":""}]},{"code":"B2-D8","day":8,"letter":"D","week":8,"name":"Scheda D8","phase":"B program 2","focus":"Glutei","note":"B program 2 - Scheda D, settimana 8","exercises":[{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"1","reps":"Test 8 RM","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 8 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"","reps":"no","rir":"","rest":"2","warmup":"--","tempo":"piccolo fermo in basso e poi spingi","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"1","reps":"Test 10 RM","rir":"","rest":"45\u0027\u0027 a gamba e poi 1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, fermo 1 sec e spingo","note":"Nel vecchio programma hai trovato il carico dei 10 RM Usa quel carico per tutto il programma","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"1","reps":"max tempo","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Se nel test del max tempo, per ogni 10 secondi in cui hai superato il minuto aggiungi 5kg (esempio ) test max tempo 80\u0027\u0027 = +10kg","note":"cerca di continuare la progressione aggiungendo secondi ogni 2 settimane aggiungi 5 secondi","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"10","reps":"Test 8 RM","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Discesa in 2 sec, spingo e fermo 1 sec","note":"Il programma 1 si Ã¨ chiuso con un test dove hai trovato un carico che ti permette 10 reps Usa quel carico nella riga 1 fino alla fine del programma 2","today":"","ref":""},{"name":"Slanci_cavo_basso","muscle":"Glutei","sets":"","reps":"no","rir":"","rest":"","warmup":"--","tempo":"","note":"riduci il carico rispetto a quello della riga sopra fai delle serie a volume","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"2","reps":"12-15","rir":"","rest":"1\u002730\u0027\u0027","warmup":"--","tempo":"Fermo in alto 2 sec, discesa controllata","note":"Se riesci aumenta il carico almeno di 1 serie nel corso delle settimane","today":"","ref":""}]},{"code":"A1","day":1,"letter":"A","week":1,"name":"Scheda A1","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda A, settimana 1","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"3","reps":"6-9","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1-2","tempo":"2 sec di tirata - 1 sec di contrazione - 2 sec di eccentrica","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino. Carico progressivo.","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Glutes_machine","muscle":"Glutei","sets":"2","reps":"6-9","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"Voglio un eccentrica davvero tenuta!","note":"movimento controllato","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"6-9","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"","note":"fai una contrazione in alto di 2 secondi Impara a non usare la schiena, metti il pad basso, movimento molto controllato quando Sali spingi forte la patata contro il pad","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"le prime 2 serie un controllo maniacale, bacino immobile e busto leggermente inclinato in avanti, l\u0027ultima serie ad alte reps inclinata indietro","today":"","ref":""},{"name":"Leg_extension_singola","muscle":"Quadricipiti","sets":"3","reps":"10-15","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci carico/reps.","today":"","ref":""}]},{"code":"A2","day":2,"letter":"A","week":2,"name":"Scheda A2","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda A, settimana 2","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"3","reps":"6-9","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1-2","tempo":"2 sec di tirata - 1 sec di contrazione - 2 sec di eccentrica","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino. Carico progressivo.","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Glutes_machine","muscle":"Glutei","sets":"2","reps":"6-9","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"Voglio un eccentrica davvero tenuta!","note":"movimento controllato","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"6-9","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"","note":"fai una contrazione in alto di 2 secondi Impara a non usare la schiena, metti il pad basso, movimento molto controllato quando Sali spingi forte la patata contro il pad","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"le prime 2 serie un controllo maniacale, bacino immobile e busto leggermente inclinato in avanti, l\u0027ultima serie ad alte reps inclinata indietro","today":"","ref":""},{"name":"Leg_extension_singola","muscle":"Quadricipiti","sets":"3","reps":"10-15","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci carico/reps.","today":"","ref":""}]},{"code":"A3","day":3,"letter":"A","week":3,"name":"Scheda A3","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda A, settimana 3","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"3","reps":"6-9","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1-2","tempo":"2 sec di tirata - 1 sec di contrazione - 2 sec di eccentrica","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino. Carico progressivo.","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Glutes_machine","muscle":"Glutei","sets":"2","reps":"6-9","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"Voglio un eccentrica davvero tenuta!","note":"movimento controllato","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"6-9","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"","note":"fai una contrazione in alto di 2 secondi Impara a non usare la schiena, metti il pad basso, movimento molto controllato quando Sali spingi forte la patata contro il pad","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"le prime 2 serie un controllo maniacale, bacino immobile e busto leggermente inclinato in avanti, l\u0027ultima serie ad alte reps inclinata indietro","today":"","ref":""},{"name":"Leg_extension_singola","muscle":"Quadricipiti","sets":"3","reps":"10-15","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci carico/reps.","today":"","ref":""}]},{"code":"A4","day":4,"letter":"A","week":4,"name":"Scheda A4","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda A, settimana 4","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"1","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"3","reps":"6-9","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1-2","tempo":"2 sec di tirata - 1 sec di contrazione - 2 sec di eccentrica","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino. Carico progressivo.","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Glutes_machine","muscle":"Glutei","sets":"2","reps":"6-9","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"Voglio un eccentrica davvero tenuta!","note":"movimento controllato","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"2","reps":"6-9","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"","note":"fai una contrazione in alto di 2 secondi Impara a non usare la schiena, metti il pad basso, movimento molto controllato quando Sali spingi forte la patata contro il pad","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"2","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"le prime 2 serie un controllo maniacale, bacino immobile e busto leggermente inclinato in avanti, l\u0027ultima serie ad alte reps inclinata indietro","today":"","ref":""},{"name":"Leg_extension_singola","muscle":"Quadricipiti","sets":"3","reps":"10-15","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci carico/reps.","today":"","ref":""}]},{"code":"A5","day":5,"letter":"A","week":5,"name":"Scheda A5","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda A, settimana 5","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"3","reps":"6-9","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1-2","tempo":"2 sec di tirata - 1 sec di contrazione - 2 sec di eccentrica","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino. Carico progressivo.","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Glutes_machine","muscle":"Glutei","sets":"2","reps":"6-9","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"Voglio un eccentrica davvero tenuta!","note":"movimento controllato","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"6-9","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"","note":"fai una contrazione in alto di 2 secondi Impara a non usare la schiena, metti il pad basso, movimento molto controllato quando Sali spingi forte la patata contro il pad","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"le prime 2 serie un controllo maniacale, bacino immobile e busto leggermente inclinato in avanti, l\u0027ultima serie ad alte reps inclinata indietro","today":"","ref":""},{"name":"Leg_extension_singola","muscle":"Quadricipiti","sets":"3","reps":"10-15","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci carico/reps.","today":"","ref":""}]},{"code":"A6","day":6,"letter":"A","week":6,"name":"Scheda A6","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda A, settimana 6","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"3","reps":"6-9","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1-2","tempo":"2 sec di tirata - 1 sec di contrazione - 2 sec di eccentrica","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino. Carico progressivo.","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Glutes_machine","muscle":"Glutei","sets":"2","reps":"6-9","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"Voglio un eccentrica davvero tenuta!","note":"movimento controllato","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"6-9","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"","note":"fai una contrazione in alto di 2 secondi Impara a non usare la schiena, metti il pad basso, movimento molto controllato quando Sali spingi forte la patata contro il pad","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"le prime 2 serie un controllo maniacale, bacino immobile e busto leggermente inclinato in avanti, l\u0027ultima serie ad alte reps inclinata indietro","today":"","ref":""},{"name":"Leg_extension_singola","muscle":"Quadricipiti","sets":"3","reps":"10-15","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci carico/reps.","today":"","ref":""}]},{"code":"A7","day":7,"letter":"A","week":7,"name":"Scheda A7","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda A, settimana 7","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"3","reps":"6-9","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1-2","tempo":"2 sec di tirata - 1 sec di contrazione - 2 sec di eccentrica","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino. Carico progressivo.","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Glutes_machine","muscle":"Glutei","sets":"2","reps":"6-9","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"Voglio un eccentrica davvero tenuta!","note":"movimento controllato","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"6-9","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"","note":"fai una contrazione in alto di 2 secondi Impara a non usare la schiena, metti il pad basso, movimento molto controllato quando Sali spingi forte la patata contro il pad","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"le prime 2 serie un controllo maniacale, bacino immobile e busto leggermente inclinato in avanti, l\u0027ultima serie ad alte reps inclinata indietro","today":"","ref":""},{"name":"Leg_extension_singola","muscle":"Quadricipiti","sets":"3","reps":"10-15","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci carico/reps.","today":"","ref":""}]},{"code":"A8","day":8,"letter":"A","week":8,"name":"Scheda A8","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda A, settimana 8","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"1","reps":"test 10rm","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1-2","tempo":"2 sec di tirata - 1 sec di contrazione - 2 sec di eccentrica","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino. Carico progressivo.","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"1","reps":"test 10rm","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Glutes_machine","muscle":"Glutei","sets":"2","reps":"6-9","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"Voglio un eccentrica davvero tenuta!","note":"movimento controllato","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"1","reps":"test 10rm","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"","note":"fai una contrazione in alto di 2 secondi Impara a non usare la schiena, metti il pad basso, movimento molto controllato quando Sali spingi forte la patata contro il pad","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"le prime 2 serie un controllo maniacale, bacino immobile e busto leggermente inclinato in avanti, l\u0027ultima serie ad alte reps inclinata indietro","today":"","ref":""},{"name":"Leg_extension_singola","muscle":"Quadricipiti","sets":"3","reps":"10-15","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci carico/reps.","today":"","ref":""}]},{"code":"B1","day":1,"letter":"B","week":1,"name":"Scheda B1","phase":"Intensificazione","focus":"Spalle, Dorsali, Centro schiena","note":"Intensificazione - Scheda B, settimana 1","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"TOP SET pesante + 2 serie strict. Ecc. controllata, concentrica esplosiva. AGGIUNGI CARICO ogni settimana.","today":"","ref":""},{"name":"Lat_machine_Triangolo","muscle":"Dorsali","sets":"2","reps":"6-9","rir":"","rest":"1\u0027","warmup":"1","tempo":"fluido","note":"lavora bene con la scapola in elevazione e poi in depressione durante la tirata","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"2","reps":"6-8 10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"fluido","note":"Unisci le scapole, porta la barra al seno con i gomiti larghi","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"2","reps":"6-8 10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"fluido","note":"Usa il Vulken, inclinati in avanti","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"30\" a braccio","warmup":"1","tempo":"fluido","note":"STRICT, controllo totale, allineato col cavo. FISSO: progredisci sul logbook. Tensione costante, non cedimento sporco. cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavo","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro USA VULKEN","note":"DELTOIDE POSTERIORE (l\u0027anello che ti manca!). Apri e strizza dietro, gomiti alti, niente trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""}]},{"code":"B2","day":2,"letter":"B","week":2,"name":"Scheda B2","phase":"Intensificazione","focus":"Spalle, Dorsali, Centro schiena","note":"Intensificazione - Scheda B, settimana 2","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"TOP SET pesante + 2 serie strict. Ecc. controllata, concentrica esplosiva. AGGIUNGI CARICO ogni settimana.","today":"","ref":""},{"name":"Lat_machine_Triangolo","muscle":"Dorsali","sets":"2","reps":"6-9","rir":"","rest":"1\u0027","warmup":"1","tempo":"fluido","note":"lavora bene con la scapola in elevazione e poi in depressione durante la tirata","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"2","reps":"6-8 10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"fluido","note":"Unisci le scapole, porta la barra al seno con i gomiti larghi","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"2","reps":"6-8 10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"fluido","note":"Usa il Vulken, inclinati in avanti","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"30\" a braccio","warmup":"1","tempo":"fluido","note":"STRICT, controllo totale, allineato col cavo. FISSO: progredisci sul logbook. Tensione costante, non cedimento sporco. cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavo","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro USA VULKEN","note":"DELTOIDE POSTERIORE (l\u0027anello che ti manca!). Apri e strizza dietro, gomiti alti, niente trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""}]},{"code":"B3","day":3,"letter":"B","week":3,"name":"Scheda B3","phase":"Intensificazione","focus":"Spalle, Dorsali, Centro schiena","note":"Intensificazione - Scheda B, settimana 3","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"TOP SET pesante + 2 serie strict. Ecc. controllata, concentrica esplosiva. AGGIUNGI CARICO ogni settimana.","today":"","ref":""},{"name":"Lat_machine_Triangolo","muscle":"Dorsali","sets":"2","reps":"6-9","rir":"","rest":"1\u0027","warmup":"1","tempo":"fluido","note":"lavora bene con la scapola in elevazione e poi in depressione durante la tirata","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"2","reps":"6-8 10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"fluido","note":"Unisci le scapole, porta la barra al seno con i gomiti larghi","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"2","reps":"6-8 10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"fluido","note":"Usa il Vulken, inclinati in avanti","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"30\" a braccio","warmup":"1","tempo":"fluido","note":"STRICT, controllo totale, allineato col cavo. FISSO: progredisci sul logbook. Tensione costante, non cedimento sporco. cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavo","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro USA VULKEN","note":"DELTOIDE POSTERIORE (l\u0027anello che ti manca!). Apri e strizza dietro, gomiti alti, niente trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""}]},{"code":"B4","day":4,"letter":"B","week":4,"name":"Scheda B4","phase":"Intensificazione","focus":"Spalle, Dorsali, Centro schiena","note":"Intensificazione - Scheda B, settimana 4","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"TOP SET pesante + 2 serie strict. Ecc. controllata, concentrica esplosiva. AGGIUNGI CARICO ogni settimana.","today":"","ref":""},{"name":"Lat_machine_Triangolo","muscle":"Dorsali","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"1\u0027","warmup":"1","tempo":"fluido","note":"lavora bene con la scapola in elevazione e poi in depressione durante la tirata","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"fluido","note":"Unisci le scapole, porta la barra al seno con i gomiti larghi","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"2","reps":"6-8 10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"fluido","note":"Usa il Vulken, inclinati in avanti","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"30\" a braccio","warmup":"1","tempo":"fluido","note":"STRICT, controllo totale, allineato col cavo. FISSO: progredisci sul logbook. Tensione costante, non cedimento sporco. cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavo","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro USA VULKEN","note":"DELTOIDE POSTERIORE (l\u0027anello che ti manca!). Apri e strizza dietro, gomiti alti, niente trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""}]},{"code":"B5","day":5,"letter":"B","week":5,"name":"Scheda B5","phase":"Intensificazione","focus":"Spalle, Dorsali, Centro schiena","note":"Intensificazione - Scheda B, settimana 5","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"TOP SET pesante + 2 serie strict. Ecc. controllata, concentrica esplosiva. AGGIUNGI CARICO ogni settimana.","today":"","ref":""},{"name":"Lat_machine_Triangolo","muscle":"Dorsali","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"1\u0027","warmup":"1","tempo":"fluido","note":"lavora bene con la scapola in elevazione e poi in depressione durante la tirata","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"fluido","note":"Unisci le scapole, porta la barra al seno con i gomiti larghi","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"2","reps":"6-8 10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"fluido","note":"Usa il Vulken, inclinati in avanti","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"30\" a braccio","warmup":"1","tempo":"fluido","note":"STRICT, controllo totale, allineato col cavo. FISSO: progredisci sul logbook. Tensione costante, non cedimento sporco. cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavo","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro USA VULKEN","note":"DELTOIDE POSTERIORE (l\u0027anello che ti manca!). Apri e strizza dietro, gomiti alti, niente trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""}]},{"code":"B6","day":6,"letter":"B","week":6,"name":"Scheda B6","phase":"Intensificazione","focus":"Spalle, Dorsali, Centro schiena","note":"Intensificazione - Scheda B, settimana 6","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"TOP SET pesante + 2 serie strict. Ecc. controllata, concentrica esplosiva. AGGIUNGI CARICO ogni settimana.","today":"","ref":""},{"name":"Lat_machine_Triangolo","muscle":"Dorsali","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"1\u0027","warmup":"1","tempo":"fluido","note":"lavora bene con la scapola in elevazione e poi in depressione durante la tirata","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"fluido","note":"Unisci le scapole, porta la barra al seno con i gomiti larghi","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"2","reps":"6-8 10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"fluido","note":"Usa il Vulken, inclinati in avanti","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"30\" a braccio","warmup":"1","tempo":"fluido","note":"STRICT, controllo totale, allineato col cavo. FISSO: progredisci sul logbook. Tensione costante, non cedimento sporco. cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavo","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro USA VULKEN","note":"DELTOIDE POSTERIORE (l\u0027anello che ti manca!). Apri e strizza dietro, gomiti alti, niente trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""}]},{"code":"B7","day":7,"letter":"B","week":7,"name":"Scheda B7","phase":"Intensificazione","focus":"Spalle, Dorsali, Centro schiena","note":"Intensificazione - Scheda B, settimana 7","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"TOP SET pesante + 2 serie strict. Ecc. controllata, concentrica esplosiva. AGGIUNGI CARICO ogni settimana.","today":"","ref":""},{"name":"Lat_machine_Triangolo","muscle":"Dorsali","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"1\u0027","warmup":"1","tempo":"fluido","note":"lavora bene con la scapola in elevazione e poi in depressione durante la tirata","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"3","reps":"1x6-8 2x10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"fluido","note":"Unisci le scapole, porta la barra al seno con i gomiti larghi","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"2","reps":"6-8 10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"fluido","note":"Usa il Vulken, inclinati in avanti","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"30\" a braccio","warmup":"1","tempo":"fluido","note":"STRICT, controllo totale, allineato col cavo. FISSO: progredisci sul logbook. Tensione costante, non cedimento sporco. cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavo","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro USA VULKEN","note":"DELTOIDE POSTERIORE (l\u0027anello che ti manca!). Apri e strizza dietro, gomiti alti, niente trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""}]},{"code":"B8","day":8,"letter":"B","week":8,"name":"Scheda B8","phase":"Intensificazione","focus":"Spalle, Dorsali, Centro schiena","note":"Intensificazione - Scheda B, settimana 8","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"1","reps":"test 10rm","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"TOP SET pesante + 2 serie strict. Ecc. controllata, concentrica esplosiva. AGGIUNGI CARICO ogni settimana.","today":"","ref":""},{"name":"Lat_machine_Triangolo","muscle":"Dorsali","sets":"1","reps":"test 10rm","rir":"","rest":"1\u0027","warmup":"1","tempo":"fluido","note":"lavora bene con la scapola in elevazione e poi in depressione durante la tirata","today":"","ref":""},{"name":"Pulley_sbarra_presa_larga_supina","muscle":"Centro schiena","sets":"1","reps":"test 10rm","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"fluido","note":"Unisci le scapole, porta la barra al seno con i gomiti larghi","today":"","ref":""},{"name":"Pull_Down_corda","muscle":"Dorsali","sets":"2","reps":"6-8 10-12","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"fluido","note":"Usa il Vulken, inclinati in avanti","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"30\" a braccio","warmup":"1","tempo":"fluido","note":"STRICT, controllo totale, allineato col cavo. FISSO: progredisci sul logbook. Tensione costante, non cedimento sporco. cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavo","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro USA VULKEN","note":"DELTOIDE POSTERIORE (l\u0027anello che ti manca!). Apri e strizza dietro, gomiti alti, niente trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""}]},{"code":"C1","day":1,"letter":"C","week":1,"name":"Scheda C1","phase":"Intensificazione","focus":"Polpacci, Glutei","note":"Intensificazione - Scheda C, settimana 1","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Leggermente inclinata in avanti, controlla bene eccentrica e concentrica","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"2","reps":"6-9","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"eccentrica controllata e poi esplosivo/a","note":"Come facevi in b program 2","today":"","ref":""},{"name":"Hip_Trust_mono","muscle":"Glutei","sets":"3","reps":"8-10","rir":"","rest":"da_2\u0027a3\u0027","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"la contrazione parte e finisce con il sedere e devi estendere al max, la barra si muove con la contrazione del gluteo al macchinario singolo","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"1x5-8 1x9-12","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"3","tempo":"Eccentrica in 2\" e fermo in basso","note":"USA ELASTICO! tempi diversi tra top set e back off","today":"","ref":""},{"name":"Slancio_laterale_cavo_basso_triset","muscle":"Glutei","sets":"1","reps":"15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"0","tempo":"No recupero tra gli esercizi, poi 2 minuto e cambi gamba","note":"Cavo parte abbastanza alto, piede extraruotato (gamba va verso l\u0027esterno)","today":"","ref":""},{"name":"Affondo_pesante_triset","muscle":"Glutei","sets":"","reps":"8","rir":"","rest":"","warmup":"","tempo":"","note":"Usa manubrio pesante, ginocchio fermo","today":"","ref":""},{"name":"Affondo_con_rotazione_busto_triset","muscle":"Glutei","sets":"","reps":"15","rir":"","rest":"","warmup":"","tempo":"","note":"Affondo libero, mentre scendi ruota il busto verso la gamba che lavora e inclinalo in avanti","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"1,30\u0027\u0027","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-15","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"C2","day":2,"letter":"C","week":2,"name":"Scheda C2","phase":"Intensificazione","focus":"Polpacci, Glutei","note":"Intensificazione - Scheda C, settimana 2","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Leggermente inclinata in avanti, controlla bene eccentrica e concentrica","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"2","reps":"6-9","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"eccentrica controllata e poi esplosivo/a","note":"Come facevi in b program 2","today":"","ref":""},{"name":"Hip_Trust_mono","muscle":"Glutei","sets":"3","reps":"8-10","rir":"","rest":"da_2\u0027a3\u0027","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"la contrazione parte e finisce con il sedere e devi estendere al max, la barra si muove con la contrazione del gluteo al macchinario singolo","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"1x5-8 1x9-12","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"3","tempo":"Eccentrica in 2\" e fermo in basso","note":"USA ELASTICO! tempi diversi tra top set e back off","today":"","ref":""},{"name":"Slancio_laterale_cavo_basso_triset","muscle":"Glutei","sets":"1","reps":"15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"0","tempo":"No recupero tra gli esercizi, poi 2 minuto e cambi gamba","note":"Cavo parte abbastanza alto, piede extraruotato (gamba va verso l\u0027esterno)","today":"","ref":""},{"name":"Affondo_pesante_triset","muscle":"Glutei","sets":"","reps":"8","rir":"","rest":"","warmup":"","tempo":"","note":"Usa manubrio pesante, ginocchio fermo","today":"","ref":""},{"name":"Affondo_con_rotazione_busto_triset","muscle":"Glutei","sets":"","reps":"15","rir":"","rest":"","warmup":"","tempo":"","note":"Affondo libero, mentre scendi ruota il busto verso la gamba che lavora e inclinalo in avanti","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"1,30\u0027\u0027","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-15","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"C3","day":3,"letter":"C","week":3,"name":"Scheda C3","phase":"Intensificazione","focus":"Polpacci, Glutei","note":"Intensificazione - Scheda C, settimana 3","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Leggermente inclinata in avanti, controlla bene eccentrica e concentrica","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"6-9","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"eccentrica controllata e poi esplosivo/a","note":"Come facevi in b program 2","today":"","ref":""},{"name":"Hip_Trust_mono","muscle":"Glutei","sets":"3","reps":"8-10","rir":"","rest":"da_2\u0027a3\u0027","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"la contrazione parte e finisce con il sedere e devi estendere al max, la barra si muove con la contrazione del gluteo al macchinario singolo","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"1x5-8 1x9-12","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"3","tempo":"Eccentrica in 2\" e fermo in basso","note":"USA ELASTICO! tempi diversi tra top set e back off","today":"","ref":""},{"name":"Slancio_laterale_cavo_basso_triset","muscle":"Glutei","sets":"1","reps":"15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"0","tempo":"No recupero tra gli esercizi, poi 2 minuto e cambi gamba","note":"Cavo parte abbastanza alto, piede extraruotato (gamba va verso l\u0027esterno)","today":"","ref":""},{"name":"Affondo_pesante_triset","muscle":"Glutei","sets":"","reps":"8","rir":"","rest":"","warmup":"","tempo":"","note":"Usa manubrio pesante, ginocchio fermo","today":"","ref":""},{"name":"Affondo_con_rotazione_busto_triset","muscle":"Glutei","sets":"","reps":"15","rir":"","rest":"","warmup":"","tempo":"","note":"Affondo libero, mentre scendi ruota il busto verso la gamba che lavora e inclinalo in avanti","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"1,30\u0027\u0027","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-15","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"C4","day":4,"letter":"C","week":4,"name":"Scheda C4","phase":"Intensificazione","focus":"Polpacci, Glutei","note":"Intensificazione - Scheda C, settimana 4","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Leggermente inclinata in avanti, controlla bene eccentrica e concentrica","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"6-9","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"eccentrica controllata e poi esplosivo/a","note":"Come facevi in b program 2","today":"","ref":""},{"name":"Hip_Trust_mono","muscle":"Glutei","sets":"3","reps":"8-10","rir":"","rest":"da_2\u0027a3\u0027","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"la contrazione parte e finisce con il sedere e devi estendere al max, la barra si muove con la contrazione del gluteo al macchinario singolo","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"1x5-8 1x9-12","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"3","tempo":"Eccentrica in 2\" e fermo in basso","note":"USA ELASTICO! tempi diversi tra top set e back off","today":"","ref":""},{"name":"Slancio_laterale_cavo_basso_triset","muscle":"Glutei","sets":"1","reps":"15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"0","tempo":"No recupero tra gli esercizi, poi 2 minuto e cambi gamba","note":"Cavo parte abbastanza alto, piede extraruotato (gamba va verso l\u0027esterno)","today":"","ref":""},{"name":"Affondo_pesante_triset","muscle":"Glutei","sets":"","reps":"8","rir":"","rest":"","warmup":"","tempo":"","note":"Usa manubrio pesante, ginocchio fermo","today":"","ref":""},{"name":"Affondo_con_rotazione_busto_triset","muscle":"Glutei","sets":"","reps":"15","rir":"","rest":"","warmup":"","tempo":"","note":"Affondo libero, mentre scendi ruota il busto verso la gamba che lavora e inclinalo in avanti","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"1,30\u0027\u0027","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"C5","day":5,"letter":"C","week":5,"name":"Scheda C5","phase":"Intensificazione","focus":"Polpacci, Glutei","note":"Intensificazione - Scheda C, settimana 5","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"1","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Leggermente inclinata in avanti, controlla bene eccentrica e concentrica","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"6-9","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"eccentrica controllata e poi esplosivo/a","note":"Come facevi in b program 2","today":"","ref":""},{"name":"Hip_Trust_mono","muscle":"Glutei","sets":"3","reps":"8-10","rir":"","rest":"da_2\u0027a3\u0027","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"la contrazione parte e finisce con il sedere e devi estendere al max, la barra si muove con la contrazione del gluteo al macchinario singolo","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"1x5-8 1x9-12","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"3","tempo":"Eccentrica in 2\" e fermo in basso","note":"USA ELASTICO! tempi diversi tra top set e back off","today":"","ref":""},{"name":"Slancio_laterale_cavo_basso_triset","muscle":"Glutei","sets":"1","reps":"15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"0","tempo":"No recupero tra gli esercizi, poi 2 minuto e cambi gamba","note":"Cavo parte abbastanza alto, piede extraruotato (gamba va verso l\u0027esterno)","today":"","ref":""},{"name":"Affondo_pesante_triset","muscle":"Glutei","sets":"","reps":"8","rir":"","rest":"","warmup":"","tempo":"","note":"Usa manubrio pesante, ginocchio fermo","today":"","ref":""},{"name":"Affondo_con_rotazione_busto_triset","muscle":"Glutei","sets":"","reps":"15","rir":"","rest":"","warmup":"","tempo":"","note":"Affondo libero, mentre scendi ruota il busto verso la gamba che lavora e inclinalo in avanti","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"1,30\u0027\u0027","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"C6","day":6,"letter":"C","week":6,"name":"Scheda C6","phase":"Intensificazione","focus":"Polpacci, Glutei","note":"Intensificazione - Scheda C, settimana 6","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Leggermente inclinata in avanti, controlla bene eccentrica e concentrica","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"6-9","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"eccentrica controllata e poi esplosivo/a","note":"Come facevi in b program 2","today":"","ref":""},{"name":"Hip_Trust_mono","muscle":"Glutei","sets":"3","reps":"8-10","rir":"","rest":"da_2\u0027a3\u0027","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"la contrazione parte e finisce con il sedere e devi estendere al max, la barra si muove con la contrazione del gluteo al macchinario singolo","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"1x5-8 1x9-12","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"3","tempo":"Eccentrica in 2\" e fermo in basso","note":"USA ELASTICO! tempi diversi tra top set e back off","today":"","ref":""},{"name":"Slancio_laterale_cavo_basso_triset","muscle":"Glutei","sets":"1","reps":"15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"0","tempo":"No recupero tra gli esercizi, poi 2 minuto e cambi gamba","note":"Cavo parte abbastanza alto, piede extraruotato (gamba va verso l\u0027esterno)","today":"","ref":""},{"name":"Affondo_pesante_triset","muscle":"Glutei","sets":"","reps":"8","rir":"","rest":"","warmup":"","tempo":"","note":"Usa manubrio pesante, ginocchio fermo","today":"","ref":""},{"name":"Affondo_con_rotazione_busto_triset","muscle":"Glutei","sets":"","reps":"15","rir":"","rest":"","warmup":"","tempo":"","note":"Affondo libero, mentre scendi ruota il busto verso la gamba che lavora e inclinalo in avanti","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"1,30\u0027\u0027","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"C7","day":7,"letter":"C","week":7,"name":"Scheda C7","phase":"Intensificazione","focus":"Polpacci, Glutei","note":"Intensificazione - Scheda C, settimana 7","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Leggermente inclinata in avanti, controlla bene eccentrica e concentrica","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"6-9","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"eccentrica controllata e poi esplosivo/a","note":"Come facevi in b program 2","today":"","ref":""},{"name":"Hip_Trust_mono","muscle":"Glutei","sets":"3","reps":"8-10","rir":"","rest":"da_2\u0027a3\u0027","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"la contrazione parte e finisce con il sedere e devi estendere al max, la barra si muove con la contrazione del gluteo al macchinario singolo","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"2","reps":"1x5-8 1x9-12","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"3","tempo":"Eccentrica in 2\" e fermo in basso","note":"USA ELASTICO! tempi diversi tra top set e back off","today":"","ref":""},{"name":"Slancio_laterale_cavo_basso_triset","muscle":"Glutei","sets":"1","reps":"15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"0","tempo":"No recupero tra gli esercizi, poi 2 minuto e cambi gamba","note":"Cavo parte abbastanza alto, piede extraruotato (gamba va verso l\u0027esterno)","today":"","ref":""},{"name":"Affondo_pesante_triset","muscle":"Glutei","sets":"","reps":"8","rir":"","rest":"","warmup":"","tempo":"","note":"Usa manubrio pesante, ginocchio fermo","today":"","ref":""},{"name":"Affondo_con_rotazione_busto_triset","muscle":"Glutei","sets":"","reps":"15","rir":"","rest":"","warmup":"","tempo":"","note":"Affondo libero, mentre scendi ruota il busto verso la gamba che lavora e inclinalo in avanti","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"1,30\u0027\u0027","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"C8","day":8,"letter":"C","week":8,"name":"Scheda C8","phase":"Intensificazione","focus":"Polpacci, Glutei","note":"Intensificazione - Scheda C, settimana 8","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Leggermente inclinata in avanti, controlla bene eccentrica e concentrica","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"1","reps":"test 10rm","rir":"","rest":"rec_completo_\u003e2","warmup":"1-2","tempo":"eccentrica controllata e poi esplosivo/a","note":"Come facevi in b program 2","today":"","ref":""},{"name":"Hip_Trust_mono","muscle":"Glutei","sets":"1","reps":"test 8rm","rir":"","rest":"da_2\u0027a3\u0027","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"la contrazione parte e finisce con il sedere e devi estendere al max, la barra si muove con la contrazione del gluteo al macchinario singolo","today":"","ref":""},{"name":"Pressa45Â°_piedi_alti_schienale_chiuso","muscle":"Glutei","sets":"1","reps":"test 10rm","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"3","tempo":"Eccentrica in 2\" e fermo in basso","note":"USA ELASTICO! tempi diversi tra top set e back off","today":"","ref":""},{"name":"Slancio_laterale_cavo_basso_triset","muscle":"Glutei","sets":"1","reps":"15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"0","tempo":"No recupero tra gli esercizi, poi 2 minuto e cambi gamba","note":"Cavo parte abbastanza alto, piede extraruotato (gamba va verso l\u0027esterno)","today":"","ref":""},{"name":"Affondo_pesante_triset","muscle":"Glutei","sets":"","reps":"8","rir":"","rest":"","warmup":"","tempo":"","note":"Usa manubrio pesante, ginocchio fermo","today":"","ref":""},{"name":"Affondo_con_rotazione_busto_triset","muscle":"Glutei","sets":"","reps":"15","rir":"","rest":"","warmup":"","tempo":"","note":"Affondo libero, mentre scendi ruota il busto verso la gamba che lavora e inclinalo in avanti","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"1,30\u0027\u0027","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"2","reps":"10-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"D1","day":1,"letter":"D","week":1,"name":"Scheda D1","phase":"Intensificazione","focus":"Spalle, Petto","note":"Intensificazione - Scheda D, settimana 1","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"4","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"MOTORE FORZA SPALLE. Carico vero, ecc. controllata + concentrica esplosiva. AGGIUNGI CARICO ogni settimana. NIENTE drop/stripping. Petto alto, movimento controllato","today":"","ref":""},{"name":"Push_Up","muscle":"Petto","sets":"2","reps":"max","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"","note":"","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"Cavo altezza pube, cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavoÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦.petto aperto, tecnica perfetta.","note":"STRICT, lento e controllato, allineato col cavo. Tensione sul deltoide, non cedimento sporco. Progredisci ogni settimana.","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro","note":"DELTOIDE POSTERIORE: 2a dose settimanale. Strizza dietro, gomiti alti, no trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"al cavo alto vulken","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"D2","day":2,"letter":"D","week":2,"name":"Scheda D2","phase":"Intensificazione","focus":"Spalle, Petto","note":"Intensificazione - Scheda D, settimana 2","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"4","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"MOTORE FORZA SPALLE. Carico vero, ecc. controllata + concentrica esplosiva. AGGIUNGI CARICO ogni settimana. NIENTE drop/stripping. Petto alto, movimento controllato","today":"","ref":""},{"name":"Push_Up","muscle":"Petto","sets":"2","reps":"max","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"","note":"","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"Cavo altezza pube, cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavoÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦.petto aperto, tecnica perfetta.","note":"STRICT, lento e controllato, allineato col cavo. Tensione sul deltoide, non cedimento sporco. Progredisci ogni settimana.","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro","note":"DELTOIDE POSTERIORE: 2a dose settimanale. Strizza dietro, gomiti alti, no trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"al cavo alto vulken","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"D3","day":3,"letter":"D","week":3,"name":"Scheda D3","phase":"Intensificazione","focus":"Spalle, Petto","note":"Intensificazione - Scheda D, settimana 3","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"4","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"MOTORE FORZA SPALLE. Carico vero, ecc. controllata + concentrica esplosiva. AGGIUNGI CARICO ogni settimana. NIENTE drop/stripping. Petto alto, movimento controllato","today":"","ref":""},{"name":"Push_Up","muscle":"Petto","sets":"2","reps":"max","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"","note":"","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"Cavo altezza pube, cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavoÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦.petto aperto, tecnica perfetta.","note":"STRICT, lento e controllato, allineato col cavo. Tensione sul deltoide, non cedimento sporco. Progredisci ogni settimana.","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro","note":"DELTOIDE POSTERIORE: 2a dose settimanale. Strizza dietro, gomiti alti, no trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"al cavo alto vulken","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"D4","day":4,"letter":"D","week":4,"name":"Scheda D4","phase":"Intensificazione","focus":"Spalle, Petto","note":"Intensificazione - Scheda D, settimana 4","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"4","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"MOTORE FORZA SPALLE. Carico vero, ecc. controllata + concentrica esplosiva. AGGIUNGI CARICO ogni settimana. NIENTE drop/stripping. Petto alto, movimento controllato","today":"","ref":""},{"name":"Push_Up","muscle":"Petto","sets":"2","reps":"max","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"","note":"","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"Cavo altezza pube, cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavoÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦.petto aperto, tecnica perfetta.","note":"STRICT, lento e controllato, allineato col cavo. Tensione sul deltoide, non cedimento sporco. Progredisci ogni settimana.","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro","note":"DELTOIDE POSTERIORE: 2a dose settimanale. Strizza dietro, gomiti alti, no trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"al cavo alto vulken","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"D5","day":5,"letter":"D","week":5,"name":"Scheda D5","phase":"Intensificazione","focus":"Spalle, Petto","note":"Intensificazione - Scheda D, settimana 5","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"4","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"MOTORE FORZA SPALLE. Carico vero, ecc. controllata + concentrica esplosiva. AGGIUNGI CARICO ogni settimana. NIENTE drop/stripping. Petto alto, movimento controllato","today":"","ref":""},{"name":"Push_Up","muscle":"Petto","sets":"2","reps":"max","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"","note":"","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"Cavo altezza pube, cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavoÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦.petto aperto, tecnica perfetta.","note":"STRICT, lento e controllato, allineato col cavo. Tensione sul deltoide, non cedimento sporco. Progredisci ogni settimana.","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro","note":"DELTOIDE POSTERIORE: 2a dose settimanale. Strizza dietro, gomiti alti, no trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"al cavo alto vulken","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"D6","day":6,"letter":"D","week":6,"name":"Scheda D6","phase":"Intensificazione","focus":"Spalle, Petto","note":"Intensificazione - Scheda D, settimana 6","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"4","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"MOTORE FORZA SPALLE. Carico vero, ecc. controllata + concentrica esplosiva. AGGIUNGI CARICO ogni settimana. NIENTE drop/stripping. Petto alto, movimento controllato","today":"","ref":""},{"name":"Push_Up","muscle":"Petto","sets":"2","reps":"max","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"","note":"","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"Cavo altezza pube, cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavoÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦.petto aperto, tecnica perfetta.","note":"STRICT, lento e controllato, allineato col cavo. Tensione sul deltoide, non cedimento sporco. Progredisci ogni settimana.","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro","note":"DELTOIDE POSTERIORE: 2a dose settimanale. Strizza dietro, gomiti alti, no trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"al cavo alto vulken","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"D7","day":7,"letter":"D","week":7,"name":"Scheda D7","phase":"Intensificazione","focus":"Spalle, Petto","note":"Intensificazione - Scheda D, settimana 7","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"4","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"MOTORE FORZA SPALLE. Carico vero, ecc. controllata + concentrica esplosiva. AGGIUNGI CARICO ogni settimana. NIENTE drop/stripping. Petto alto, movimento controllato","today":"","ref":""},{"name":"Push_Up","muscle":"Petto","sets":"2","reps":"max","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"","note":"","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"Cavo altezza pube, cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavoÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦.petto aperto, tecnica perfetta.","note":"STRICT, lento e controllato, allineato col cavo. Tensione sul deltoide, non cedimento sporco. Progredisci ogni settimana.","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro","note":"DELTOIDE POSTERIORE: 2a dose settimanale. Strizza dietro, gomiti alti, no trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"al cavo alto vulken","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"D8","day":8,"letter":"D","week":8,"name":"Scheda D8","phase":"Intensificazione","focus":"Spalle, Petto","note":"Intensificazione - Scheda D, settimana 8","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"1","reps":"TEST 10 RM","rir":"","rest":"rec_completo_\u003e2","warmup":"2","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"MOTORE FORZA SPALLE. Carico vero, ecc. controllata + concentrica esplosiva. AGGIUNGI CARICO ogni settimana. NIENTE drop/stripping. Petto alto, movimento controllato","today":"","ref":""},{"name":"Push_Up","muscle":"Petto","sets":"2","reps":"max","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"","note":"","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"8-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"Cavo altezza pube, cavigliera al gomito, tanta aggressivitÃ  e allineamento con il cavoÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦.petto aperto, tecnica perfetta.","note":"STRICT, lento e controllato, allineato col cavo. Tensione sul deltoide, non cedimento sporco. Progredisci ogni settimana.","today":"","ref":""},{"name":"Face_Pull","muscle":"Spalle","sets":"3","reps":"15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato, 1\" strizzata dietro","note":"DELTOIDE POSTERIORE: 2a dose settimanale. Strizza dietro, gomiti alti, no trapezi.","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"fluido","note":"Panca 80Â° eccentrica dilatata e in tensione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"2x6-9 1x12-15","rir":"","rest":"da_2\u0027a3\u0027","warmup":"1","tempo":"fluido","note":"al cavo alto vulken","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"E1","day":1,"letter":"E","week":1,"name":"Scheda E1","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda E, settimana 1","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"2","reps":"1x5-8 1x9-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"Eccentrica in 2\" e fermo in basso","note":"Scendi in MASSIMO allungamento, senti tirare il femorale, non portare il bacino avanti. +carico ogni settimana.","today":"","ref":""},{"name":"Stacco_mono_gamba","muscle":"Femorali","sets":"4","reps":"15, 12, 10, 8","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"","tempo":"fluido","note":"Rotazione corretta e peso avanti, CON MANUBRI","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"3","reps":"5-8","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"eccentrica in 3 secondi","note":"Mono gamba, proviamo ad abbassare il rep range a tenere un eccentrica attiva","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"4","reps":"30+40\" iso","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fai 30 rep e poi 40 sec in contrazione","note":"Leggermente inclinata in avanti, usa un peso abbastanza basso (es.50kg)","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-15","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"E2","day":2,"letter":"E","week":2,"name":"Scheda E2","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda E, settimana 2","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"2","reps":"1x5-8 1x9-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"Eccentrica in 2\" e fermo in basso","note":"Scendi in MASSIMO allungamento, senti tirare il femorale, non portare il bacino avanti. +carico ogni settimana.","today":"","ref":""},{"name":"Stacco_mono_gamba","muscle":"Femorali","sets":"4","reps":"15, 12, 10, 8","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"","tempo":"fluido","note":"Rotazione corretta e peso avanti, CON MANUBRI","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"3","reps":"5-8","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"eccentrica in 3 secondi","note":"Mono gamba, proviamo ad abbassare il rep range a tenere un eccentrica attiva","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"4","reps":"30+40\" iso","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fai 30 rep e poi 40 sec in contrazione","note":"Leggermente inclinata in avanti, usa un peso abbastanza basso (es.50kg)","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-15","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"E3","day":3,"letter":"E","week":3,"name":"Scheda E3","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda E, settimana 3","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"2","reps":"1x5-8 1x9-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"Eccentrica in 2\" e fermo in basso","note":"Scendi in MASSIMO allungamento, senti tirare il femorale, non portare il bacino avanti. +carico ogni settimana.","today":"","ref":""},{"name":"Stacco_mono_gamba","muscle":"Femorali","sets":"4","reps":"15, 12, 10, 8","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"","tempo":"fluido","note":"Rotazione corretta e peso avanti, CON MANUBRI","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"3","reps":"5-8","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"eccentrica in 3 secondi","note":"Mono gamba, proviamo ad abbassare il rep range a tenere un eccentrica attiva","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"4","reps":"30+40\" iso","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fai 30 rep e poi 40 sec in contrazione","note":"Leggermente inclinata in avanti, usa un peso abbastanza basso (es.50kg)","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-15","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"E4","day":4,"letter":"E","week":4,"name":"Scheda E4","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda E, settimana 4","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"1","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"2","reps":"1x5-8 1x9-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"Eccentrica in 2\" e fermo in basso","note":"Scendi in MASSIMO allungamento, senti tirare il femorale, non portare il bacino avanti. +carico ogni settimana.","today":"","ref":""},{"name":"Stacco_mono_gamba","muscle":"Femorali","sets":"3","reps":"12,10,8","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"","tempo":"fluido","note":"Rotazione corretta e peso avanti, CON MANUBRI","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"3","reps":"5-8","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"eccentrica in 3 secondi","note":"Mono gamba, proviamo ad abbassare il rep range a tenere un eccentrica attiva","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"3","reps":"30+40\" iso","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fai 30 rep e poi 40 sec in contrazione","note":"Leggermente inclinata in avanti, usa un peso abbastanza basso (es.50kg)","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"E5","day":5,"letter":"E","week":5,"name":"Scheda E5","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda E, settimana 5","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"2","reps":"1x5-8 1x9-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"Eccentrica in 2\" e fermo in basso","note":"Scendi in MASSIMO allungamento, senti tirare il femorale, non portare il bacino avanti. +carico ogni settimana.","today":"","ref":""},{"name":"Stacco_mono_gamba","muscle":"Femorali","sets":"4","reps":"15, 12, 10, 8","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"","tempo":"fluido","note":"Rotazione corretta e peso avanti, CON MANUBRI","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"3","reps":"5-8","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"eccentrica in 3 secondi","note":"Mono gamba, proviamo ad abbassare il rep range a tenere un eccentrica attiva","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"4","reps":"30+40\" iso","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fai 30 rep e poi 40 sec in contrazione","note":"Leggermente inclinata in avanti, usa un peso abbastanza basso (es.50kg)","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"E6","day":6,"letter":"E","week":6,"name":"Scheda E6","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda E, settimana 6","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"2","reps":"1x5-8 1x9-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"Eccentrica in 2\" e fermo in basso","note":"Scendi in MASSIMO allungamento, senti tirare il femorale, non portare il bacino avanti. +carico ogni settimana.","today":"","ref":""},{"name":"Stacco_mono_gamba","muscle":"Femorali","sets":"4","reps":"15, 12, 10, 8","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"","tempo":"fluido","note":"Rotazione corretta e peso avanti, CON MANUBRI","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"3","reps":"5-8","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"eccentrica in 3 secondi","note":"Mono gamba, proviamo ad abbassare il rep range a tenere un eccentrica attiva","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"4","reps":"30+40\" iso","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fai 30 rep e poi 40 sec in contrazione","note":"Leggermente inclinata in avanti, usa un peso abbastanza basso (es.50kg)","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"E7","day":7,"letter":"E","week":7,"name":"Scheda E7","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda E, settimana 7","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"2","reps":"1x5-8 1x9-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"Eccentrica in 2\" e fermo in basso","note":"Scendi in MASSIMO allungamento, senti tirare il femorale, non portare il bacino avanti. +carico ogni settimana.","today":"","ref":""},{"name":"Stacco_mono_gamba","muscle":"Femorali","sets":"4","reps":"15, 12, 10, 8","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"","tempo":"fluido","note":"Rotazione corretta e peso avanti, CON MANUBRI","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"3","reps":"5-8","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"eccentrica in 3 secondi","note":"Mono gamba, proviamo ad abbassare il rep range a tenere un eccentrica attiva","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"4","reps":"30+40\" iso","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fai 30 rep e poi 40 sec in contrazione","note":"Leggermente inclinata in avanti, usa un peso abbastanza basso (es.50kg)","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"E8","day":8,"letter":"E","week":8,"name":"Scheda E8","phase":"Intensificazione","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensificazione - Scheda E, settimana 8","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"2","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"2","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"1","reps":"test 10rm","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"Eccentrica in 2\" e fermo in basso","note":"Scendi in MASSIMO allungamento, senti tirare il femorale, non portare il bacino avanti. +carico ogni settimana.","today":"","ref":""},{"name":"Stacco_mono_gamba","muscle":"Femorali","sets":"4","reps":"15, 12, 10, 8","rir":"","rest":"1\u0027 a gamba e poi 2-3\u0027","warmup":"","tempo":"fluido","note":"Rotazione corretta e peso avanti, CON MANUBRI","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"1","reps":"test 10rm","rir":"","rest":"rec_completo_\u003e2","warmup":"3","tempo":"eccentrica in 3 secondi","note":"Fai una serie di leg extension leggera prima per attivare i quadricipiti QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana.","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"3","reps":"5-8","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"eccentrica in 3 secondi","note":"Mono gamba, proviamo ad abbassare il rep range a tenere un eccentrica attiva","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"4","reps":"30+40\" iso","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fai 30 rep e poi 40 sec in contrazione","note":"Leggermente inclinata in avanti, usa un peso abbastanza basso (es.50kg)","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"2","reps":"10-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"un secondo di contrazione ogni rep","note":"Cedimento tecnico, 1\" di contrazione, ROM pieno. Progredisci.","today":"","ref":""}]},{"code":"F1","day":1,"letter":"F","week":1,"name":"Scheda F1","phase":"Intensificazione","focus":"Dorsali, Centro schiena","note":"Intensificazione - Scheda F, settimana 1","exercises":[{"name":"Trazioni","muscle":"Dorsali","sets":"2","reps":"max","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Vedi tabella","today":"","ref":""},{"name":"Row_machine_panatta","muscle":"Centro schiena","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"1 sec di contrazione ogni rep","note":"Tira ai fianchi e strizza le scapole. Schiena neutra: spessore del centro schiena","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"3","reps":"8-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Presa larga, porta al petto alto, gomiti larghi. Cerca la LARGHEZZA del dorso, scapole in depressione.","today":"","ref":""},{"name":"Pull_down_sbarra","muscle":"Dorsali","sets":"3","reps":"12-15","rir":"","rest":"rec_completo_\u003c2","warmup":"2","tempo":"fluido","note":"Braccia quasi tese, isola il GRAN DORSALE in allungamento. Spingi i gomiti verso i fianchi, niente bicipiti.","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"10-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\u0027\u0027 contrazione in picco","note":"Petto in fuori eccentrica controllata","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"alterna_arto","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"F2","day":2,"letter":"F","week":2,"name":"Scheda F2","phase":"Intensificazione","focus":"Dorsali, Centro schiena","note":"Intensificazione - Scheda F, settimana 2","exercises":[{"name":"Trazioni","muscle":"Dorsali","sets":"2","reps":"max","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Vedi tabella","today":"","ref":""},{"name":"Row_machine_panatta","muscle":"Centro schiena","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"1 sec di contrazione ogni rep","note":"Tira ai fianchi e strizza le scapole. Schiena neutra: spessore del centro schiena","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"3","reps":"8-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Presa larga, porta al petto alto, gomiti larghi. Cerca la LARGHEZZA del dorso, scapole in depressione.","today":"","ref":""},{"name":"Pull_down_sbarra","muscle":"Dorsali","sets":"3","reps":"12-15","rir":"","rest":"rec_completo_\u003c2","warmup":"2","tempo":"fluido","note":"Braccia quasi tese, isola il GRAN DORSALE in allungamento. Spingi i gomiti verso i fianchi, niente bicipiti.","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"10-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\u0027\u0027 contrazione in picco","note":"Petto in fuori eccentrica controllata","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"alterna_arto","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"F3","day":3,"letter":"F","week":3,"name":"Scheda F3","phase":"Intensificazione","focus":"Dorsali, Centro schiena","note":"Intensificazione - Scheda F, settimana 3","exercises":[{"name":"Trazioni","muscle":"Dorsali","sets":"3","reps":"max","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Vedi tabella","today":"","ref":""},{"name":"Row_machine_panatta","muscle":"Centro schiena","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"1 sec di contrazione ogni rep","note":"Tira ai fianchi e strizza le scapole. Schiena neutra: spessore del centro schiena","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"3","reps":"8-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Presa larga, porta al petto alto, gomiti larghi. Cerca la LARGHEZZA del dorso, scapole in depressione.","today":"","ref":""},{"name":"Pull_down_sbarra","muscle":"Dorsali","sets":"3","reps":"12-15","rir":"","rest":"rec_completo_\u003c2","warmup":"2","tempo":"fluido","note":"Braccia quasi tese, isola il GRAN DORSALE in allungamento. Spingi i gomiti verso i fianchi, niente bicipiti.","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"10-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\u0027\u0027 contrazione in picco","note":"Petto in fuori eccentrica controllata","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"alterna_arto","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"F4","day":4,"letter":"F","week":4,"name":"Scheda F4","phase":"Intensificazione","focus":"Dorsali, Centro schiena","note":"Intensificazione - Scheda F, settimana 4","exercises":[{"name":"Trazioni","muscle":"Dorsali","sets":"1","reps":"max","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Vedi tabella","today":"","ref":""},{"name":"Row_machine_panatta","muscle":"Centro schiena","sets":"2","reps":"6-10","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"1 sec di contrazione ogni rep","note":"Tira ai fianchi e strizza le scapole. Schiena neutra: spessore del centro schiena","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"2","reps":"8-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Presa larga, porta al petto alto, gomiti larghi. Cerca la LARGHEZZA del dorso, scapole in depressione.","today":"","ref":""},{"name":"Pull_down_sbarra","muscle":"Dorsali","sets":"2","reps":"12-15","rir":"","rest":"rec_completo_\u003c2","warmup":"2","tempo":"fluido","note":"Braccia quasi tese, isola il GRAN DORSALE in allungamento. Spingi i gomiti verso i fianchi, niente bicipiti.","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"2","reps":"10-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\u0027\u0027 contrazione in picco","note":"Petto in fuori eccentrica controllata","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"1","reps":"1x20","rir":"","rest":"alterna_arto","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"F5","day":5,"letter":"F","week":5,"name":"Scheda F5","phase":"Intensificazione","focus":"Dorsali, Centro schiena","note":"Intensificazione - Scheda F, settimana 5","exercises":[{"name":"Trazioni","muscle":"Dorsali","sets":"3","reps":"max","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Vedi tabella","today":"","ref":""},{"name":"Row_machine_panatta","muscle":"Centro schiena","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"1 sec di contrazione ogni rep","note":"Tira ai fianchi e strizza le scapole. Schiena neutra: spessore del centro schiena","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"3","reps":"8-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Presa larga, porta al petto alto, gomiti larghi. Cerca la LARGHEZZA del dorso, scapole in depressione.","today":"","ref":""},{"name":"Pull_down_sbarra","muscle":"Dorsali","sets":"3","reps":"12-15","rir":"","rest":"rec_completo_\u003c2","warmup":"2","tempo":"fluido","note":"Braccia quasi tese, isola il GRAN DORSALE in allungamento. Spingi i gomiti verso i fianchi, niente bicipiti.","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"10-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\u0027\u0027 contrazione in picco","note":"Petto in fuori eccentrica controllata","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"alterna_arto","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"F6","day":6,"letter":"F","week":6,"name":"Scheda F6","phase":"Intensificazione","focus":"Dorsali, Centro schiena","note":"Intensificazione - Scheda F, settimana 6","exercises":[{"name":"Trazioni","muscle":"Dorsali","sets":"3","reps":"max","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Vedi tabella","today":"","ref":""},{"name":"Row_machine_panatta","muscle":"Centro schiena","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"1 sec di contrazione ogni rep","note":"Tira ai fianchi e strizza le scapole. Schiena neutra: spessore del centro schiena","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"3","reps":"8-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Presa larga, porta al petto alto, gomiti larghi. Cerca la LARGHEZZA del dorso, scapole in depressione.","today":"","ref":""},{"name":"Pull_down_sbarra","muscle":"Dorsali","sets":"3","reps":"12-15","rir":"","rest":"rec_completo_\u003c2","warmup":"2","tempo":"fluido","note":"Braccia quasi tese, isola il GRAN DORSALE in allungamento. Spingi i gomiti verso i fianchi, niente bicipiti.","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"10-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\u0027\u0027 contrazione in picco","note":"Petto in fuori eccentrica controllata","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"alterna_arto","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"F7","day":7,"letter":"F","week":7,"name":"Scheda F7","phase":"Intensificazione","focus":"Dorsali, Centro schiena","note":"Intensificazione - Scheda F, settimana 7","exercises":[{"name":"Trazioni","muscle":"Dorsali","sets":"3","reps":"max","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Vedi tabella","today":"","ref":""},{"name":"Row_machine_panatta","muscle":"Centro schiena","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"1 sec di contrazione ogni rep","note":"Tira ai fianchi e strizza le scapole. Schiena neutra: spessore del centro schiena","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"3","reps":"8-12","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Presa larga, porta al petto alto, gomiti larghi. Cerca la LARGHEZZA del dorso, scapole in depressione.","today":"","ref":""},{"name":"Pull_down_sbarra","muscle":"Dorsali","sets":"3","reps":"12-15","rir":"","rest":"rec_completo_\u003c2","warmup":"2","tempo":"fluido","note":"Braccia quasi tese, isola il GRAN DORSALE in allungamento. Spingi i gomiti verso i fianchi, niente bicipiti.","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"10-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\u0027\u0027 contrazione in picco","note":"Petto in fuori eccentrica controllata","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"alterna_arto","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"F8","day":8,"letter":"F","week":8,"name":"Scheda F8","phase":"Intensificazione","focus":"Dorsali, Centro schiena","note":"Intensificazione - Scheda F, settimana 8","exercises":[{"name":"Trazioni","muscle":"Dorsali","sets":"1","reps":"test max","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Vedi tabella","today":"","ref":""},{"name":"Row_machine_panatta","muscle":"Centro schiena","sets":"3","reps":"6-10","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"1 sec di contrazione ogni rep","note":"Tira ai fianchi e strizza le scapole. Schiena neutra: spessore del centro schiena","today":"","ref":""},{"name":"Lat_machine","muscle":"Dorsali","sets":"1","reps":"test 10rm","rir":"","rest":"rec_completo_\u003c2","warmup":"1","tempo":"fluido","note":"Presa larga, porta al petto alto, gomiti larghi. Cerca la LARGHEZZA del dorso, scapole in depressione.","today":"","ref":""},{"name":"Pull_down_sbarra","muscle":"Dorsali","sets":"1","reps":"test 12 rm","rir":"","rest":"rec_completo_\u003c2","warmup":"2","tempo":"fluido","note":"Braccia quasi tese, isola il GRAN DORSALE in allungamento. Spingi i gomiti verso i fianchi, niente bicipiti.","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"1","reps":"test 10rm","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\u0027\u0027 contrazione in picco","note":"Petto in fuori eccentrica controllata","today":"","ref":""},{"name":"crunch_obliqui","muscle":"Addome","sets":"2","reps":"1x10 1x20","rir":"","rest":"alterna_arto","warmup":"","tempo":"fludio","note":"Crunch inversi + crunch obliqui su panca inversa","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-A1","day":1,"letter":"A","week":1,"name":"Scheda A1","phase":"Intensita","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensita - Scheda A, settimana 1","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"1","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor/adductor, usa carico basso","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"carico basso","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"3","reps":"8","rir":"@8/9","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\" fermo basso","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Non portare bacino avanti in concentrica!!!","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"2","reps":"10 +20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Super peso pensante per fare 10 reps, poi lo molli e ne fai 20 a corpo libero, spingi le pelvi contro il pad","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"8","rir":"@8/9","rest":"rec_completo_\u003e2","warmup":"1","tempo":"QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana. ECCENTRICA IN 3\"","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Fai una serie di leg extension leggera prima per attivare i quadricipiti","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"3","reps":"12-15","rir":"@9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""}]},{"code":"INT-A2","day":2,"letter":"A","week":2,"name":"Scheda A2","phase":"Intensita","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensita - Scheda A, settimana 2","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"1","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor/adductor, usa carico basso","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"carico basso","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"3","reps":"8-8-x","rir":"@9","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\" fermo basso","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Non portare bacino avanti in concentrica!!!","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"10 +20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Super peso pensante per fare 10 reps, poi lo molli e ne fai 20 a corpo libero, spingi le pelvi contro il pad","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"8-8-x","rir":"@9","rest":"rec_completo_\u003e2","warmup":"1","tempo":"QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana. ECCENTRICA IN 3\"","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Fai una serie di leg extension leggera prima per attivare i quadricipiti","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"3","reps":"12-15","rir":"@9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""}]},{"code":"INT-A3","day":3,"letter":"A","week":3,"name":"Scheda A3","phase":"Intensita","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensita - Scheda A, settimana 3","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"1","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor/adductor, usa carico basso","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"carico basso","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"3","reps":"8-x-x","rir":"@9/10","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\" fermo basso","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Non portare bacino avanti in concentrica!!!","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"10 +20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Super peso pensante per fare 10 reps, poi lo molli e ne fai 20 a corpo libero, spingi le pelvi contro il pad","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"8-x-x","rir":"@9/10","rest":"rec_completo_\u003e2","warmup":"1","tempo":"QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana. ECCENTRICA IN 3\"","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Fai una serie di leg extension leggera prima per attivare i quadricipiti","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"3","reps":"12-15","rir":"@9/10","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""}]},{"code":"INT-A4","day":4,"letter":"A","week":4,"name":"Scheda A4","phase":"Intensita","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensita - Scheda A, settimana 4","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"1","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor/adductor, usa carico basso","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"carico basso","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"2","reps":"8","rir":"@7 scarico","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\" fermo basso","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Non portare bacino avanti in concentrica!!!","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"2","reps":"10 +20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Super peso pensante per fare 10 reps, poi lo molli e ne fai 20 a corpo libero, spingi le pelvi contro il pad","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"2","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"2","reps":"8","rir":"@7 scarico","rest":"rec_completo_\u003e2","warmup":"1","tempo":"QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana. ECCENTRICA IN 3\"","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Fai una serie di leg extension leggera prima per attivare i quadricipiti","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"2","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"2","reps":"12-15","rir":"@7 scarico","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""}]},{"code":"INT-A5","day":5,"letter":"A","week":5,"name":"Scheda A5","phase":"Intensita","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensita - Scheda A, settimana 5","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"1","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor/adductor, usa carico basso","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"carico basso","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"3","reps":"9","rir":"@8/9","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\" fermo basso","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Non portare bacino avanti in concentrica!!!","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"10 +20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Super peso pensante per fare 10 reps, poi lo molli e ne fai 20 a corpo libero, spingi le pelvi contro il pad","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"9","rir":"@8/9","rest":"rec_completo_\u003e2","warmup":"1","tempo":"QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana. ECCENTRICA IN 3\"","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Fai una serie di leg extension leggera prima per attivare i quadricipiti","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"3","reps":"12-15","rir":"@9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""}]},{"code":"INT-A6","day":6,"letter":"A","week":6,"name":"Scheda A6","phase":"Intensita","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensita - Scheda A, settimana 6","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"1","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor/adductor, usa carico basso","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"carico basso","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"3","reps":"9-9-x","rir":"@9","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\" fermo basso","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Non portare bacino avanti in concentrica!!!","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"10 +20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Super peso pensante per fare 10 reps, poi lo molli e ne fai 20 a corpo libero, spingi le pelvi contro il pad","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"9-9-x","rir":"@9","rest":"rec_completo_\u003e2","warmup":"1","tempo":"QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana. ECCENTRICA IN 3\"","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Fai una serie di leg extension leggera prima per attivare i quadricipiti","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"3","reps":"12-15","rir":"@9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""}]},{"code":"INT-A7","day":7,"letter":"A","week":7,"name":"Scheda A7","phase":"Intensita","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensita - Scheda A, settimana 7","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"1","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor/adductor, usa carico basso","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"carico basso","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"3","reps":"9-x-x","rir":"@9/10","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\" fermo basso","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Non portare bacino avanti in concentrica!!!","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"10 +20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Super peso pensante per fare 10 reps, poi lo molli e ne fai 20 a corpo libero, spingi le pelvi contro il pad","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"3","reps":"9-x-x","rir":"@9/10","rest":"rec_completo_\u003e2","warmup":"1","tempo":"QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana. ECCENTRICA IN 3\"","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Fai una serie di leg extension leggera prima per attivare i quadricipiti","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"3","reps":"12-15","rir":"@9/10","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""}]},{"code":"INT-A8","day":8,"letter":"A","week":8,"name":"Scheda A8","phase":"Intensita","focus":"Polpacci, Quadricipiti, Femorali","note":"Intensita - Scheda A, settimana 8","exercises":[{"name":"Calf_machine","muscle":"Polpacci","sets":"1","reps":"15-20","rir":"","rest":"senza riposo in jump set","warmup":"","tempo":"1 sec di contrazione ogni rep","note":"in jump set con abductor/adductor, usa carico basso","today":"","ref":""},{"name":"Adductor","muscle":"Quadricipiti","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"carico basso","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Stacco_RDL","muscle":"Femorali","sets":"1","reps":"test 10rm","rir":"","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\" fermo basso","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Non portare bacino avanti in concentrica!!!","today":"","ref":""},{"name":"Hyperstension_con_cuscinetto","muscle":"Femorali","sets":"3","reps":"10 +20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Super peso pensante per fare 10 reps, poi lo molli e ne fai 20 a corpo libero, spingi le pelvi contro il pad","today":"","ref":""},{"name":"Leg_curls_singolo","muscle":"Femorali","sets":"2","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""},{"name":"Pendulum","muscle":"Quadricipiti","sets":"1","reps":"test 10rm","rir":"","rest":"rec_completo_\u003e2","warmup":"1","tempo":"QUAD DRIVER: massima flessione di ginocchio, carica il tallone, ROM PROFONDO. Carico vero, AGGIUNGI ogni settimana. ECCENTRICA IN 3\"","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Fai una serie di leg extension leggera prima per attivare i quadricipiti","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"2","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Abductor","muscle":"Glutei","sets":"2","reps":"12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"continua con la progressone, eccentrica attiva","today":"","ref":""}]},{"code":"INT-B1","day":1,"letter":"B","week":1,"name":"Scheda B1","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda B, settimana 1","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"8","rir":"@8/9","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\"+esplosivo (metti FERMI)","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare MOTORE FORZA SPALLE: ecc. controllata, esplosivo su","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"controllato","note":"STRICT, no slancio. FISSO: progredisci sul logbook","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"12-15","rir":"@9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Allineamento col cavo, deltoide protagonista","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"DELTOIDE POSTERIORE: apri e strizza","today":"","ref":""},{"name":"Chest_press","muscle":"Petto","sets":"3","reps":"8-10","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. 2\"","note":"Petto caricabile (sostituisce i push up)","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"10-12","rir":"@8/9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Eccentrica dilatata, gomiti fermi","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-B2","day":2,"letter":"B","week":2,"name":"Scheda B2","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda B, settimana 2","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"8-8-x","rir":"@9","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\"+esplosivo (metti FERMI)","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare MOTORE FORZA SPALLE: ecc. controllata, esplosivo su","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"controllato","note":"STRICT, no slancio. FISSO: progredisci sul logbook","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"12-15","rir":"@9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Allineamento col cavo, deltoide protagonista","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"DELTOIDE POSTERIORE: apri e strizza","today":"","ref":""},{"name":"Chest_press","muscle":"Petto","sets":"3","reps":"8-10","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. 2\"","note":"Petto caricabile (sostituisce i push up)","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"10-12","rir":"@9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Eccentrica dilatata, gomiti fermi","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-B3","day":3,"letter":"B","week":3,"name":"Scheda B3","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda B, settimana 3","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"8-x-x","rir":"@9/10","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\"+esplosivo (metti FERMI)","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare MOTORE FORZA SPALLE: ecc. controllata, esplosivo su","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"controllato","note":"STRICT, no slancio. FISSO: progredisci sul logbook","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"12-15","rir":"@9/10","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Allineamento col cavo, deltoide protagonista","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"DELTOIDE POSTERIORE: apri e strizza","today":"","ref":""},{"name":"Chest_press","muscle":"Petto","sets":"3","reps":"8-10","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. 2\"","note":"Petto caricabile (sostituisce i push up)","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"10-12","rir":"@9/10","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Eccentrica dilatata, gomiti fermi","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-B4","day":4,"letter":"B","week":4,"name":"Scheda B4","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda B, settimana 4","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"2","reps":"8","rir":"@7 scarico","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\"+esplosivo (metti FERMI)","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare MOTORE FORZA SPALLE: ecc. controllata, esplosivo su","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"2","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"controllato","note":"STRICT, no slancio. FISSO: progredisci sul logbook","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"2","reps":"12-15","rir":"@7 scarico","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Allineamento col cavo, deltoide protagonista","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"2","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"DELTOIDE POSTERIORE: apri e strizza","today":"","ref":""},{"name":"Chest_press","muscle":"Petto","sets":"1","reps":"test 10 rm","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. 2\"","note":"Petto caricabile (sostituisce i push up)","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"2","reps":"10-12","rir":"@7 scarico","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Eccentrica dilatata, gomiti fermi","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-B5","day":5,"letter":"B","week":5,"name":"Scheda B5","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda B, settimana 5","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"9","rir":"@8/9","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\"+esplosivo (metti FERMI)","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare MOTORE FORZA SPALLE: ecc. controllata, esplosivo su","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"controllato","note":"STRICT, no slancio. FISSO: progredisci sul logbook","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"12-15","rir":"@9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Allineamento col cavo, deltoide protagonista","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"DELTOIDE POSTERIORE: apri e strizza","today":"","ref":""},{"name":"Chest_press","muscle":"Petto","sets":"3","reps":"7","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. 2\"","note":"Petto caricabile (sostituisce i push up)","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"10-12","rir":"@8/9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Eccentrica dilatata, gomiti fermi","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-B6","day":6,"letter":"B","week":6,"name":"Scheda B6","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda B, settimana 6","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"9-9-x","rir":"@9","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\"+esplosivo (metti FERMI)","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare MOTORE FORZA SPALLE: ecc. controllata, esplosivo su","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"controllato","note":"STRICT, no slancio. FISSO: progredisci sul logbook","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"12-15","rir":"@9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Allineamento col cavo, deltoide protagonista","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"DELTOIDE POSTERIORE: apri e strizza","today":"","ref":""},{"name":"Chest_press","muscle":"Petto","sets":"3","reps":"8","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. 2\"","note":"Petto caricabile (sostituisce i push up)","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"10-12","rir":"@9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Eccentrica dilatata, gomiti fermi","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-B7","day":7,"letter":"B","week":7,"name":"Scheda B7","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda B, settimana 7","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"3","reps":"9-x-x","rir":"@9/10","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\"+esplosivo (metti FERMI)","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare MOTORE FORZA SPALLE: ecc. controllata, esplosivo su","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"controllato","note":"STRICT, no slancio. FISSO: progredisci sul logbook","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"3","reps":"12-15","rir":"@9/10","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Allineamento col cavo, deltoide protagonista","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"DELTOIDE POSTERIORE: apri e strizza","today":"","ref":""},{"name":"Chest_press","muscle":"Petto","sets":"3","reps":"8","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. 2\"","note":"Petto caricabile (sostituisce i push up)","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"3","reps":"10-12","rir":"@9/10","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Eccentrica dilatata, gomiti fermi","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-B8","day":8,"letter":"B","week":8,"name":"Scheda B8","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda B, settimana 8","exercises":[{"name":"Military_al_multypower_panca70Â°","muscle":"Spalle","sets":"1","reps":"test 10rm","rir":"","rest":"2-3\u0027","warmup":"2-3","tempo":"ecc. 3\"+esplosivo (metti FERMI)","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare MOTORE FORZA SPALLE: ecc. controllata, esplosivo su","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"2","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1-2","tempo":"controllato","note":"STRICT, no slancio. FISSO: progredisci sul logbook","today":"","ref":""},{"name":"Alzate_laterali_cavo_basso_cavigliera_polso","muscle":"Spalle","sets":"2","reps":"12-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Allineamento col cavo, deltoide protagonista","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"2","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"DELTOIDE POSTERIORE: apri e strizza","today":"","ref":""},{"name":"Chest_press","muscle":"Petto","sets":"2","reps":"9","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. 2\"","note":"Petto caricabile (sostituisce i push up)","today":"","ref":""},{"name":"Curls_martello_panca","muscle":"Bicipiti","sets":"2","reps":"10-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Eccentrica dilatata, gomiti fermi","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-C1","day":1,"letter":"C","week":1,"name":"Scheda C1","phase":"Intensita","focus":"Quadricipiti, Glutei","note":"Intensita - Scheda C, settimana 1","exercises":[{"name":"Adductor","muscle":"Quadricipiti","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"8","rir":"@8/9","rest":"2-3\u0027","warmup":"1-2","tempo":"ecc. controllata","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Continua con la progressione, cazzutissima cerca di mantenere le pelvi allineate","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"1","reps":"test 12rm","rir":"poi 1x8","rest":"2-3\u0027","warmup":"2","tempo":"1\" tenuta in alto","note":"Estensione completa, blocca e tieni in alto","today":"","ref":""},{"name":"Pressa_verticale_panatta","muscle":"Glutei","sets":"3","reps":"12-8","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. controllata (metti FERMI)","note":"schienale pi+ piatto possibile, piedi alti focus gluteo","today":"","ref":""},{"name":"Affondi_al_multypower","muscle":"Quadricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrica in 2\" e poi esplodo","note":"fallo alla front squat machine, focus QUADS scendo dritta e immagino di spingere verso l\u0027alto mentre scendo","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-12","rir":"@8/9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"3","reps":"8-10-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico","today":"","ref":""}]},{"code":"INT-C2","day":2,"letter":"C","week":2,"name":"Scheda C2","phase":"Intensita","focus":"Quadricipiti, Glutei","note":"Intensita - Scheda C, settimana 2","exercises":[{"name":"Adductor","muscle":"Quadricipiti","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"8-8-x","rir":"@9","rest":"2-3\u0027","warmup":"1-2","tempo":"ecc. controllata","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Continua con la progressione, cazzutissima cerca di mantenere le pelvi allineate","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"3","reps":"10-8-x","rir":"","rest":"2-3\u0027","warmup":"2","tempo":"1\" tenuta in alto","note":"Estensione completa, blocca e tieni in alto","today":"","ref":""},{"name":"Pressa_verticale_panatta","muscle":"Glutei","sets":"3","reps":"12-8","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. controllata (metti FERMI)","note":"schienale pi+ piatto possibile, piedi alti focus gluteo","today":"","ref":""},{"name":"Affondi_al_multypower","muscle":"Quadricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrica in 2\" e poi esplodo","note":"fallo alla front squat machine, focus QUADS scendo dritta e immagino di spingere verso l\u0027alto mentre scendo","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-12","rir":"@9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"3","reps":"8-10-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico","today":"","ref":""}]},{"code":"INT-C3","day":3,"letter":"C","week":3,"name":"Scheda C3","phase":"Intensita","focus":"Quadricipiti, Glutei","note":"Intensita - Scheda C, settimana 3","exercises":[{"name":"Adductor","muscle":"Quadricipiti","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"8-x-x","rir":"@9/10","rest":"2-3\u0027","warmup":"1-2","tempo":"ecc. controllata","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Continua con la progressione, cazzutissima cerca di mantenere le pelvi allineate","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"2","reps":"10-x","rir":"","rest":"2-3\u0027","warmup":"2","tempo":"1\" tenuta in alto","note":"Estensione completa, blocca e tieni in alto","today":"","ref":""},{"name":"Pressa_verticale_panatta","muscle":"Glutei","sets":"3","reps":"12-8","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. controllata (metti FERMI)","note":"schienale pi+ piatto possibile, piedi alti focus gluteo","today":"","ref":""},{"name":"Affondi_al_multypower","muscle":"Quadricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrica in 2\" e poi esplodo","note":"fallo alla front squat machine, focus QUADS scendo dritta e immagino di spingere verso l\u0027alto mentre scendo","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-12","rir":"@9/10","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"4","reps":"8-10-15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico","today":"","ref":""}]},{"code":"INT-C4","day":4,"letter":"C","week":4,"name":"Scheda C4","phase":"Intensita","focus":"Quadricipiti, Glutei","note":"Intensita - Scheda C, settimana 4","exercises":[{"name":"Adductor","muscle":"Quadricipiti","sets":"1","reps":"15-20","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"2","reps":"8","rir":"@7 scarico","rest":"2-3\u0027","warmup":"1-2","tempo":"ecc. controllata","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Continua con la progressione, cazzutissima cerca di mantenere le pelvi allineate","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"2","reps":"10","rir":"","rest":"2-3\u0027","warmup":"2","tempo":"1\" tenuta in alto","note":"Estensione completa, blocca e tieni in alto","today":"","ref":""},{"name":"Pressa_verticale_panatta","muscle":"Glutei","sets":"2","reps":"12-8","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. controllata (metti FERMI)","note":"schienale pi+ piatto possibile, piedi alti focus gluteo","today":"","ref":""},{"name":"Affondi_al_multypower","muscle":"Quadricipiti","sets":"2","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrica in 2\" e poi esplodo","note":"fallo alla front squat machine, focus QUADS scendo dritta e immagino di spingere verso l\u0027alto mentre scendo","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"2","reps":"10-12","rir":"@7 scarico","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"2","reps":"8-10-15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico","today":"","ref":""}]},{"code":"INT-C5","day":5,"letter":"C","week":5,"name":"Scheda C5","phase":"Intensita","focus":"Quadricipiti, Glutei","note":"Intensita - Scheda C, settimana 5","exercises":[{"name":"Adductor","muscle":"Quadricipiti","sets":"--","reps":"da compilare","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"9","rir":"@8/9","rest":"2-3\u0027","warmup":"1-2","tempo":"ecc. controllata","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Continua con la progressione, cazzutissima cerca di mantenere le pelvi allineate","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"3","reps":"10-8-x","rir":"","rest":"2-3\u0027","warmup":"2","tempo":"1\" tenuta in alto","note":"Estensione completa, blocca e tieni in alto","today":"","ref":""},{"name":"Pressa_verticale_panatta","muscle":"Glutei","sets":"3","reps":"12-8","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. controllata (metti FERMI)","note":"schienale pi+ piatto possibile, piedi alti focus gluteo","today":"","ref":""},{"name":"Affondi_al_multypower","muscle":"Quadricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrica in 2\" e poi esplodo","note":"fallo alla front squat machine, focus QUADS scendo dritta e immagino di spingere verso l\u0027alto mentre scendo","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-12","rir":"@8/9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"4","reps":"8-10-15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico","today":"","ref":""}]},{"code":"INT-C6","day":6,"letter":"C","week":6,"name":"Scheda C6","phase":"Intensita","focus":"Quadricipiti, Glutei","note":"Intensita - Scheda C, settimana 6","exercises":[{"name":"Adductor","muscle":"Quadricipiti","sets":"--","reps":"da compilare","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"9-9-x","rir":"@9","rest":"2-3\u0027","warmup":"1-2","tempo":"ecc. controllata","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Continua con la progressione, cazzutissima cerca di mantenere le pelvi allineate","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"2","reps":"10-x","rir":"","rest":"2-3\u0027","warmup":"2","tempo":"1\" tenuta in alto","note":"Estensione completa, blocca e tieni in alto","today":"","ref":""},{"name":"Pressa_verticale_panatta","muscle":"Glutei","sets":"3","reps":"12-8","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. controllata (metti FERMI)","note":"schienale pi+ piatto possibile, piedi alti focus gluteo","today":"","ref":""},{"name":"Affondi_al_multypower","muscle":"Quadricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrica in 2\" e poi esplodo","note":"fallo alla front squat machine, focus QUADS scendo dritta e immagino di spingere verso l\u0027alto mentre scendo","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-12","rir":"@9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"3","reps":"8-10-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico","today":"","ref":""}]},{"code":"INT-C7","day":7,"letter":"C","week":7,"name":"Scheda C7","phase":"Intensita","focus":"Quadricipiti, Glutei","note":"Intensita - Scheda C, settimana 7","exercises":[{"name":"Adductor","muscle":"Quadricipiti","sets":"--","reps":"da compilare","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"3","reps":"9-x-x","rir":"@9/10","rest":"2-3\u0027","warmup":"1-2","tempo":"ecc. controllata","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Continua con la progressione, cazzutissima cerca di mantenere le pelvi allineate","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"3","reps":"10-x-x","rir":"","rest":"2-3\u0027","warmup":"2","tempo":"1\" tenuta in alto","note":"Estensione completa, blocca e tieni in alto","today":"","ref":""},{"name":"Pressa_verticale_panatta","muscle":"Glutei","sets":"3","reps":"12-8","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. controllata (metti FERMI)","note":"schienale pi+ piatto possibile, piedi alti focus gluteo","today":"","ref":""},{"name":"Affondi_al_multypower","muscle":"Quadricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrica in 2\" e poi esplodo","note":"fallo alla front squat machine, focus QUADS scendo dritta e immagino di spingere verso l\u0027alto mentre scendo","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"3","reps":"10-12","rir":"@9/10","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"3","reps":"8-10-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico","today":"","ref":""}]},{"code":"INT-C8","day":8,"letter":"C","week":8,"name":"Scheda C8","phase":"Intensita","focus":"Quadricipiti, Glutei","note":"Intensita - Scheda C, settimana 8","exercises":[{"name":"Adductor","muscle":"Quadricipiti","sets":"--","reps":"da compilare","rir":"","rest":"","warmup":"","tempo":"","note":"Pulita stringi bene, piccola contrazione da 1 sec ogni reps","today":"","ref":""},{"name":"Bulgaro_focus_glutei","muscle":"Glutei","sets":"1","reps":"test 10rm","rir":"","rest":"2-3\u0027","warmup":"1-2","tempo":"ecc. controllata","note":"Nello scorso programma hai trovato il carico dei 10rm, usalo nel programma e cerca di aumentare Continua con la progressione, cazzutissima cerca di mantenere le pelvi allineate","today":"","ref":""},{"name":"Hip_Thrust","muscle":"Glutei","sets":"2","reps":"10","rir":"","rest":"2-3\u0027","warmup":"2","tempo":"1\" tenuta in alto","note":"Estensione completa, blocca e tieni in alto","today":"","ref":""},{"name":"Pressa_verticale_panatta","muscle":"Glutei","sets":"2","reps":"12-8","rir":"","rest":"2\u0027","warmup":"1-2","tempo":"ecc. controllata (metti FERMI)","note":"schienale pi+ piatto possibile, piedi alti focus gluteo","today":"","ref":""},{"name":"Affondi_al_multypower","muscle":"Quadricipiti","sets":"2","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrica in 2\" e poi esplodo","note":"fallo alla front squat machine, focus QUADS scendo dritta e immagino di spingere verso l\u0027alto mentre scendo","today":"","ref":""},{"name":"Leg_Extension","muscle":"Quadricipiti","sets":"2","reps":"10-12","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Cadenza fluida, 1\" di contrazione","today":"","ref":""},{"name":"Leg_curls","muscle":"Femorali","sets":"3","reps":"8-10-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"ecc. 2\"","note":"Femorale in ALLUNGAMENTO: ecc. 3\", spingi le cosce contro il pad, non staccare il bacino Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico","today":"","ref":""}]},{"code":"INT-D1","day":1,"letter":"D","week":1,"name":"Scheda D1","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda D, settimana 1","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"3","reps":"8","rir":"@8/9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"scheda precedente hai trovato un carico che ti permette 10 reps, inizia con quello Petto alto, movimento controllato","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"8-10-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico 2a esposizione spalle. STRICT, FISSO, progredisci","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Posteriore, 2a esposizione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Gomiti fermi, allunga bene in basso","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-D2","day":2,"letter":"D","week":2,"name":"Scheda D2","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda D, settimana 2","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"3","reps":"8-8-x","rir":"@9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"scheda precedente hai trovato un carico che ti permette 10 reps, inizia con quello Petto alto, movimento controllato","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"8-10-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico 2a esposizione spalle. STRICT, FISSO, progredisci","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Posteriore, 2a esposizione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Gomiti fermi, allunga bene in basso","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-D3","day":3,"letter":"D","week":3,"name":"Scheda D3","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda D, settimana 3","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"3","reps":"8-x-x","rir":"@9/10","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"scheda precedente hai trovato un carico che ti permette 10 reps, inizia con quello Petto alto, movimento controllato","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"4","reps":"8-10-15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico 2a esposizione spalle. STRICT, FISSO, progredisci","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Posteriore, 2a esposizione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Gomiti fermi, allunga bene in basso","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-D4","day":4,"letter":"D","week":4,"name":"Scheda D4","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda D, settimana 4","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"2","reps":"8","rir":"@7 scarico","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"scheda precedente hai trovato un carico che ti permette 10 reps, inizia con quello Petto alto, movimento controllato","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"2","reps":"8-10-15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico 2a esposizione spalle. STRICT, FISSO, progredisci","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"2","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Posteriore, 2a esposizione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"2","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Gomiti fermi, allunga bene in basso","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-D5","day":5,"letter":"D","week":5,"name":"Scheda D5","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda D, settimana 5","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"3","reps":"9","rir":"@8/9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"scheda precedente hai trovato un carico che ti permette 10 reps, inizia con quello Petto alto, movimento controllato","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"4","reps":"8-10-15-20","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico 2a esposizione spalle. STRICT, FISSO, progredisci","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Posteriore, 2a esposizione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Gomiti fermi, allunga bene in basso","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-D6","day":6,"letter":"D","week":6,"name":"Scheda D6","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda D, settimana 6","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"3","reps":"9-9-x","rir":"@9","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"scheda precedente hai trovato un carico che ti permette 10 reps, inizia con quello Petto alto, movimento controllato","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"8-10-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico 2a esposizione spalle. STRICT, FISSO, progredisci","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Posteriore, 2a esposizione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Gomiti fermi, allunga bene in basso","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-D7","day":7,"letter":"D","week":7,"name":"Scheda D7","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda D, settimana 7","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"3","reps":"9-x-x","rir":"@9/10","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"scheda precedente hai trovato un carico che ti permette 10 reps, inizia con quello Petto alto, movimento controllato","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"8-10-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico 2a esposizione spalle. STRICT, FISSO, progredisci","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Posteriore, 2a esposizione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Gomiti fermi, allunga bene in basso","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]},{"code":"INT-D8","day":8,"letter":"D","week":8,"name":"Scheda D8","phase":"Intensita","focus":"Spalle","note":"Intensita - Scheda D, settimana 8","exercises":[{"name":"Lento_avanti_machine","muscle":"Spalle","sets":"1","reps":"test 10rm","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"eccentrice controllate ed eeccentriche esplosive","note":"scheda precedente hai trovato un carico che ti permette 10 reps, inizia con quello Petto alto, movimento controllato","today":"","ref":""},{"name":"Alzate_laterali_macchinario","muscle":"Spalle","sets":"3","reps":"8-10-15","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Piramidale parti dal 10 rm trovato nella scorsa scheda e poi scendi di carico 2a esposizione spalle. STRICT, FISSO, progredisci","today":"","ref":""},{"name":"Face_pull_reverse_pec","muscle":"Spalle","sets":"2","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"1\" contrazione","note":"Posteriore, 2a esposizione","today":"","ref":""},{"name":"Tricipiti_cavo_alto_in_corda","muscle":"Tricipiti","sets":"3","reps":"12-8","rir":"","rest":"1,30\u0027\u0027","warmup":"1","tempo":"controllato","note":"Gomiti fermi, allunga bene in basso","today":"","ref":""},{"name":"Cardio_tapins_+_corsa","muscle":"Cardio","sets":"1","reps":"","rir":"PiÃ¹ 0,2 KM/H","rest":"Defaticamento 5 minuti","warmup":"OGNI SETTIMANA AUMENTI DI 0,2 TUTTI I LIVELLI","tempo":"","note":"CONTINUA CON LA PROGRESSIONE 1 giro Ã¨ Ã¨ composto da 4 step DA 1 MINUTO CIASCUNO in cui aumenti progressivamente la velocitÃ . Esempio 5khm, poi 6, poi 7, poi 8 e poi 9, questo Ã¨ un giro. Finito il giro riparti dal 5. Parti da livelli fattibili (quindi potresti provare 4-5-6-7-8 km/h)","today":"","ref":""}]}];
+
+    const EXCEL_WORKOUT_HISTORY = [{"id":900001,"date":"16/05/2026","dateInput":"2026-05-16","phase":"Storico Excel","week":"Settimana 1","sessionCode":"A","sessionName":"Logbook A","feeling":"storico","total":392.08,"weight":"","exercises":[{"name":"Calf","kg":65,"value":"65 / 65 kg","date":"16/05/2026","sessionCode":"A","sets":"","reps":""},{"name":"Leg curl","kg":59.17,"value":"55 / 60 / 62,5 kg","date":"16/05/2026","sessionCode":"A","sets":"","reps":""},{"name":"Hack Squat","kg":50,"value":"40 / 60 / 50 kg","date":"16/05/2026","sessionCode":"A","sets":"","reps":""},{"name":"Slanci c.b","kg":50.75,"value":"40 / 50 / 55 / 58 kg","date":"16/05/2026","sessionCode":"A","sets":"","reps":""},{"name":"Hyperextension","kg":37.33,"value":"32 / 40 / 40 kg","date":"16/05/2026","sessionCode":"A","sets":"","reps":""},{"name":"Abductor","kg":102.33,"value":"105 / 107 / 95 kg","date":"16/05/2026","sessionCode":"A","sets":"","reps":""},{"name":"Leg extension sing.","kg":27.5,"value":"27,5 / 27,5 kg","date":"16/05/2026","sessionCode":"A","sets":"","reps":""}]},{"id":900002,"date":"28/05/2026","dateInput":"2026-05-28","phase":"Storico Excel","week":"Settimana 2","sessionCode":"A","sessionName":"Logbook A","feeling":"storico","total":361,"weight":"","exercises":[{"name":"Calf","kg":70,"value":"70 / 70 kg","date":"28/05/2026","sessionCode":"A","sets":"","reps":""},{"name":"Abductor","kg":75,"value":"75 / 75 kg","date":"28/05/2026","sessionCode":"A","sets":"","reps":""},{"name":"Leg curl","kg":60,"value":"60 / 60 / 60 kg","date":"28/05/2026","sessionCode":"A","sets":"","reps":""},{"name":"Hack Squat","kg":50,"value":"50 / 50 kg","date":"28/05/2026","sessionCode":"A","sets":"","reps":""},{"name":"Hyperextension","kg":36,"value":"36 / 36 / 36 kg","date":"28/05/2026","sessionCode":"A","sets":"","reps":""},{"name":"Slanci c.b","kg":40,"value":"40 / 40 kg","date":"28/05/2026","sessionCode":"A","sets":"","reps":""},{"name":"Leg extension sing.","kg":30,"value":"30 / 30 kg","date":"28/05/2026","sessionCode":"A","sets":"","reps":""}]},{"id":900003,"date":"06/06/2026","dateInput":"2026-06-06","phase":"Storico Excel","week":"Settimana 3","sessionCode":"A","sessionName":"Logbook A","feeling":"storico","total":451.33,"weight":"","exercises":[{"name":"Calf","kg":70,"value":"70 / 70 kg","date":"06/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Abductor","kg":75,"value":"75 / 75 kg","date":"06/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Leg curl","kg":60,"value":"60 / 60 / 60 kg","date":"06/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Hack Squat","kg":50,"value":"50 / 50 kg","date":"06/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Hyperextension","kg":40,"value":"40 / 40 / 40 kg","date":"06/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Glutes machine","kg":25,"value":"25 / 25 kg","date":"06/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Abductor","kg":101.33,"value":"107 / 107 / 90 kg","date":"06/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Leg extension sing.","kg":30,"value":"30 / 30 kg","date":"06/06/2026","sessionCode":"A","sets":"","reps":""}]},{"id":900004,"date":"16/06/2026","dateInput":"2026-06-16","phase":"Storico Excel","week":"Settimana 4","sessionCode":"A","sessionName":"Logbook A","feeling":"storico","total":448.33,"weight":"","exercises":[{"name":"Calf","kg":70,"value":"70 / 70 kg","date":"16/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Abductor","kg":75,"value":"75 / 75 kg","date":"16/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Leg curl","kg":62.5,"value":"62,5 / 62,5 / 62,5 kg","date":"16/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Pendulum","kg":42,"value":"40 / 44 kg","date":"16/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Hyperextension","kg":40,"value":"40 / 40 / 40 kg","date":"16/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Glutes machine","kg":27.5,"value":"25 / 30 kg","date":"16/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Abductor","kg":101.33,"value":"107 / 107 / 90 kg","date":"16/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Leg extension sing.","kg":30,"value":"30 / 30 kg","date":"16/06/2026","sessionCode":"A","sets":"","reps":""}]},{"id":900005,"date":"25/06/2026","dateInput":"2026-06-25","phase":"Storico Excel","week":"Settimana 5","sessionCode":"A","sessionName":"Logbook A","feeling":"storico","total":438.67,"weight":"","exercises":[{"name":"Calf","kg":50,"value":"50 / 50 kg","date":"25/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Abductor","kg":85,"value":"85 / 85 kg","date":"25/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Leg curl","kg":65,"value":"65 / 65 / 65 kg","date":"25/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Pendulum","kg":44,"value":"44 / 44 / 44 kg","date":"25/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Hyperextension","kg":40,"value":"40 / 40 / 40 kg","date":"25/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Glutes machine","kg":25,"value":"25 / 25 kg","date":"25/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Abductor","kg":99.67,"value":"107 / 107 / 85 kg","date":"25/06/2026","sessionCode":"A","sets":"","reps":""},{"name":"Leg extension sing.","kg":30,"value":"30 / 30 / 30 kg","date":"25/06/2026","sessionCode":"A","sets":"","reps":""}]},{"id":900006,"date":"19/05/2026","dateInput":"2026-05-19","phase":"Storico Excel","week":"Settimana 1","sessionCode":"B","sessionName":"Logbook B","feeling":"storico","total":169.33,"weight":"","exercises":[{"name":"Military press","kg":37.33,"value":"40 / 36 / 36 kg","date":"19/05/2026","sessionCode":"B","sets":"","reps":""},{"name":"Lat mono","kg":25,"value":"25 / 25 kg","date":"19/05/2026","sessionCode":"B","sets":"","reps":""},{"name":"Pulley","kg":43,"value":"45 / 42 / 42 kg","date":"19/05/2026","sessionCode":"B","sets":"","reps":""},{"name":"Pull down","kg":43,"value":"45 / 42 / 42 kg","date":"19/05/2026","sessionCode":"B","sets":"","reps":""},{"name":"Alzate laterali cavo basso","kg":11,"value":"13 / 10 / 10 kg","date":"19/05/2026","sessionCode":"B","sets":"","reps":""},{"name":"Alz.laterali panca 45","kg":6,"value":"6 / 6 kg","date":"19/05/2026","sessionCode":"B","sets":"","reps":""},{"name":"Cardio","kg":4,"value":"4 kg","date":"19/05/2026","sessionCode":"B","sets":"","reps":""}]},{"id":900007,"date":"26/05/2026","dateInput":"2026-05-26","phase":"Storico Excel","week":"Settimana 2","sessionCode":"B","sessionName":"Logbook B","feeling":"storico","total":182.7,"weight":"","exercises":[{"name":"Military press","kg":39,"value":"40 / 42 / 36 / 38 kg","date":"26/05/2026","sessionCode":"B","sets":"","reps":""},{"name":"Lat mono","kg":25,"value":"25 / 25 kg","date":"26/05/2026","sessionCode":"B","sets":"","reps":""},{"name":"Pulley","kg":51,"value":"50 / 55 / 48 kg","date":"26/05/2026","sessionCode":"B","sets":"","reps":""},{"name":"Pull down","kg":47.5,"value":"50 / 45 kg","date":"26/05/2026","sessionCode":"B","sets":"","reps":""},{"name":"Alzate laterali cavo basso","kg":11,"value":"13 / 10 / 10 kg","date":"26/05/2026","sessionCode":"B","sets":"","reps":""},{"name":"Alz.laterali panca 45","kg":5,"value":"5 / 5 kg","date":"26/05/2026","sessionCode":"B","sets":"","reps":""},{"name":"Cardio","kg":4.2,"value":"4,2 kg","date":"26/05/2026","sessionCode":"B","sets":"","reps":""}]},{"id":900008,"date":"08/06/2026","dateInput":"2026-06-08","phase":"Storico Excel","week":"Settimana 3","sessionCode":"B","sessionName":"Logbook B","feeling":"storico","total":193.66,"weight":"","exercises":[{"name":"Military press","kg":39.33,"value":"42 / 38 / 38 kg","date":"08/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Lat machine","kg":25,"value":"25 / 25 kg","date":"08/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Pulley","kg":51.5,"value":"55 / 48 kg","date":"08/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Pull down","kg":47.5,"value":"50 / 45 kg","date":"08/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Alzate laterali cavo basso","kg":13,"value":"13 / 15 / 12 / 12 kg","date":"08/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Alz.laterali panca 45","kg":6,"value":"6 / 6 kg","date":"08/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Curl","kg":11.33,"value":"12 / 12 / 10 kg","date":"08/06/2026","sessionCode":"B","sets":"","reps":""}]},{"id":900009,"date":"18/06/2026","dateInput":"2026-06-18","phase":"Storico Excel","week":"Settimana 4","sessionCode":"B","sessionName":"Logbook B","feeling":"storico","total":218.16,"weight":"","exercises":[{"name":"Military press","kg":39.33,"value":"42 / 38 / 38 kg","date":"18/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Lat machine","kg":49,"value":"55 / 45 / 47 kg","date":"18/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Pulley","kg":51.5,"value":"55 / 48 kg","date":"18/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Pull down","kg":47.5,"value":"50 / 45 kg","date":"18/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Alzate laterali cavo basso","kg":13.5,"value":"15 / 15 / 12 / 12 kg","date":"18/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Alz.laterali seduta","kg":6,"value":"6 / 6 / 6 kg","date":"18/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Curl","kg":11.33,"value":"12 / 12 / 10 kg","date":"18/06/2026","sessionCode":"B","sets":"","reps":""}]},{"id":900010,"date":"29/06/2026","dateInput":"2026-06-29","phase":"Storico Excel","week":"Settimana 5","sessionCode":"B","sessionName":"Logbook B","feeling":"storico","total":212.32,"weight":"","exercises":[{"name":"Military press","kg":39.33,"value":"42 / 38 / 38 kg","date":"29/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Lat machine","kg":48.33,"value":"55 / 45 / 45 kg","date":"29/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Pulley","kg":51.5,"value":"55 / 48 kg","date":"29/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Pull down","kg":47.5,"value":"50 / 45 kg","date":"29/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Alzate laterali cavo basso","kg":14.33,"value":"15 / 14 / 14 kg","date":"29/06/2026","sessionCode":"B","sets":"","reps":""},{"name":"Curl","kg":11.33,"value":"12 / 12 / 10 kg","date":"29/06/2026","sessionCode":"B","sets":"","reps":""}]},{"id":900011,"date":"21/05/2026","dateInput":"2026-05-21","phase":"Storico Excel","week":"Settimana 1","sessionCode":"C","sessionName":"Logbook C","feeling":"storico","total":279.83,"weight":"","exercises":[{"name":"Bulgaro","kg":67.33,"value":"60 / 70 / 72 kg","date":"21/05/2026","sessionCode":"C","sets":"","reps":""},{"name":"Hip thurst","kg":141.33,"value":"140 / 142 / 142 kg","date":"21/05/2026","sessionCode":"C","sets":"","reps":""},{"name":"pressa mono","kg":46.67,"value":"50 / 50 / 40 kg","date":"21/05/2026","sessionCode":"C","sets":"","reps":""},{"name":"triset glutei","kg":24.5,"value":"25 / 24 kg","date":"21/05/2026","sessionCode":"C","sets":"","reps":""}]},{"id":900012,"date":"30/05/2026","dateInput":"2026-05-30","phase":"Storico Excel","week":"Settimana 2","sessionCode":"C","sessionName":"Logbook C","feeling":"storico","total":258.5,"weight":"","exercises":[{"name":"Bulgaro","kg":74,"value":"74 / 74 kg","date":"30/05/2026","sessionCode":"C","sets":"","reps":""},{"name":"Hip thurst","kg":105,"value":"80 / 120 / 140 / 80 kg","date":"30/05/2026","sessionCode":"C","sets":"","reps":""},{"name":"pressa mono","kg":55,"value":"60 / 50 kg","date":"30/05/2026","sessionCode":"C","sets":"","reps":""},{"name":"triset glutei","kg":24.5,"value":"25 / 24 kg","date":"30/05/2026","sessionCode":"C","sets":"","reps":""}]},{"id":900013,"date":"10/06/2026","dateInput":"2026-06-10","phase":"Storico Excel","week":"Settimana 3","sessionCode":"C","sessionName":"Logbook C","feeling":"storico","total":385.17,"weight":"","exercises":[{"name":"Calf","kg":70,"value":"70 / 70 kg","date":"10/06/2026","sessionCode":"C","sets":"","reps":""},{"name":"Abductor","kg":75,"value":"75 / 75 kg","date":"10/06/2026","sessionCode":"C","sets":"","reps":""},{"name":"Bulgaro","kg":74,"value":"74 / 74 / 74 kg","date":"10/06/2026","sessionCode":"C","sets":"","reps":""},{"name":"Hip thurst","kg":105,"value":"80 / 120 / 140 / 80 kg","date":"10/06/2026","sessionCode":"C","sets":"","reps":""},{"name":"pressa mono","kg":36.67,"value":"40 / 40 / 30 kg","date":"10/06/2026","sessionCode":"C","sets":"","reps":""},{"name":"triset glutei","kg":24.5,"value":"25 / 24 kg","date":"10/06/2026","sessionCode":"C","sets":"","reps":""}]},{"id":900014,"date":"20/06/2026","dateInput":"2026-06-20","phase":"Storico Excel","week":"Settimana 4","sessionCode":"C","sessionName":"Logbook C","feeling":"storico","total":70,"weight":"","exercises":[{"name":"Calf","kg":70,"value":"70 / 70 kg","date":"20/06/2026","sessionCode":"C","sets":"","reps":""}]},{"id":900015,"date":"21/06/2026","dateInput":"2026-06-21","phase":"Storico Excel","week":"Settimana 4","sessionCode":"C","sessionName":"Logbook C","feeling":"storico","total":85,"weight":"","exercises":[{"name":"Abductor","kg":85,"value":"85 / 85 kg","date":"21/06/2026","sessionCode":"C","sets":"","reps":""}]},{"id":900016,"date":"22/06/2026","dateInput":"2026-06-22","phase":"Storico Excel","week":"Settimana 4","sessionCode":"C","sessionName":"Logbook C","feeling":"storico","total":74,"weight":"","exercises":[{"name":"Bulgaro","kg":74,"value":"74 / 74 / 74 kg","date":"22/06/2026","sessionCode":"C","sets":"","reps":""}]},{"id":900017,"date":"23/06/2026","dateInput":"2026-06-23","phase":"Storico Excel","week":"Settimana 4","sessionCode":"C","sessionName":"Logbook C","feeling":"storico","total":113.33,"weight":"","exercises":[{"name":"Hip thurst","kg":113.33,"value":"110 / 110 / 120 kg","date":"23/06/2026","sessionCode":"C","sets":"","reps":""}]},{"id":900018,"date":"24/06/2026","dateInput":"2026-06-24","phase":"Storico Excel","week":"Settimana 4","sessionCode":"C","sessionName":"Logbook C","feeling":"storico","total":43.33,"weight":"","exercises":[{"name":"pressa mono","kg":43.33,"value":"50 / 40 / 40 kg","date":"24/06/2026","sessionCode":"C","sets":"","reps":""}]},{"id":900019,"date":"25/06/2026","dateInput":"2026-06-25","phase":"Storico Excel","week":"Settimana 4","sessionCode":"C","sessionName":"Logbook C","feeling":"storico","total":24.5,"weight":"","exercises":[{"name":"triset glutei","kg":24.5,"value":"25 / 24 kg","date":"25/06/2026","sessionCode":"C","sets":"","reps":""}]},{"id":900020,"date":"19/05/2026","dateInput":"2026-05-19","phase":"Storico Excel","week":"Settimana 1","sessionCode":"D","sessionName":"Logbook D","feeling":"storico","total":104.66,"weight":"","exercises":[{"name":"Lento avanti","kg":13.33,"value":"16 / 12 / 12 kg","date":"19/05/2026","sessionCode":"D","sets":"","reps":""},{"name":"push up","kg":16.5,"value":"17 / 16 kg","date":"19/05/2026","sessionCode":"D","sets":"","reps":""},{"name":"Alzate laterali cavo basso","kg":12,"value":"13 / 13 / 10 kg","date":"19/05/2026","sessionCode":"D","sets":"","reps":""},{"name":"face pull","kg":17.5,"value":"15 / 20 kg","date":"19/05/2026","sessionCode":"D","sets":"","reps":""},{"name":"Curls","kg":10,"value":"10 / 12 / 10 / 8 kg","date":"19/05/2026","sessionCode":"D","sets":"","reps":""},{"name":"Push down","kg":35.33,"value":"38 / 38 / 30 kg","date":"19/05/2026","sessionCode":"D","sets":"","reps":""}]},{"id":900021,"date":"01/06/2026","dateInput":"2026-06-01","phase":"Storico Excel","week":"Settimana 2","sessionCode":"D","sessionName":"Logbook D","feeling":"storico","total":101.17,"weight":"","exercises":[{"name":"Lento avanti","kg":14.67,"value":"16 / 16 / 12 kg","date":"01/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"push up","kg":13.5,"value":"13 / 14 kg","date":"01/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"Alzate laterali cavo basso","kg":12,"value":"13 / 13 / 10 kg","date":"01/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"face pull","kg":15,"value":"15 / 15 kg","date":"01/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"Curls","kg":11.33,"value":"12 / 12 / 10 kg","date":"01/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"Push down","kg":34.67,"value":"38 / 38 / 28 kg","date":"01/06/2026","sessionCode":"D","sets":"","reps":""}]},{"id":900022,"date":"11/06/2026","dateInput":"2026-06-11","phase":"Storico Excel","week":"Settimana 3","sessionCode":"D","sessionName":"Logbook D","feeling":"storico","total":116.8,"weight":"","exercises":[{"name":"Lento avanti","kg":12.8,"value":"16 / 16 / 12 / 12 / 8 kg","date":"11/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"push up","kg":16,"value":"20 / 12 kg","date":"11/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"Alzate laterali cavo basso","kg":12,"value":"13 / 13 / 10 kg","date":"11/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"face pull","kg":30,"value":"30 / 30 kg","date":"11/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"Curls","kg":11.33,"value":"12 / 12 / 10 kg","date":"11/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"Push down","kg":34.67,"value":"38 / 38 / 28 kg","date":"11/06/2026","sessionCode":"D","sets":"","reps":""}]},{"id":900023,"date":"22/06/2026","dateInput":"2026-06-22","phase":"Storico Excel","week":"Settimana 4","sessionCode":"D","sessionName":"Logbook D","feeling":"storico","total":113.73,"weight":"","exercises":[{"name":"Lento avanti","kg":12.8,"value":"16 / 16 / 12 / 12 / 8 kg","date":"22/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"push up","kg":12.67,"value":"14 / 11 / 13 kg","date":"22/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"Alzate laterali cavo basso","kg":12,"value":"13 / 13 / 10 kg","date":"22/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"face pull","kg":30,"value":"30 / 30 / 30 kg","date":"22/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"Curls","kg":11.38,"value":"12 / 12 / 10 / 11,5 kg","date":"22/06/2026","sessionCode":"D","sets":"","reps":""},{"name":"Push down","kg":34.88,"value":"38 / 38 / 28 / 35,5 kg","date":"22/06/2026","sessionCode":"D","sets":"","reps":""}]},{"id":900024,"date":"25/05/2026","dateInput":"2026-05-25","phase":"Storico Excel","week":"Settimana 1","sessionCode":"E","sessionName":"Logbook E","feeling":"storico","total":308.5,"weight":"","exercises":[{"name":"Calf","kg":67.22,"value":"65 / 70 / 66,6666666666667 kg","date":"25/05/2026","sessionCode":"E","sets":"","reps":""},{"name":"Stacco_RDL","kg":71.5,"value":"74 / 70 / 70 / 72 kg","date":"25/05/2026","sessionCode":"E","sets":"","reps":""},{"name":"Stacco mono","kg":16,"value":"16 / 16 / 16 / 16 kg","date":"25/05/2026","sessionCode":"E","sets":"","reps":""},{"name":"Abductor","kg":40,"value":"40 / 40 / 40 / 40 kg","date":"25/05/2026","sessionCode":"E","sets":"","reps":""},{"name":"Leg curl singolo","kg":26.56,"value":"25 / 27,5 / 27,5 / 26,25 kg","date":"25/05/2026","sessionCode":"E","sets":"","reps":""},{"name":"Slanci c.b.","kg":40,"value":"40 / 45 / 35 / 40 kg","date":"25/05/2026","sessionCode":"E","sets":"","reps":""},{"name":"Leg extension","kg":47.22,"value":"45 / 50 / 46,6666666666667 kg","date":"25/05/2026","sessionCode":"E","sets":"","reps":""}]},{"id":900025,"date":"03/06/2026","dateInput":"2026-06-03","phase":"Storico Excel","week":"Settimana 2","sessionCode":"E","sessionName":"Logbook E","feeling":"storico","total":385.7,"weight":"","exercises":[{"name":"Calf","kg":70,"value":"70 / 70 / 70 kg","date":"03/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Abductor","kg":75,"value":"75 / 75 / 75 kg","date":"03/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Stacco_RDL","kg":72.22,"value":"74 / 70 / 72,6666666666667 kg","date":"03/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Stacco mono","kg":14.88,"value":"12 / 14 / 16 / 18 / 14,4 kg","date":"03/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Hack squat","kg":40,"value":"40 / 40 / 40 kg","date":"03/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Leg curl singolo","kg":27.5,"value":"27,5 / 27,5 / 27,5 / 27,5 kg","date":"03/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Abductor","kg":33.6,"value":"30 / 35 / 35 / 35 / 33 kg","date":"03/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Leg extension","kg":52.5,"value":"52,5 / 52,5 / 52,5 kg","date":"03/06/2026","sessionCode":"E","sets":"","reps":""}]},{"id":900026,"date":"13/06/2026","dateInput":"2026-06-13","phase":"Storico Excel","week":"Settimana 3","sessionCode":"E","sessionName":"Logbook E","feeling":"storico","total":391.7,"weight":"","exercises":[{"name":"Calf","kg":70,"value":"70 / 70 / 70 kg","date":"13/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Abductor","kg":77.22,"value":"75 / 80 / 76,6666666666667 kg","date":"13/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Stacco_RDL","kg":74.22,"value":"76 / 72 / 74,6666666666667 kg","date":"13/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Stacco mono","kg":15.36,"value":"12 / 14 / 16 / 20 / 14,8 kg","date":"13/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Pendulum","kg":40,"value":"40 / 40 / 40 kg","date":"13/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Leg curl singolo","kg":30,"value":"30 / 30 / 30 / 30 kg","date":"13/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Abductor","kg":32.4,"value":"30 / 30 / 35 / 35 / 32 kg","date":"13/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Leg extension","kg":52.5,"value":"52,5 / 52,5 / 52,5 kg","date":"13/06/2026","sessionCode":"E","sets":"","reps":""}]},{"id":900027,"date":"23/06/2026","dateInput":"2026-06-23","phase":"Storico Excel","week":"Settimana 4","sessionCode":"E","sessionName":"Logbook E","feeling":"storico","total":404.33,"weight":"","exercises":[{"name":"Calf","kg":70,"value":"70 / 70 / 70 kg","date":"23/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Abductor","kg":85,"value":"85 / 85 / 85 kg","date":"23/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Stacco_RDL","kg":74.22,"value":"76 / 72 / 74,6666666666667 kg","date":"23/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Stacco mono","kg":16.5,"value":"14 / 16 / 20 / 16 kg","date":"23/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Pendulum","kg":40,"value":"40 / 40 / 40 / 40 kg","date":"23/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Leg curl singolo","kg":30,"value":"30 / 30 / 30 / 30 kg","date":"23/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Abductor","kg":35,"value":"35 / 35 / 35 / 35 kg","date":"23/06/2026","sessionCode":"E","sets":"","reps":""},{"name":"Leg extension","kg":53.61,"value":"52,5 / 55 / 53,3333333333333 kg","date":"23/06/2026","sessionCode":"E","sets":"","reps":""}]},{"id":900028,"date":"23/05/2026","dateInput":"2026-05-23","phase":"Storico Excel","week":"Settimana 1","sessionCode":"F","sessionName":"Logbook F","feeling":"storico","total":181.31,"weight":"","exercises":[{"name":"Trazioni","kg":7.11,"value":"8 / 6 / 7,33333333333333 kg","date":"23/05/2026","sessionCode":"F","sets":"","reps":""},{"name":"Lat triangolo","kg":46.88,"value":"50 / 45 / 45 / 47,5 kg","date":"23/05/2026","sessionCode":"F","sets":"","reps":""},{"name":"pulley","kg":47.8,"value":"55 / 45 / 45 / 45 / 49 kg","date":"23/05/2026","sessionCode":"F","sets":"","reps":""},{"name":"pulldown","kg":46.88,"value":"50 / 45 / 45 / 47,5 kg","date":"23/05/2026","sessionCode":"F","sets":"","reps":""},{"name":"alz.laterali macchinario","kg":18.64,"value":"22 / 22 / 15 / 15 / 19,2 kg","date":"23/05/2026","sessionCode":"F","sets":"","reps":""},{"name":"crunch_obliqui","kg":10,"value":"10 / 10 kg","date":"23/05/2026","sessionCode":"F","sets":"","reps":""},{"name":"Cardio","kg":4,"value":"4 / 4 kg","date":"23/05/2026","sessionCode":"F","sets":"","reps":""}]},{"id":900029,"date":"04/06/2026","dateInput":"2026-06-04","phase":"Storico Excel","week":"Settimana 2","sessionCode":"F","sessionName":"Logbook F","feeling":"storico","total":168.47,"weight":"","exercises":[{"name":"Lat triangolo","kg":50,"value":"55 / 47 / 47 / 51 kg","date":"04/06/2026","sessionCode":"F","sets":"","reps":""},{"name":"pulley","kg":48.75,"value":"55 / 45 / 45 / 50 kg","date":"04/06/2026","sessionCode":"F","sets":"","reps":""},{"name":"pulldown","kg":46.88,"value":"50 / 45 / 45 / 47,5 kg","date":"04/06/2026","sessionCode":"F","sets":"","reps":""},{"name":"alz.laterali macchinario","kg":18.64,"value":"22 / 22 / 15 / 15 / 19,2 kg","date":"04/06/2026","sessionCode":"F","sets":"","reps":""},{"name":"Cardio","kg":4.2,"value":"4,2 / 4,2 kg","date":"04/06/2026","sessionCode":"F","sets":"","reps":""}]},{"id":900030,"date":"15/06/2026","dateInput":"2026-06-15","phase":"Storico Excel","week":"Settimana 3","sessionCode":"F","sessionName":"Logbook F","feeling":"storico","total":187.71,"weight":"","exercises":[{"name":"Trazioni","kg":6.44,"value":"8 / 6 / 5 / 6,75 kg","date":"15/06/2026","sessionCode":"F","sets":"","reps":""},{"name":"Lat triangolo","kg":50,"value":"55 / 47 / 47 / 51 kg","date":"15/06/2026","sessionCode":"F","sets":"","reps":""},{"name":"pulley","kg":50,"value":"55 / 47 / 47 / 51 kg","date":"15/06/2026","sessionCode":"F","sets":"","reps":""},{"name":"pulldown","kg":48.33,"value":"47 / 50 / 48 kg","date":"15/06/2026","sessionCode":"F","sets":"","reps":""},{"name":"alz.laterali macchinario","kg":18.64,"value":"22 / 22 / 15 / 15 / 19,2 kg","date":"15/06/2026","sessionCode":"F","sets":"","reps":""},{"name":"crunch_obliqui","kg":10,"value":"10 / 10 / 10 kg","date":"15/06/2026","sessionCode":"F","sets":"","reps":""},{"name":"Cardio","kg":4.3,"value":"4,3 / 4,3 kg","date":"15/06/2026","sessionCode":"F","sets":"","reps":""}]},{"id":900031,"date":"24/06/2026","dateInput":"2026-06-24","phase":"Storico Excel","week":"Settimana 4","sessionCode":"F","sessionName":"Logbook F","feeling":"storico","total":128,"weight":"","exercises":[{"name":"Trazioni","kg":9,"value":"9 / 9 kg","date":"24/06/2026","sessionCode":"F","sets":"","reps":""},{"name":"lat larga","kg":55,"value":"55 / 55 / 55 kg","date":"24/06/2026","sessionCode":"F","sets":"","reps":""},{"name":"row machine","kg":44,"value":"44 / 44 / 44 kg","date":"24/06/2026","sessionCode":"F","sets":"","reps":""},{"name":"pulldown sbarra","kg":20,"value":"20 / 20 / 20 kg","date":"24/06/2026","sessionCode":"F","sets":"","reps":""}]}];
+
+    const ANNUAL_PHASES = [{"phase":"1.Volume","objective":"Ipertrofia e Basi","scheme":"3x6 -\u003e 6x6 (o 5x8)","load":"Carico iniziale basato su 10 RM","duration":"6 - 8 Settimane","current":true},{"phase":"2.Intensificazione","objective":"Forza Submassimale","scheme":"4x6 Costante","load":"Incremento dei kg ogni settimana","duration":"6 - 8/12 Settimane","current":false},{"phase":"3.IntensitÃ ","objective":"Forza Massima","scheme":"8 - X - X (a scalare)","load":"Massimo sforzo (RPE molto alto)","duration":"3 - 4 Settimane (Picco)","current":false},{"phase":"4. Stabilizzazione","objective":"Consolidamento","scheme":"2 - 10/x","load":"Controllo tecnico e tenuta","duration":"2 - 3 Settimane","current":false},{"phase":"5. Restart Tecnico","objective":"Scarico e Reset","scheme":"3x8 Leggero","load":"Pulizia dei difetti esecutivi","duration":"1 - 2 Settimane (Reset)","current":false}];
+
+    const VOLUME_HISTORY = [{"title":"Volume B program 1","source":"Programmazione annuale","rows":[{"muscle":"Glutei","weeks":[0,28,28,19,30,30,19,10],"total":164,"average":20.5},{"muscle":"Quadricipiti","weeks":[6,6,6,4,6,6,6,4],"total":44,"average":5.5},{"muscle":"Femorali","weeks":[6,6,6,4,6,6,5,3],"total":42,"average":5.25},{"muscle":"Spalle","weeks":[12,12,13,8,14,15,10,6],"total":90,"average":11.25},{"muscle":"Bicipiti","weeks":[4,4,4,3,4,4,4,3],"total":30,"average":3.75},{"muscle":"Tricipiti","weeks":[12,12,12,9,12,12,12,9],"total":90,"average":11.25},{"muscle":"Dorsali","weeks":[7,11,11,9,11,11,10,4],"total":74,"average":9.25},{"muscle":"Centro schiena","weeks":[6,6,6,4,8,8,4,2],"total":44,"average":5.5},{"muscle":"Polpacci","weeks":[4,4,4,4,4,4,4,4],"total":32,"average":4},{"muscle":"Petto","weeks":[0,0,0,0,0,0,0,0],"total":0,"average":0}]},{"title":"Volume B program 2","source":"Programmazione annuale","rows":[{"muscle":"Glutei","weeks":[21,24,26,13,26,23,14,15],"total":162,"average":20.25},{"muscle":"Quadricipiti","weeks":[6,6,6,4,6,6,6,4],"total":44,"average":5.5},{"muscle":"Femorali","weeks":[7,6,5,4,6,6,5,3],"total":42,"average":5.25},{"muscle":"Spalle","weeks":[12,13,14,7,14,14,9,6],"total":89,"average":11.12},{"muscle":"Bicipiti","weeks":[8,8,8,6,8,8,8,6],"total":60,"average":7.5},{"muscle":"Tricipiti","weeks":[8,8,8,6,8,8,8,6],"total":60,"average":7.5},{"muscle":"Dorsali","weeks":[12,11,10,4,11,11,10,4],"total":73,"average":9.12},{"muscle":"Centro schiena","weeks":[6,6,6,4,8,8,4,2],"total":44,"average":5.5},{"muscle":"Polpacci","weeks":[4,4,4,4,4,4,4,4],"total":32,"average":4},{"muscle":"Petto","weeks":[0,0,0,0,0,0,0,0],"total":0,"average":0}]},{"title":"Volume B program 3","source":"Programmazione annuale","rows":[{"muscle":"Glutei","weeks":[20,21,24,15,24,20,15,10],"total":149,"average":18.62},{"muscle":"Quadricipiti","weeks":[6,6,6,6,6,6,6,4],"total":46,"average":5.75},{"muscle":"Femorali","weeks":[8,8,8,7,8,8,7,4],"total":58,"average":7.25},{"muscle":"Spalle","weeks":[12,12,13,13,13,14,10,6],"total":93,"average":11.62},{"muscle":"Bicipiti","weeks":[4,4,4,4,4,4,4,4],"total":32,"average":4},{"muscle":"Tricipiti","weeks":[10,11,12,10,12,11,10,7],"total":83,"average":10.38},{"muscle":"Dorsali","weeks":[12,12,11,6,11,11,10,4],"total":77,"average":9.62},{"muscle":"Centro schiena","weeks":[6,6,6,5,8,8,4,2],"total":45,"average":5.62},{"muscle":"Polpacci","weeks":[4,4,4,4,4,4,4,4],"total":32,"average":4},{"muscle":"Petto","weeks":[0,0,0,0,0,0,0,0],"total":0,"average":0}]},{"title":"Volume Intensificazione","source":"Programmazione annuale","rows":[{"muscle":"Glutei","weeks":[19,19,20,18,19,20,20,15],"total":150,"average":18.75},{"muscle":"Quadricipiti","weeks":[19,19,19,17,19,19,19,13],"total":144,"average":18},{"muscle":"Femorali","weeks":[15,15,15,13,15,15,15,10],"total":113,"average":14.12},{"muscle":"Spalle","weeks":[22,22,22,21,22,22,22,15],"total":168,"average":21},{"muscle":"Bicipiti","weeks":[6,6,6,6,6,6,6,6],"total":48,"average":6},{"muscle":"Tricipiti","weeks":[5,5,5,5,5,5,5,5],"total":40,"average":5},{"muscle":"Dorsali","weeks":[12,12,13,10,14,14,14,6],"total":95,"average":11.88},{"muscle":"Centro schiena","weeks":[5,5,5,5,6,6,6,4],"total":42,"average":5.25},{"muscle":"Polpacci","weeks":[6,6,6,4,5,6,6,6],"total":45,"average":5.62},{"muscle":"Petto","weeks":[0,0,0,0,0,0,0,0],"total":0,"average":0},{"muscle":"Cardio","weeks":[2,2,2,2,2,2,2,2],"total":16,"average":2}]},{"title":"Volume Intensita","source":"calcolato dalla scheda Intensita","rows":[{"muscle":"Bicipiti","weeks":[3,3,3,2,3,3,3,2],"total":22,"average":2.75},{"muscle":"Cardio","weeks":[2,2,2,2,2,2,2,2],"total":16,"average":2},{"muscle":"Femorali","weeks":[11,12,13,8,13,12,12,9],"total":90,"average":11.25},{"muscle":"Glutei","weeks":[10,12,11,8,12,11,12,7],"total":83,"average":10.38},{"muscle":"Petto","weeks":[3,3,3,1,3,3,3,2],"total":21,"average":2.62},{"muscle":"Polpacci","weeks":[1,1,1,1,1,1,1,1],"total":8,"average":1},{"muscle":"Quadricipiti","weeks":[14,14,14,10,13,13,13,8],"total":99,"average":12.38},{"muscle":"Spalle","weeks":[21,21,22,14,22,21,21,13],"total":155,"average":19.38},{"muscle":"Tricipiti","weeks":[3,3,3,2,3,3,3,3],"total":23,"average":2.88}]}];
+    const COACH_EXERCISE_LIBRARY = {
+    "Spalle":  [
+                   {
+                       "name":  "Push Press Ktb",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Arnold Press",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Croci inverse manubri",
+                       "som":  "Spalle",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Face Pull",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Alzate laterali",
+                       "som":  "Spalle",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Y raises cavo alto",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Esercizio custom",
+                       "som":  "Spalle",
+                       "stimulus":  "da definire"
+                   },
+                   {
+                       "name":  "Face pull reverse pec",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Alzate deltoidi posteriori",
+                       "som":  "Spalle",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Lento avanti machine",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Alzate laterali + alzate frontali panca 70°",
+                       "som":  "Spalle",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Military al multypower panca70°",
+                       "som":  "Spalle",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Lento avanti manubri",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Alzate laterali Seduta",
+                       "som":  "Spalle",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Alzata laterale su panca inclinata 30°",
+                       "som":  "Spalle",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Alzate laterali cavo basso cavigliera polso",
+                       "som":  "Spalle",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Military press",
+                       "som":  "Spalle",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Alzate laterali macchinario",
+                       "som":  "Spalle",
+                       "stimulus":  "accorciamento"
+                   }
+               ],
+    "Petto":  [
+                  {
+                      "name":  "Cross over ai cavi",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Dips inclinato in avanti",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Croci manubri",
+                      "som":  "Petto",
+                      "stimulus":  "allungamento"
+                  },
+                  {
+                      "name":  "Croci ai cavi",
+                      "som":  "Petto",
+                      "stimulus":  "allungamento"
+                  },
+                  {
+                      "name":  "Piegamenti sulle braccia",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Esercizio custom",
+                      "som":  "Petto",
+                      "stimulus":  "da definire"
+                  },
+                  {
+                      "name":  "Squez Press",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Push Up",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Floor press bilanciere",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Floor press manubri",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Panca piana",
+                      "som":  "Petto",
+                      "stimulus":  "allungamento"
+                  },
+                  {
+                      "name":  "Panca inclinata",
+                      "som":  "Petto",
+                      "stimulus":  "allungamento"
+                  },
+                  {
+                      "name":  "Chest press",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Croci manubri su panca inclinata",
+                      "som":  "Petto",
+                      "stimulus":  "allungamento"
+                  },
+                  {
+                      "name":  "Distensioni manubri su piana",
+                      "som":  "Petto",
+                      "stimulus":  "stimolo da definire"
+                  },
+                  {
+                      "name":  "Distensione manubri su inclinata",
+                      "som":  "Petto",
+                      "stimulus":  "allungamento"
+                  }
+              ],
+    "Quadricipiti":  [
+                         {
+                             "name":  "Sissy squat in piedi",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Goblet squat",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Leg Extension",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "accorciamento"
+                         },
+                         {
+                             "name":  "Leg extension singola",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "accorciamento"
+                         },
+                         {
+                             "name":  "Pendulum",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Esercizio custom",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "da definire"
+                         },
+                         {
+                             "name":  "Front squat machine",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Pressa mono gamba",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Squat Bulgaro focus quads",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Leg press steso",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "stimolo da definire"
+                         },
+                         {
+                             "name":  "Pressa 45°",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Squat",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Adductor",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "accorciamento"
+                         },
+                         {
+                             "name":  "Affondi forntali manubri",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "stimolo da definire"
+                         },
+                         {
+                             "name":  "Affondi al multypower",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "stimolo da definire"
+                         },
+                         {
+                             "name":  "Hack Squat con elastico",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         },
+                         {
+                             "name":  "Squat al multypower",
+                             "som":  "Quadricipiti",
+                             "stimulus":  "allungamento"
+                         }
+                     ],
+    "Femorali":  [
+                     {
+                         "name":  "Ghd",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Hamstring Destroyers",
+                         "som":  "Femorali",
+                         "stimulus":  "stimolo da definire"
+                     },
+                     {
+                         "name":  "Stacco da rialzi",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Jefferson Culs",
+                         "som":  "Femorali",
+                         "stimulus":  "stimolo da definire"
+                     },
+                     {
+                         "name":  "Stacco B Stance cavo",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Esercizio custom",
+                         "som":  "Femorali",
+                         "stimulus":  "da definire"
+                     },
+                     {
+                         "name":  "Leg Curs Fitbal",
+                         "som":  "Femorali",
+                         "stimulus":  "stimolo da definire"
+                     },
+                     {
+                         "name":  "Hyperstension con cuscinetto",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "RDL Belt machine",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Stacco RDL",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Stacco gambe semi tese",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Stacco Regular",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Stacco Sumo",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Leg curls singolo",
+                         "som":  "Femorali",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Stacco mono gamba",
+                         "som":  "Femorali",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Leg curls",
+                         "som":  "Femorali",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Leg curls seduta",
+                         "som":  "Femorali",
+                         "stimulus":  "accorciamento"
+                     }
+                 ],
+    "Dorsali":  [
+                    {
+                        "name":  "Pull down sbarra",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Pullover manubrio",
+                        "som":  "Dorsali",
+                        "stimulus":  "allungamento"
+                    },
+                    {
+                        "name":  "Lat mono braccio",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Pull Down corda",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Trazioni gironda",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Esercizio custom",
+                        "som":  "Dorsali",
+                        "stimulus":  "da definire"
+                    },
+                    {
+                        "name":  "Pullover bilanciere",
+                        "som":  "Dorsali",
+                        "stimulus":  "allungamento"
+                    },
+                    {
+                        "name":  "Stretchers",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Trazioni supine",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Trazioni neutre",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Trazioni",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Trazioni assistite",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Vertical Traction",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Lat machine Triangolo",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Lat machine",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    },
+                    {
+                        "name":  "Lat Machine supina",
+                        "som":  "Dorsali",
+                        "stimulus":  "vertical pull"
+                    }
+                ],
+    "Centro schiena":  [
+                           {
+                               "name":  "Krock Row",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Gentlemen row",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Pulley sbarra presa larga supina",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "T bar",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Scrollate con manubri",
+                               "som":  "Centro schiena",
+                               "stimulus":  "accorciamento"
+                           },
+                           {
+                               "name":  "Peck deck",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Esercizio custom",
+                               "som":  "Centro schiena",
+                               "stimulus":  "da definire"
+                           },
+                           {
+                               "name":  "Croci inverse con uso delle scapole",
+                               "som":  "Centro schiena",
+                               "stimulus":  "allungamento"
+                           },
+                           {
+                               "name":  "Renegade row",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Row machine panatta",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Rematore Bilanciere Z",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Rematore Dead Stop",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Pendaly Row",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Rematore supino",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Reamtore mono braccio corda bassa",
+                               "som":  "Centro schiena",
+                               "stimulus":  "stimolo da definire"
+                           },
+                           {
+                               "name":  "Pulley triangolo",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           },
+                           {
+                               "name":  "Rematore manubri panca 30°",
+                               "som":  "Centro schiena",
+                               "stimulus":  "allungamento"
+                           },
+                           {
+                               "name":  "Rematore bilanciere",
+                               "som":  "Centro schiena",
+                               "stimulus":  "horizontal pull"
+                           }
+                       ],
+    "Bicipiti":  [
+                     {
+                         "name":  "Curls martello panca inlinata 45°",
+                         "som":  "Bicipiti",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Curls martello panca",
+                         "som":  "Bicipiti",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Curls martello in piedi",
+                         "som":  "Bicipiti",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Esercizio custom",
+                         "som":  "Bicipiti",
+                         "stimulus":  "da definire"
+                     },
+                     {
+                         "name":  "Curls trx",
+                         "som":  "Bicipiti",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Spider curls",
+                         "som":  "Bicipiti",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Curls panca 45°",
+                         "som":  "Bicipiti",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Curls panca scoot",
+                         "som":  "Bicipiti",
+                         "stimulus":  "allungamento"
+                     },
+                     {
+                         "name":  "Curl manubri",
+                         "som":  "Bicipiti",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Curls manubri schiena al muro",
+                         "som":  "Bicipiti",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Curls Bilaciere Z",
+                         "som":  "Bicipiti",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Curl cavo basso con bilancere piccolo",
+                         "som":  "Bicipiti",
+                         "stimulus":  "accorciamento"
+                     }
+                 ],
+    "Tricipiti":  [
+                      {
+                          "name":  "Push ups",
+                          "som":  "Tricipiti",
+                          "stimulus":  "stimolo da definire"
+                      },
+                      {
+                          "name":  "Tricipiti mono braccio cavo alto",
+                          "som":  "Tricipiti",
+                          "stimulus":  "accorciamento"
+                      },
+                      {
+                          "name":  "Dips stretti",
+                          "som":  "Tricipiti",
+                          "stimulus":  "stimolo da definire"
+                      },
+                      {
+                          "name":  "Esercizio custom",
+                          "som":  "Tricipiti",
+                          "stimulus":  "da definire"
+                      },
+                      {
+                          "name":  "Kick back",
+                          "som":  "Tricipiti",
+                          "stimulus":  "accorciamento"
+                      },
+                      {
+                          "name":  "Tricipiti manubrio dietro la testa",
+                          "som":  "Tricipiti",
+                          "stimulus":  "accorciamento"
+                      },
+                      {
+                          "name":  "French press panca 40°",
+                          "som":  "Tricipiti",
+                          "stimulus":  "allungamento"
+                      },
+                      {
+                          "name":  "French press bilanciere Z",
+                          "som":  "Tricipiti",
+                          "stimulus":  "allungamento"
+                      },
+                      {
+                          "name":  "French press manubri",
+                          "som":  "Tricipiti",
+                          "stimulus":  "allungamento"
+                      },
+                      {
+                          "name":  "Tricipiti Pullover",
+                          "som":  "Tricipiti",
+                          "stimulus":  "allungamento"
+                      },
+                      {
+                          "name":  "Tricipiti cavo basso dietro la testa",
+                          "som":  "Tricipiti",
+                          "stimulus":  "accorciamento"
+                      },
+                      {
+                          "name":  "Tricipiti cavo alto in corda",
+                          "som":  "Tricipiti",
+                          "stimulus":  "accorciamento"
+                      }
+                  ],
+    "Addominali":  [
+                       {
+                           "name":  "crunch obliqui",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Crunch machine",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Leg raise",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Farmer Walk",
+                           "som":  "Addominali",
+                           "stimulus":  "stimolo da definire"
+                       },
+                       {
+                           "name":  "GHD lateral crunch",
+                           "som":  "Addominali",
+                           "stimulus":  "allungamento"
+                       },
+                       {
+                           "name":  "Esercizio custom",
+                           "som":  "Addominali",
+                           "stimulus":  "da definire"
+                       },
+                       {
+                           "name":  "Dead bug dinamico",
+                           "som":  "Addominali",
+                           "stimulus":  "stimolo da definire"
+                       },
+                       {
+                           "name":  "GHD sit up crunch",
+                           "som":  "Addominali",
+                           "stimulus":  "allungamento"
+                       },
+                       {
+                           "name":  "Addominali livello 1",
+                           "som":  "Addominali",
+                           "stimulus":  "stimolo da definire"
+                       },
+                       {
+                           "name":  "Hollow position",
+                           "som":  "Addominali",
+                           "stimulus":  "stimolo da definire"
+                       },
+                       {
+                           "name":  "Crunch classici",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Crunch gambe 90°",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Plank statico",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Dragon Flag",
+                           "som":  "Addominali",
+                           "stimulus":  "stimolo da definire"
+                       },
+                       {
+                           "name":  "Side Plank",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Ab Roll",
+                           "som":  "Addominali",
+                           "stimulus":  "accorciamento"
+                       },
+                       {
+                           "name":  "Dragon Flag mono",
+                           "som":  "Addominali",
+                           "stimulus":  "stimolo da definire"
+                       }
+                   ],
+    "Glutei":  [
+                   {
+                       "name":  "Glutes machine",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Clam shell side plank",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Slanci cavo basso",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Affondo pesante triset",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Affondo con rotazione busto triset",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Passo del granchio",
+                       "som":  "Glutei",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Pressa verticale panatta",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Esercizio custom",
+                       "som":  "Glutei",
+                       "stimulus":  "da definire"
+                   },
+                   {
+                       "name":  "Triset glutei",
+                       "som":  "Glutei",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Frog Pump con elastico",
+                       "som":  "Glutei",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Rotazioni cavo medio",
+                       "som":  "Glutei",
+                       "stimulus":  "stimolo da definire"
+                   },
+                   {
+                       "name":  "Hip Thrust",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Pressa45° piedi alti schienale chiuso",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Hip Thrust statico",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Abductor",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Hip Trust mono",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Hypersetensioni con cuscino",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Stacco B stance con cavo",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "Slancio laterale cavo basso triset",
+                       "som":  "Glutei",
+                       "stimulus":  "accorciamento"
+                   },
+                   {
+                       "name":  "Bulgaro focus glutei",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "RDL focus Gluteo Belt machine",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   },
+                   {
+                       "name":  "RDL focus Gluteo",
+                       "som":  "Glutei",
+                       "stimulus":  "allungamento"
+                   }
+               ],
+    "Polpacci":  [
+                     {
+                         "name":  "Polpacci seduto",
+                         "som":  "Polpacci",
+                         "stimulus":  "stimolo da definire"
+                     },
+                     {
+                         "name":  "Calf machine",
+                         "som":  "Polpacci",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Esercizio custom",
+                         "som":  "Polpacci",
+                         "stimulus":  "da definire"
+                     },
+                     {
+                         "name":  "Calf Frog",
+                         "som":  "Polpacci",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Polpacci in piedi",
+                         "som":  "Polpacci",
+                         "stimulus":  "stimolo da definire"
+                     },
+                     {
+                         "name":  "Calf al multypower",
+                         "som":  "Polpacci",
+                         "stimulus":  "accorciamento"
+                     },
+                     {
+                         "name":  "Donkey calf",
+                         "som":  "Polpacci",
+                         "stimulus":  "accorciamento"
+                     }
+                 ],
+    "Cardio":  [
+                   {
+                       "name":  "Cyclette",
+                       "som":  "Cardio",
+                       "stimulus":  "cardio"
+                   },
+                   {
+                       "name":  "Camminata in salita",
+                       "som":  "Cardio",
+                       "stimulus":  "cardio"
+                   },
+                   {
+                       "name":  "Esercizio custom",
+                       "som":  "Cardio",
+                       "stimulus":  "da definire"
+                   },
+                   {
+                       "name":  "Cardio libero",
+                       "som":  "Cardio",
+                       "stimulus":  "cardio"
+                   },
+                   {
+                       "name":  "Tapis roulant",
+                       "som":  "Cardio",
+                       "stimulus":  "cardio"
+                   },
+                   {
+                       "name":  "Tapins + corsa",
+                       "som":  "Cardio",
+                       "stimulus":  "cardio"
+                   }
+               ]
+};
+
+
+    const DATA_SCHEMA_VERSION = 4;
+    const PRE_V55_BACKUP_KEY = "alice-method-app.pre-v55-backup";
+    const PRE_WEEK_CONSOLIDATION_BACKUP_KEY = "barbell-diva.pre-week-consolidation-backup";
+    const PROGRAM_STATUSES = new Set(["draft", "available", "active", "archived", "deleted"]);
+    const SCHEMA_MIGRATIONS = new Map([[1, migrateV1ToV2], [2, migrateV2ToV3], [3, migrateV3ToV4]]);
+
+    const baseState = {
+      profile: {
+        name: "Alice",
+        phase: "Intensificazione",
+        phaseStart: "2026-06-04",
+        phaseLength: 8,
+        mode: "athlete",
+        coachPin: "ettorino1",
+        theme: "dark",
+        account: {
+          uid: "",
+          name: "",
+          email: "",
+          photo: "",
+          provider: "",
+          cloudStatus: "locale"
+        }
+      },
+      metrics: {
+        weight: "",
+        sleep: "",
+        stress: "",
+        energy: "",
+        adherence: "",
+        hunger: "",
+        cycle: "ok"
+      },
+      nutrition: {
+        kcal: "",
+        protein: "",
+        water: "",
+        context: "soft",
+        dashboard: {}
+      },
+      body: {
+        waist: "",
+        hip: "",
+        steps: "",
+        soreness: "",
+        context: "soft"
+      },
+      // Anche il primo avvio (senza un backup precedente) passa dalla stessa
+      // normalizzazione usata dalla migrazione: la griglia non deve mai
+      // ricevere le vecchie schede settimanali come celle vuote.
+      programs: buildProgramsFromLegacy(PROGRAM_LIBRARY, []).map(consolidateLegacyWeeklyProgram),
+      training: {
+        date: todayInput(),
+        phaseFilter: "Intensificazione",
+        sessionName: "auto",
+        feeling: "medio",
+        selected: "Lento_avanti_machine",
+        openExercise: "",
+        exercises: buildExerciseIndex(PROGRAM_LIBRARY, EXCEL_WORKOUT_HISTORY),
+        sessions: EXCEL_WORKOUT_HISTORY,
+        draft: {},
+        noteDraft: {},
+        timerRemaining: 0
+      },
+      coach: {
+        unlocked: false,
+        activeTab: "create",
+        athleteView: false,
+        athleteLayout: "compact",
+        viewChoice: "browse-old",
+        builder: {
+          phase: "Coach custom",
+          code: "CC-A1",
+          name: "Nuova scheda",
+          focus: "Da definire",
+          muscle: "Glutei",
+          exercise: "",
+          som: "",
+          approach: "1-2",
+          sets: "3",
+          reps: "8-12",
+          week1: "3 x 12",
+          week2: "3 x 10",
+          week3: "4 x 8",
+          week4: "2 x 10 scarico",
+          week5: "4 x 10",
+          week6: "4 x 8",
+          week7: "3 x 8",
+          week8: "test",
+          rir: "",
+          rest: "90 sec",
+          note: ""
+        },
+        editorPhase: "Intensificazione",
+        editorCode: "A6",
+        exerciseLibrary: [],
+        coachAi: {
+          enabled: true,
+          filter: "all",
+          ignored: [],
+          applied: []
+        },
+        progressionTemplates: [],
+        feedback: [
+          {
+            id: 1,
+            date: "03/07/2026",
+            type: "coach",
+            title: "Controllo tecnico",
+            text: "Usa questa area per note su tecnica, setup, recupero e modifiche alle schede.",
+            status: "aperto"
+          }
+        ]
+      },
+      quiz: {
+        checkin: {
+          energy: 3,
+          sleep: 3,
+          doms: 1,
+          stress: 3,
+          hunger: 3
+        },
+        feeling: "medio",
+        fatigue: "medio",
+        pain: "no",
+        sleepQuality: "ok",
+        hunger: "normale",
+        digestion: "regolare",
+        stress: "medio",
+        workout: "bene",
+        recovery: "ok",
+        sheetFit: "bene",
+        motivation: "alta",
+        goodExercises: "",
+        weakExercises: "",
+        changeExercises: "",
+        note: ""
+      }
+    };
+
+    let state = loadState();
+    state.training.date = todayInput();
+    state.training.sessionName = "auto";
+    hydrateStateModel(state);
+    state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
+    if (state.profile.coachPin === "2507") state.profile.coachPin = "ettorino1";
+    const initialHash = String(location.hash || "").replace("#", "");
+    const initialScreens = new Set(["dashboard", "training", "progress", "nutrition", "quiz", "coach"]);
+    let activeScreen = initialScreens.has(initialHash) ? initialHash : "dashboard";
+    let activeBottom = activeScreen === "training" ? "workout" : activeScreen === "dashboard" ? "home" : activeScreen;
+    let timerHandle = null;
+    let authService = null;
+    let dbService = null;
+    let cloudUser = null;
+    let cloudSaveTimer = null;
+    let localSaveTimer = null;
+    let pendingSaveOptions = null;
+    let lastPersistenceError = null;
+    let cloudLoading = false;
+    let nutritionPhotosUnsubscribe = null;
+    let authReady = false;
+    let localLoginBypass = localStorage.getItem(`${STORE_KEY}.loginBypass`) === "1";
+    const coachProgramUi = {
+      programId: "",
+      sheetId: "",
+      lastSheetByProgram: new Map(),
+      drafts: new Map(),
+      dirtySheets: new Set(),
+      allSheetsOpen: false,
+      sheetMenuId: "",
+      modal: "",
+      modalData: {},
+      draggedSheetId: "",
+      selectedExercises: new Set(),
+      draggedExerciseId: "",
+      saveStatus: "saved",
+      autoSaveTimer: null,
+      histories: new Map(),
+      libraryQuery: "",
+      libraryMuscle: "",
+      libraryEquipment: "",
+      libraryPattern: ""
+      ,aiExpanded: new Set()
+      ,aiNoticeDismissed: new Set()
+    };
+
+    function clone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function stableId(...parts) {
+      const source = parts.map((part) => normalizeExerciseName(String(part ?? "")) || "item").join("-");
+      let hash = 2166136261;
+      for (let index = 0; index < source.length; index += 1) {
+        hash ^= source.charCodeAt(index);
+        hash = Math.imul(hash, 16777619);
+      }
+      return `${source.slice(0, 48)}-${(hash >>> 0).toString(36)}`;
+    }
+
+    function numericParts(value) {
+      return Array.from(String(value ?? "").matchAll(/\d+(?:[.,]\d+)?/g), (match) => Number(match[0].replace(",", "."))).filter(Number.isFinite);
+    }
+
+    function optionalNumber(value) {
+      if (value === null || value === undefined || value === "") return null;
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function parseReps(value) {
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        return {
+          ...value,
+          min: optionalNumber(value.min),
+          max: optionalNumber(value.max),
+          sequence: Array.isArray(value.sequence) ? value.sequence.map(optionalNumber).filter((item) => item !== null) : [],
+          label: String(value.label || "")
+        };
+      }
+      const label = String(value ?? "").trim();
+      const values = numericParts(label);
+      const sequence = /[,/]|\d\s*-\s*\d\s*-/.test(label) ? values : [];
+      return {
+        min: values.length ? Math.min(...values) : null,
+        max: values.length ? Math.max(...values) : null,
+        sequence,
+        label
+      };
+    }
+
+    function parseRir(value) {
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        return {
+          ...value,
+          min: optionalNumber(value.min),
+          max: optionalNumber(value.max),
+          label: String(value.label || "")
+        };
+      }
+      const label = String(value ?? "").trim();
+      const values = numericParts(label);
+      return { min: values.length ? Math.min(...values) : null, max: values.length ? Math.max(...values) : null, label };
+    }
+
+    function parseRest(value) {
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        return {
+          ...value,
+          seconds: optionalNumber(value.seconds),
+          minSeconds: optionalNumber(value.minSeconds),
+          maxSeconds: optionalNumber(value.maxSeconds),
+          label: String(value.label || "")
+        };
+      }
+      const label = String(value ?? "").trim();
+      const seconds = [];
+      for (const match of label.matchAll(/(\d+)\s*['’]\s*(?:(\d{1,2})\s*(?:''|”|"))?/g)) seconds.push(Number(match[1]) * 60 + Number(match[2] || 0));
+      for (const match of label.matchAll(/(\d+)\s*(?:sec|secondi|s\b|''|”|")/gi)) seconds.push(Number(match[1]));
+      return {
+        seconds: seconds.length === 1 ? seconds[0] : null,
+        minSeconds: seconds.length ? Math.min(...seconds) : null,
+        maxSeconds: seconds.length ? Math.max(...seconds) : null,
+        label
+      };
+    }
+
+    function parseWeekPrescription(value, weekNumber, fallback = {}) {
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        const number = Number(value.weekNumber || value.week || weekNumber);
+        return {
+          ...value,
+          id: String(value.id || stableId("week", number, JSON.stringify(value))),
+          week: number,
+          weekNumber: number,
+          sets: optionalNumber(value.sets),
+          reps: parseReps(value.reps),
+          rir: parseRir(value.rir),
+          rpe: parseRir(value.rpe),
+          rest: parseRest(value.rest),
+          restSeconds: optionalNumber(value.restSeconds) ?? optionalNumber(value.rest?.seconds),
+          prescribedLoad: parsePrescribedLoad(value.prescribedLoad ?? { value: value.load, unit: value.loadUnit }),
+          loadUnit: value.loadUnit || value.prescribedLoad?.unit || "kg",
+          tempo: parseTempo(value.tempo ?? fallback.tempo),
+          technique: parseTechnique(value.technique ?? fallback.technique),
+          type: ["normal", "accumulation", "intensification", "deload", "test", "recovery", "custom"].includes(value.type) ? value.type : "normal",
+          notes: String(value.notes ?? value.note ?? ""),
+          note: String(value.note ?? value.notes ?? ""),
+          status: value.status || "planned",
+          source: value.source || "manual",
+          legacyLabel: String(value.legacyLabel || "")
+        };
+      }
+      const label = String(value ?? "").trim();
+      const match = label.match(/(\d+)\s*[x×]\s*(\d+)(?:\s*-\s*(\d+))?/i);
+      const rirMatch = label.match(/@?\s*(\d+(?:[.,]\d+)?(?:\s*[-/]\s*\d+(?:[.,]\d+)?)?)\s*RIR/i);
+      const rpeMatch = label.match(/@?\s*(\d+(?:[.,]\d+)?(?:\s*[-/]\s*\d+(?:[.,]\d+)?)?)\s*RPE/i);
+      const type = /scarico/i.test(label) ? "deload" : /test|rm/i.test(label) ? "test" : "normal";
+      return {
+        id: stableId("week", weekNumber, label || "planned"),
+        week: weekNumber,
+        weekNumber,
+        sets: match ? Number(match[1]) : optionalNumber(fallback.sets),
+        reps: match ? parseReps(match[3] ? `${match[2]}-${match[3]}` : match[2]) : type === "test" ? parseReps(label) : parseReps(fallback.reps),
+        rir: parseRir(rirMatch?.[1] || fallback.rir),
+        rpe: parseRir(rpeMatch?.[1] || fallback.rpe),
+        rest: parseRest(fallback.rest),
+        restSeconds: optionalNumber(fallback.restSeconds) ?? optionalNumber(fallback.rest?.seconds),
+        prescribedLoad: parsePrescribedLoad(fallback.prescribedLoad),
+        loadUnit: fallback.prescribedLoad?.unit || "kg",
+        tempo: parseTempo(fallback.tempo),
+        technique: parseTechnique(fallback.technique),
+        type,
+        notes: label && !match ? label : "",
+        note: label && !match ? label : "",
+        status: "planned",
+        source: "legacy",
+        legacyLabel: label
+      };
+    }
+
+    // Fase 6: libreria centrale e generatore di progressioni. Le settimane sono
+    // sempre dinamiche: la durata del programma è l'unico limite applicativo.
+    const PROGRESSION_TEMPLATE_LIBRARY = [
+      { id: "double-progression", name: "Doppia progressione", description: "Aumenta le ripetizioni nel range e poi il carico.", category: "classica", suitableFor: "forza/ipertrofia", durationPolicy: "dynamic", rules: { kind: "double" }, parameters: { repMin: 8, repMax: 12, sets: 3, loadIncrement: 0.025 }, builtIn: true, userEditable: false },
+      { id: "linear-load", name: "Lineare carico", description: "Incremento lineare del carico quando il dato iniziale è disponibile.", category: "lineare", suitableFor: "forza", durationPolicy: "dynamic", rules: { kind: "linear-load" }, parameters: { increment: 2.5, unit: "kg" }, builtIn: true, userEditable: false },
+      { id: "linear-reps", name: "Lineare ripetizioni", description: "Incremento lineare delle ripetizioni.", category: "lineare", suitableFor: "ipertrofia", durationPolicy: "dynamic", rules: { kind: "linear-reps" }, parameters: { increment: 1 }, builtIn: true, userEditable: false },
+      { id: "linear-sets", name: "Lineare serie", description: "Incremento graduale delle serie.", category: "lineare", suitableFor: "volume", durationPolicy: "dynamic", rules: { kind: "linear-sets" }, parameters: { increment: 1 }, builtIn: true, userEditable: false },
+      { id: "rir-progression", name: "Progressione RIR/RPE", description: "Riduce il RIR o aumenta il RPE in modo controllato.", category: "autoregolata", suitableFor: "tutti", durationPolicy: "dynamic", rules: { kind: "rir" }, parameters: { rirStart: 3, rirEnd: 1 }, builtIn: true, userEditable: false },
+      { id: "top-set-backoff", name: "Top set + back-off", description: "Top set identificato e serie di back-off.", category: "forza", suitableFor: "forza", durationPolicy: "dynamic", rules: { kind: "top-set-backoff" }, parameters: { backoffPercent: 0.9, backoffSets: 3 }, builtIn: true, userEditable: false },
+      { id: "volume-progression", name: "Volume", description: "Progressione del volume mantenendo il gesto.", category: "volume", suitableFor: "ipertrofia", durationPolicy: "dynamic", rules: { kind: "volume" }, parameters: { setsIncrement: 1 }, builtIn: true, userEditable: false },
+      { id: "intensity-progression", name: "Intensità", description: "Progressione dell'intensità senza inventare carichi.", category: "intensità", suitableFor: "forza", durationPolicy: "dynamic", rules: { kind: "intensity" }, parameters: { increment: 0.025 }, builtIn: true, userEditable: false },
+      { id: "undulating", name: "Ondulata", description: "Alterna settimane volume e intensità.", category: "ondulata", suitableFor: "tutti", durationPolicy: "dynamic", rules: { kind: "undulating" }, parameters: {}, builtIn: true, userEditable: false },
+      { id: "pyramid", name: "Piramidale", description: "Serie e ripetizioni salgono e scendono.", category: "piramidale", suitableFor: "ipertrofia", durationPolicy: "dynamic", rules: { kind: "pyramid" }, parameters: {}, builtIn: true, userEditable: false },
+      { id: "reverse-pyramid", name: "Piramidale inversa", description: "Ripetizioni più alte nelle serie successive.", category: "piramidale", suitableFor: "ipertrofia", durationPolicy: "dynamic", rules: { kind: "reverse-pyramid" }, parameters: {}, builtIn: true, userEditable: false },
+      { id: "density", name: "Densità", description: "Mantieni il lavoro e riduci il recupero.", category: "densità", suitableFor: "condizionamento", durationPolicy: "dynamic", rules: { kind: "density" }, parameters: { restDecrement: 10 }, builtIn: true, userEditable: false },
+      { id: "recovery-decreasing", name: "Recupero decrescente", description: "Riduce progressivamente il recupero.", category: "recupero", suitableFor: "tutti", durationPolicy: "dynamic", rules: { kind: "recovery" }, parameters: { decrement: 10 }, builtIn: true, userEditable: false },
+      { id: "maintenance", name: "Mantenimento", description: "Mantiene invariata la prescrizione.", category: "base", suitableFor: "tutti", durationPolicy: "dynamic", rules: { kind: "maintenance" }, parameters: {}, builtIn: true, userEditable: false },
+      { id: "deload", name: "Deload", description: "Scarico con riduzione del lavoro.", category: "recupero", suitableFor: "tutti", durationPolicy: "dynamic", rules: { kind: "deload" }, parameters: { reduction: 0.6, rirIncrease: 2 }, builtIn: true, userEditable: false },
+      { id: "custom", name: "Personalizzata", description: "Regola definita dall'utente.", category: "custom", suitableFor: "tutti", durationPolicy: "dynamic", rules: { kind: "custom" }, parameters: {}, builtIn: true, userEditable: true }
+    ];
+
+    function progressionTemplates() {
+      return [...PROGRESSION_TEMPLATE_LIBRARY, ...((state.coach && state.coach.progressionTemplates) || [])];
+    }
+    function progressionTemplateById(id) { return progressionTemplates().find((item) => item.id === id) || null; }
+    function progressionBasePrescription(exercise = {}) {
+      const p = exercise.prescription || {};
+      const reps = parseReps(p.reps);
+      return { sets: optionalNumber(p.sets) ?? 3, reps, rir: parseRir(p.rir), rpe: parseRir(p.rpe), restSeconds: optionalNumber(p.rest?.seconds) ?? 90, prescribedLoad: parsePrescribedLoad(p.prescribedLoad), loadUnit: p.prescribedLoad?.unit || "kg", tempo: parseTempo(p.tempo), technique: parseTechnique(p.technique) };
+    }
+    function progressionNumber(value, fallback = null) { const n = Number(value); return Number.isFinite(n) ? n : fallback; }
+    function generateProgressionWeeks(exercise = {}, templateId = "maintenance", duration = 1, parameters = {}, existing = []) {
+      const template = progressionTemplateById(templateId) || progressionTemplateById("custom");
+      const base = progressionBasePrescription(exercise);
+      const count = Math.max(1, Number(duration) || 1);
+      const rule = { templateId: template.id, kind: template.rules?.kind || "custom", parameters: { ...(template.parameters || {}), ...(parameters || {}) } };
+      const current = Array.isArray(existing) ? existing : [];
+      const manual = new Set((exercise.progression?.manualWeeks || []).map(Number));
+      return Array.from({ length: count }, (_, index) => {
+        const weekNumber = index + 1;
+        const previous = current[index] ? parseWeekPrescription(current[index], weekNumber, base) : null;
+        if (previous && (manual.has(weekNumber) || previous.source === "manual")) return { ...previous, week: weekNumber, weekNumber, source: "manual" };
+        let sets = progressionNumber(base.sets, 3), reps = base.reps, rir = base.rir, rpe = base.rpe, restSeconds = base.restSeconds, load = base.prescribedLoad;
+        const kind = rule.kind;
+        if (kind === "double") { const min = progressionNumber(rule.parameters.repMin, reps.min ?? 8), max = progressionNumber(rule.parameters.repMax, reps.max ?? min); const span = Math.max(1, max - min + 1); const rep = min + (index % span); reps = parseReps(rep); sets = progressionNumber(rule.parameters.sets, sets); if (index > 0 && index % span === 0 && load?.value != null) load = { ...load, value: load.value * (1 + Number(rule.parameters.loadIncrement || 0)) }; }
+        if (kind === "linear-reps") reps = parseReps((reps.min ?? reps.max ?? 8) + index * Number(rule.parameters.increment || 1));
+        if (kind === "linear-sets" || kind === "volume") sets += index * Number(rule.parameters.increment || rule.parameters.setsIncrement || 1);
+        if (kind === "linear-load" || kind === "intensity") { if (load?.value != null) load = { ...load, value: load.value + index * Number(rule.parameters.increment || 0) }; }
+        if ((kind === "linear-load" || kind === "intensity") && load?.value == null) load = { ...load, value: null, unit: load?.unit || base.loadUnit, label: "Carico iniziale non disponibile" };
+        if (kind === "rir") { const start = progressionNumber(rule.parameters.rirStart, rir.min ?? 3), end = progressionNumber(rule.parameters.rirEnd, rir.max ?? 1); const value = Math.max(end, start - index); rir = parseRir(value); }
+        if (kind === "top-set-backoff") { const backoffSets = Number(rule.parameters.backoffSets || 3); sets = backoffSets + 1; }
+        if (kind === "recovery" || kind === "density") restSeconds = Math.max(0, restSeconds - index * Number(rule.parameters.decrement || rule.parameters.restDecrement || 10));
+        if (kind === "pyramid" || kind === "reverse-pyramid") reps = parseReps((reps.min ?? reps.max ?? 8) + (kind === "pyramid" ? Math.abs(Math.ceil(count / 2) - weekNumber) : index));
+        let type = "normal", notes = "";
+        if (kind === "deload" || (rule.parameters.deloadEvery && weekNumber % Number(rule.parameters.deloadEvery) === 0)) { type = "deload"; sets = Math.max(1, Math.round(sets * Number(rule.parameters.reduction || 0.6))); if (load?.value != null) load = { ...load, value: load.value * Number(rule.parameters.reduction || 0.6) }; rir = parseRir((rir.min ?? 1) + Number(rule.parameters.rirIncrease || 2)); notes = "Settimana di scarico"; }
+        if (kind === "top-set-backoff") notes = `Top set + ${Number(rule.parameters.backoffSets || 3)} back-off`;
+        return parseWeekPrescription({ id: previous?.id || stableId("week", exercise.id || exercise.name || "exercise", weekNumber), week: weekNumber, weekNumber, sets, reps, rir, rpe, restSeconds, prescribedLoad: load, loadUnit: load?.unit || base.loadUnit, tempo: base.tempo, technique: base.technique, type, notes, status: "planned", source: "auto", rule, segments: kind === "top-set-backoff" ? [{ kind: "top-set", sets: 1 }, { kind: "back-off", sets: Number(rule.parameters.backoffSets || 3), loadFactor: Number(rule.parameters.backoffPercent || 0.9) }] : undefined }, weekNumber, base);
+      });
+    }
+
+    function formatReps(reps) {
+      const parsed = parseReps(reps);
+      if (parsed.label) return parsed.label;
+      if (parsed.sequence.length) return parsed.sequence.join("-");
+      if (parsed.min !== null && parsed.max !== null && parsed.min !== parsed.max) return `${parsed.min}-${parsed.max}`;
+      return parsed.min !== null ? String(parsed.min) : "";
+    }
+
+    function formatRir(rir) {
+      const parsed = parseRir(rir);
+      if (parsed.label) return parsed.label;
+      if (parsed.min !== null && parsed.max !== null && parsed.min !== parsed.max) return `${parsed.min}-${parsed.max}`;
+      return parsed.min !== null ? String(parsed.min) : "";
+    }
+
+    function formatRest(rest) {
+      const parsed = parseRest(rest);
+      if (parsed.label) return parsed.label;
+      const seconds = parsed.seconds ?? parsed.minSeconds;
+      if (!Number.isFinite(seconds)) return "";
+      return seconds % 60 === 0 ? `${seconds / 60}'` : `${seconds} sec`;
+    }
+
+    function exerciseTechniqueSet() {
+      return new Set(["normal", "top-set", "back-off", "drop-set", "stripping", "rest-pause", "myo-reps", "cluster", "superset", "giant-set", "amrap", "isometric", "lengthened-partials", "custom"]);
+    }
+
+    function parseTempo(value) {
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        const phases = Array.isArray(value.phases) ? value.phases.map((part) => String(part ?? "").trim()).slice(0, 4) : [];
+        return { ...value, phases, label: String(value.label || phases.join("-") || ""), valid: !phases.length || phases.length === 4 };
+      }
+      const label = String(value ?? "").trim();
+      const phases = /^([0-9xX]+)-([0-9xX]+)-([0-9xX]+)-([0-9xX]+)$/.test(label) ? label.split("-").map((part) => part.toUpperCase()) : [];
+      return { phases, label, valid: !label || phases.length === 4 };
+    }
+
+    function formatTempo(value) {
+      const parsed = parseTempo(value);
+      return parsed.phases.length === 4 ? parsed.phases.join("-") : parsed.label;
+    }
+
+    function parseTechnique(value) {
+      const source = value && typeof value === "object" ? value : { type: value };
+      const type = String(source.type || "normal").toLowerCase();
+      const allowed = exerciseTechniqueSet();
+      return { ...source, type: allowed.has(type) ? type : "custom", description: String(source.description || (allowed.has(type) ? "" : value || "")), groupId: String(source.groupId || "") };
+    }
+
+    function parsePrescribedLoad(value) {
+      const source = value && typeof value === "object" ? value : { value };
+      const unit = ["kg", "lb", "%1RM"].includes(source.unit) ? source.unit : "kg";
+      return { ...source, value: optionalNumber(source.value), min: optionalNumber(source.min), max: optionalNumber(source.max), unit, label: String(source.label || "") };
+    }
+
+    function formatWeekPrescription(week) {
+      if (!week) return "";
+      if (week.legacyLabel) return week.legacyLabel;
+      const reps = formatReps(week.reps);
+      if (week.type === "test" && !week.sets) return week.note || "test";
+      const core = week.sets && reps ? `${week.sets} x ${reps}` : week.sets ? String(week.sets) : reps;
+      return [core, week.type === "deload" ? "scarico" : "", week.note].filter(Boolean).join(" ").trim();
+    }
+
+    function normalizePrescription(exercise = {}) {
+      const existing = exercise.prescription || {};
+      return {
+        ...existing,
+        sets: optionalNumber(existing.sets) ?? (numericParts(exercise.sets)[0] ?? null),
+        reps: parseReps(existing.reps ?? exercise.reps),
+        rir: parseRir(existing.rir ?? exercise.rir),
+        rest: parseRest(existing.rest ?? exercise.rest),
+        rpe: parseRir(existing.rpe ?? exercise.rpe),
+        warmup: existing.warmup && typeof existing.warmup === "object" ? {
+          sets: optionalNumber(existing.warmup.sets),
+          label: String(existing.warmup.label || "")
+        } : {
+          sets: optionalNumber(existing.warmupSets) ?? (numericParts(exercise.warmup)[0] ?? null),
+          label: String(exercise.warmup || "")
+        },
+        tempo: parseTempo(existing.tempo ?? exercise.tempo),
+        technique: parseTechnique(existing.technique ?? exercise.technique),
+        prescribedLoad: parsePrescribedLoad(existing.prescribedLoad ?? exercise.prescribedLoad)
+      };
+    }
+
+    function defineExerciseCompatibility(exercise) {
+      const define = (key, getter, setter) => {
+        const descriptor = Object.getOwnPropertyDescriptor(exercise, key);
+        if (descriptor?.get) return;
+        delete exercise[key];
+        Object.defineProperty(exercise, key, { enumerable: false, configurable: true, get: getter, set: setter });
+      };
+      define("sets", () => exercise.prescription.sets ?? "", (value) => { exercise.prescription.sets = numericParts(value)[0] ?? null; });
+      define("reps", () => formatReps(exercise.prescription.reps), (value) => { exercise.prescription.reps = parseReps(value); });
+      define("rir", () => formatRir(exercise.prescription.rir), (value) => { exercise.prescription.rir = parseRir(value); });
+      define("rest", () => formatRest(exercise.prescription.rest), (value) => { exercise.prescription.rest = parseRest(value); });
+      define("warmup", () => exercise.prescription.warmup?.label || exercise.prescription.warmup?.sets || "", (value) => {
+        exercise.prescription.warmup = { sets: numericParts(value)[0] ?? null, label: String(value ?? "") };
+      });
+      define("tempo", () => formatTempo(exercise.prescription.tempo), (value) => { exercise.prescription.tempo = parseTempo(value); });
+      define("weeks", () => (exercise.progression?.weeks || []).map(formatWeekPrescription), (values) => {
+        exercise.progression = exercise.progression || { weeks: [] };
+        exercise.progression.weeks = Array.from({ length: Math.max(8, values?.length || 0) }, (_, index) => parseWeekPrescription(values?.[index], index + 1, exercise.prescription));
+      });
+      return exercise;
+    }
+
+    function biomechanicsForExercise(name = "", explicit = null) {
+      if (explicit && typeof explicit === "object") return { ...clone(explicit), missingFields: Array.isArray(explicit.missingFields) ? explicit.missingFields : [] };
+      const value = normalizeExerciseName(name);
+      const key = Object.entries(BIOMECHANICS_KNOWLEDGE_BASE.aliases).find(([, aliases]) => aliases.some((alias) => value.includes(normalizeExerciseName(alias))))?.[0];
+      const profile = key ? BIOMECHANICS_KNOWLEDGE_BASE.exercises[key] : null;
+      if (!profile) return { confidence:"low", sourceVersion:BIOMECHANICS_KNOWLEDGE_BASE.version, reviewedAt:BIOMECHANICS_KNOWLEDGE_BASE.reviewedAt, reviewedBy:BIOMECHANICS_KNOWLEDGE_BASE.reviewedBy, missingFields:["exerciseType","movementPattern","jointActions","primaryMuscles","resistanceProfile","jointDemand"] };
+      const required = ["exerciseType","movementPattern","jointActions","primaryMuscles","resistanceProfile","stability","systemicFatigue","progressionEase","stimulusToFatigue","jointDemand"];
+      return { ...clone(profile), confidence:profile.confidence || "medium", sourceVersion:BIOMECHANICS_KNOWLEDGE_BASE.version, reviewedAt:BIOMECHANICS_KNOWLEDGE_BASE.reviewedAt, reviewedBy:BIOMECHANICS_KNOWLEDGE_BASE.reviewedBy, missingFields:required.filter((field) => profile[field] == null) };
+    }
+
+    function biomechanicsResistanceLabel(value = "unknown") { return ({ ascending:"crescente", descending:"decrescente", "bell-shaped":"massimo al centro", constant:"relativamente costante", variable:"variabile", unknown:"non disponibile" })[value] || "non disponibile"; }
+    function biomechanicsScaleLabel(value) { return value == null ? "non disponibile" : `${value}/5`; }
+    function contextualExerciseRating(exercise = {}, context = {}) {
+      const bio = exercise.biomechanics || biomechanicsForExercise(exercise.name, exercise.biomechanics);
+      const factors = { stimulus: Number(bio.stimulusToFatigue || 0), stability: Number(bio.stability || 0), progression: Number(bio.progressionEase || 0), stimulusToFatigue: Number(bio.stimulusToFatigue || 0), technicalEase: bio.technicalDifficulty ? 6 - Number(bio.technicalDifficulty) : 0 };
+      const available = Object.values(factors).filter((value) => value > 0); const score = available.length ? available.reduce((sum, value) => sum + value, 0) / available.length : 0;
+      const tier = score >= 4.4 ? "S" : score >= 3.7 ? "A" : score >= 2.8 ? "B" : score ? "C" : "—";
+      return { tier, score:Number(score.toFixed(1)), factors, confidence:bio.confidence || "low", explanation:`Rating relativo a ${context.goal || "questa scheda"}: combina stimolo, stabilità, progressione, facilità tecnica e rapporto stimolo/fatica.` };
+    }
+
+    function exerciseAnalysisHtml(exercise = {}) {
+      const bio = exercise.biomechanics || biomechanicsForExercise(exercise.name);
+      const rating = contextualExerciseRating(exercise, { goal: exercise.muscle || "muscolo target" });
+      const demand = Object.entries(bio.jointDemand || {}).filter(([, value]) => value).map(([joint, value]) => `<span title="Scala richiesta articolare: 1 bassa, 5 alta">${joint}: ${value}/5</span>`).join("");
+      return `<section class="exercise-analysis"><div class="row"><h4>Analisi</h4><span class="analysis-tier" title="Rating contestuale, non assoluto">${rating.tier} · ${rating.score}/5</span></div><div class="analysis-grid"><span class="analysis-stimulus">Stimolo/fatica ${biomechanicsScaleLabel(bio.stimulusToFatigue)}</span><span class="analysis-stability">Stabilità ${biomechanicsScaleLabel(bio.stability)}</span><span class="analysis-fatigue">Fatica ${biomechanicsScaleLabel(bio.systemicFatigue)}</span><span class="analysis-progression">Progressione ${biomechanicsScaleLabel(bio.progressionEase)}</span></div><p class="micro-copy">${escapeHtml((bio.primaryMuscles || []).join(", ") || "Muscolo non classificato")} · ${escapeHtml((bio.jointActions || []).join(", ") || "Azione non disponibile")} · resistenza: ${escapeHtml(biomechanicsResistanceLabel(bio.resistanceProfile))}</p><div class="analysis-joints">${demand || "Richieste articolari non disponibili"}</div><small class="analysis-confidence">${(bio.missingFields || []).length ? "Dati biomeccanici parziali · " : "Dati completi · "}${escapeHtml(bio.confidence || "low")} · versione ${escapeHtml(bio.sourceVersion || BIOMECHANICS_KNOWLEDGE_BASE.version)} · campi mancanti: ${escapeHtml((bio.missingFields || []).join(", ") || "nessuno")}</small><button type="button" class="ghost-button" data-exercise-compare="${escapeHtml(exercise.id || "")}">Confronta esercizi</button></section>`;
+    }
+
+    function normalizeExerciseModel(exercise = {}, context = {}) {
+      const source = { ...exercise };
+      const prescription = normalizePrescription(source);
+      const legacyNote2 = source.metadata?.note2 ?? source.note2 ?? source.tempo ?? source.prescription?.tempo?.label ?? "";
+      const existingWeeks = source.progression?.weeks || source.weeks || [];
+      const normalized = {
+        ...source,
+        id: source.id || stableId("exercise", context.programId, context.sheetId, source.name, context.index),
+        name: source.name || "Esercizio",
+        muscle: source.muscle || source.som || "Custom",
+        som: source.som || source.muscle || "",
+        prescription,
+        progression: {
+          ...(source.progression || {}),
+          templateId: String(source.progression?.templateId || source.metadata?.progressionTemplateId || ""),
+          rule: source.progression?.rule ? clone(source.progression.rule) : null,
+          weeks: (existingWeeks || []).map((week, index) => parseWeekPrescription(week, index + 1, prescription)),
+          manualWeeks: Array.isArray(source.progression?.manualWeeks) ? source.progression.manualWeeks.map(Number) : [],
+          archivedWeeks: Array.isArray(source.progression?.archivedWeeks) ? clone(source.progression.archivedWeeks) : []
+        },
+        note: source.note || "",
+        today: source.today || "",
+        ref: source.ref || "",
+        order: Number.isFinite(Number(source.order)) ? Number(source.order) : Number(context.index || 0),
+        createdAt: source.createdAt || "",
+        updatedAt: source.updatedAt || "",
+        deletedAt: source.deletedAt || "",
+        biomechanics: biomechanicsForExercise(source.name || "", source.biomechanics),
+        metadata: {
+          ...(source.metadata || {}),
+          equipment: String(source.metadata?.equipment || source.equipment || ""),
+          pattern: String(source.metadata?.pattern || source.pattern || ""),
+          secondaryMuscles: Array.isArray(source.metadata?.secondaryMuscles) ? source.metadata.secondaryMuscles.map(String) : [],
+          mainLift: !!(source.metadata?.mainLift ?? source.mainLift),
+          locked: !!(source.metadata?.locked ?? source.locked),
+          custom: !!(source.metadata?.custom ?? source.custom),
+          note2: String(legacyNote2 || "")
+        }
+      };
+      return defineExerciseCompatibility(normalized);
+    }
+
+    function normalizeSheetModel(sheet = {}, programId = "program", index = 0) {
+      const id = sheet.id || stableId("sheet", programId, sheet.code || index, sheet.name || "");
+      return {
+        ...sheet,
+        id,
+        code: sheet.code || `S${index + 1}`,
+        day: Number(sheet.day) || 1,
+        letter: sheet.letter || sessionLetter(sheet.code) || "A",
+        week: Number(sheet.week) || 1,
+        name: sheet.name || "Scheda",
+        focus: sheet.focus || "",
+        note: sheet.note || "",
+        split: sheet.split || "",
+        source: sheet.source || "imported",
+        order: Number.isFinite(Number(sheet.order)) ? Number(sheet.order) : index,
+        createdAt: sheet.createdAt || "",
+        updatedAt: sheet.updatedAt || "",
+        deletedAt: sheet.deletedAt || "",
+        exercises: (sheet.exercises || []).map((exercise, exerciseIndex) => normalizeExerciseModel(exercise, { programId, sheetId: id, index: exerciseIndex }))
+      };
+    }
+
+    function normalizeProgramModel(program = {}, index = 0) {
+      const id = program.id || stableId("program", program.phase || program.name || index);
+      const normalized = {
+        ...program,
+        id,
+        name: program.name || program.phase || `Programma ${index + 1}`,
+        phase: program.phase || program.name || "Programma",
+        status: program.status || "available",
+        source: program.source || "imported",
+        startDate: program.startDate || "",
+        durationWeeks: Number(program.durationWeeks) || Math.max(1, ...(program.sheets || []).map((sheet) => Number(sheet.week) || 1)),
+        periodization: { ...(program.periodization || {}), phase: program.periodization?.phase || program.phase || "" },
+        createdAt: program.createdAt || "",
+        updatedAt: program.updatedAt || "",
+        deletedAt: program.deletedAt || "",
+        sheets: (program.sheets || []).map((sheet, sheetIndex) => normalizeSheetModel(sheet, id, sheetIndex))
+      };
+      normalized.sheets.forEach((sheet) => attachSheetCompatibility(sheet, normalized));
+      return normalized;
+    }
+
+    function attachSheetCompatibility(sheet, program) {
+      const currentPhase = sheet.phase;
+      delete sheet.phase;
+      Object.defineProperty(sheet, "phase", {
+        enumerable: false,
+        configurable: true,
+        get: () => program.phase,
+        set: (value) => { program.phase = value; program.periodization.phase = value; }
+      });
+      if (currentPhase && !program.phase) program.phase = currentPhase;
+      return sheet;
+    }
+
+    function buildProgramsFromLegacy(legacySheets = [], legacyCustomSheets = []) {
+      const customKeys = new Set((legacyCustomSheets || []).map((sheet) => `${sheet.phase || "Coach custom"}|${sheet.code || ""}`));
+      const imported = new Map();
+      (legacySheets || []).forEach((sheet) => {
+        const key = customKeys.has(`${sheet.phase || "Coach custom"}|${sheet.code || ""}`) ? `custom|${sheet.phase}|${sheet.code}` : `imported|${sheet.phase || "Programma"}`;
+        if (!imported.has(key)) {
+          const isCustom = key.startsWith("custom|");
+          imported.set(key, {
+            id: stableId("program", key),
+            name: isCustom ? sheet.name || "Programma custom" : sheet.phase || "Programma",
+            phase: sheet.phase || "Programma",
+            status: "available",
+            source: isCustom ? "custom" : "imported",
+            startDate: sheet.startDate || "",
+            durationWeeks: 8,
+            sheets: []
+          });
+        }
+        imported.get(key).sheets.push({ ...sheet, source: key.startsWith("custom|") ? "custom" : sheet.source || "imported" });
+      });
+      (legacyCustomSheets || []).forEach((sheet) => {
+        const exists = Array.from(imported.values()).some((program) => program.phase === (sheet.phase || "Coach custom") && program.sheets.some((item) => item.code === sheet.code));
+        if (exists) return;
+        const key = `custom|${sheet.phase || "Coach custom"}|${sheet.code || sheet.name || "scheda"}`;
+        imported.set(key, {
+          id: stableId("program", key), name: sheet.name || "Programma custom", phase: sheet.phase || "Coach custom",
+          status: "available", source: "custom", startDate: sheet.startDate || "", durationWeeks: 8,
+          sheets: [{ ...sheet, source: "custom" }]
+        });
+      });
+      return Array.from(imported.values()).map(normalizeProgramModel);
+    }
+
+    function mergeProgramCollections(older = [], newer = []) {
+      const left = (older || []).map(normalizeProgramModel);
+      const right = (newer || []).map(normalizeProgramModel);
+      const programs = new Map(left.map((program) => [program.id, program]));
+      right.forEach((incoming) => {
+        const current = programs.get(incoming.id);
+        if (!current) return programs.set(incoming.id, incoming);
+        const winner = newerEntity(current, incoming);
+        const sheets = mergeSheetCollections(current.sheets || [], incoming.sheets || [], incoming.id);
+        programs.set(incoming.id, normalizeProgramModel({ ...winner, sheets }));
+      });
+      return Array.from(programs.values()).map(normalizeProgramModel);
+    }
+
+    function entityTimestamp(entity = {}) {
+      return Date.parse(entity.deletedAt || entity.updatedAt || entity.createdAt || "") || 0;
+    }
+
+    function newerEntity(left = {}, right = {}) {
+      return entityTimestamp(right) >= entityTimestamp(left) ? right : left;
+    }
+
+    function mergeExerciseCollections(older = [], newer = [], context = {}) {
+      const rows = new Map((older || []).map((exercise, index) => {
+        const normalized = normalizeExerciseModel(exercise, { ...context, index });
+        return [normalized.id, normalized];
+      }));
+      (newer || []).forEach((exercise, index) => {
+        const normalized = normalizeExerciseModel(exercise, { ...context, index });
+        const current = rows.get(normalized.id);
+        rows.set(normalized.id, current ? normalizeExerciseModel(newerEntity(current, normalized), { ...context, index }) : normalized);
+      });
+      return Array.from(rows.values()).sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+    }
+
+    function resolveSheetCodeCollisions(sheets = []) {
+      const byCode = new Map();
+      sheets.filter((sheet) => !sheet.deletedAt).forEach((sheet) => {
+        const key = String(sheet.code || "").trim().toLowerCase();
+        if (!key) return;
+        const current = byCode.get(key);
+        byCode.set(key, current ? newerEntity(current, sheet) : sheet);
+      });
+      return sheets.map((sheet) => {
+        if (sheet.deletedAt) return sheet;
+        const winner = byCode.get(String(sheet.code || "").trim().toLowerCase());
+        if (!winner || winner.id === sheet.id) return sheet;
+        return { ...sheet, deletedAt: winner.updatedAt || winner.createdAt || "1970-01-01T00:00:00.000Z", deletionReason: "merge-code-collision" };
+      });
+    }
+
+    function mergeSheetCollections(older = [], newer = [], programId = "program") {
+      const rows = new Map((older || []).map((sheet, index) => {
+        const normalized = normalizeSheetModel(sheet, programId, index);
+        return [normalized.id, normalized];
+      }));
+      (newer || []).forEach((sheet, index) => {
+        const incoming = normalizeSheetModel(sheet, programId, index);
+        const current = rows.get(incoming.id);
+        if (!current) return rows.set(incoming.id, incoming);
+        const winner = newerEntity(current, incoming);
+        const exercises = mergeExerciseCollections(current.exercises || [], incoming.exercises || [], { programId, sheetId: incoming.id });
+        rows.set(incoming.id, normalizeSheetModel({ ...winner, exercises }, programId, index));
+      });
+      return resolveSheetCodeCollisions(Array.from(rows.values())).sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+    }
+
+    function consolidationWeekFromLegacy(item = {}, weekNumber = 1, prescription = {}) {
+      const rawReps = String(item.reps ?? "").trim();
+      const lowered = rawReps.toLowerCase();
+      const type = /test|rm\b/.test(lowered) ? "test" : /scarico|deload/.test(lowered) || /scarico|deload/.test(String(item.rir || "").toLowerCase()) ? "deload" : "normal";
+      const week = parseWeekPrescription({ sets: item.sets, reps: rawReps, rir: item.rir || "", rest: item.rest || "", tempo: item.tempo || "", type, legacyLabel: rawReps || item.sets || "" }, weekNumber, prescription);
+      week.type = type;
+      week.legacyLabel = [item.sets, rawReps, item.rir].filter(Boolean).join(" | ");
+      if (!rawReps) week.reps = parseReps("");
+      return week;
+    }
+
+    function consolidateLegacyWeeklyProgram(program = {}) {
+      const weeklySheets = (program.sheets || []).filter((sheet) => /^.+-[A-Z]+\d+$/i.test(String(sheet.code || "")) || Number(sheet.week) > 1);
+      if (weeklySheets.length < 2) return program;
+      const groups = new Map();
+      weeklySheets.forEach((sheet) => {
+        const letter = String(sheet.letter || sessionLetter(sheet.code) || "A").toUpperCase();
+        if (!groups.has(letter)) groups.set(letter, []);
+        groups.get(letter).push(sheet);
+      });
+      const consolidated = [];
+      const archived = [...(program.archivedSheets || []), ...weeklySheets.map((sheet) => ({ ...sheet, archivedReason: "week-consolidation", archivedAt: new Date().toISOString() }))];
+      groups.forEach((sheets, letter) => {
+        sheets.sort((a,b) => Number(a.week || 1) - Number(b.week || 1));
+        const first = sheets[0];
+        const byKey = new Map();
+        sheets.forEach((sheet) => (sheet.exercises || []).forEach((exercise, index) => {
+          const key = `${normalizeExerciseName(exercise.name || exercise.exercise || "")}|${String(exercise.muscle || exercise.som || "").toLowerCase()}|${index}`;
+          if (!byKey.has(key)) byKey.set(key, { ...exercise, progression: { ...(exercise.progression || {}), weeks: [] }, order: index });
+          const target = byKey.get(key);
+          const weekNumber = Number(sheet.week || 1);
+          target.progression.weeks.push(consolidationWeekFromLegacy(exercise, weekNumber, target.prescription || exercise));
+          if (!target.note && exercise.note) target.note = exercise.note;
+        }));
+        consolidated.push({ ...first, id: stableId("sheet", program.id, letter, "consolidated"), code: letter, name: `Scheda ${letter}`, letter, week: 1, source: "consolidated", durationWeeks: Math.max(...sheets.map((sheet) => Number(sheet.week) || 1)), exercises: Array.from(byKey.values()) });
+      });
+      return { ...program, durationWeeks: Math.max(Number(program.durationWeeks) || 1, ...consolidated.map((sheet) => Number(sheet.durationWeeks) || 1)), sheets: consolidated, archivedSheets: archived, consolidationVersion: 1 };
+    }
+
+    function migrateV2ToV3(input = {}) {
+      const migrated = clone(input || {});
+      if (migrated.meta?.weekConsolidationVersion === 1) return migrated;
+      const raw = JSON.stringify(input || {});
+      if (raw && !localStorage.getItem(PRE_WEEK_CONSOLIDATION_BACKUP_KEY)) localStorage.setItem(PRE_WEEK_CONSOLIDATION_BACKUP_KEY, raw);
+      migrated.programs = (migrated.programs || []).map((program) => consolidateLegacyWeeklyProgram(program));
+      migrated.meta = { ...(migrated.meta || {}), schemaVersion: 3, weekConsolidationVersion: 1, weekConsolidationAt: new Date().toISOString() };
+      return migrated;
+    }
+
+    function auditWeeklyProgressions(input = {}) {
+      const report = { programs: [], programsNeedingRepair: 0, legacySheets: 0, consolidatedSheets: 0, exercisesWithWeeks: 0, nonEmptyWeeks: 0, missingWeeks: 0 };
+      (input.programs || []).forEach((program) => {
+        const sheets = program.sheets || []; const archived = program.archivedSheets || [];
+        const legacy = [...sheets, ...archived].filter((sheet) => /-[A-Z]+\d+$/i.test(String(sheet.code || "")));
+        const logical = sheets.filter((sheet) => /^[A-Z]+$/i.test(String(sheet.code || "")) && !sheet.deletedAt);
+        let withWeeks = 0; let nonEmpty = 0; let missing = 0;
+        logical.forEach((sheet) => (sheet.exercises || []).forEach((exercise) => { const weeks = exercise.progression?.weeks || []; if (weeks.length) withWeeks += 1; nonEmpty += weeks.filter((week) => week && (week.sets != null || week.reps?.label || week.reps?.min != null || week.legacyLabel)).length; if (!weeks.length) missing += 1; }));
+        const expected = Math.max(Number(program.durationWeeks) || 1, ...legacy.map((sheet) => Number(sheet.week) || 1));
+        // Non fidarti del solo flag di versione: alcuni backup risultano "v2"
+        // ma hanno ancora celle vuote. Un programma multi-settimana va quindi
+        // verificato sui dati effettivamente presenti.
+        const knownImportedPhase = PROGRAM_LIBRARY.some((sheet) => String(sheet.phase || "").toLowerCase() === String(program.phase || program.name || "").toLowerCase());
+        const importedProgram = knownImportedPhase || legacy.length > 0 || Number(program.consolidationVersion) > 0;
+        const hasWeekPlan = importedProgram && (expected > 1 || legacy.length > 0);
+        const needsRepair = hasWeekPlan && (logical.length === 0 || missing > 0 || logical.some((sheet) => (sheet.exercises || []).some((exercise) => (exercise.progression?.weeks || []).length < expected)));
+        report.legacySheets += legacy.length; report.consolidatedSheets += logical.length; report.exercisesWithWeeks += withWeeks; report.nonEmptyWeeks += nonEmpty; report.missingWeeks += missing;
+        if (needsRepair) report.programsNeedingRepair += 1;
+        report.programs.push({ id: program.id, name: program.name, legacySheets: legacy.length, consolidatedSheets: logical.length, exercisesWithWeeks: withWeeks, nonEmptyWeeks: nonEmpty, missingWeeks: missing, expectedWeeks: expected, needsRepair });
+      });
+      return report;
+    }
+
+    function repairImportedProgressions(options = {}) {
+      const target = options.state || state;
+      const audit = auditWeeklyProgressions(target);
+      if (!options.force && !audit.programsNeedingRepair) return { ok: true, state: target, audit, repaired: 0 };
+      let repaired = 0;
+      target.programs = (target.programs || []).map((program) => {
+        const details = audit.programs.find((item) => item.id === program.id); if (!details?.needsRepair) return program;
+        const legacy = [...(program.archivedSheets || []), ...(program.sheets || [])].filter((sheet) => /-[A-Z]+\d+$/i.test(String(sheet.code || "")));
+        const source = legacy.length ? legacy : PROGRAM_LIBRARY.filter((sheet) => String(sheet.phase || "").toLowerCase() === String(program.phase || program.name || "").toLowerCase());
+        if (!source.length) return program;
+        const rebuilt = consolidateLegacyWeeklyProgram({ ...program, sheets: source }).sheets || [];
+        const currentLogical = (program.sheets || []).filter((sheet) => /^[A-Z]+$/i.test(String(sheet.code || "")) && !sheet.deletedAt);
+        const sheets = rebuilt.map((incoming) => {
+          const current = currentLogical.find((sheet) => String(sheet.code).toUpperCase() === String(incoming.code).toUpperCase());
+          if (!current) return incoming;
+          const exercises = (current.exercises || []).map((exercise, index) => {
+            const rebuiltExercise = (incoming.exercises || []).find((item, rebuiltIndex) => normalizeExerciseName(item.name) === normalizeExerciseName(exercise.name) && String(item.muscle || "").toLowerCase() === String(exercise.muscle || "").toLowerCase() && (rebuiltIndex === index || !exercise.muscle));
+            if (!rebuiltExercise) return exercise;
+            const existingWeeks = exercise.progression?.weeks || [];
+            const validWeeks = existingWeeks.filter((week) => week && (week.source === "manual" || week.sets != null || week.reps?.label || week.reps?.min != null));
+            return validWeeks.length ? exercise : { ...exercise, progression: { ...(rebuiltExercise.progression || {}), ...(exercise.progression || {}), weeks: rebuiltExercise.progression.weeks, manualWeeks: exercise.progression?.manualWeeks || [] } };
+          });
+          return { ...incoming, ...current, source: current.source || "consolidated", exercises };
+        });
+        repaired += 1;
+        return { ...program, sheets, archivedSheets: [...(program.archivedSheets || []), ...(program.sheets || []).filter((sheet) => !/^[A-Z]+$/i.test(String(sheet.code || "")))], consolidationVersion: 2 };
+      });
+      const after = auditWeeklyProgressions(target);
+      if (after.programsNeedingRepair) return { ok: false, state: target, audit: after, repaired, error: "Riparazione incompleta: alcune progressioni restano mancanti." };
+      target.meta = { ...(target.meta || {}), schemaVersion: 4, weekConsolidationVersion: 2, weekConsolidationAudit: after };
+      return { ok: true, state: target, audit: after, repaired };
+    }
+
+    function migrateV3ToV4(input = {}) {
+      const migrated = clone(input || {});
+      const raw = JSON.stringify(input || {});
+      if (raw && !localStorage.getItem(PRE_WEEK_CONSOLIDATION_BACKUP_KEY)) localStorage.setItem(PRE_WEEK_CONSOLIDATION_BACKUP_KEY, raw);
+      const result = repairImportedProgressions({ state: migrated, force: true });
+      if (!result.ok) throw new Error(result.error || "Riparazione progressioni non riuscita.");
+      return result.state;
+    }
+
+    function migrateV1ToV2(input = {}) {
+      const migrated = clone(input || {});
+      const legacyProgram = migrated.training?.program || [];
+      const legacyCustom = migrated.coach?.customSessions || [];
+      if (Array.isArray(migrated.programs) && migrated.programs.length) {
+        migrated.programs = mergeProgramCollections(migrated.programs, buildProgramsFromLegacy(legacyProgram, legacyCustom));
+      } else {
+        migrated.programs = buildProgramsFromLegacy(legacyProgram.length ? legacyProgram : PROGRAM_LIBRARY, legacyCustom);
+      }
+      if (migrated.training) delete migrated.training.program;
+      if (migrated.coach) delete migrated.coach.customSessions;
+      migrated.meta = { ...(migrated.meta || {}), schemaVersion: DATA_SCHEMA_VERSION };
+      return migrated;
+    }
+
+    function stateSchemaVersion(input = {}) {
+      const version = Number(input?.meta?.schemaVersion);
+      return Number.isInteger(version) && version >= 1 ? version : 1;
+    }
+
+    function runSchemaMigrations(input = {}, targetVersion = DATA_SCHEMA_VERSION) {
+      const original = clone(input || {});
+      let working = clone(original);
+      const fromVersion = stateSchemaVersion(working);
+      let version = fromVersion;
+      const applied = [];
+      try {
+        while (version < targetVersion) {
+          const migration = SCHEMA_MIGRATIONS.get(version);
+          if (typeof migration !== "function") throw new Error(`Migrazione ${version} -> ${version + 1} non disponibile.`);
+          const next = migration(clone(working));
+          if (!next || typeof next !== "object") throw new Error(`Migrazione ${version} non valida.`);
+          working = next;
+          version += 1;
+          working.meta = { ...(working.meta || {}), schemaVersion: version };
+          applied.push(`${version - 1}->${version}`);
+        }
+        hydrateStateModel(working);
+        const validation = validateProgramCollection(working.programs || []);
+        working.meta = { ...(working.meta || {}), schemaVersion: targetVersion, migrationIssues: validation.errors.slice(0, 200) };
+        return { ok: true, state: working, fromVersion, toVersion: targetVersion, applied, errors: [], warnings: validation.errors };
+      } catch (error) {
+        return { ok: false, state: original, fromVersion, toVersion: version, applied, errors: [String(error?.message || error)], warnings: [] };
+      }
+    }
+
+    function migrateStateSchema(input = {}) {
+      const result = runSchemaMigrations(input);
+      if (!result.ok) throw new Error(result.errors.join(" ") || "Migrazione dati non riuscita.");
+      return result.state;
+    }
+
+    function ensurePreV55Backup(rawState) {
+      if (!rawState || localStorage.getItem(PRE_V55_BACKUP_KEY)) return false;
+      localStorage.setItem(PRE_V55_BACKUP_KEY, rawState);
+      return true;
+    }
+
+    function restorePreV55Backup() {
+      const raw = localStorage.getItem(PRE_V55_BACKUP_KEY);
+      if (!raw) return repositoryResult(false, null, [validationIssue("backup", "not-found", "Backup pre-v55 non disponibile.", PRE_V55_BACKUP_KEY)]);
+      try {
+        JSON.parse(raw);
+        localStorage.setItem(STORE_KEY, raw);
+        return repositoryResult(true, { key: PRE_V55_BACKUP_KEY });
+      } catch (error) {
+        return repositoryResult(false, null, [validationIssue("backup", "invalid", "Backup pre-v55 non valido.", String(error?.message || error))]);
+      }
+    }
+
+    function restoreWeekConsolidationBackup() {
+      const raw = localStorage.getItem(PRE_WEEK_CONSOLIDATION_BACKUP_KEY);
+      if (!raw) return repositoryResult(false, null, [validationIssue("backup", "not-found", "Backup pre-consolidamento non disponibile.", PRE_WEEK_CONSOLIDATION_BACKUP_KEY)]);
+      try { JSON.parse(raw); localStorage.setItem(STORE_KEY, raw); return repositoryResult(true, { key: PRE_WEEK_CONSOLIDATION_BACKUP_KEY }); }
+      catch (error) { return repositoryResult(false, null, [validationIssue("backup", "invalid", "Backup pre-consolidamento non valido.", PRE_WEEK_CONSOLIDATION_BACKUP_KEY)]); }
+    }
+
+    function hydrateStateModel(target = state) {
+      target.programs = (target.programs || []).map(normalizeProgramModel);
+      if (!target.meta) target.meta = {};
+      target.meta.schemaVersion = DATA_SCHEMA_VERSION;
+      return target;
+    }
+
+    function allProgramSheets(target = state) {
+      return (target.programs || [])
+        .filter((program) => !program.deletedAt)
+        .flatMap((program) => (program.sheets || [])
+          .filter((sheet) => !sheet.deletedAt)
+          .sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
+          .map((sheet) => ({
+            ...sheet,
+            phase: program.phase || sheet.phase || "",
+            exercises: (sheet.exercises || []).filter((exercise) => !exercise.deletedAt).sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
+          })));
+    }
+
+    function customProgramSheets(target = state) {
+      return allProgramSheets(target).filter((sheet) => {
+        const program = findProgramForSheet(sheet.id, target);
+        return program?.source === "custom" || sheet.source === "custom" || sheet.source === "customized";
+      });
+    }
+
+    function findProgramForSheet(sheetId, target = state) {
+      return (target.programs || []).find((program) => program.sheets.some((sheet) => sheet.id === sheetId));
+    }
+
+    function validationIssue(path, code, message, value) {
+      return { path, code, message, value };
+    }
+
+    function validateNumberRange(value, path, min, max, errors) {
+      if (value === null || value === undefined || value === "") return;
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric) || numeric < min || (Number.isFinite(max) && numeric > max)) {
+        errors.push(validationIssue(path, "range", `Valore atteso tra ${min} e ${max}.`, value));
+      }
+    }
+
+    function validateReps(reps, path, errors) {
+      const value = parseReps(reps);
+      validateNumberRange(value.min, `${path}.min`, 0, Infinity, errors);
+      validateNumberRange(value.max, `${path}.max`, 0, Infinity, errors);
+      if (value.min !== null && value.max !== null && value.max < value.min) errors.push(validationIssue(path, "order", "Il massimo ripetizioni non può essere inferiore al minimo.", value));
+      value.sequence.forEach((item, index) => validateNumberRange(item, `${path}.sequence.${index}`, 0, Infinity, errors));
+    }
+
+    function validateWeekPrescription(week, path = "week") {
+      const errors = [];
+      const warnings = [];
+      const value = parseWeekPrescription(week, Number(week?.week) || 1);
+      if (!Number.isInteger(value.week) || value.week < 1) errors.push(validationIssue(`${path}.week`, "invalid-week", "Numero settimana non valido.", value.week));
+      validateNumberRange(value.sets, `${path}.sets`, 0, Infinity, errors);
+      validateReps(value.reps, `${path}.reps`, errors);
+      validateNumberRange(value.rir?.min, `${path}.rir.min`, 0, 10, errors);
+      validateNumberRange(value.rir?.max, `${path}.rir.max`, 0, 10, errors);
+      validateNumberRange(value.rpe?.min, `${path}.rpe.min`, 1, 10, errors);
+      validateNumberRange(value.rpe?.max, `${path}.rpe.max`, 1, 10, errors);
+      ["seconds", "minSeconds", "maxSeconds"].forEach((key) => validateNumberRange(value.rest?.[key], `${path}.rest.${key}`, 0, Infinity, errors));
+      validateNumberRange(value.restSeconds, `${path}.restSeconds`, 0, Infinity, errors);
+      ["value", "min", "max"].forEach((key) => validateNumberRange(value.prescribedLoad?.[key], `${path}.prescribedLoad.${key}`, 0, Infinity, errors));
+      if (!value.id) errors.push(validationIssue(`${path}.id`, "required", "ID settimana mancante.", value.id));
+      if (!["normal", "accumulation", "intensification", "deload", "test", "recovery", "custom"].includes(value.type)) errors.push(validationIssue(`${path}.type`, "invalid-type", "Tipo settimana non valido.", value.type));
+      if (value.reps?.min !== null && value.reps?.max !== null && value.reps.min > value.reps.max) errors.push(validationIssue(`${path}.reps`, "reversed-range", "Range ripetizioni invertito.", value.reps));
+      return { valid: !errors.length, value, errors, warnings };
+    }
+
+    function validateExercisePrescription(prescription, path = "prescription") {
+      const errors = [];
+      const warnings = [];
+      const value = normalizePrescription({ prescription: prescription || {} });
+      validateNumberRange(value.sets, `${path}.sets`, 0, Infinity, errors);
+      validateReps(value.reps, `${path}.reps`, errors);
+      validateNumberRange(value.rir?.min, `${path}.rir.min`, 0, 10, errors);
+      validateNumberRange(value.rir?.max, `${path}.rir.max`, 0, 10, errors);
+      validateNumberRange(value.rpe?.min, `${path}.rpe.min`, 1, 10, errors);
+      validateNumberRange(value.rpe?.max, `${path}.rpe.max`, 1, 10, errors);
+      ["seconds", "minSeconds", "maxSeconds"].forEach((key) => validateNumberRange(value.rest?.[key], `${path}.rest.${key}`, 0, Infinity, errors));
+      ["value", "min", "max"].forEach((key) => validateNumberRange(value.prescribedLoad?.[key], `${path}.prescribedLoad.${key}`, 0, Infinity, errors));
+      if (value.tempo?.label && !value.tempo.valid) warnings.push(validationIssue(`${path}.tempo`, "legacy-tempo", "Tempo conservato come testo legacy; usa quattro fasi, es. 3-1-X-0.", value.tempo.label));
+      if (!exerciseTechniqueSet().has(value.technique?.type)) errors.push(validationIssue(`${path}.technique.type`, "invalid-technique", "Tecnica di intensità non valida.", value.technique?.type));
+      return { valid: !errors.length, value, errors, warnings };
+    }
+
+    function validateExerciseModel(exercise, path = "exercise") {
+      const errors = [];
+      const warnings = [];
+      if (!String(exercise?.id || "").trim()) errors.push(validationIssue(`${path}.id`, "required", "ID esercizio mancante.", exercise?.id));
+      if (!String(exercise?.name || exercise?.ref || "").trim()) errors.push(validationIssue(`${path}.name`, "required", "Nome o riferimento esercizio mancante.", exercise?.name));
+      const prescription = validateExercisePrescription(exercise?.prescription, `${path}.prescription`);
+      errors.push(...prescription.errors);
+      const weekNumbers = new Set();
+      (exercise?.progression?.weeks || []).forEach((week, index) => {
+        const result = validateWeekPrescription(week, `${path}.progression.weeks.${index}`);
+        errors.push(...result.errors);
+        if (weekNumbers.has(result.value.week)) errors.push(validationIssue(`${path}.progression.weeks.${index}.week`, "duplicate", "Settimana duplicata nello stesso esercizio.", result.value.week));
+        weekNumbers.add(result.value.week);
+      });
+      return { valid: !errors.length, value: exercise, errors, warnings };
+    }
+
+    function validateSheetModel(sheet, path = "sheet") {
+      const errors = [];
+      const warnings = [];
+      if (!String(sheet?.id || "").trim()) errors.push(validationIssue(`${path}.id`, "required", "ID scheda mancante.", sheet?.id));
+      if (!String(sheet?.code || "").trim()) errors.push(validationIssue(`${path}.code`, "required", "Codice scheda mancante.", sheet?.code));
+      if (!Array.isArray(sheet?.exercises)) errors.push(validationIssue(`${path}.exercises`, "type", "Exercises deve essere un array.", sheet?.exercises));
+      const ids = new Set();
+      (sheet?.exercises || []).forEach((exercise, index) => {
+        const result = validateExerciseModel(exercise, `${path}.exercises.${index}`);
+        errors.push(...result.errors);
+        if (ids.has(exercise.id)) errors.push(validationIssue(`${path}.exercises.${index}.id`, "duplicate", "ID esercizio duplicato nella scheda.", exercise.id));
+        ids.add(exercise.id);
+      });
+      return { valid: !errors.length, value: sheet, errors, warnings };
+    }
+
+    function validateProgramModel(program, path = "program") {
+      const errors = [];
+      const warnings = [];
+      if (!String(program?.id || "").trim()) errors.push(validationIssue(`${path}.id`, "required", "ID programma mancante.", program?.id));
+      if (!String(program?.name || "").trim()) errors.push(validationIssue(`${path}.name`, "required", "Nome programma mancante.", program?.name));
+      if (!Number.isInteger(Number(program?.durationWeeks)) || Number(program.durationWeeks) < 1) errors.push(validationIssue(`${path}.durationWeeks`, "invalid-duration", "Durata programma non valida.", program?.durationWeeks));
+      if (!PROGRAM_STATUSES.has(program?.status)) errors.push(validationIssue(`${path}.status`, "invalid-status", "Stato programma non valido.", program?.status));
+      if (!Array.isArray(program?.sheets)) errors.push(validationIssue(`${path}.sheets`, "type", "Sheets deve essere un array.", program?.sheets));
+      const ids = new Set();
+      const codes = new Set();
+      (program?.sheets || []).forEach((sheet, index) => {
+        const result = validateSheetModel(sheet, `${path}.sheets.${index}`);
+        errors.push(...result.errors);
+        if (ids.has(sheet.id)) errors.push(validationIssue(`${path}.sheets.${index}.id`, "duplicate", "ID scheda duplicato nel programma.", sheet.id));
+        ids.add(sheet.id);
+        const code = String(sheet.code || "").trim().toLowerCase();
+        if (!sheet.deletedAt && codes.has(code)) errors.push(validationIssue(`${path}.sheets.${index}.code`, "duplicate", "Codice scheda duplicato nel programma.", sheet.code));
+        if (!sheet.deletedAt) codes.add(code);
+      });
+      return { valid: !errors.length, value: program, errors, warnings };
+    }
+
+    function validateProgramCollection(programs = []) {
+      const errors = [];
+      const warnings = [];
+      const ids = new Set();
+      (programs || []).forEach((program, index) => {
+        const result = validateProgramModel(program, `programs.${index}`);
+        errors.push(...result.errors);
+        if (ids.has(program.id)) errors.push(validationIssue(`programs.${index}.id`, "duplicate", "ID programma duplicato.", program.id));
+        ids.add(program.id);
+      });
+      return { valid: !errors.length, value: programs, errors, warnings };
+    }
+
+    function newEntityId(kind) {
+      if (globalThis.crypto?.randomUUID) return `${kind}-${globalThis.crypto.randomUUID()}`;
+      return stableId(kind, Date.now(), Math.random(), (state?.programs || []).length);
+    }
+
+    function indexToSheetCode(index) {
+      let value = Math.max(0, Number(index) || 0);
+      let result = "";
+      do {
+        result = String.fromCharCode(65 + (value % 26)) + result;
+        value = Math.floor(value / 26) - 1;
+      } while (value >= 0);
+      return result;
+    }
+
+    function suggestedSheetCode(sheets = []) {
+      const used = new Set(sheets.filter((sheet) => !sheet.deletedAt).map((sheet) => String(sheet.code || "").trim().toLowerCase()));
+      for (let index = 0; ; index += 1) {
+        const candidate = indexToSheetCode(index);
+        if (!used.has(candidate.toLowerCase())) return candidate;
+      }
+    }
+
+    function uniqueSheetCode(base, sheets = []) {
+      const used = new Set(sheets.filter((sheet) => !sheet.deletedAt).map((sheet) => String(sheet.code || "").trim().toLowerCase()));
+      const root = String(base || suggestedSheetCode(sheets)).trim() || suggestedSheetCode(sheets);
+      if (!used.has(root.toLowerCase())) return root;
+      for (let index = 2; ; index += 1) {
+        const candidate = `${root}-${index}`;
+        if (!used.has(candidate.toLowerCase())) return candidate;
+      }
+    }
+
+    function repositoryResult(ok, value = null, errors = [], warnings = []) {
+      return { ok, value, errors, warnings };
+    }
+
+    function commitProgramCollection(programs, options = {}) {
+      const normalized = (programs || []).map(normalizeProgramModel);
+      const validation = validateProgramCollection(normalized);
+      state.programs = normalized;
+      state.meta = { ...(state.meta || {}), validationIssues: validation.errors.slice(0, 200) };
+      if (options.save !== false) saveState({ immediate: !!options.immediate, cloud: options.cloud !== false, touch: options.touch !== false });
+      return repositoryResult(validation.valid, normalized, validation.errors, validation.warnings);
+    }
+
+    const programRepository = {
+      getPrograms(options = {}) {
+        return (state.programs || []).filter((program) => options.includeDeleted || !program.deletedAt);
+      },
+      getProgramById(programId, options = {}) {
+        return (state.programs || []).find((program) => program.id === programId && (options.includeDeleted || !program.deletedAt)) || null;
+      },
+      createProgram(data = {}, options = {}) {
+        const now = new Date().toISOString();
+        const program = normalizeProgramModel({ ...data, id: data.id || newEntityId("program"), name: String(data.name || "Nuovo programma").trim(), durationWeeks: Number(data.durationWeeks) || 1, status: data.status || "draft", sheets: Array.isArray(data.sheets) ? data.sheets : [], createdAt: data.createdAt || now, updatedAt: now, deletedAt: "" });
+        if ((state.programs || []).some((item) => item.id === program.id)) return repositoryResult(false, null, [validationIssue("program.id", "duplicate", "ID programma già presente.", program.id)]);
+        const validation = validateProgramModel(program);
+        if (!validation.valid) return repositoryResult(false, program, validation.errors, validation.warnings);
+        commitProgramCollection([...(state.programs || []), program], options);
+        return repositoryResult(true, program);
+      },
+      updateProgram(programId, changes = {}, options = {}) {
+        const current = this.getProgramById(programId, { includeDeleted: true });
+        if (!current) return repositoryResult(false, null, [validationIssue("programId", "not-found", "Programma non trovato.", programId)]);
+        const updated = normalizeProgramModel({ ...clone(current), ...clone(changes), id: current.id, sheets: changes.sheets || current.sheets, updatedAt: new Date().toISOString() });
+        const validation = validateProgramModel(updated);
+        if (!validation.valid) return repositoryResult(false, updated, validation.errors, validation.warnings);
+        commitProgramCollection(state.programs.map((item) => item.id === programId ? updated : item), options);
+        return repositoryResult(true, updated);
+      },
+      deleteProgram(programId, options = {}) {
+        return this.updateProgram(programId, { status: "deleted", deletedAt: new Date().toISOString() }, options);
+      },
+      duplicateProgram(programId, options = {}) {
+        const source = this.getProgramById(programId);
+        if (!source) return repositoryResult(false, null, [validationIssue("programId", "not-found", "Programma non trovato.", programId)]);
+        const now = new Date().toISOString();
+        const duplicate = clone(source);
+        duplicate.id = newEntityId("program");
+        duplicate.name = `${source.name} copia`;
+        duplicate.status = "draft";
+        duplicate.createdAt = now;
+        duplicate.updatedAt = now;
+        duplicate.deletedAt = "";
+        duplicate.sheets = source.sheets.filter((sheet) => !sheet.deletedAt).map((sheet, sheetIndex) => ({ ...clone(sheet), id: newEntityId("sheet"), order: sheetIndex, createdAt: now, updatedAt: now, deletedAt: "", exercises: sheet.exercises.filter((exercise) => !exercise.deletedAt).map((exercise, exerciseIndex) => ({ ...clone(exercise), id: newEntityId("exercise"), order: exerciseIndex, createdAt: now, updatedAt: now, deletedAt: "" })) }));
+        return this.createProgram(duplicate, options);
+      },
+      getSheets(programId, options = {}) {
+        const program = this.getProgramById(programId, { includeDeleted: options.includeDeleted });
+        return program ? program.sheets.filter((sheet) => options.includeDeleted || !sheet.deletedAt).slice().sort((a, b) => Number(a.order || 0) - Number(b.order || 0)) : [];
+      },
+      getSheetById(programId, sheetId, options = {}) {
+        return this.getSheets(programId, { includeDeleted: true }).find((sheet) => sheet.id === sheetId && (options.includeDeleted || !sheet.deletedAt)) || null;
+      },
+      createSheet(programId, data = {}, options = {}) {
+        const program = this.getProgramById(programId);
+        if (!program) return repositoryResult(false, null, [validationIssue("programId", "not-found", "Programma non trovato.", programId)]);
+        const now = new Date().toISOString();
+        const activeSheets = this.getSheets(programId);
+        const requestedCode = String(data.code ?? "").trim();
+        const code = requestedCode || suggestedSheetCode(activeSheets);
+        if (activeSheets.some((sheet) => String(sheet.code).trim().toLowerCase() === code.toLowerCase())) return repositoryResult(false, null, [validationIssue("sheet.code", "duplicate", "Codice scheda già presente nel programma.", code)]);
+        const order = Number.isFinite(Number(data.order)) ? Number(data.order) : Math.max(-1, ...activeSheets.map((sheet) => Number(sheet.order || 0))) + 1;
+        const sheet = normalizeSheetModel({ ...data, id: data.id || newEntityId("sheet"), code, name: String(data.name || `Scheda ${code}`).trim(), order, exercises: Array.isArray(data.exercises) ? data.exercises : [], createdAt: data.createdAt || now, updatedAt: now, deletedAt: "" }, program.id, program.sheets.length);
+        if (program.sheets.some((item) => item.id === sheet.id)) return repositoryResult(false, null, [validationIssue("sheet.id", "duplicate", "ID scheda già presente.", sheet.id)]);
+        const validation = validateSheetModel(sheet);
+        if (!validation.valid) return repositoryResult(false, sheet, validation.errors, validation.warnings);
+        const updatedProgram = normalizeProgramModel({ ...clone(program), sheets: [...program.sheets, sheet], updatedAt: now });
+        commitProgramCollection(state.programs.map((item) => item.id === programId ? updatedProgram : item), options);
+        return repositoryResult(true, this.getSheetById(programId, sheet.id));
+      },
+      updateSheet(programId, sheetId, changes = {}, options = {}) {
+        const program = this.getProgramById(programId, { includeDeleted: true });
+        const current = this.getSheetById(programId, sheetId, { includeDeleted: true });
+        if (!program || !current) return repositoryResult(false, null, [validationIssue("sheetId", "not-found", "Scheda non trovata.", sheetId)]);
+        const code = String(changes.code ?? current.code).trim();
+        if (!changes.deletedAt && program.sheets.some((sheet) => sheet.id !== sheetId && !sheet.deletedAt && String(sheet.code).trim().toLowerCase() === code.toLowerCase())) return repositoryResult(false, null, [validationIssue("sheet.code", "duplicate", "Codice scheda già presente nel programma.", code)]);
+        const updated = normalizeSheetModel({ ...clone(current), ...clone(changes), id: current.id, code, exercises: changes.exercises || current.exercises, updatedAt: new Date().toISOString() }, program.id, Number(current.order || 0));
+        const validation = validateSheetModel(updated);
+        if (!validation.valid) return repositoryResult(false, updated, validation.errors, validation.warnings);
+        const sheets = program.sheets.map((sheet) => sheet.id === sheetId ? updated : sheet);
+        const updatedProgram = normalizeProgramModel({ ...clone(program), sheets, updatedAt: updated.updatedAt });
+        commitProgramCollection(state.programs.map((item) => item.id === programId ? updatedProgram : item), options);
+        return repositoryResult(true, this.getSheetById(programId, sheetId, { includeDeleted: true }));
+      },
+      deleteSheet(programId, sheetId, options = {}) {
+        return this.updateSheet(programId, sheetId, { deletedAt: new Date().toISOString() }, options);
+      },
+      duplicateSheet(programId, sheetId, options = {}) {
+        const source = this.getSheetById(programId, sheetId);
+        if (!source) return repositoryResult(false, null, [validationIssue("sheetId", "not-found", "Scheda non trovata.", sheetId)]);
+        const now = new Date().toISOString();
+        return this.createSheet(programId, { ...clone(source), id: newEntityId("sheet"), code: uniqueSheetCode(`${source.code}-COPY`, this.getSheets(programId)), name: `${source.name} copia`, order: Math.max(-1, ...this.getSheets(programId).map((sheet) => Number(sheet.order || 0))) + 1, createdAt: now, updatedAt: now, exercises: source.exercises.filter((exercise) => !exercise.deletedAt).map((exercise, index) => ({ ...clone(exercise), id: newEntityId("exercise"), order: index, createdAt: now, updatedAt: now, deletedAt: "" })) }, options);
+      },
+      reorderSheets(programId, orderedSheetIds = [], options = {}) {
+        const program = this.getProgramById(programId);
+        if (!program) return repositoryResult(false, null, [validationIssue("programId", "not-found", "Programma non trovato.", programId)]);
+        const requested = new Set(orderedSheetIds);
+        const active = this.getSheets(programId);
+        if (orderedSheetIds.some((id) => !active.some((sheet) => sheet.id === id))) return repositoryResult(false, null, [validationIssue("orderedSheetIds", "not-found", "Una scheda da riordinare non esiste.", orderedSheetIds)]);
+        const ordered = [...orderedSheetIds.map((id) => active.find((sheet) => sheet.id === id)), ...active.filter((sheet) => !requested.has(sheet.id))];
+        const now = new Date().toISOString();
+        const positions = new Map(ordered.map((sheet, index) => [sheet.id, index]));
+        const sheets = program.sheets.map((sheet) => positions.has(sheet.id) ? normalizeSheetModel({ ...clone(sheet), order: positions.get(sheet.id), updatedAt: now }, program.id, positions.get(sheet.id)) : sheet);
+        return this.updateProgram(programId, { sheets }, options);
+      },
+      getExercises(programId, sheetId, options = {}) {
+        const sheet = this.getSheetById(programId, sheetId, { includeDeleted: options.includeDeleted });
+        return sheet ? sheet.exercises.filter((exercise) => options.includeDeleted || !exercise.deletedAt).slice().sort((a, b) => Number(a.order || 0) - Number(b.order || 0)) : [];
+      },
+      getExerciseById(programId, sheetId, exerciseId, options = {}) {
+        return this.getExercises(programId, sheetId, { includeDeleted: true }).find((exercise) => exercise.id === exerciseId && (options.includeDeleted || !exercise.deletedAt)) || null;
+      },
+      createExercise(programId, sheetId, data = {}, options = {}) {
+        const sheet = this.getSheetById(programId, sheetId);
+        if (!sheet) return repositoryResult(false, null, [validationIssue("sheetId", "not-found", "Scheda non trovata.", sheetId)]);
+        const now = new Date().toISOString();
+        const active = this.getExercises(programId, sheetId);
+        const order = Number.isFinite(Number(data.order)) ? Number(data.order) : Math.max(-1, ...active.map((exercise) => Number(exercise.order || 0))) + 1;
+        const exercise = normalizeExerciseModel({ ...data, id: data.id || newEntityId("exercise"), order, createdAt: data.createdAt || now, updatedAt: now, deletedAt: "" }, { programId, sheetId, index: order });
+        if (sheet.exercises.some((item) => item.id === exercise.id)) return repositoryResult(false, null, [validationIssue("exercise.id", "duplicate", "ID esercizio già presente.", exercise.id)]);
+        const validation = validateExerciseModel(exercise);
+        if (!validation.valid) return repositoryResult(false, exercise, validation.errors, validation.warnings);
+        const result = this.updateSheet(programId, sheetId, { exercises: [...sheet.exercises, exercise] }, options);
+        return result.ok ? repositoryResult(true, this.getExerciseById(programId, sheetId, exercise.id)) : result;
+      },
+      updateExercise(programId, sheetId, exerciseId, changes = {}, options = {}) {
+        const sheet = this.getSheetById(programId, sheetId, { includeDeleted: true });
+        const current = this.getExerciseById(programId, sheetId, exerciseId, { includeDeleted: true });
+        if (!sheet || !current) return repositoryResult(false, null, [validationIssue("exerciseId", "not-found", "Esercizio non trovato.", exerciseId)]);
+        if (current.metadata?.locked && !options.forceLocked) return repositoryResult(false, current, [validationIssue("exercise.locked", "locked", "L’esercizio è bloccato.", exerciseId)]);
+        const draft = { ...clone(current), ...clone(changes), id: current.id, updatedAt: new Date().toISOString() };
+        draft.prescription = { ...clone(current.prescription), ...(changes.prescription ? clone(changes.prescription) : {}) };
+        if (Object.prototype.hasOwnProperty.call(changes, "sets")) draft.prescription.sets = numericParts(changes.sets)[0] ?? null;
+        if (Object.prototype.hasOwnProperty.call(changes, "reps")) draft.prescription.reps = parseReps(changes.reps);
+        if (Object.prototype.hasOwnProperty.call(changes, "rir")) draft.prescription.rir = parseRir(changes.rir);
+        if (Object.prototype.hasOwnProperty.call(changes, "rpe")) draft.prescription.rpe = parseRir(changes.rpe);
+        if (Object.prototype.hasOwnProperty.call(changes, "rest")) draft.prescription.rest = parseRest(changes.rest);
+        if (Object.prototype.hasOwnProperty.call(changes, "weeks")) draft.progression = { ...clone(current.progression), weeks: changes.weeks.map((week, index) => parseWeekPrescription(week, index + 1, draft.prescription)) };
+        if (changes.progression) {
+          draft.progression = { ...clone(current.progression || {}), ...clone(changes.progression) };
+          if (Array.isArray(changes.progression.weeks)) draft.progression.weeks = changes.progression.weeks.map((week, index) => parseWeekPrescription(week, index + 1, draft.prescription));
+          if (Array.isArray(changes.progression.manualWeeks)) draft.progression.manualWeeks = changes.progression.manualWeeks.map(Number).filter(Number.isFinite);
+        }
+        const updated = normalizeExerciseModel(draft, { programId, sheetId, index: Number(current.order || 0) });
+        const validation = validateExerciseModel(updated);
+        if (!validation.valid) return repositoryResult(false, updated, validation.errors, validation.warnings);
+        const exercises = sheet.exercises.map((exercise) => exercise.id === exerciseId ? updated : exercise);
+        const result = this.updateSheet(programId, sheetId, { exercises }, options);
+        return result.ok ? repositoryResult(true, this.getExerciseById(programId, sheetId, exerciseId, { includeDeleted: true })) : result;
+      },
+      deleteExercise(programId, sheetId, exerciseId, options = {}) {
+        return this.updateExercise(programId, sheetId, exerciseId, { deletedAt: new Date().toISOString() }, options);
+      },
+      duplicateExercise(programId, sheetId, exerciseId, options = {}) {
+        const source = this.getExerciseById(programId, sheetId, exerciseId);
+        if (!source) return repositoryResult(false, null, [validationIssue("exerciseId", "not-found", "Esercizio non trovato.", exerciseId)]);
+        const now = new Date().toISOString();
+        return this.createExercise(programId, sheetId, { ...clone(source), id: newEntityId("exercise"), name: `${source.name} copia`, order: Math.max(-1, ...this.getExercises(programId, sheetId).map((exercise) => Number(exercise.order || 0))) + 1, createdAt: now, updatedAt: now, deletedAt: "" }, options);
+      },
+      reorderExercises(programId, sheetId, orderedExerciseIds = [], options = {}) {
+        const sheet = this.getSheetById(programId, sheetId);
+        if (!sheet) return repositoryResult(false, null, [validationIssue("sheetId", "not-found", "Scheda non trovata.", sheetId)]);
+        const active = this.getExercises(programId, sheetId);
+        if (orderedExerciseIds.some((id) => !active.some((exercise) => exercise.id === id))) return repositoryResult(false, null, [validationIssue("orderedExerciseIds", "not-found", "Un esercizio da riordinare non esiste.", orderedExerciseIds)]);
+        const requested = new Set(orderedExerciseIds);
+        const ordered = [...orderedExerciseIds.map((id) => active.find((exercise) => exercise.id === id)), ...active.filter((exercise) => !requested.has(exercise.id))];
+        const now = new Date().toISOString();
+        const positions = new Map(ordered.map((exercise, index) => [exercise.id, index]));
+        const exercises = sheet.exercises.map((exercise) => positions.has(exercise.id) ? normalizeExerciseModel({ ...clone(exercise), order: positions.get(exercise.id), updatedAt: now }, { programId, sheetId, index: positions.get(exercise.id) }) : exercise);
+        return this.updateSheet(programId, sheetId, { exercises }, options);
+      },
+      copyExercise(sourceProgramId, sourceSheetId, exerciseId, targetProgramId, targetSheetId, options = {}) {
+        const source = this.getExerciseById(sourceProgramId, sourceSheetId, exerciseId);
+        if (!source) return repositoryResult(false, null, [validationIssue("exerciseId", "not-found", "Esercizio sorgente non trovato.", exerciseId)]);
+        const copy = clone(source);
+        if (options.resetLoad) copy.prescription.prescribedLoad = parsePrescribedLoad(null);
+        if (options.resetNotes) copy.note = "";
+        if (options.resetProgressions) copy.progression = { weeks: [] };
+        if (options.resetTechnique) copy.prescription.technique = parseTechnique("normal");
+        const created = this.createExercise(targetProgramId, targetSheetId, { ...copy, id: newEntityId("exercise"), order: this.getExercises(targetProgramId, targetSheetId).length, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), deletedAt: "" }, { ...options, save: false });
+        if (!created.ok) return created;
+        if (Number.isFinite(Number(options.position))) {
+          const ids = this.getExercises(targetProgramId, targetSheetId).filter((item) => item.id !== created.value.id).map((item) => item.id);
+          ids.splice(Math.max(0, Math.min(ids.length, Number(options.position))), 0, created.value.id);
+          this.reorderExercises(targetProgramId, targetSheetId, ids, { ...options, save: false });
+        }
+        commitProgramCollection(state.programs, options);
+        return repositoryResult(true, this.getExerciseById(targetProgramId, targetSheetId, created.value.id));
+      },
+      moveExercise(sourceProgramId, sourceSheetId, exerciseId, targetProgramId, targetSheetId, options = {}) {
+        if (sourceProgramId === targetProgramId && sourceSheetId === targetSheetId) {
+          const ids = this.getExercises(sourceProgramId, sourceSheetId).filter((item) => item.id !== exerciseId).map((item) => item.id);
+          ids.splice(Number.isFinite(Number(options.position)) ? Number(options.position) : ids.length, 0, exerciseId);
+          return this.reorderExercises(sourceProgramId, sourceSheetId, ids, options);
+        }
+        const source = this.getExerciseById(sourceProgramId, sourceSheetId, exerciseId);
+        if (!source) return repositoryResult(false, null, [validationIssue("exerciseId", "not-found", "Esercizio sorgente non trovato.", exerciseId)]);
+        if (source.metadata?.locked && !options.forceLocked) return repositoryResult(false, source, [validationIssue("exercise.locked", "locked", "L’esercizio è bloccato.", exerciseId)]);
+        const target = this.getSheetById(targetProgramId, targetSheetId);
+        if (!target) return repositoryResult(false, null, [validationIssue("targetSheetId", "not-found", "Scheda destinazione non trovata.", targetSheetId)]);
+        const preserveId = !target.exercises.some((item) => item.id === source.id);
+        const moved = this.createExercise(targetProgramId, targetSheetId, { ...clone(source), id: preserveId ? source.id : newEntityId("exercise"), order: Number.isFinite(Number(options.position)) ? Number(options.position) : this.getExercises(targetProgramId, targetSheetId).length, updatedAt: new Date().toISOString(), deletedAt: "" }, { ...options, save: false });
+        if (!moved.ok) return moved;
+        if (Number.isFinite(Number(options.position))) {
+          const ids = this.getExercises(targetProgramId, targetSheetId).filter((item) => item.id !== moved.value.id).map((item) => item.id);
+          ids.splice(Math.max(0, Math.min(ids.length, Number(options.position))), 0, moved.value.id);
+          this.reorderExercises(targetProgramId, targetSheetId, ids, { ...options, save: false });
+        }
+        const deleted = this.deleteExercise(sourceProgramId, sourceSheetId, exerciseId, { ...options, forceLocked: true, save: false });
+        if (!deleted.ok) return deleted;
+        commitProgramCollection(state.programs, options);
+        return moved;
+      },
+      exportData() {
+        return clone(state.programs || []);
+      },
+      importData(input, options = {}) {
+        const incoming = Array.isArray(input) ? input : migrateStateSchema(input || {}).programs;
+        const programs = options.replace ? incoming : mergeProgramCollections(state.programs || [], incoming || []);
+        return commitProgramCollection(programs, options);
+      },
+      validate() {
+        return validateProgramCollection(state.programs || []);
+      }
+    };
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORE_KEY);
+        const parsed = saved ? JSON.parse(saved) : null;
+        if (saved && stateSchemaVersion(parsed) < DATA_SCHEMA_VERSION) ensurePreV55Backup(saved);
+        const migration = parsed ? runSchemaMigrations(parsed) : null;
+        if (migration && !migration.ok) throw new Error(migration.errors.join(" "));
+        const incoming = migration?.state || null;
+        const loaded = incoming ? mergeState(clone(baseState), incoming) : clone(baseState);
+        hydrateStateModel(loaded);
+        // Audit reale anche per backup già marcati v4: il flag non garantisce
+        // che la progressione sia stata materialmente importata.
+        const repaired = repairImportedProgressions({ state: loaded });
+        if (!repaired.ok) throw new Error(repaired.error || "Riparazione progressioni non riuscita.");
+        if (saved) {
+          try { writeLocalStateSnapshot(loaded, { touch: false, cloud: false }); } catch (error) {}
+        }
+        if (loaded.training) loaded.training.openExercise = "";
+        return loaded;
+      } catch (error) {
+        return clone(baseState);
+      }
+    }
+
+    function mergeState(base, saved) {
+      Object.keys(saved || {}).forEach((key) => {
+        if (saved[key] && typeof saved[key] === "object" && !Array.isArray(saved[key])) {
+          base[key] = mergeState(base[key] || {}, saved[key]);
+        } else {
+          base[key] = saved[key];
+        }
+      });
+      return base;
+    }
+
+    function writeLocalStateSnapshot(snapshot, options = {}) {
+      try {
+        if (options.touch !== false) snapshot.meta = { ...(snapshot.meta || {}), updatedAt: new Date().toISOString(), version: 66, schemaVersion: DATA_SCHEMA_VERSION };
+        localStorage.setItem(STORE_KEY, JSON.stringify(snapshot));
+        lastPersistenceError = null;
+        if (options.cloud !== false && snapshot === state) scheduleCloudSave();
+        return true;
+      } catch (error) {
+        lastPersistenceError = { at: new Date().toISOString(), message: String(error?.message || error), scope: "localStorage" };
+        return false;
+      }
+    }
+
+    function flushStateSave() {
+      clearTimeout(localSaveTimer);
+      localSaveTimer = null;
+      const options = pendingSaveOptions || { touch: true, cloud: true };
+      pendingSaveOptions = null;
+      return writeLocalStateSnapshot(state, options);
+    }
+
+    function saveState(options = {}) {
+      const request = { touch: options.touch !== false, cloud: options.cloud !== false };
+      pendingSaveOptions = pendingSaveOptions ? { touch: pendingSaveOptions.touch || request.touch, cloud: pendingSaveOptions.cloud || request.cloud } : request;
+      if (options.immediate) return flushStateSave();
+      clearTimeout(localSaveTimer);
+      localSaveTimer = setTimeout(flushStateSave, 180);
+      return true;
+    }
+
+    function mergeRowsByKey(current = [], incoming = [], keyFn = (row) => JSON.stringify(row || {})) {
+      const rows = new Map();
+      [...(Array.isArray(current) ? current : []), ...(Array.isArray(incoming) ? incoming : [])].filter(Boolean).forEach((row) => {
+        const key = keyFn(row);
+        if (String(key || "").replace(/\|/g, "").trim()) rows.set(key, row);
+      });
+      return Array.from(rows.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+    }
+
+    function mergeNutritionDashboard(current = {}, incoming = {}) {
+      const merged = { ...(current || {}), ...(incoming || {}) };
+      merged.log = mergeRowsByKey(current.log, incoming.log, (row) => row.date || JSON.stringify(row));
+      const measures = new Map();
+      [...(Array.isArray(current.measures) ? current.measures : []), ...(Array.isArray(incoming.measures) ? incoming.measures : [])]
+        .filter(Boolean)
+        .forEach((row) => {
+          const key = row.date || JSON.stringify(row);
+          measures.set(key, { ...(measures.get(key) || {}), ...row });
+        });
+      merged.measures = Array.from(measures.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+      const photoRows = new Map();
+      [...(Array.isArray(current.photos) ? current.photos : []), ...(Array.isArray(incoming.photos) ? incoming.photos : [])]
+        .filter((photo) => photo && (photo.front || photo.side || photo.back))
+        .forEach((photo) => {
+          const key = photo.id || `${photo.date || ""}|${photo.notes || ""}`;
+          photoRows.set(key, { ...(photoRows.get(key) || {}), ...photo });
+        });
+      merged.photos = Array.from(photoRows.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+      return merged;
+    }
+
+    function mergeCloudAndLocalState(localState = {}, cloudState = {}) {
+      localState = migrateStateSchema(localState);
+      cloudState = migrateStateSchema(cloudState);
+      const localStamp = Date.parse(localState.meta?.updatedAt || "") || 0;
+      const cloudStamp = Date.parse(cloudState.meta?.updatedAt || "") || 0;
+      const newer = localStamp >= cloudStamp ? localState : cloudState;
+      const older = newer === localState ? cloudState : localState;
+      const merged = mergeState(mergeState(clone(baseState), clone(older)), clone(newer));
+      merged.programs = mergeProgramCollections(older.programs || [], newer.programs || []);
+      if (!merged.training) merged.training = {};
+      merged.training.sessions = mergeRowsByKey(
+        older.training?.sessions || [],
+        newer.training?.sessions || [],
+        (session) => session.id || `${session.dateInput || session.date}|${session.sessionCode}|${session.source || ""}`
+      ).sort((a, b) => String(a.dateInput || "").localeCompare(String(b.dateInput || "")) || Number(a.id || 0) - Number(b.id || 0));
+      if (!merged.nutrition) merged.nutrition = {};
+      merged.nutrition.dashboard = mergeNutritionDashboard(
+        older.nutrition?.dashboard || {},
+        newer.nutrition?.dashboard || {}
+      );
+      hydrateStateModel(merged);
+      merged.training.exercises = buildExerciseIndex(allProgramSheets(merged), merged.training.sessions);
+      return merged;
+    }
+
+    function nutritionPhotoId(photo = {}) {
+      if (photo.id) return String(photo.id).replace(/-(front|side|back)$/, "");
+      const text = [photo.date || "", photo.notes || ""].join("|");
+      let hash = 0;
+      for (let index = 0; index < text.length; index += 1) {
+        hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
+      }
+      return `photo-${Math.abs(hash).toString(36)}-${String(photo.date || "no-date").replace(/[^a-z0-9-]/gi, "-")}`;
+    }
+
+    function splitNutritionPhotosForCloud(payload) {
+      const photos = Array.isArray(payload.nutrition?.dashboard?.photos) ? payload.nutrition.dashboard.photos : [];
+      if (payload.nutrition?.dashboard) payload.nutrition.dashboard.photos = [];
+      return photos;
+    }
+
+    function nutritionPhotosCollection() {
+      const doc = cloudDocument();
+      return doc ? doc.collection("nutritionPhotos") : null;
+    }
+
+    async function saveNutritionPhotosToCloud(photos = []) {
+      const collection = nutritionPhotosCollection();
+      if (!collection) return;
+      const validPhotos = photos.filter((photo) => photo && (photo.front || photo.side || photo.back));
+      const pieces = validPhotos.flatMap((photo) => ["front", "side", "back"].filter((slot) => photo[slot]).map((slot) => ({
+        id: `${nutritionPhotoId(photo)}-${slot}`,
+        baseId: nutritionPhotoId(photo), date: photo.date || "", notes: photo.notes || "", slot, image: photo[slot]
+      })));
+      const writes = pieces.map((piece) => collection.doc(piece.id).set({ ...piece, updatedAt: new Date().toISOString() }));
+      await Promise.all(writes);
+    }
+
+    function nutritionPhotosFromSnapshot(snapshot) {
+      const grouped = new Map();
+      snapshot.forEach((item) => {
+        const photo = item.data();
+        if (!photo) return;
+        if (photo.slot && photo.image) {
+          const id = photo.baseId || String(item.id).replace(/-(front|side|back)$/, "");
+          grouped.set(id, { ...(grouped.get(id) || {}), id, date: photo.date || "", notes: photo.notes || "", [photo.slot]: photo.image });
+        } else if (photo.front || photo.side || photo.back) {
+          const id = nutritionPhotoId(photo);
+          grouped.set(id, { ...(grouped.get(id) || {}), ...photo, id });
+        }
+      });
+      return Array.from(grouped.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+    }
+
+    async function loadNutritionPhotosFromCloud() {
+      const collection = nutritionPhotosCollection();
+      if (!collection) return [];
+      const snapshot = await withTimeout(collection.get(), 5000);
+      return nutritionPhotosFromSnapshot(snapshot);
+    }
+
+    function stopNutritionPhotosRealtime() {
+      if (typeof nutritionPhotosUnsubscribe === "function") nutritionPhotosUnsubscribe();
+      nutritionPhotosUnsubscribe = null;
+    }
+
+    function startNutritionPhotosRealtime() {
+      stopNutritionPhotosRealtime();
+      const collection = nutritionPhotosCollection();
+      if (!collection || !state.profile.account?.syncReady) return;
+      nutritionPhotosUnsubscribe = collection.onSnapshot((snapshot) => {
+        const cloudPhotos = nutritionPhotosFromSnapshot(snapshot);
+        if (!state.nutrition) state.nutrition = {};
+        const before = JSON.stringify(state.nutrition.dashboard?.photos || []);
+        state.nutrition.dashboard = mergeNutritionDashboard(state.nutrition.dashboard || {}, { photos: cloudPhotos });
+        if (JSON.stringify(state.nutrition.dashboard.photos || []) === before) return;
+        writeLocalStateSnapshot(state, { touch: false, cloud: false });
+        pushNutritionDashboardToFrame();
+      }, () => {});
+    }
+
+    function nutritionPayloadHasUserData(payload = {}) {
+      return !!(
+        (Array.isArray(payload.photos) && payload.photos.length) ||
+        (Array.isArray(payload.log) && payload.log.length) ||
+        (Array.isArray(payload.measures) && payload.measures.some((row) => String(row.source || "").toLowerCase() === "app"))
+      );
+    }
+
+    async function receiveNutritionDashboard(payload) {
+      if (!payload || typeof payload !== "object") return;
+      if (!nutritionPayloadHasUserData(payload)) return;
+      if (!state.nutrition) state.nutrition = {};
+      const before = JSON.stringify(state.nutrition.dashboard || {});
+      state.nutrition.dashboard = mergeNutritionDashboard(state.nutrition.dashboard || {}, payload);
+      if (JSON.stringify(state.nutrition.dashboard || {}) !== before) {
+        saveState({ cloud: false });
+        if (cloudUser && dbService && state.profile.account?.syncReady) {
+          clearTimeout(cloudSaveTimer);
+          const synced = await saveCloudState();
+          const frame = document.querySelector(".nutrition-frame");
+          frame?.contentWindow?.postMessage({ type: "barbell-diva:nutrition-synced", ok: synced }, window.location.origin);
+        } else scheduleCloudSave();
+      }
+    }
+
+    function pushNutritionDashboardToFrame() {
+      const frame = document.querySelector(".nutrition-frame");
+      if (!frame?.contentWindow) return;
+      frame.contentWindow.postMessage({
+        type: "barbell-diva:nutrition-load",
+        state: state.nutrition?.dashboard || {}
+      }, window.location.origin);
+    }
+
+    function firebaseConfigured() {
+      return !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.authDomain && FIREBASE_CONFIG.projectId && FIREBASE_CONFIG.appId);
+    }
+
+    function accountStatusText() {
+      if (!firebaseConfigured()) return "Login Google pronto, ma Firebase non e ancora configurato.";
+      if (!window.firebase) return "Firebase non caricato: serve connessione internet.";
+      if (!cloudUser) return "Dati salvati su questo dispositivo. Accedi per prepararli al cloud.";
+      return state.profile.account?.cloudStatus === "sync"
+        ? "Accesso Google attivo. Sync automatico acceso."
+        : "Accesso Google attivo. Sincronizzazione in preparazione.";
+    }
+
+    function initFirebase() {
+      if (!firebaseConfigured() || !window.firebase) return false;
+      if (!window.firebase.apps.length) window.firebase.initializeApp(FIREBASE_CONFIG);
+      authService = window.firebase.auth();
+      dbService = window.firebase.firestore ? window.firebase.firestore() : null;
+      authService.setPersistence(window.firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+      authService.getRedirectResult().catch(() => {
+        showToast("Login Google non completato. Controlla domini autorizzati.");
+      });
+      authService.onAuthStateChanged(async (user) => {
+        authReady = true;
+        cloudUser = user || null;
+        if (user) {
+          localLoginBypass = false;
+          localStorage.removeItem(`${STORE_KEY}.loginBypass`);
+        }
+        const previousAccount = state.profile.account || {};
+        state.profile.account = user ? {
+          uid: user.uid,
+          name: user.displayName || "Alice",
+          email: user.email || "",
+          photo: user.photoURL || "",
+          provider: "google",
+          cloudStatus: previousAccount.syncReady ? "sync" : "login",
+          syncReady: !!previousAccount.syncReady
+        } : {
+          uid: "",
+          name: "",
+          email: "",
+          photo: "",
+          provider: "",
+          cloudStatus: "locale",
+          syncReady: false
+        };
+        saveState({ cloud: false });
+        render();
+        if (user && state.profile.account.syncReady) {
+          loadCloudState({ silent: true }).then(() => {
+            saveState({ cloud: false });
+            render();
+            startNutritionPhotosRealtime();
+          });
+        } else {
+          stopNutritionPhotosRealtime();
+        }
+      });
+      return true;
+    }
+
+    function cloudDocument() {
+      if (!dbService || !cloudUser) return null;
+      return dbService.collection(CLOUD_COLLECTION).doc(cloudUser.uid);
+    }
+
+    function scheduleCloudSave() {
+      if (!cloudUser || !dbService || cloudLoading || !state.profile.account?.syncReady) return;
+      clearTimeout(cloudSaveTimer);
+      cloudSaveTimer = setTimeout(saveCloudState, 900);
+    }
+
+    async function saveCloudState() {
+      const doc = cloudDocument();
+      if (!doc) return false;
+      const payload = clone(state);
+      const nutritionPhotos = splitNutritionPhotosForCloud(payload);
+      try {
+        payload.profile.account.cloudStatus = "sync";
+        payload.profile.account.syncReady = true;
+        await doc.set({
+          updatedAt: new Date().toISOString(),
+          app: APP_NAME,
+          state: payload
+        }, { merge: true });
+        await saveNutritionPhotosToCloud(nutritionPhotos);
+        state.profile.account.cloudStatus = "sync";
+        writeLocalStateSnapshot(state, { touch: false, cloud: false });
+        return true;
+      } catch (error) {
+        state.profile.account.cloudStatus = "errore sync";
+        writeLocalStateSnapshot(state, { touch: false, cloud: false });
+        return false;
+      }
+    }
+
+    async function loadCloudState(options = {}) {
+      const doc = cloudDocument();
+      if (!doc) return;
+      cloudLoading = true;
+      try {
+        const snapshot = await withTimeout(doc.get(), 5000);
+        if (snapshot.exists && snapshot.data()?.state) {
+          const account = state.profile.account;
+          state = mergeCloudAndLocalState(state, snapshot.data().state);
+          const nutritionPhotos = await loadNutritionPhotosFromCloud().catch(() => []);
+          if (!state.nutrition) state.nutrition = {};
+          state.nutrition.dashboard = mergeNutritionDashboard(state.nutrition.dashboard || {}, { photos: nutritionPhotos });
+          state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
+          writeLocalStateSnapshot(state, { touch: false, cloud: false });
+          setTimeout(pushNutritionDashboardToFrame, 0);
+          if (!options.silent) showToast("Dati cloud caricati.");
+        } else {
+          state.profile.account.cloudStatus = "sync";
+          state.profile.account.syncReady = true;
+          await saveCloudState();
+          if (!options.silent) showToast("Account Google collegato.");
+        }
+      } catch (error) {
+        state.profile.account.cloudStatus = "errore cloud";
+        if (!options.silent) showToast("Login ok, cloud non raggiungibile.");
+      } finally {
+        cloudLoading = false;
+      }
+    }
+
+    function refreshCloudIfSynced() {
+      if (!cloudUser || !dbService || !state.profile.account?.syncReady || cloudLoading) return;
+      loadCloudState({ silent: true }).then(() => {
+        saveState({ cloud: false });
+        render();
+        setTimeout(pushNutritionDashboardToFrame, 0);
+      });
+    }
+
+    function withTimeout(promise, ms) {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms))
+      ]);
+    }
+
+    async function signInWithGoogle(mode = "popup") {
+      if (!firebaseConfigured()) {
+        showToast("Firebase non configurato: preparo il posto per le chiavi.");
+        return;
+      }
+      if (!initFirebase()) {
+        showToast("Firebase non caricato. Controlla connessione o GitHub Pages.");
+        return;
+      }
+      const provider = new window.firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      try {
+        if (mode === "redirect") {
+          await authService.signInWithRedirect(provider);
+          return;
+        }
+        await authService.signInWithPopup(provider);
+      } catch (error) {
+        const code = String(error?.code || "");
+        if (code.includes("popup") || code.includes("unauthorized-domain") || code.includes("operation-not-supported")) {
+          showToast("Popup non riuscito. Prova accesso alternativo.");
+        } else {
+          showToast(`Accesso Google non completato: ${code || "errore"}.`);
+        }
+      }
+    }
+
+    async function uploadThisDeviceToCloud() {
+      if (!cloudUser) {
+        showToast("Accedi prima con Google.");
+        return;
+      }
+      state.profile.account.syncReady = true;
+      state.profile.account.cloudStatus = "sync";
+      await saveCloudState();
+      startNutritionPhotosRealtime();
+      writeLocalStateSnapshot(state, { touch: false, cloud: false });
+      showToast("Questo dispositivo e stato caricato nel cloud.");
+      render();
+    }
+
+    async function downloadCloudToThisDevice() {
+      if (!cloudUser) {
+        showToast("Accedi prima con Google.");
+        return;
+      }
+      await loadCloudState();
+      state.profile.account.syncReady = true;
+      state.profile.account.cloudStatus = "sync";
+      saveState({ cloud: false, immediate: true });
+      startNutritionPhotosRealtime();
+      render();
+    }
+
+    async function signOutGoogle() {
+      if (!authService) return;
+      await authService.signOut();
+      showToast("Account scollegato. I dati locali restano qui.");
+    }
+
+    function loginRequired() {
+      return firebaseConfigured() && !cloudUser && !localLoginBypass;
+    }
+
+    function greetingName() {
+      const hour = new Date().getHours();
+      return `${hour >= 18 || hour < 5 ? "Buonasera" : "Buongiorno"} Alice`;
+    }
+
+    function dailyFace() {
+      const faces = ["??", "??", "??", "??", "??", "??", "??", "?", "??"];
+      const today = todayInput().replaceAll("-", "");
+      const seed = Number(today) || new Date().getDate();
+      return faces[seed % faces.length];
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function number(value, fallback = 0) {
+      if (value === "" || value == null) return fallback;
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    }
+
+    function todayInput() {
+      return formatInputDate(new Date());
+    }
+
+    function formatInputDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function parseInputDate(value) {
+      const fallback = todayInput();
+      const [year, month, day] = String(value || fallback).split("-").map(Number);
+      return new Date(year, (month || 1) - 1, day || 1);
+    }
+
+    function formatDateLabel(value) {
+      return new Intl.DateTimeFormat("it-IT", { weekday: "short", day: "2-digit", month: "short" }).format(parseInputDate(value));
+    }
+
+    function weekFromDate(value) {
+      const start = parseInputDate(state.profile.phaseStart);
+      const date = parseInputDate(value);
+      const diffDays = Math.floor((date - start) / 86400000);
+      return clamp(Math.floor(diffDays / 7) + 1, 1, state.profile.phaseLength || 6);
+    }
+
+    function latestAppWorkout(phase = state.training.phaseFilter || "Intensificazione") {
+      return state.training.sessions
+        .filter((session) => (session.source === "App" || Number(session.id) > 1000000000) && (!session.phase || session.phase === phase))
+        .slice()
+        .sort((a, b) => String(b.dateInput || "").localeCompare(String(a.dateInput || "")) || Number(b.id || 0) - Number(a.id || 0))[0] || null;
+    }
+
+    function nextProgramCode(workout, phase = state.training.phaseFilter || "Intensificazione") {
+      const sheets = allProgramSheets().filter((sheet) => sheet.phase === phase);
+      const current = workout?.sheetId
+        ? sheets.find((sheet) => sheet.id === workout.sheetId)
+        : sheets.find((sheet) => sheet.code === workout?.sessionCode);
+      if (!current) return "";
+      const owner = findProgramForSheet(current.id);
+      const ordered = (owner?.sheets || []).filter((sheet) => !sheet.deletedAt).slice().sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+      const currentIndex = ordered.findIndex((sheet) => sheet.id === current.id);
+      return currentIndex >= 0 ? ordered[currentIndex + 1]?.code || "" : "";
+    }
+
+    function autoSessionCodeForDate(value) {
+      const phase = state.training.phaseFilter || "Intensificazione";
+      const latest = latestAppWorkout(phase);
+      const afterLatest = nextProgramCode(latest, phase);
+      if (afterLatest) return afterLatest;
+      const week = weekFromDate(value);
+      const sheets = allProgramSheets().filter((sheet) => sheet.phase === phase);
+      return sheets.find((sheet) => Number(sheet.week) === week)?.code || sheets[0]?.code || "";
+    }
+
+    function programByCode(code) {
+      return allProgramSheets().find((session) => session.code === code) || allProgramSheets()[0];
+    }
+
+    function availablePhases() {
+      return Array.from(new Set((state.programs || []).map((program) => program.phase)));
+    }
+
+    function sessionsForPhase(phase) {
+      return allProgramSheets().filter((session) => session.phase === phase);
+    }
+
+    function currentTrainingContext() {
+      const date = state.training.date || todayInput();
+      const week = weekFromDate(date);
+      const autoCode = autoSessionCodeForDate(date);
+      const phase = state.training.phaseFilter || "Intensificazione";
+      const phaseSessions = sessionsForPhase(phase);
+      const selectedCode = state.training.sessionName === "auto" ? autoCode : state.training.sessionName;
+      let session = allProgramSheets().find((item) => item.code === selectedCode && item.phase === phase);
+      if (!session && phase === "Intensificazione") session = programByCode(autoCode || "D5");
+      if (!session) session = phaseSessions[0] || programByCode("D5");
+      return {
+        date,
+        week,
+        autoCode,
+        session,
+        phase,
+        phaseSessions,
+        isRestDay: false
+      };
+    }
+
+    function draftKey(context, exercise) {
+      return `${context.date}|${context.session.code}|${exercise.name}`;
+    }
+
+    function draftNoteKey(context, exercise) {
+      return `${draftKey(context, exercise)}|note`;
+    }
+
+    function draftNoteFor(context, exercise) {
+      if (!state.training.noteDraft) state.training.noteDraft = {};
+      return state.training.noteDraft[draftNoteKey(context, exercise)] || "";
+    }
+
+    function muscleColor(muscle = "") {
+      const value = normalizeExerciseName(muscle);
+      if (value.includes("glute")) return "#ff6fcb";
+      if (value.includes("femoral")) return "#69e6b0";
+      if (value.includes("spall")) return "#8bc9ff";
+      if (value.includes("quad")) return "#ffbd63";
+      if (value.includes("dors") || value.includes("schiena")) return "#a990ff";
+      if (value.includes("tricip") || value.includes("bicip")) return "#ff9b49";
+      if (value.includes("cardio")) return "#ff6e7d";
+      return "#d8a4ff";
+    }
+
+    function setCountFor(exercise) {
+      const match = String(exercise.sets || "").match(/\d+/);
+      return clamp(match ? Number(match[0]) : 1, 1, 8);
+    }
+
+
+    function missionHtml(context) {
+      const session = context.session;
+      const exercises = session.exercises || [];
+      const totalSets = exercises.reduce((total, exercise) => total + setCountFor(exercise), 0);
+      const first = exercises[0];
+      const focus = displayLabel(session.focus || session.phase || "Allenamento");
+      if (context.isRestDay) {
+        return `
+          <section class="card mission-card">
+            <div class="mission-head">
+              <div><span>Missione di oggi</span><h3>Recupero attivo</h3></div>
+              <div class="mission-pill">Reset</div>
+            </div>
+            <p class="micro-copy">Oggi niente scheda automatica: tieni alta la qualita con mobilita, passi e recupero.</p>
+          </section>
+        `;
+      }
+      return `
+        <section class="card mission-card">
+          <div class="mission-head">
+            <div><span>Missione di oggi</span><h3>${escapeHtml(session.name || session.code)}</h3></div>
+            <div class="mission-pill">${escapeHtml(session.code || "--")}</div>
+          </div>
+          <div class="mission-grid">
+            <div class="mission-stat"><span>Focus</span><strong>${escapeHtml(focus)}</strong></div>
+            <div class="mission-stat"><span>Esercizi</span><strong>${exercises.length || "--"}</strong></div>
+            <div class="mission-stat"><span>Serie</span><strong>${totalSets || "--"}</strong></div>
+          </div>
+          <p class="mission-focus">Parti da <strong>${escapeHtml(displayExerciseName(first?.name || "primo esercizio"))}</strong>${first?.reps ? `: target ${escapeHtml(first.reps)}` : ""}.</p>
+        </section>
+      `;
+    }
+    function repTargetsFor(exercise) {
+      const count = setCountFor(exercise);
+      const reps = String(exercise.reps || "").trim();
+      const expanded = [];
+      const repeated = reps.matchAll(/(\d+)\s*x\s*([^\s,]+)/gi);
+      for (const match of repeated) {
+        const times = clamp(Number(match[1]), 1, 8);
+        for (let i = 0; i < times; i++) expanded.push(match[2]);
+      }
+      const commaSplit = reps.includes(",") ? reps.split(",").map((item) => item.trim()).filter(Boolean) : [];
+      const targets = expanded.length ? expanded : commaSplit;
+      return Array.from({ length: count }, (_, index) => targets[index] || targets[targets.length - 1] || reps || "--");
+    }
+
+    function draftSetsFor(context, exercise) {
+      const count = setCountFor(exercise);
+      if (!state.training.draft) state.training.draft = {};
+      const saved = state.training.draft?.[draftKey(context, exercise)] || [];
+      return Array.from({ length: count }, (_, index) => saved[index] || "");
+    }
+
+    function normalizeExerciseName(value) {
+      return displayExerciseName(value)
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+    }
+
+    function sessionLetter(code) {
+      const match = String(code || "").match(/^([A-Z]+)\d*$/i);
+      return match ? match[1].toUpperCase() : String(code || "");
+    }
+
+    function canonicalExerciseNames(value) {
+      const normalized = normalizeExerciseName(value);
+      const aliases = EXERCISE_ALIASES[normalized] || [];
+      return new Set([normalized, ...aliases.map(normalizeExerciseName)]);
+    }
+
+    function exerciseSignature(value) {
+      const stop = new Set(["machine", "macchinario", "panatta", "singola", "singolo", "seduta", "sdraiata", "cavo", "basso", "alto", "presa", "larga", "supina", "corda", "con", "alla", "allo", "al", "focus", "gamba", "piedi", "schienale", "chiuso"]);
+      return normalizeExerciseName(value)
+        .split(" ")
+        .map((word) => word.replace(/e$|i$|a$|o$|s$/g, ""))
+        .filter((word) => word.length > 2 && !stop.has(word))
+        .join(" ");
+    }
+
+    function addExerciseMuscle(matches, muscle) {
+      const normalized = normalizeExerciseName(muscle || "");
+      if (normalized) matches.add(normalized);
+    }
+
+    let exerciseMuscleIndexCache = null;
+
+    function exerciseMuscleIndex() {
+      if (exerciseMuscleIndexCache) return exerciseMuscleIndexCache;
+      const index = new Map();
+      const add = (name, muscle) => {
+        canonicalExerciseNames(name).forEach((alias) => {
+          if (!index.has(alias)) index.set(alias, new Set());
+          addExerciseMuscle(index.get(alias), muscle);
+        });
+      };
+      Object.entries(COACH_EXERCISE_LIBRARY || {}).forEach(([group, exercises]) => {
+        (exercises || []).forEach((item) => add(item.name, item.som || group));
+      });
+      PROGRAM_LIBRARY.forEach((program) => {
+        (program.exercises || []).forEach((item) => add(item.name, item.muscle));
+      });
+      exerciseMuscleIndexCache = index;
+      return index;
+    }
+
+    function inferredExerciseMuscles(value, exercise = null) {
+      const matches = new Set();
+      if (exercise) {
+        addExerciseMuscle(matches, exercise.muscle);
+        addExerciseMuscle(matches, exercise.som);
+        (Array.isArray(exercise.muscles) ? exercise.muscles : []).forEach((muscle) => addExerciseMuscle(matches, muscle));
+      }
+      const index = exerciseMuscleIndex();
+      canonicalExerciseNames(value || exercise?.name || "").forEach((name) => {
+        (index.get(name) || []).forEach((muscle) => matches.add(muscle));
+      });
+      return matches;
+    }
+
+    function exerciseMusclesCompatible(leftExercise, rightExercise) {
+      const left = inferredExerciseMuscles(leftExercise?.name || leftExercise, leftExercise);
+      const right = inferredExerciseMuscles(rightExercise?.name || rightExercise, rightExercise);
+      if (!left.size || !right.size) return true;
+      return [...left].some((muscle) => right.has(muscle));
+    }
+
+    function signatureMatches(left, right) {
+      const a = exerciseSignature(left);
+      const b = exerciseSignature(right);
+      if (!a || !b) return false;
+      if (a === b) return true;
+      if (a.length >= 6 && b.includes(a)) return true;
+      if (b.length >= 6 && a.includes(b)) return true;
+      const aTokens = new Set(a.split(" ").filter(Boolean));
+      const bTokens = new Set(b.split(" ").filter(Boolean));
+      const shared = [...aTokens].filter((token) => bTokens.has(token));
+      return shared.length >= 2;
+    }
+
+    function exerciseMatches(left, right) {
+      const leftSet = canonicalExerciseNames(left);
+      const rightSet = canonicalExerciseNames(right);
+      if ([...leftSet].some((name) => rightSet.has(name))) return true;
+      return [...leftSet].some((leftName) => [...rightSet].some((rightName) => signatureMatches(leftName, rightName)));
+    }
+
+    let trainingHistoryIndexCache = null;
+
+    function trainingHistoryIndex() {
+      if (trainingHistoryIndexCache) return trainingHistoryIndexCache;
+      const index = new Map();
+      state.training.sessions.forEach((session) => {
+        (session.exercises || []).forEach((item) => {
+          const row = { ...item, date: item.date || session.date, dateInput: session.dateInput || "", week: session.week, sessionCode: session.sessionCode, _sessionId: session.id };
+          canonicalExerciseNames(item.name).forEach((name) => {
+            if (!index.has(name)) index.set(name, []);
+            index.get(name).push(row);
+          });
+        });
+      });
+      trainingHistoryIndexCache = index;
+      return index;
+    }
+
+    function exerciseHistory(exercise, limit = 4, code = "") {
+      const wantedLetter = sessionLetter(code);
+      const rows = new Map();
+      const index = trainingHistoryIndex();
+      canonicalExerciseNames(exercise.name).forEach((name) => {
+        (index.get(name) || []).forEach((row) => {
+          const key = `${row._sessionId}|${normalizeExerciseName(row.name)}|${row.value || row.kg || ""}`;
+          rows.set(key, { ...row, _sameLetter: !wantedLetter || sessionLetter(row.sessionCode) === wantedLetter });
+        });
+      });
+      return Array.from(rows.values())
+        .sort((a, b) => (Number(b._sameLetter) - Number(a._sameLetter)) || String(b.dateInput || "").localeCompare(String(a.dateInput || "")))
+        .slice(0, limit);
+    }
+
+    function exerciseNotes(exercise, limit = 2) {
+      const rows = [];
+      exerciseHistory(exercise, 999).forEach((item) => {
+        const text = [item.userNote, item.notes, item.note].filter(Boolean).join(" - ").trim();
+        if (text) rows.push({ text, date: item.date, dateInput: item.dateInput || "" });
+      });
+      return rows
+        .sort((a, b) => String(b.dateInput || "").localeCompare(String(a.dateInput || "")))
+        .slice(0, limit);
+    }
+
+    function logbookNotesHtml(exercise) {
+      const notes = exerciseNotes(exercise, 2);
+      if (!notes.length) return "";
+      return `<div class="logbook-note"><strong>Note dal logbook rosa</strong><br>${notes.map((row) => `${escapeHtml(row.date)} - ${escapeHtml(row.text)}`).join("<br>")}</div>`;
+    }
+
+    function historyLoadLabel(row) {
+      if (Array.isArray(row.setValues) && row.setValues.filter(Boolean).length) {
+        return `${row.setValues.filter(Boolean).join(" / ")} kg`;
+      }
+      if (row.value) return row.value;
+      if (Number(row.kg)) return `${row.kg} kg`;
+      return row.userNote ? "nota salvata" : "--";
+    }
+
+    function selectedExerciseMeta() {
+      return state.training.exercises.find((exercise) => exercise.name === state.training.selected) || { name: state.training.selected, jump: "" };
+    }
+
+    function buildExerciseIndex(program, sessions = []) {
+      const seen = new Map();
+      const put = (exercise, meta) => {
+        const key = exerciseSignature(exercise.name) || normalizeExerciseName(exercise.name);
+        const existing = seen.get(key);
+        if (existing) {
+          existing.aliases = Array.from(new Set([...(existing.aliases || []), exercise.name]));
+          if (!existing.jump && meta.jump) existing.jump = meta.jump;
+          if (!existing.muscles && meta.muscles) existing.muscles = meta.muscles;
+          return;
+        }
+        seen.set(key, { ...meta, aliases: [exercise.name] });
+      };
+      program.forEach((session) => {
+        session.exercises.forEach((exercise) => {
+          put(exercise, {
+            name: exercise.name,
+            target: `${exercise.sets} x ${exercise.reps}`,
+            ref: "",
+            today: "",
+            muscles: exercise.muscle || "",
+            jump: session.code
+          });
+        });
+      });
+      sessions.forEach((session) => {
+        session.exercises.forEach((exercise) => {
+          put(exercise, {
+            name: exercise.name,
+            target: "storico Excel",
+            ref: "",
+            today: "",
+            muscles: session.sessionName || "Storico",
+            jump: session.sessionCode || "Log"
+          });
+        });
+      });
+      return Array.from(seen.values());
+    }
+
+    function displayExerciseName(name) {
+      return cleanText(name).replaceAll("_", " ").replace(/\s+-\s+/g, " - ");
+    }
+
+    function displayLabel(value) {
+      return cleanText(value)
+        .replaceAll("_", " ")
+        .replaceAll("Intensita", "Intensità")
+        .replaceAll("IntensitÃ ", "Intensità");
+    }
+
+    function cleanText(value) {
+      return String(value ?? "")
+        .replaceAll("Â°", "°")
+        .replaceAll("Â·", " - ")
+        .replaceAll("Ã ", "à")
+        .replaceAll("Ã¨", "è")
+        .replaceAll("Ã©", "é")
+        .replaceAll("Ã¬", "ì")
+        .replaceAll("Ã²", "ò")
+        .replaceAll("Ã¹", "ù")
+        .replaceAll("Ã€", "À")
+        .replaceAll("Ãˆ", "È")
+        .replaceAll("Ã‰", "É")
+        .replaceAll("ÃŒ", "Ì")
+        .replaceAll("Ã’", "Ò")
+        .replaceAll("Ã™", "Ù")
+        .replaceAll("â€™", "'")
+        .replaceAll("â€œ", "\"")
+        .replaceAll("â€", "\"")
+        .replaceAll("â€“", "-")
+        .replaceAll("â€”", "-")
+        .replaceAll("â†’", "->")
+        .replaceAll("\u00c2\u00b7", " - ")
+        .replaceAll("\u00c3\u00a0", "à")
+        .replaceAll("\u00c3\u00a8", "è")
+        .replaceAll("\u00c3\u00a9", "é")
+        .replaceAll("\u00c3\u00ac", "ì")
+        .replaceAll("\u00c3\u00b2", "ò")
+        .replaceAll("\u00c3\u00b9", "ù")
+        .replaceAll("\u00e2\u0086\u0092", "->")
+        .replaceAll("\u00e2\u0080\u0099", "'")
+        .replaceAll("\u00e2\u0080\u009c", "\"")
+        .replaceAll("\u00e2\u0080\u009d", "\"")
+        .replaceAll("\u00e2\u0080\u0093", "-");
+    }
+    function displayPhaseDuration(phase) {
+      const label = displayLabel(phase.phase || phase);
+      if (label.startsWith("1.Volume")) return "8 - 12+ settimane";
+      if (label.startsWith("2.Intensificazione")) return "6 - 8 settimane";
+      return phase.duration || "";
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function latestSession() {
+      return state.training.sessions[state.training.sessions.length - 1] || null;
+    }
+
+    function exerciseTrendSummary() {
+      const sessions = state.training.sessions;
+      if (sessions.length < 2) return { score: sessions.length ? 62 : 0, up: 0, stable: 0, down: 0, total: 0, downNames: [], label: sessions.length ? "primo log" : "senza dati" };
+      const previousByName = new Map();
+      sessions.slice(0, -1).reverse().forEach((session) => {
+        (session.exercises || []).forEach((exercise) => {
+          const key = normalizeExerciseName(exercise.name);
+          const value = number(exercise.maxKg || exercise.kg, null);
+          if (key && Number.isFinite(value) && value > 0 && !previousByName.has(key)) previousByName.set(key, value);
+        });
+      });
+      const compared = [];
+      (sessions[sessions.length - 1].exercises || []).forEach((exercise) => {
+        const key = normalizeExerciseName(exercise.name);
+        const current = number(exercise.maxKg || exercise.kg, null);
+        const previous = previousByName.get(key);
+        if (!key || !Number.isFinite(current) || !Number.isFinite(previous) || previous <= 0) return;
+        const change = (current - previous) / previous;
+        compared.push({ name: displayExerciseName(exercise.name), change });
+      });
+      if (!compared.length) return { score: 64, up: 0, stable: 0, down: 0, total: 0, downNames: [], label: "pochi confronti" };
+      const up = compared.filter((item) => item.change >= .04);
+      const down = compared.filter((item) => item.change <= -.06);
+      const stable = compared.length - up.length - down.length;
+      const score = clamp(Math.round(68 + up.length * 8 + stable * 3 - down.length * 10), 0, 100);
+      return {
+        score,
+        up: up.length,
+        stable,
+        down: down.length,
+        total: compared.length,
+        downNames: down.slice(0, 3).map((item) => item.name),
+        label: down.length ? `${down.length} in calo` : "stabili"
+      };
+    }
+
+    function performanceScore() {
+      return exerciseTrendSummary().score;
+    }
+
+    function adherenceScore() {
+      const completed = state.training.sessions.length;
+      const logScore = completed ? 60 + Math.min(30, completed * 8) : 0;
+      const manual = number(state.metrics.adherence, logScore);
+      return clamp(Math.round((manual + logScore) / 2), 0, 100);
+    }
+
+    function structuralRisk() {
+      const stressMap = { basso: 18, medio: 42, alto: 76 };
+      const sleepMap = { bene: 8, ok: 6.8, male: 5 };
+      const recoveryMap = { ok: 16, indolenzita: 42, distrutta: 72 };
+      const stress = state.metrics.stress === "" ? (stressMap[state.quiz.stress] ?? 42) : number(state.metrics.stress, 0);
+      const sleep = state.metrics.sleep === "" ? (sleepMap[state.quiz.sleepQuality] ?? 6.8) : number(state.metrics.sleep, 8);
+      const soreness = recoveryMap[state.quiz.recovery] ?? number(state.body.soreness, 0);
+      const pain = 0;
+      const digestion = 0;
+      return clamp(Math.round(stress * .34 + Math.max(0, 8 - sleep) * 8 + soreness * .26 + pain + digestion), 0, 100);
+    }
+
+    function programResponse() {
+      const feelingMap = { basso: 32, medio: 58, alto: 82 };
+      const energy = state.metrics.energy === "" ? (feelingMap[state.quiz.feeling] ?? 58) : number(state.metrics.energy, 50);
+      const perf = performanceScore();
+      const adherence = adherenceScore();
+      const sleep = checkinValue("sleep") * 20;
+      const stress = 100 - checkinValue("stress") * 16;
+      return clamp(Math.round(energy * .3 + perf * .3 + adherence * .18 + sleep * .12 + stress * .1), 0, 100);
+    }
+
+    function readinessScore() {
+      const sleepMap = { bene: 86, ok: 62, male: 36 };
+      const stressMap = { basso: 82, medio: 56, alto: 28 };
+      const feelingMap = { basso: 36, medio: 60, alto: 82 };
+      const sleep = state.metrics.sleep === "" ? (sleepMap[state.quiz.sleepQuality] ?? 62) : clamp(number(state.metrics.sleep) / 8 * 100, 0, 100);
+      const stress = state.metrics.stress === "" ? (stressMap[state.quiz.stress] ?? 56) : 100 - clamp(number(state.metrics.stress), 0, 100);
+      const energy = state.metrics.energy === "" ? (feelingMap[state.quiz.feeling] ?? 60) : number(state.metrics.energy);
+      const adherence = adherenceScore() || 45;
+      const risk = structuralRisk();
+      return clamp(Math.round(sleep * .26 + stress * .24 + energy * .22 + adherence * .18 + (100 - risk) * .1), 0, 100);
+    }
+
+    function averageQuizValue(keys) {
+      const maps = {
+        fatigue: { basso: 2, medio: 4, alto: 5 },
+        effort: { basso: 2, medio: 4, alto: 5 },
+        stress: { basso: 1, medio: 3, alto: 5 },
+        soreness: { ok: 1, indolenzita: 3, distrutta: 5 },
+        pain: { no: 1, si: 5 }
+      };
+      const values = keys.map((key) => {
+        if (key === "soreness") return maps.soreness[state.quiz.recovery] ?? number(state.body.soreness, null);
+        if (key === "pain") return maps.pain[state.quiz.pain] ?? null;
+        return maps[key]?.[state.quiz[key]] ?? number(state.quiz[key], null);
+      }).filter((value) => Number.isFinite(value));
+      return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+    }
+
+    function decisionPriority() {
+      const risk = structuralRisk();
+      const adherence = adherenceScore();
+      const perf = performanceScore();
+      const response = programResponse();
+      if (state.quiz.recovery === "distrutta" || state.quiz.sleepQuality === "male") return { level: 1, label: "Recupero", color: colors.red, text: "Recupero basso: oggi meglio non cercare PR, tieni tecnica pulita e scala se serve." };
+      if (risk >= 66) return { level: 1, label: "Sicurezza", color: colors.red, text: "Riduci carico, niente progressioni aggressive, controlla i segnali." };
+      if (perf <= 38 && exerciseTrendSummary().down >= 2) return { level: 2, label: "Calo", color: colors.orange, text: "Due o piu esercizi risultano in calo nel logbook: mantieni volume e controlla recupero." };
+      if (adherence < 55) return { level: 3, label: "Aderenza", color: colors.gold, text: "Semplifica la scheda e proteggi la costanza." };
+      if (response < 58) return { level: 4, label: "Stallo", color: colors.blue, text: "Cambia stimolo o riduci fatica accumulata." };
+      return { level: 5, label: "OK", color: colors.green, text: "Puoi progredire con piccoli aumenti misurati." };
+    }
+
+    function decisionReasonText() {
+      const decision = decisionPriority();
+      if (decision.label === "Calo") return "Qui sta guardando il logbook esercizio per esercizio: esce Calo solo se piu esercizi scendono davvero, non per un singolo calf o per una scheda diversa.";
+      if (decision.label === "Recupero") return "Qui sta guardando il questionario: sonno scarso o recupero molto basso pesano piu dei carichi.";
+      if (decision.label === "Sicurezza") return "Qui sta guardando dolore, recupero e stress: se segnali dolore o rischio alto, ti protegge e consiglia prudenza.";
+      if (decision.label === "Scheda da rivedere") return "Qui sta guardando le risposte del questionario su workout e sensazione della scheda.";
+      if (decision.label === "Aderenza") return "Qui sta guardando quanti allenamenti risultano salvati e l'aderenza manuale se la compili.";
+      if (decision.label === "Stallo") return "Qui incrocia energia, andamento carichi, aderenza e feedback sulla scheda: non e un allarme, e un invito a cambiare stimolo.";
+      return "Qui i segnali principali sono buoni: questionario, recupero e andamento del logbook non mostrano problemi importanti.";
+    }
+
+    function setScreen(screen) {
+      if (screen === "coach" && !coachDesktopAllowed()) {
+        activeScreen = "dashboard";
+        activeBottom = "home";
+        render();
+        showToast("Coach si apre da PC browser.");
+        return;
+      }
+      if (screen === "volume" && state.profile.mode !== "coach") {
+        activeScreen = "coach";
+        activeBottom = "coach";
+        render();
+        return;
+      }
+      activeScreen = screen;
+      const bottomMap = { dashboard: "home", training: "workout", progress: "progress", logbook: "progress", nutrition: "nutrition", volume: "volume", quiz: "quiz", coach: "coach" };
+      activeBottom = bottomMap[screen] || "home";
+      render();
+    }
+
+    function setBottom(bottom) {
+      activeBottom = bottom;
+      if (bottom === "home") activeScreen = "dashboard";
+      if (bottom === "workout") activeScreen = "training";
+      if (bottom === "progress") activeScreen = "progress";
+      if (bottom === "nutrition") activeScreen = "nutrition";
+      if (bottom === "volume") activeScreen = state.profile.mode === "coach" ? "volume" : "coach";
+      if (bottom === "quiz") activeScreen = "quiz";
+      if (bottom === "coach") activeScreen = coachDesktopAllowed() ? "coach" : "dashboard";
+      render();
+    }
+
+    function coachDesktopAllowed() {
+      return true;
+    }
+
+    function render() {
+      if ((activeScreen === "coach" || activeScreen === "volume") && !coachDesktopAllowed()) {
+        activeScreen = "dashboard";
+        activeBottom = "home";
+      }
+      document.body.dataset.theme = state.profile.theme || "dark";
+      document.body.classList.toggle("coach-mode", state.profile.mode === "coach");
+      updateNav();
+      const screen = document.getElementById("screen");
+      if (loginRequired()) {
+        document.getElementById("appTitle").textContent = APP_NAME;
+        document.getElementById("appSubtitle").textContent = authReady ? "Accedi per sincronizzare i tuoi dati" : "Controllo accesso...";
+        document.getElementById("modeButton").textContent = "PIN";
+        screen.innerHTML = loginGateHtml();
+        bindScreen();
+        return;
+      }
+      const titleMap = {
+        dashboard: [APP_NAME, OPENING_QUOTE],
+        training: ["Allenamento", state.profile.phase],
+        progress: ["Progressioni", "Trend carichi e score"],
+        logbook: ["Logbook", "Storico allenamenti e PR"],
+        nutrition: ["Nutrizione", "Dashboard alimentazione"],
+        volume: ["Volume", "Programmazione annuale"],
+        quiz: ["Check-in", "Semaforo e benessere"],
+        coach: ["Coach", "Back office"]
+      };
+      document.getElementById("appTitle").textContent = titleMap[activeScreen][0];
+      document.getElementById("appSubtitle").textContent = titleMap[activeScreen][1];
+      document.getElementById("modeButton").textContent = state.profile.mode === "coach" ? "C" : "PIN";
+      if (activeScreen === "dashboard") screen.innerHTML = dashboardHtml();
+      if (activeScreen === "training") screen.innerHTML = trainingHtml();
+      if (activeScreen === "progress") screen.innerHTML = progressHtml();
+      if (activeScreen === "logbook") screen.innerHTML = logbookHtml();
+      if (activeScreen === "nutrition") screen.innerHTML = nutritionHtml();
+      if (activeScreen === "volume") screen.innerHTML = volumeScreenHtml();
+      if (activeScreen === "quiz") screen.innerHTML = quizHtml();
+      if (activeScreen === "coach") screen.innerHTML = coachHtml();
+      ensureCoachMascotFallbacks();
+      bindScreen();
+      renderEngine();
+      drawCharts();
+    }
+
+    function renderTrainingOnly() {
+      if (activeScreen !== "training") return render();
+      const screen = document.getElementById("screen");
+      screen.innerHTML = trainingHtml();
+      bindScreen();
+    }
+
+    function updateNav() {
+      document.querySelectorAll(".top-tab").forEach((button) => {
+        button.classList.toggle("active", button.dataset.screen === activeScreen);
+      });
+      document.querySelectorAll(".nav-button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.bottom === activeBottom);
+      });
+      document.querySelectorAll(".rail-dot").forEach((button) => {
+        const isTop = button.dataset.jump === activeScreen;
+        const isBottom = button.dataset.bottom === activeBottom;
+        button.classList.toggle("active", isTop || isBottom);
+      });
+    }
+
+    function dashboardWorkoutStats() {
+      const now = new Date();
+      const weekStart = new Date(now); weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7)); weekStart.setHours(0, 0, 0, 0);
+      const sessions = state.training.sessions.filter((session) => new Date(session.dateInput || session.date || 0) >= weekStart);
+      const volume = sessions.reduce((sum, session) => sum + (session.exercises || []).reduce((total, item) => total + Number(item.volume || (Number(item.kg) || 0) * (Number(item.reps) || 0) || 0), 0), 0);
+      return { sessions, volume, adherence: clamp(Math.round((sessions.length / 4) * 100), 0, 100), frequency: new Set(sessions.map((session) => session.sessionCode || session.sessionName)).size };
+    }
+
+    function dashboardHtml() {
+      const ready = readinessScore(); const last = latestSession(); const context = currentTrainingContext(); const decision = decisionPriority(); const stats = dashboardWorkoutStats();
+      return `<div class="phase11-dashboard">
+        <section class="phase11-hero card"><div><span class="section-eyebrow">${escapeHtml(displayLabel(context.phase))} · Settimana ${context.week}</span><h2>${greetingName()} <span class="daily-face" aria-label="faccina del giorno">${dailyFace()}</span></h2><p>Oggi: <strong>${escapeHtml(context.session.code)} — ${escapeHtml(displayLabel(context.session.focus || context.session.phase))}</strong></p><p class="micro-copy">Recupero: <strong style="color:${decision.color}">${escapeHtml(checkinStatusMeta().status)}</strong></p></div><button class="gold-button" data-screen-target="training">Inizia allenamento</button></section>
+        <section class="phase11-summary-grid">
+          ${dashboardSummaryCard("?", "Allenamenti", stats.sessions.length, "questa settimana", colors.green)}
+          ${dashboardSummaryCard("?", "Aderenza", `${stats.adherence}%`, "costanza recente", colors.blue)}
+          ${dashboardSummaryCard("?", "Volume", `${Math.round(stats.volume)} kg`, "serie registrate", colors.violet)}
+          ${dashboardSummaryCard("?", "Frequenza", stats.frequency, "schede svolte", colors.pink)}
+          ${dashboardSummaryCard("?", "Readiness", `${Math.round(ready)}%`, "recupero percepito", decision.color)}
+          ${dashboardSummaryCard("?", "Ultima seduta", last?.sessionCode || "—", last ? formatDateLabel(last.dateInput || last.date) : "nessun log", colors.gold)}
+        </section>
+        <section class="phase11-main-grid"><div>
+          <section class="phase11-today card"><div class="row"><div><span class="section-eyebrow">La tua seduta</span><h3>${escapeHtml(context.session.name || context.session.code)}</h3><p>${escapeHtml(displayLabel(context.session.focus || "Focus da definire"))}</p></div><span class="status-badge">${context.session.exercises?.length || 0} esercizi</span></div><div class="phase11-progress"><span style="width:${Math.min(100, (context.session.exercises?.length || 0) ? Math.round((stats.sessions.length ? 100 : 0)) : 0)}%"></span></div><div class="quick-actions"><button class="gold-button" data-screen-target="training">Avvia</button><button class="ghost-button" data-screen-target="progress">Apri logbook</button><button class="ghost-button" data-screen-target="volume">Apri volume</button></div></section>
+          <section class="phase11-chart-card card"><div class="row"><div><span class="section-eyebrow">Progressi recenti</span><h3>Settimana in movimento</h3></div><span class="chip">${stats.sessions.length} sedute</span></div><div class="phase11-bars">${[0,1,2,3,4,5,6].map((day) => { const count = stats.sessions.filter((session) => new Date(session.dateInput || session.date || 0).getDay() === (day + 1) % 7).length; return `<div class="phase11-bar-col"><span style="height:${Math.max(8, Math.min(100, count * 34))}%"></span><small>${["L","M","M","G","V","S","D"][day]}</small></div>`; }).join("")}</div><p class="micro-copy">Volume e frequenza vengono aggiornati automaticamente dai tuoi log.</p></section>
+        </div><aside class="phase11-side"><section class="card"><div class="row"><h3>Azioni rapide</h3><span class="chip">oggi</span></div><button class="quick-action" data-screen-target="training">??? Inizia workout <span>›</span></button><button class="quick-action" data-screen-target="progress">?? Apri logbook <span>›</span></button><button class="quick-action" data-screen-target="volume">?? Analizza volume <span>›</span></button><button class="quick-action" data-screen-target="quiz">?? Registra check-in <span>›</span></button></section><section class="card"><div class="row"><h3>Coach note</h3><span class="chip" style="color:${decision.color}">${escapeHtml(decision.label)}</span></div><p class="micro-copy">${escapeHtml(decision.text)}</p></section></aside></section>
+        ${accountCardHtml()}
+      </div>`;
+    }
+
+    function dashboardSummaryCard(icon, label, value, detail, color) {
+      return `<article class="phase11-summary-card card" style="--summary-accent:${color}"><span class="summary-icon">${icon}</span><div><span>${label}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div></article>`;
+    }
+
+    function loginGateHtml() {
+      const readyText = authReady ? "Accedi una volta: poi telefono e PC restano sincronizzati in automatico." : "Sto controllando se eri gia loggata.";
+      return `
+        <div class="login-gate">
+          <section class="login-panel">
+            <div class="login-icon">BD</div>
+            <h2>Barbell diva</h2>
+            <p>${escapeHtml(readyText)}</p>
+            <button class="google-button" id="googleLoginButton" data-login-mode="popup">Accedi con Google</button>
+            <button class="ghost-button" style="width:100%;margin-top:10px" id="googleRedirectButton" data-login-mode="redirect">Accesso alternativo</button>
+            <button class="ghost-button" style="width:100%;margin-top:10px" id="continueLocalButton">Continua senza login</button>
+            <span class="login-small">Se il primo pulsante torna qui senza entrare, prova Accesso alternativo.</span>
+          </section>
+        </div>
+      `;
+    }
+
+    function accountCardHtml() {
+      const account = state.profile.account || {};
+      const connected = !!account.uid;
+      const syncReady = !!account.syncReady;
+      const initial = escapeHtml((account.name || account.email || "B").slice(0, 1).toUpperCase());
+      return `
+        <section class="card account-card">
+          <div class="row">
+            <h3>Account Google</h3>
+            <span class="chip">${connected ? syncReady ? "auto sync" : "cloud" : "locale"}</span>
+          </div>
+          <div class="account-status">
+            <div class="account-avatar">${account.photo ? `<img src="${escapeHtml(account.photo)}" alt="">` : initial}</div>
+            <div>
+              <strong>${connected ? escapeHtml(account.name || account.email || "Account collegato") : "Salvataggio locale"}</strong>
+              <span>${escapeHtml(accountStatusText())}</span>
+            </div>
+          </div>
+          ${connected ? `
+            <div class="account-actions">
+              <button class="google-button" id="uploadLocalCloud">${syncReady ? "Forza upload" : "Carica questo dispositivo"}</button>
+              <button class="ghost-button" id="downloadCloudLocal">${syncReady ? "Aggiorna da cloud" : "Scarica cloud"}</button>
+            </div>
+            <button class="ghost-button" style="width:100%;margin-top:8px" id="googleLogoutButton">Esci</button>
+          ` : `
+            <div class="account-actions">
+              <button class="google-button" id="googleLoginButton" data-login-mode="popup">Accedi con Google</button>
+              <button class="ghost-button" id="googleInfoButton">Info</button>
+            </div>
+            <button class="ghost-button" style="width:100%;margin-top:8px" id="googleRedirectButton" data-login-mode="redirect">Accesso alternativo</button>
+          `}
+        </section>
+      `;
+    }
+
+    function trainingHtml() {
+      const context = currentTrainingContext();
+      const session = context.session;
+      const phases = availablePhases();
+      const phaseSessions = context.phaseSessions;
+      const completedExercises = (session.exercises || []).filter((item) => draftSetsFor(context, item).some((value) => String(value || "").trim())).length;
+      const completion = session.exercises?.length ? Math.round(completedExercises / session.exercises.length * 100) : 0;
+      return `
+        <div class="hero-title">
+          <h2>Allenamento <span>${session.code}</span></h2>
+          <p>${formatDateLabel(context.date)} - ${session.phase}, settimana ${session.week || context.week}.</p>
+        </div>
+        <section class="card session-panel">
+          <div class="row">
+            <div>
+              <h3>${session.name}</h3>
+              <p>${session.focus}</p>
+            </div>
+            <span class="chip">Week ${session.week || context.week}</span>
+          </div>
+          <div class="workout-progress-head"><strong>${completedExercises} di ${session.exercises?.length || 0} esercizi completati</strong><span>${completion}%</span></div><div class="workout-progress"><span style="width:${completion}%"></span></div>
+          <div class="form-grid">
+            <label>Data
+              <input type="date" id="trainingDate" value="${context.date}">
+            </label>
+            <label>Fase
+              <select id="trainingPhase">
+                ${phases.map((phase) => `<option value="${escapeHtml(phase)}" ${context.phase === phase ? "selected" : ""}>${escapeHtml(displayLabel(phase))}</option>`).join("")}
+              </select>
+            </label>
+            <label>Scheda
+              <select id="trainingSession">
+                ${phaseSessions.map((item) => `<option value="${item.code}" ${session.code === item.code ? "selected" : ""}>${item.code} - ${item.focus}</option>`).join("")}
+              </select>
+            </label>
+          </div>
+          <div class="session-note">${context.isRestDay ? "Giorno senza scheda automatica: resta su recupero/check oppure scegli una scheda manualmente." : escapeHtml(displayLabel(session.note))} ${context.phase === "Intensita" ? "Fase futura: importata, ma non ancora attiva nel percorso." : ""}</div>
+          <div class="quick-feeling">
+            <span>Come ti senti oggi?</span>
+            <div class="choice-row" data-choice-group="feeling">
+              ${choice("basso", "Basso", state.training.feeling)}
+              ${choice("medio", "Medio", state.training.feeling)}
+              ${choice("alto", "Alto", state.training.feeling)}
+            </div>
+          </div>
+        </section>
+        <section class="card">
+          <div class="row">
+            <h3>Logbook</h3>
+            <button class="ghost-button" data-screen-target="progress">Progressi</button>
+          </div>
+          <div class="choice-row" data-choice-group="feeling">
+            <span class="chip">${session.exercises.length} esercizi</span>
+            <span class="chip">${displayLabel(session.phase)}</span>
+            <span class="chip">${session.code}</span>
+          </div>
+          <p class="micro-copy">Salva Sessione registra subito i carichi sul dispositivo e, quando hai effettuato l'accesso, li sincronizza su PC e telefono.</p>
+        </section>
+        ${session.exercises.map((item, index) => exerciseHtml(item, index, session)).join("")}
+        <button class="gold-button" style="width:100%;margin-top:4px" id="saveWorkout">Salva Sessione</button>
+        ${state.training.lastSavedMessage ? `<div class="save-success" id="workoutSaveConfirmation">? ${escapeHtml(state.training.lastSavedMessage)}</div>` : ""}
+        ${workoutHistoryHtml()}
+      `;
+    }
+
+    function workoutExerciseKey(session, item) {
+      return `${session.code}|${item.name}`;
+    }
+
+    function exerciseHtml(item, index, session) {
+      const context = currentTrainingContext();
+      const accent = muscleColor(item.muscle || session.focus || item.name);
+      const exerciseKey = workoutExerciseKey(session, item);
+      const savedOpen = String(state.training.openExercise || "");
+      const activeKey = savedOpen.startsWith(`${session.code}|`) ? savedOpen : "";
+      const isOpen = activeKey === exerciseKey;
+      const history = isOpen ? exerciseHistory(item, 4, session.code) : [];
+      const notes = isOpen ? exerciseNotes(item, 2) : [];
+      const reps = isOpen ? repTargetsFor(item) : [];
+      const values = isOpen ? draftSetsFor(context, item) : [];
+      const noteValue = isOpen ? draftNoteFor(context, item) : "";
+      return `
+        <section class="card exercise-card workout-entry" style="--exercise-accent:${accent}">
+          <button class="workout-toggle" type="button" data-workout-toggle="${escapeHtml(exerciseKey)}" aria-expanded="${isOpen ? "true" : "false"}">
+            <span class="workout-toggle-stripe"></span>
+            <span class="workout-toggle-main">
+              <h3>${escapeHtml(displayExerciseName(item.name))}</h3>
+              <small>${escapeHtml(item.muscle || session.code)} - ${escapeHtml(displayLabel(item.rest || "recupero libero"))}</small>
+            </span>
+            <span class="workout-toggle-badges">
+              <span class="workout-mini-badge">${escapeHtml(displayLabel(item.sets || "--"))} serie</span>
+              <span class="workout-mini-badge">${escapeHtml(displayLabel(item.reps || "--"))}</span>
+              <span class="workout-toggle-icon">${isOpen ? "-" : "+"}</span>
+            </span>
+          </button>
+          ${isOpen ? `
+            <div class="workout-details">
+              <div class="exercise-head">
+                <div class="target-grid">
+                  <div class="target-box"><span>Serie</span><strong>${escapeHtml(displayLabel(item.sets || "--"))}</strong></div>
+                  <div class="target-box"><span>Reps</span><strong>${escapeHtml(displayLabel(item.reps || "--"))}</strong></div>
+                  <div class="target-box"><span>Recupero</span><strong>${escapeHtml(displayLabel(item.rest || "--"))}</strong></div>
+                </div>
+                <div class="chips">
+                  <span class="chip">Avv. ${escapeHtml(displayLabel(item.warmup || "--"))}</span>
+                  <span class="chip">${escapeHtml(displayLabel(item.tempo || "tempo libero"))}</span>
+                </div>
+              </div>
+              <div class="timer-panel exercise-timer">
+                <div>
+                  <span class="micro-copy">Recupero previsto</span>
+                  <strong>${escapeHtml(displayLabel(item.rest || "--"))}</strong><br>
+                  <small data-rest-display>${formatTimer(state.training.timerRemaining || 0)}</small>
+                </div>
+                <div class="chips">
+                  ${recoveryButtons(item.rest)}
+                </div>
+              </div>
+              <div class="set-log">
+                <div class="section-eyebrow" style="margin:0">Carichi per serie</div>
+                <div class="set-log-grid">
+                  ${values.map((value, setIndex) => `
+                    <label class="set-input-card">
+                      <span>Serie ${setIndex + 1}</span>
+                      <small>${escapeHtml(displayLabel(reps[setIndex] || item.reps || "--"))} reps</small>
+                      <div class="copy-row">
+                        <input type="text" inputmode="decimal" placeholder="kg" value="${escapeHtml(value)}" data-set-kg="${index}" data-set-index="${setIndex}">
+                        <button class="copy-kg" type="button" data-copy-kg="${index}" data-copy-index="${setIndex}" title="Copia nella serie successiva">+</button>
+                      </div>
+                    </label>
+                  `).join("")}
+                </div>
+              </div>
+              <div class="exercise-notes"><strong>Istruzioni</strong><span>${escapeHtml(displayLabel(item.note || "--"))}</span></div>
+              <label class="exercise-note-box">
+                <span>Nota di oggi</span>
+                <textarea data-exercise-note="${index}" placeholder="Cue, sensazioni, setup o cose da ricordare...">${escapeHtml(noteValue)}</textarea>
+              </label>
+              <div class="recent-note-box">
+                <span>Ultime 2 note ${escapeHtml(displayExerciseName(item.name))}</span>
+                ${notes.length ? notes.map((row) => `<div class="recent-note-row"><strong>${escapeHtml(row.date)}</strong>${escapeHtml(row.text)}</div>`).join("") : `<div class="recent-note-row">Nessuna nota precedente per questo esercizio.</div>`}
+              </div>
+              ${logbookNotesHtml(item)}
+              <div class="history">
+                <div class="section-eyebrow" style="margin:0">Progressioni carico</div>
+                ${history.length ? history.map((row) => `<div class="history-row"><span>${escapeHtml(historyLoadLabel(row))}</span><strong>${escapeHtml(row.date)}</strong></div>`).join("") : `<div class="history-row"><span>Nessuna progressione trovata nel logbook</span><strong>--</strong></div>`}
+              </div>
+            </div>
+          ` : ""}
+        </section>
+      `;
+    }
+
+    function logbookSessionsForUi() {
+      const query = String(state.ui?.logbookSearch || "").trim().toLowerCase();
+      const status = state.ui?.logbookStatus || "all";
+      return (state.training.sessions || []).filter((session) => {
+        const completed = session.status === "completed" || session.completedAt || session.savedAt;
+        if (status === "completed" && !completed) return false;
+        if (status === "draft" && completed) return false;
+        if (!query) return true;
+        return [session.sessionCode, session.sessionName, session.name, session.phase, session.dateInput, session.date, ...(session.exercises || []).map((item) => item.name || item.exerciseName)]
+          .filter(Boolean).join(" ").toLowerCase().includes(query);
+      }).slice().sort((a, b) => new Date(b.dateInput || b.date || 0) - new Date(a.dateInput || a.date || 0));
+    }
+
+    function logbookSessionVolume(session) {
+      return (session.exercises || []).reduce((total, item) => {
+        const sets = item.sets || item.completedSets || [];
+        if (Array.isArray(sets) && sets.length) return total + sets.reduce((sum, set) => sum + (Number(set.kg ?? set.load ?? 0) || 0) * (Number(set.reps ?? 0) || 0), 0);
+        return total + (Number(item.volume) || (Number(item.kg) || 0) * (Number(item.reps) || 0));
+      }, 0);
+    }
+
+    function logbookHtml() {
+      const sessions = logbookSessionsForUi();
+      const allSessions = state.training.sessions || [];
+      const totalVolume = allSessions.reduce((sum, session) => sum + logbookSessionVolume(session), 0);
+      const best = allSessions.reduce((max, session) => Math.max(max, ...(session.exercises || []).map((item) => Number(item.kg) || 0)), 0);
+      return `<div class="phase11-logbook">
+        <section class="phase11-hero card"><div><span class="section-eyebrow">Storico allenamenti</span><h2>Il tuo <span>Logbook</span></h2><p>Rivedi sedute, carichi e progressi senza perdere il filo.</p></div><button class="gold-button" data-screen-target="training">Nuovo workout</button></section>
+        <section class="phase11-summary-grid">
+          ${dashboardSummaryCard("?", "Sedute", allSessions.length, "salvate", colors.green)}
+          ${dashboardSummaryCard("?", "Volume totale", `${Math.round(totalVolume)} kg`, "carico registrato", colors.violet)}
+          ${dashboardSummaryCard("?", "Carico top", `${best || 0} kg`, "miglior dato", colors.gold)}
+        </section>
+        <section class="card phase11-logbook-toolbar"><label>Cerca nel logbook<input id="phase11LogbookSearch" type="search" placeholder="Esercizio, scheda o data" value="${escapeHtml(state.ui?.logbookSearch || "")}" /></label><label>Mostra<select id="phase11LogbookStatus"><option value="all" ${!state.ui?.logbookStatus || state.ui.logbookStatus === "all" ? "selected" : ""}>Tutte le sedute</option><option value="completed" ${state.ui?.logbookStatus === "completed" ? "selected" : ""}>Completate</option><option value="draft" ${state.ui?.logbookStatus === "draft" ? "selected" : ""}>In bozza</option></select></label></section>
+        <section class="phase11-logbook-grid">${sessions.length ? sessions.map((session) => {
+          const date = formatDateLabel(session.dateInput || session.date || "");
+          const exercises = session.exercises || [];
+          const completed = session.status === "completed" || session.completedAt || session.savedAt;
+          return `<article class="phase11-log-card card"><div class="row"><div><span class="section-eyebrow">${escapeHtml(date)}</span><h3>${escapeHtml(session.sessionName || session.name || session.sessionCode || "Allenamento")}</h3></div><span class="status-badge">${completed ? "Completato" : "Bozza"}</span></div><div class="phase11-log-meta"><span>${escapeHtml(session.sessionCode || "Seduta")}</span><span>•</span><span>${escapeHtml(session.phase || "Programma")}</span><span>•</span><span>${exercises.length} esercizi</span></div><div class="phase11-log-stats"><div><strong>${Math.round(logbookSessionVolume(session))} kg</strong><span>volume</span></div><div><strong>${exercises.reduce((n, item) => n + Number(item.sets?.length || item.completedSets?.length || item.series || 0), 0)}</strong><span>serie</span></div><div><strong>${escapeHtml(session.week ? `S${session.week}` : "—")}</strong><span>settimana</span></div></div><details class="phase11-log-exercises"><summary>Dettagli seduta</summary><ul>${exercises.length ? exercises.map((item) => `<li>${escapeHtml(displayExerciseName(item.name || item.exerciseName || "Esercizio"))} ${item.kg ? `· ${escapeHtml(item.kg)} kg` : ""}</li>`).join("") : "<li>Nessun esercizio registrato</li>"}</ul></details></article>`;
+        }).join("") : `<div class="phase11-log-empty card">Nessuna seduta corrisponde ai filtri. Completa un workout per iniziare lo storico.</div>`}</section>
+      </div>`;
+    }
+
+    function progressHtml() {
+      return `
+        <div class="hero-title">
+          <h2>Progressioni <span>intelligenti</span></h2>
+          <p>Seleziona un esercizio e guarda il trend dei carichi.</p>
+        </div>
+        <section class="card">
+          <label>Esercizio
+            <select id="progressExercise">
+              ${state.training.exercises.map((item) => `<option value="${escapeHtml(item.name)}" ${state.training.selected === item.name ? "selected" : ""}>${escapeHtml(displayExerciseName(item.name))}</option>`).join("")}
+            </select>
+          </label>
+          <div style="margin-top:14px">
+            <canvas id="progressChart" width="360" height="190"></canvas>
+          </div>
+          ${selectedProgressionHtml()}
+        </section>
+        <div class="score-list">
+          ${scoreCard("Carichi", performanceScore(), "Trend dei carichi registrati nello storico.", colors.gold)}
+          ${scoreCard("Aderenza", adherenceScore(), "Sessioni salvate e qualita della compilazione.", colors.green)}
+          ${scoreCard("Rischio", structuralRisk(), "Stress, sonno, dolore e recupero percepito.", structuralRisk() > 65 ? colors.red : colors.orange)}
+          ${scoreCard("Risposta programma", programResponse(), "Energia, andamento allenamento, carichi e feeling con la scheda.", colors.blue)}
+        </div>
+      `;
+    }
+
+    function selectedProgressionHtml() {
+      const meta = selectedExerciseMeta();
+      const rows = exerciseHistory(meta, 8, meta.jump);
+      return `<div class="history">
+        <div class="section-eyebrow" style="margin:0">Storico carichi esercizio</div>
+        ${rows.length ? rows.map((row) => `<div class="history-row"><span>${escapeHtml(historyLoadLabel(row))}</span><strong>${escapeHtml(row.date)} - ${escapeHtml(row.sessionCode || "")}</strong></div>`).join("") : `<div class="history-row"><span>Nessuna progressione trovata per questo esercizio</span><strong>--</strong></div>`}
+      </div>`;
+    }
+
+    function nutritionHtml() {
+      return `
+        <div class="hero-title">
+          <h2>Dashboard <span>nutrizione</span></h2>
+          <p>Piano nutrizionale, semaforo bulk, pliche, circonferenze, foto progressi e backup alimentazione.</p>
+        </div>
+        <section class="card">
+          <div class="row">
+            <h3>Dashboard alimentazione</h3>
+            <a class="ghost-button" href="./nutrizione/index.html" target="_blank" rel="noopener">Apri completa</a>
+          </div>
+          <iframe class="nutrition-frame" src="./nutrizione/index.html?v=54" title="Dashboard nutrizione"></iframe>
+        </section>
+      `;
+    }
+
+    function volumeScreenHtml() {
+      return `
+        <div class="hero-title">
+          <h2>Storico volume <span>annuale</span></h2>
+          <p>Ordine della programmazione e confronto dei volumi per scheda.</p>
+        </div>
+        ${volumeHistoryHtml()}
+      `;
+    }
+
+    function coachHtml() {
+      if (state.profile.mode !== "coach") return coachLockHtml();
+      const p = decisionPriority();
+      const customCount = customProgramSheets().length;
+      const importedGroups = new Set(sessionsForPhase(state.coach.editorPhase || state.training.phaseFilter || "Intensificazione").map((item) => item.letter || sessionLetter(item.code))).size || 0;
+      return `
+        <div class="hero-title">
+          <h2>Coach Studio <span>Alice</span></h2>
+          <p>Programmi, vista atleta, progressioni e volume in una schermata da PC.</p>
+        </div>
+        ${coachCommandHtml()}
+        <div class="coach-grid">
+          <article class="coach-tile"><span>Schede custom</span><strong>${customCount}</strong><span>create dal builder</span></article>
+          <article class="coach-tile"><span>Blocchi importati</span><strong>${importedGroups}</strong><span>schede base modificabili</span></article>
+          <article class="coach-tile"><span>Check-in</span><strong>${p.level}</strong><span>${escapeHtml(p.label)}</span></article>
+          <article class="coach-tile"><span>Volume</span><strong>${VOLUME_HISTORY.length + customCount}</strong><span>blocchi monitorati</span></article>
+        </div>
+        ${coachWorkbenchHtml()}
+        <section class="coach-section">${coachVolumePanelHtml()}</section>
+      `;
+    }
+
+    function coachCommandHtml() {
+      const athleteLayout = state.coach.athleteLayout || "compact";
+      const layoutLabels = {
+        compact: "Compatta",
+        wide: "Ampia",
+        bottom: "Sotto"
+      };
+      return `
+        <section class="coach-command">
+          <div class="coach-command-top">
+            <div>
+              <h3 class="coach-section-title">CONTROL ROOM</h3>
+              <p class="micro-copy">Archivio locale su questo dispositivo.</p>
+            </div>
+            ${themeSwitcherHtml()}
+          </div>
+          <div class="coach-control-row">
+            <div class="chips">
+              <button class="ghost-button" id="exportData">Esporta dati</button>
+              <label class="ghost-button" for="importData">Importa backup</label>
+              <input id="importData" type="file" accept="application/json" hidden>
+              <button class="ghost-button" data-screen-target="quiz">Check-in</button>
+            </div>
+            <button class="view-toggle-button ${state.coach.athleteView ? "active" : ""}" data-toggle-athlete-view>Vista Atleta</button>
+            ${state.coach.athleteView ? `
+              <div class="athlete-layout-controls" aria-label="Layout Vista Atleta">
+                ${["compact", "wide", "bottom"].map((layout) => `
+                  <button class="athlete-layout-button ${athleteLayout === layout ? "active" : ""}" data-athlete-layout="${layout}">${layoutLabels[layout]}</button>
+                `).join("")}
+              </div>
+            ` : ""}
+          </div>
+        </section>
+      `;
+    }
+
+    function themeSwitcherHtml() {
+      const theme = state.profile.theme || "dark";
+      return `
+        <div class="theme-switcher" aria-label="Tema app">
+          <span>Tema</span>
+          <button class="theme-choice ${theme === "light" ? "active" : ""}" data-theme-choice="light">Chiaro</button>
+          <button class="theme-choice ${theme !== "light" ? "active" : ""}" data-theme-choice="dark">Scuro</button>
+        </div>
+      `;
+    }
+
+    function coachProgramsForUi() {
+      const rank = { active: 0, available: 1, draft: 1, archived: 2 };
+      return programRepository.getPrograms().slice().sort((a, b) => (rank[a.status] ?? 1) - (rank[b.status] ?? 1) || String(a.name || "").localeCompare(String(b.name || "")));
+    }
+
+    function ensureCoachProgramSelection() {
+      const programs = coachProgramsForUi();
+      if (!programs.length) {
+        coachProgramUi.programId = "";
+        coachProgramUi.sheetId = "";
+        return { program: null, sheets: [], sheet: null };
+      }
+      let program = programs.find((item) => item.id === coachProgramUi.programId);
+      if (!program) program = programs.find((item) => item.status === "active") || programs[0];
+      coachProgramUi.programId = program.id;
+      const sheets = programRepository.getSheets(program.id);
+      const remembered = coachProgramUi.lastSheetByProgram.get(program.id);
+      let sheet = sheets.find((item) => item.id === coachProgramUi.sheetId) || sheets.find((item) => item.id === remembered) || sheets[0] || null;
+      coachProgramUi.sheetId = sheet?.id || "";
+      if (sheet) coachProgramUi.lastSheetByProgram.set(program.id, sheet.id);
+      return { program, sheets, sheet };
+    }
+
+    function coachSheetDraftKey(programId, sheetId) {
+      return `${programId}:${sheetId}`;
+    }
+
+    function programWeekCount(program, sheet = null) {
+      const existing = (sheet?.exercises || []).reduce((max, exercise) => Math.max(max, (exercise.progression?.weeks || []).length), 0);
+      return Math.max(1, Number(program?.durationWeeks) || 1, existing);
+    }
+
+    function draftFromCanonicalSheet(program, sheet) {
+      const weekCount = programWeekCount(program, sheet);
+      return {
+        programId: program.id,
+        sheetId: sheet.id,
+        name: sheet.name || "",
+        code: sheet.code || "",
+        focus: sheet.focus || "",
+        split: sheet.split || "",
+        note: sheet.note || "",
+        color: sheet.color || "",
+        rows: (sheet.exercises || []).filter((exercise) => !exercise.deletedAt).sort((a, b) => Number(a.order || 0) - Number(b.order || 0)).map((exercise) => ({
+          id: exercise.id,
+          group: coachEditorExerciseGroup(exercise),
+          exercise: exercise.name || "",
+          note: exercise.note || "",
+          som: exercise.som || exercise.muscle || "",
+          approach: exercise.prescription?.warmup?.label || exercise.warmup || "",
+          sets: exercise.prescription?.sets ?? "",
+          reps: formatReps(exercise.prescription?.reps),
+          effort: exercise.prescription?.rpe?.min !== null && exercise.prescription?.rpe?.min !== undefined ? `RPE ${formatRir(exercise.prescription.rpe)}` : formatRir(exercise.prescription?.rir),
+          restSeconds: exercise.prescription?.rest?.seconds ?? exercise.prescription?.rest?.minSeconds ?? "",
+          tempo: formatTempo(exercise.prescription?.tempo),
+          technique: exercise.prescription?.technique?.type || "normal",
+          techniqueDescription: exercise.prescription?.technique?.description || "",
+          loadValue: exercise.prescription?.prescribedLoad?.value ?? "",
+          loadUnit: exercise.prescription?.prescribedLoad?.unit || "kg",
+          equipment: exercise.metadata?.equipment || "",
+          pattern: exercise.metadata?.pattern || "",
+          secondaryMuscles: (exercise.metadata?.secondaryMuscles || []).join(", "),
+          mainLift: !!exercise.metadata?.mainLift,
+          locked: !!exercise.metadata?.locked,
+          custom: !!exercise.metadata?.custom,
+          progression: clone(exercise.progression || { weeks: [] }),
+          weeks: Array.from({ length: weekCount }, (_, index) => {
+            const week = (exercise.progression?.weeks || []).find((item) => Number(item.week) === index + 1);
+            return week ? formatWeekPrescription(week) : "";
+          })
+        })),
+        weekCount,
+        dirtyRows: new Set(),
+        dirtyBaseFields: new Set(),
+        dirtyWeekNumbers: new Set(),
+        activeRow: 0,
+        copiedWeeks: []
+      };
+    }
+
+    function activeCoachBuilder() {
+      const selection = ensureCoachProgramSelection();
+      if (!selection.program || !selection.sheet) return null;
+      const key = coachSheetDraftKey(selection.program.id, selection.sheet.id);
+      if (!coachProgramUi.drafts.has(key)) coachProgramUi.drafts.set(key, draftFromCanonicalSheet(selection.program, selection.sheet));
+      return coachProgramUi.drafts.get(key);
+    }
+
+    function discardCoachDraft(programId, sheetId) {
+      coachProgramUi.drafts.delete(coachSheetDraftKey(programId, sheetId));
+      coachProgramUi.dirtySheets.delete(sheetId);
+    }
+
+    function selectCoachProgram(programId) {
+      clearTimeout(coachProgramUi.autoSaveTimer);
+      commitActiveCoachDraft({ immediate: true, quiet: true });
+      coachProgramUi.programId = programId;
+      coachProgramUi.sheetId = coachProgramUi.lastSheetByProgram.get(programId) || "";
+      coachProgramUi.sheetMenuId = "";
+      coachProgramUi.allSheetsOpen = false;
+      coachProgramUi.selectedExercises.clear();
+      ensureCoachProgramSelection();
+    }
+
+    function selectCoachSheet(sheetId) {
+      clearTimeout(coachProgramUi.autoSaveTimer);
+      commitActiveCoachDraft({ immediate: true, quiet: true });
+      coachProgramUi.sheetId = sheetId;
+      if (coachProgramUi.programId && sheetId) coachProgramUi.lastSheetByProgram.set(coachProgramUi.programId, sheetId);
+      coachProgramUi.sheetMenuId = "";
+      coachProgramUi.allSheetsOpen = false;
+      coachProgramUi.selectedExercises.clear();
+    }
+
+    function programStatusLabel(status) {
+      return status === "active" ? "Attivo" : status === "archived" ? "Archiviato" : "Bozza";
+    }
+
+    function coachProgramManagerHtml() {
+      const { program, sheets, sheet } = ensureCoachProgramSelection();
+      const programs = coachProgramsForUi();
+      if (!program) return `
+        <section class="program-empty-state">
+          <h3>Nessun programma disponibile</h3>
+          <p>Crea il primo programma: potrai aggiungere le schede anche in un secondo momento.</p>
+          <button class="gold-button" data-program-action="new">+ Crea programma</button>
+        </section>
+        ${coachUiModalHtml()}
+      `;
+      const menuSheet = sheets.find((item) => item.id === coachProgramUi.sheetMenuId);
+      return `
+        <div class="program-manager">
+          <section class="program-header-card">
+            <div class="program-picker-row">
+              <label>Programma da modificare
+                <select id="coachProgramSelect">
+                  ${programs.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === program.id ? "selected" : ""}>${escapeHtml(item.name)} · ${programStatusLabel(item.status)}</option>`).join("")}
+                </select>
+              </label>
+              <div class="sheet-tab-actions">
+                <button class="ghost-button" data-program-action="new">+ Nuovo</button>
+                <button class="ghost-button" data-program-action="edit">Modifica</button>
+                <button class="ghost-button" data-program-action="duplicate">Duplica</button>
+                <button class="ghost-button" data-program-action="activate">Rendi attivo</button>
+                <button class="ghost-button" data-program-action="archive">Archivia</button>
+                <button class="danger-button" data-program-action="delete">Elimina</button>
+              </div>
+            </div>
+            <div class="program-summary-row">
+              <div class="program-summary-item"><span>Nome</span><strong>${escapeHtml(program.name)}</strong></div>
+              <div class="program-summary-item"><span>Fase</span><strong>${escapeHtml(program.phase || "Da definire")}</strong></div>
+              <div class="program-summary-item"><span>Durata</span><strong>${escapeHtml(program.durationWeeks || 1)} settimane</strong></div>
+              <div class="program-summary-item"><span>Schede</span><strong>${sheets.length}</strong></div>
+              <div class="program-summary-item"><span>Stato</span><strong><span class="program-status ${program.status === "active" ? "active" : program.status === "archived" ? "archived" : ""}">${programStatusLabel(program.status)}</span></strong></div>
+            </div>
+          </section>
+          ${sheets.length ? `
+            <section class="sheet-navigation">
+              <div class="sheet-navigation-head">
+                <div><strong>Schede del programma</strong><div class="micro-copy">Trascina le tab per riordinarle oppure usa il menu ?</div></div>
+                <span class="chip">${sheets.length} schede</span>
+              </div>
+              <div class="sheet-tabs-shell">
+                <button class="sheet-scroll-button" data-sheet-scroll="-1" aria-label="Schede precedenti">‹</button>
+                <div class="program-sheet-tabs" id="programSheetTabs">
+                  ${sheets.map((item) => `
+                    <div class="program-sheet-tab ${item.id === sheet?.id ? "active" : ""} ${item.status === "archived" ? "archived" : ""}" draggable="true" data-sheet-tab-id="${escapeHtml(item.id)}" style="${item.color ? `--sheet-color:${escapeHtml(item.color)};border-color:${escapeHtml(item.color)}` : ""}">
+                      <button class="program-sheet-tab-copy" data-select-sheet="${escapeHtml(item.id)}">
+                        <strong>${escapeHtml(item.code)} ${coachProgramUi.dirtySheets.has(item.id) ? '<span class="sheet-dirty-dot">?</span>' : ""}</strong>
+                        <small>${escapeHtml(item.name || item.focus || "Scheda")}</small>
+                      </button>
+                      <button class="sheet-tab-menu" data-sheet-menu="${escapeHtml(item.id)}" aria-label="Azioni ${escapeHtml(item.code)}">?</button>
+                    </div>
+                  `).join("")}
+                </div>
+                <button class="sheet-scroll-button" data-sheet-scroll="1" aria-label="Schede successive">›</button>
+                <button class="ghost-button all-sheets-button" data-toggle-all-sheets>Tutte ?</button>
+                <button class="sheet-add-button" data-sheet-action="new" aria-label="Nuova scheda">+ <span class="desktop-only">Nuova scheda</span></button>
+              </div>
+              ${coachProgramUi.allSheetsOpen ? `
+                <div class="all-sheets-panel">
+                  <input id="allSheetsSearch" type="search" placeholder="Cerca per nome, codice o focus">
+                  <div class="all-sheets-grid" id="allSheetsGrid">
+                    ${sheets.map((item) => `<button class="all-sheet-choice ${item.id === sheet?.id ? "active" : ""}" data-select-sheet="${escapeHtml(item.id)}" data-sheet-search="${escapeHtml(`${item.code} ${item.name} ${item.focus}`.toLowerCase())}"><strong>${escapeHtml(item.code)}</strong><br><small>${escapeHtml(item.name || item.focus || "Scheda")}</small></button>`).join("")}
+                  </div>
+                </div>
+              ` : ""}
+              ${menuSheet ? coachSheetContextMenuHtml(menuSheet, sheets) : ""}
+            </section>
+          ` : `
+            <section class="program-empty-state">
+              <h3>Nessuna scheda in questo programma</h3>
+              <p>Il programma può restare vuoto finché non vuoi iniziare a costruirlo.</p>
+              <button class="gold-button" data-sheet-action="new">+ Aggiungi la prima scheda</button>
+            </section>
+          `}
+        </div>
+        ${coachUiModalHtml()}
+      `;
+    }
+
+    function coachSheetContextMenuHtml(sheet, sheets) {
+      const position = sheets.findIndex((item) => item.id === sheet.id);
+      return `
+        <div class="sheet-context-menu">
+          <div class="row"><div><strong>${escapeHtml(sheet.code)} · ${escapeHtml(sheet.name || "Scheda")}</strong><div class="micro-copy">ID stabile: ${escapeHtml(sheet.id)}</div></div><button class="mini-button" data-close-sheet-menu>Chiudi</button></div>
+          <div class="sheet-context-actions">
+            <button class="ghost-button" data-sheet-action="rename" data-sheet-id="${escapeHtml(sheet.id)}">Rinomina</button>
+            <button class="ghost-button" data-sheet-action="edit" data-sheet-id="${escapeHtml(sheet.id)}">Modifica dettagli</button>
+            <button class="ghost-button" data-sheet-action="duplicate" data-sheet-id="${escapeHtml(sheet.id)}">Duplica</button>
+            <button class="ghost-button" data-sheet-action="left" data-sheet-id="${escapeHtml(sheet.id)}" ${position <= 0 ? "disabled" : ""}>? Sinistra</button>
+            <button class="ghost-button" data-sheet-action="right" data-sheet-id="${escapeHtml(sheet.id)}" ${position >= sheets.length - 1 ? "disabled" : ""}>Destra ?</button>
+            <button class="ghost-button" data-sheet-action="position" data-sheet-id="${escapeHtml(sheet.id)}">Sposta in posizione</button>
+            <button class="ghost-button" data-sheet-action="copy" data-sheet-id="${escapeHtml(sheet.id)}">Copia in altro programma</button>
+            <button class="ghost-button" data-sheet-action="move" data-sheet-id="${escapeHtml(sheet.id)}">Sposta in altro programma</button>
+            <button class="ghost-button" data-sheet-action="archive" data-sheet-id="${escapeHtml(sheet.id)}">${sheet.status === "archived" ? "Riattiva" : "Archivia"}</button>
+            <button class="danger-button" data-sheet-action="delete" data-sheet-id="${escapeHtml(sheet.id)}">Elimina</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function coachMascotHtml(className = "") {
+      return `<div class="coach-avatar ${className}"><img src="coach-mascot.svg" alt="Coach AI" onerror="this.parentElement.classList.add('mascot-failed')"><svg class="coach-mascot-inline-fallback" viewBox="0 0 160 160" aria-hidden="true"><rect x="27" y="42" width="106" height="82" rx="28" fill="#f6a8d0"/><rect x="38" y="55" width="84" height="57" rx="18" fill="#24142f"/><circle cx="65" cy="82" r="7" fill="#ff3d91"/><circle cx="95" cy="82" r="7" fill="#ff3d91"/><path d="M68 97q12 10 24 0" fill="none" stroke="#ff3d91" stroke-width="5" stroke-linecap="round"/></svg></div>`;
+    }
+    function ensureCoachMascotFallbacks() {
+      document.querySelectorAll('.coach-avatar img[src="coach-mascot.svg"]').forEach((img) => {
+        if (img.dataset.mascotFallbackBound) return;
+        img.dataset.mascotFallbackBound = "1";
+        img.addEventListener("error", () => {
+          img.parentElement.classList.add("mascot-failed");
+          if (!img.parentElement.querySelector(".coach-mascot-inline-fallback")) img.parentElement.insertAdjacentHTML("beforeend", coachMascotHtml().match(/<svg class="coach-mascot-inline-fallback"[\s\S]*?<\/svg>/)?.[0] || "");
+        });
+      });
+    }
+
+    function coachUiModalHtml() {
+      const type = coachProgramUi.modal;
+      if (!type) return "";
+      const { program, sheets, sheet } = ensureCoachProgramSelection();
+      const targetSheet = coachProgramUi.modalData.sheetId ? programRepository.getSheetById(program?.id, coachProgramUi.modalData.sheetId) : sheet;
+      const close = `<button class="ghost-button" data-coach-modal-close>Annulla</button>`;
+      if (type === "program-new" || type === "program-edit") {
+        const item = type === "program-edit" ? program : { name: "", phase: "", durationWeeks: 8, status: "draft" };
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${type === "program-new" ? "Nuovo programma" : "Modifica programma"}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(item?.name || "")}" placeholder="Nome programma"></label><label>Fase<input id="programModalPhase" value="${escapeHtml(item?.phase || "")}" placeholder="Volume, intensificazione..."></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Stato<select id="programModalStatus"><option value="draft" ${item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div><div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>Salva programma</button></div></section></div>`;
+      }
+      if (type === "sheet-new" || type === "sheet-edit" || type === "sheet-rename") {
+        const item = type === "sheet-new" ? { name: "", code: suggestedSheetCode(sheets), focus: "", split: "", note: "", color: "" } : targetSheet;
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${type === "sheet-new" ? "Nuova scheda" : type === "sheet-rename" ? "Rinomina scheda" : "Modifica dettagli scheda"}</h3><div class="form-grid" style="margin-top:12px"><label>Nome<input id="sheetModalName" value="${escapeHtml(item?.name || "")}" placeholder="Nome scheda"></label><label>Codice<input id="sheetModalCode" value="${escapeHtml(item?.code || "")}" placeholder="A, AA o personalizzato"></label>${type === "sheet-rename" ? "" : `<label>Focus<input id="sheetModalFocus" value="${escapeHtml(item?.focus || "")}"></label><label>Split<input id="sheetModalSplit" value="${escapeHtml(item?.split || "")}"></label><label class="full">Note<textarea id="sheetModalNote">${escapeHtml(item?.note || "")}</textarea></label><label>Colore facoltativo<input id="sheetModalColor" type="color" value="${/^#[0-9a-f]{6}$/i.test(item?.color || "") ? escapeHtml(item.color) : "#ff6fcb"}"></label>`}</div><div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>Salva scheda</button></div></section></div>`;
+      }
+      if (type === "sheet-position") {
+        const current = Math.max(1, sheets.findIndex((item) => item.id === targetSheet?.id) + 1);
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>Sposta scheda in posizione</h3><label style="margin-top:12px">Posizione da 1 a ${sheets.length}<input id="sheetModalPosition" type="number" min="1" max="${sheets.length}" value="${current}"></label><div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>Sposta</button></div></section></div>`;
+      }
+      if (type === "sheet-copy" || type === "sheet-move") {
+        const targets = coachProgramsForUi().filter((item) => item.id !== program?.id);
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${type === "sheet-copy" ? "Copia" : "Sposta"} in un altro programma</h3>${targets.length ? `<label style="margin-top:12px">Programma destinazione<select id="sheetModalTargetProgram">${targets.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("")}</select></label>` : `<p class="micro-copy">Non esiste ancora un altro programma di destinazione.</p>`}<div class="coach-modal-actions">${close}${targets.length ? `<button class="gold-button" data-coach-modal-save>Conferma</button>` : ""}</div></section></div>`;
+      }
+      if (type === "program-delete" || type === "sheet-delete") {
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>Conferma eliminazione</h3><p style="margin-top:12px">L’elemento verrà eliminato tramite repository e conservato come tombstone per la sincronizzazione.</p><div class="coach-modal-actions">${close}<button class="danger-button" data-coach-modal-save>Elimina</button></div></section></div>`;
+      }
+      if (type === "exercise-library") {
+        const query = String(coachProgramUi.libraryQuery || "").toLowerCase();
+        const items = coachExerciseGroups().flatMap((group) => coachExercisesForGroup(group).map((item) => ({ ...item, group, equipment: item.equipment || "", pattern: item.pattern || "" }))).filter((item, index, all) => all.findIndex((other) => normalizeExerciseName(other.name) === normalizeExerciseName(item.name) && other.group === item.group) === index).filter((item) => (!query || `${item.name} ${item.group}`.toLowerCase().includes(query)) && (!coachProgramUi.libraryMuscle || item.group === coachProgramUi.libraryMuscle) && (!coachProgramUi.libraryEquipment || item.equipment === coachProgramUi.libraryEquipment) && (!coachProgramUi.libraryPattern || item.pattern === coachProgramUi.libraryPattern));
+        return `<div class="coach-modal-backdrop"><section class="coach-modal phase4-library-modal"><div class="row"><h3>Aggiungi esercizio</h3>${close}</div><div class="phase4-library-filters"><input id="exerciseLibrarySearch" value="${escapeHtml(coachProgramUi.libraryQuery)}" placeholder="Cerca esercizio"><select id="exerciseLibraryMuscle"><option value="">Tutti i gruppi</option>${coachExerciseGroups().map((group) => `<option ${coachProgramUi.libraryMuscle === group ? "selected" : ""}>${escapeHtml(group)}</option>`).join("")}</select></div><div class="phase4-library-list">${items.slice(0, 100).map((item) => `<button type="button" data-library-add="${escapeHtml(item.name)}" data-library-group="${escapeHtml(item.group)}"><strong>${escapeHtml(displayExerciseName(item.name))}</strong><span>${escapeHtml(item.group)}${item.equipment ? ` · ${escapeHtml(item.equipment)}` : ""}</span></button>`).join("") || '<p class="micro-copy">Nessun risultato.</p>'}</div><button class="ghost-button" type="button" data-exercise-custom>+ Crea esercizio personalizzato</button></section></div>`;
+      }
+      if (type === "biomechanics-compare") {
+        const selected = (coachProgramUi.modalData.exerciseIds || []).map((id) => programRepository.getExerciseById(program?.id, sheet?.id, id)).filter(Boolean);
+        const candidates = programRepository.getExercises(program?.id, sheet?.id).filter((item) => !selected.some((chosen) => chosen.id === item.id)).slice(0, 30);
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>Confronta esercizi</h3><p class="micro-copy">Seleziona da 2 a 4 esercizi. Le differenze sono evidenziate senza dichiarare un vincitore assoluto.</p><div class="form-grid"><label class="full">Aggiungi esercizio<select id="compareExerciseSelect"><option value="">Seleziona...</option>${candidates.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("")}</select></label></div><div class="comparison-grid">${selected.map((item) => { const bio=item.biomechanics || biomechanicsForExercise(item.name); const rating=contextualExerciseRating(item,{goal:item.muscle}); return `<article class="comparison-card"><h4>${escapeHtml(item.name)}</h4><strong>${rating.tier} · ${rating.score}/5</strong><span>${escapeHtml((bio.primaryMuscles || []).join(", "))}</span><span>Azione: ${escapeHtml((bio.jointActions || []).join(", "))}</span><span>Resistenza: ${escapeHtml(biomechanicsResistanceLabel(bio.resistanceProfile))}</span><span>Allungamento: ${escapeHtml(bio.lengthenedBias || "n/d")} · Accorciamento: ${escapeHtml(bio.shortenedBias || "n/d")}</span><span>Stabilità ${biomechanicsScaleLabel(bio.stability)} · Fatica ${biomechanicsScaleLabel(bio.systemicFatigue)}</span><span>Caricabilità ${biomechanicsScaleLabel(bio.loadability)} · Progressione ${biomechanicsScaleLabel(bio.progressionEase)}</span></article>`; }).join("") || `<p class="micro-copy">Scegli almeno due esercizi.</p>`}</div><div class="coach-modal-actions">${close}</div></section></div>`;
+      }
+      if (type === "exercise-custom" || type === "exercise-details") {
+        const exercise = type === "exercise-details" ? programRepository.getExerciseById(program?.id, sheet?.id, coachProgramUi.modalData.exerciseId) : null;
+        const metadata = exercise?.metadata || {};
+        return `<div class="coach-modal-backdrop"><section class="coach-modal phase4-details-modal"><h3>${type === "exercise-custom" ? "Esercizio personalizzato" : "Dettagli esercizio"}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="exerciseModalName" value="${escapeHtml(exercise?.name || "")}"></label><label>Gruppo principale<input id="exerciseModalMuscle" value="${escapeHtml(exercise?.muscle || "Custom")}"></label><label>Gruppi secondari<input id="exerciseModalSecondary" value="${escapeHtml((metadata.secondaryMuscles || []).join(", "))}" placeholder="Separati da virgola"></label><label>Attrezzatura<input id="exerciseModalEquipment" value="${escapeHtml(metadata.equipment || "")}"></label><label>Pattern<input id="exerciseModalPattern" value="${escapeHtml(metadata.pattern || "")}"></label><label class="full">Note<textarea id="exerciseModalNotes">${escapeHtml(exercise?.note || "")}</textarea></label><label><input id="exerciseModalMain" type="checkbox" ${metadata.mainLift ? "checked" : ""}> Esercizio principale</label><label><input id="exerciseModalLocked" type="checkbox" ${metadata.locked ? "checked" : ""}> Proteggi da modifiche</label></div>${type === "exercise-details" ? `<p class="micro-copy">ID stabile: ${escapeHtml(exercise?.id || "")} · creato ${escapeHtml(exercise?.createdAt || "n/d")} · aggiornato ${escapeHtml(exercise?.updatedAt || "n/d")}</p><button type="button" class="ghost-button" data-progression-open="${escapeHtml(exercise?.id || "")}">Apri progressione settimanale</button>${exerciseAnalysisHtml(exercise)}` : ""}<div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type === "exercise-custom" ? "Aggiungi" : "Salva dettagli"}</button></div></section></div>`;
+      }
+      if (type === "progression-editor") {
+        const ex = programRepository.getExerciseById(program?.id, sheet?.id, coachProgramUi.modalData.exerciseId);
+        const duration = programWeekCount(program, sheet);
+        const progression = ex?.progression || {};
+        const templateId = coachProgramUi.modalData.templateId || progression.templateId || "maintenance";
+        const weeks = coachProgramUi.modalData.weeks || progression.weeks || generateProgressionWeeks(ex, templateId, duration);
+        return `<div class="coach-modal-backdrop"><section class="coach-modal progression-modal"><h3>Progressione · ${escapeHtml(ex?.name || "Esercizio")}</h3><div class="form-grid"><label>Template<select id="progressionTemplateId">${progressionTemplates().map((t) => `<option value="${escapeHtml(t.id)}" ${t.id === templateId ? "selected" : ""}>${escapeHtml(t.name)}</option>`).join("")}</select></label><label>Settimane<input id="progressionDuration" type="number" min="1" value="${duration}"></label><label>Modalità<select id="progressionApplyMode"><option value="replace">Sostituisci automatiche</option><option value="empty-only">Solo settimane vuote</option></select></label></div><div class="progression-scroll"><table class="progression-table"><thead><tr><th>Settimana</th><th>Serie</th><th>Ripetizioni</th><th>RIR</th><th>RPE</th><th>Carico</th><th>Recupero</th><th>Tipo</th><th>Note</th></tr></thead><tbody>${weeks.map((w, i) => `<tr><td><strong>${i + 1}</strong>${w.source === "manual" ? '<span class="phase4-badge">manuale</span>' : '<span class="phase4-badge">auto</span>'}</td><td><input data-progression-week="${i}" data-progression-field="sets" type="number" min="0" value="${escapeHtml(w.sets ?? "")}"></td><td><input data-progression-week="${i}" data-progression-field="reps" value="${escapeHtml(formatReps(w.reps))}"></td><td><input data-progression-week="${i}" data-progression-field="rir" value="${escapeHtml(w.rir?.label || "")}"></td><td><input data-progression-week="${i}" data-progression-field="rpe" value="${escapeHtml(w.rpe?.label || "")}"></td><td><input data-progression-week="${i}" data-progression-field="load" type="number" min="0" value="${escapeHtml(w.prescribedLoad?.value ?? "")}"></td><td><input data-progression-week="${i}" data-progression-field="rest" type="number" min="0" value="${escapeHtml(w.restSeconds ?? "")}"></td><td><select data-progression-week="${i}" data-progression-field="type">${["normal","accumulation","intensification","deload","test","recovery","custom"].map((v) => `<option value="${v}" ${w.type === v ? "selected" : ""}>${v}</option>`).join("")}</select></td><td><input data-progression-week="${i}" data-progression-field="notes" value="${escapeHtml(w.notes || "")}"></td></tr>`).join("")}</tbody></table></div><div class="coach-modal-actions">${close}<button type="button" class="ghost-button" data-progression-generate>Genera anteprima</button><button type="button" class="gold-button" data-coach-modal-save>Applica progressione</button></div></section></div>`;
+      }
+      if (type === "exercise-transfer") {
+        const programs = coachProgramsForUi();
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>Copia o sposta esercizi</h3><div class="form-grid" style="margin-top:12px"><label>Azione<select id="exerciseTransferMode"><option value="copy">Copia</option><option value="move">Sposta</option></select></label><label>Programma<select id="exerciseTransferProgram">${programs.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === program?.id ? "selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}</select></label><label>Scheda<select id="exerciseTransferSheet">${programs.flatMap((item) => programRepository.getSheets(item.id).map((target) => `<option value="${escapeHtml(item.id)}|${escapeHtml(target.id)}" ${target.id === sheet?.id ? "selected" : ""}>${escapeHtml(item.name)} · ${escapeHtml(target.code)} ${escapeHtml(target.name)}</option>`)).join("")}</select></label><label>Posizione<input id="exerciseTransferPosition" type="number" min="1" value="${programRepository.getExercises(program?.id, sheet?.id).length + 1}"></label><label><input id="exerciseTransferResetLoad" type="checkbox"> Azzera carico prescritto</label><label><input id="exerciseTransferResetNotes" type="checkbox"> Azzera note</label><label><input id="exerciseTransferResetProgressions" type="checkbox"> Azzera progressioni settimanali</label><label><input id="exerciseTransferResetTechnique" type="checkbox"> Azzera tecnica</label></div><div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>Conferma</button></div></section></div>`;
+      }
+      if (type === "exercise-bulk-value") {
+        const kind = coachProgramUi.modalData.kind;
+        const labels = { rest: "Recupero in secondi", rir: "RIR o RPE", technique: "Tecnica" };
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>Applica a ${coachProgramUi.selectedExercises.size} esercizi</h3><label style="margin-top:12px">${labels[kind] || "Valore"}<input id="exerciseBulkValue" placeholder="${kind === "rest" ? "90" : kind === "rir" ? "2 oppure RPE 8" : "rest-pause"}"></label><div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>Applica</button></div></section></div>`;
+      }
+      if (type === "exercise-delete") {
+        const count = (coachProgramUi.modalData.exerciseIds || []).length;
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>Eliminare ${count} ${count === 1 ? "esercizio" : "esercizi"}?</h3><p class="micro-copy">Gli elementi bloccati richiedono questa conferma esplicita. L’operazione può essere annullata con “Annulla”.</p><div class="coach-modal-actions">${close}<button class="danger-button" data-coach-modal-save>Elimina</button></div></section></div>`;
+      }
+      if (type === "coach-ai-confirm") {
+        const suggestion = coachProgramUi.modalData.suggestion || {};
+        return `<div class="coach-modal-backdrop"><section class="coach-modal coach-ai-detail-modal"><div class="coach-detail-heading"><div class="coach-avatar"><img src="coach-mascot.svg" alt="Coach AI"></div><div><span class="chip">${escapeHtml(suggestion.severity || "media")} · ${escapeHtml(suggestion.confidence || "dati")}</span><h3>${escapeHtml(suggestion.title || "Suggerimento")}</h3></div></div><p class="coach-detail-lead">${escapeHtml(suggestion.problem || "")}</p><div class="coach-detail-grid"><div class="reference-row"><strong>Motivazione tecnica</strong><p>${escapeHtml(suggestion.reason || "Analisi basata sui dati presenti nella scheda.")}</p><strong>Dati utilizzati</strong><p>${(suggestion.dataUsed || []).map(escapeHtml).join(" · ") || "Nessun dato aggiuntivo"}</p></div><div class="reference-row"><strong>Intervento suggerito</strong><p>${escapeHtml(suggestion.actionLabel || "Applica modifica al repository")}</p>${suggestion.exercise ? `<p><b>Esercizio:</b> ${escapeHtml(suggestion.exercise)}</p>` : ""}${suggestion.prescription ? `<p>${suggestion.prescription.sets} serie × ${escapeHtml(suggestion.prescription.reps)} · RIR ${escapeHtml(suggestion.prescription.rir)} · ${suggestion.prescription.rest}s recupero</p>` : ""}${suggestion.progression ? `<strong>Progressione</strong><p>${escapeHtml(suggestion.progression)}</p>` : ""}</div></div>${suggestion.alternatives?.length ? `<div class="coach-alternative-grid"><strong>Alternative disponibili</strong>${suggestion.alternatives.slice(0,5).map((item) => `<button type="button" data-ai-alternative="${escapeHtml(item.name)}" data-ai-suggestion="${escapeHtml(suggestion.id)}"><img src="app-icon-192.png" alt=""><span><b>${escapeHtml(item.name)}</b><small>${escapeHtml(item.group || "Gruppo non indicato")} · ${escapeHtml(item.equipment || "Attrezzatura libera")}</small></span><em>Seleziona</em></button>`).join("")}</div>` : ""}<p class="micro-copy">L’azione entrerà nello storico undo/redo e potrà essere annullata.</p><div class="coach-modal-actions">${close}<button class="ghost-button" data-coach-ai-later>Più tardi</button><button class="gold-button" data-coach-modal-save>Applica suggerimento</button></div></section></div>`;
+      }
+      return "";
+    }
+
+    function coachWorkbenchHtml() {
+      const athleteOn = !!state.coach.athleteView;
+      const athleteLayout = state.coach.athleteLayout || "compact";
+      const layoutClass = athleteOn ? `athlete-${athleteLayout}` : "no-athlete";
+      const selection = ensureCoachProgramSelection();
+      return `
+        <div class="coach-tabs"><button class="coach-tab-button active">Crea Scheda</button></div>
+        ${coachProgramManagerHtml()}
+        <div class="coach-workbench premium-coach-layout ${layoutClass}">
+          <div class="coach-main-column">${selection.sheet ? coachBuilderHtml() : ""}</div>
+          <aside class="coach-ai-sidebar ${coachProgramUi.aiDrawerOpen ? "open" : ""}" aria-label="Coach AI">
+            <div class="coach-ai-sidebar-head"><button class="coach-mascot-button" data-ai-status-tab="suggestions" aria-label="Apri Coach AI"><div class="coach-avatar"><img src="coach-mascot.svg" alt="Coach AI" onerror="this.parentElement.classList.add('mascot-failed')"><svg class="coach-mascot-inline-fallback" viewBox="0 0 160 160" aria-hidden="true"><rect x="27" y="42" width="106" height="82" rx="28" fill="#f6a8d0"/><rect x="38" y="55" width="84" height="57" rx="18" fill="#24142f"/><circle cx="65" cy="82" r="7" fill="#ff3d91"/><circle cx="95" cy="82" r="7" fill="#ff3d91"/><path d="M68 97q12 10 24 0" fill="none" stroke="#ff3d91" stroke-width="5" stroke-linecap="round"/></svg></div><span class="coach-mascot-badge">${coachAiSuggestions().length}</span></button><div><strong>Coach AI</strong><span>Analisi della scheda</span></div><label class="coach-ai-switch"><input type="checkbox" data-ai-toggle ${coachAiState().enabled ? "checked" : ""}><span></span></label><button type="button" class="coach-ai-drawer-close" data-ai-drawer-close aria-label="Chiudi Coach AI">×</button></div>
+            <div class="coach-muscle-card"><img src="muscle-map-premium.png" alt="Mappa muscolare frontale e posteriore"><div><strong>Focus muscolare</strong><span>Visualizza i distretti coinvolti nella scheda.</span></div></div>
+            ${coachAiPanelHtml()}
+          </aside>
+          ${coachAiPopupHtml()}
+          <button type="button" class="coach-ai-floating" data-ai-status-tab="suggestions" aria-label="Apri Coach AI">${coachMascotHtml()}<span class="coach-mascot-badge">${coachAiSuggestions().length}</span></button>
+          ${athleteOn ? coachAthleteViewHtml() : ""}
+        </div>
+      `;
+    }
+
+    function coachLockHtml() {
+      return `
+        <div class="hero-title">
+          <h2>Coach Studio <span>bloccato</span></h2>
+          <p>Inserisci la password per aprire archivio schede, builder, feedback e review.</p>
+        </div>
+        <section class="card">
+          <div class="row"><h3>Accesso coach</h3><span class="chip">PIN</span></div>
+          <div class="form-grid">
+            <label class="full">PIN Coach
+              <input type="password" id="coachPinInput" placeholder="Inserisci password">
+            </label>
+          </div>
+          <button class="gold-button" style="width:100%;margin-top:12px" id="unlockCoach">Sblocca Coach Studio</button>
+        </section>
+        <section class="card">
+          <div class="row"><h3>Cosa trovi qui</h3><span class="chip">coach</span></div>
+          <div class="history">
+            <div class="history-row"><span>Creazione e modifica schede</span><strong>Builder</strong></div>
+            <div class="history-row"><span>Schede importate modificabili</span><strong>Archivio</strong></div>
+            <div class="history-row"><span>Builder, vista atleta e feedback coach</span><strong>Check</strong></div>
+          </div>
+        </section>
+      `;
+    }
+
+    function coachProgramArchiveHtml() {
+      const phases = availablePhases();
+      const phase = state.coach.editorPhase || state.training.phaseFilter || "Intensificazione";
+      const sessions = sessionsForPhase(phase);
+      let code = state.coach.editorCode || state.training.sessionName || sessions[0]?.code || "";
+      let session = sessions.find((item) => item.code === code) || sessions[0] || allProgramSheets()[0];
+      if (!session) return "";
+      state.coach.editorPhase = session.phase;
+      state.coach.editorCode = session.code;
+      return `
+        <section class="coach-program-panel">
+          <div class="panel-head">
+            <div><h3 class="coach-section-title">MODIFICA SCHEDE VECCHIE</h3><p class="micro-copy">${escapeHtml(session.code)} - ${escapeHtml(session.focus || session.name)}</p></div>
+            <span class="chip">${sessions.length} schede fase</span>
+          </div>
+          <div class="form-grid">
+            <label>Fase programmazione
+              <select id="coachEditorPhase">
+                ${phases.map((item) => `<option value="${escapeHtml(item)}" ${item === session.phase ? "selected" : ""}>${escapeHtml(displayLabel(item))}</option>`).join("")}
+              </select>
+            </label>
+            <label>Codice scheda
+              <select id="coachEditorCode">
+                ${sessions.map((item) => `<option value="${escapeHtml(item.code)}" ${item.code === session.code ? "selected" : ""}>${escapeHtml(item.code)} - ${escapeHtml(item.focus || item.name)}</option>`).join("")}
+              </select>
+            </label>
+            <label>Scheda<input type="text" id="coachSessionName" value="${escapeHtml(session.name || "")}"></label>
+            <label>Focus<input type="text" id="coachSessionFocus" value="${escapeHtml(session.focus || "")}"></label>
+            <label class="full">Note scheda<textarea id="coachSessionNote">${escapeHtml(displayLabel(session.note || ""))}</textarea></label>
+          </div>
+          <div class="coach-program-scroll">
+            <table class="coach-program-table">
+              <thead>
+                <tr>
+                  <th>Cod</th><th>Gruppo</th><th>Esercizio</th><th>Note coach</th><th>Serie</th><th>Reps</th><th>RIR</th><th>Rec.</th><th>Note atleta/logbook</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${session.exercises.map((exercise, index) => coachExerciseEditorRow(exercise, index)).join("")}
+              </tbody>
+            </table>
+          </div>
+          <button class="gold-button" style="width:100%;margin-top:12px" id="saveEditedProgram">Salva modifiche scheda</button>
+        </section>
+      `;
+    }
+
+    function coachExerciseEditorRow(exercise, index) {
+      const groups = coachExerciseGroups();
+      const group = coachEditorExerciseGroup(exercise);
+      const exercises = coachExercisesForGroup(group);
+      const notes = exerciseNotes(exercise, 2);
+      const code = String.fromCharCode(65 + index);
+      const selectedName = normalizeExerciseName(exercise.name);
+      const hasExerciseMatch = exercises.some((item) => normalizeExerciseName(item.name) === selectedName);
+      const hasGroupMatch = groups.includes(group);
+      return `
+        <tr>
+          <td><span class="exercise-letter">${code}</span></td>
+          <td>
+            <select data-edit-exercise="${index}" data-edit-key="muscle">
+              ${groups.map((item) => `<option value="${escapeHtml(item)}" ${item === group ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}
+              ${hasGroupMatch ? "" : `<option value="${escapeHtml(group)}" selected>${escapeHtml(group)}</option>`}
+            </select>
+          </td>
+          <td>
+            <select data-edit-exercise="${index}" data-edit-key="name">
+              ${exercises.map((item) => `<option value="${escapeHtml(item.name)}" ${normalizeExerciseName(item.name) === selectedName ? "selected" : ""}>${escapeHtml(displayExerciseName(item.name))}</option>`).join("")}
+              ${hasExerciseMatch ? "" : `<option value="${escapeHtml(exercise.name || "")}" selected>${escapeHtml(displayExerciseName(exercise.name || ""))}</option>`}
+            </select>
+          </td>
+          <td><textarea data-edit-exercise="${index}" data-edit-key="note">${escapeHtml(exercise.note || "")}</textarea></td>
+          <td><input data-edit-exercise="${index}" data-edit-key="sets" value="${escapeHtml(exercise.sets || "")}"></td>
+          <td><input data-edit-exercise="${index}" data-edit-key="reps" value="${escapeHtml(exercise.reps || "")}"></td>
+          <td><input data-edit-exercise="${index}" data-edit-key="rir" value="${escapeHtml(exercise.rir || "")}"></td>
+          <td><input data-edit-exercise="${index}" data-edit-key="rest" value="${escapeHtml(exercise.rest || "")}"></td>
+          <td>${notes.map((row) => `<div class="athlete-note"><strong>${escapeHtml(row.date)}</strong> ${escapeHtml(row.text)}</div>`).join("") || `<span class="micro-copy">Nessuna nota importata.</span>`}</td>
+        </tr>
+      `;
+    }
+
+    function coachExerciseGroups() {
+      return Object.keys(COACH_EXERCISE_LIBRARY || {});
+    }
+
+    function coachEditorExerciseGroup(exercise) {
+      const explicit = exercise?.muscle || exercise?.som || "";
+      if (coachExerciseGroups().includes(explicit)) return explicit;
+      const inferred = inferredExerciseMuscles(exercise?.name || "", exercise);
+      const match = coachExerciseGroups().find((group) => inferred.has(normalizeExerciseName(group)));
+      if (match) return match;
+      const byLibrary = coachExerciseGroups().find((group) => coachExercisesForGroup(group).some((item) => exerciseMatches(item.name, exercise?.name || "")));
+      return byLibrary || coachExerciseGroups()[0] || "";
+    }
+
+    function coachExercisesForGroup(group) {
+      return COACH_EXERCISE_LIBRARY[group] || COACH_EXERCISE_LIBRARY[coachExerciseGroups()[0]] || [];
+    }
+
+    function coachExerciseMeta(group, name) {
+      return coachExercisesForGroup(group).find((item) => item.name === name) || coachExercisesForGroup(group)[0] || { name: "", som: group || "", stimulus: "" };
+    }
+
+    function emptyBuilderRow(group = "Glutei", weekCount = 1) {
+      const meta = coachExercisesForGroup(group)[0] || { name: "", som: group, stimulus: "" };
+      return {
+        group,
+        exercise: meta.name || "",
+        note: "",
+        som: meta.som || group,
+        approach: "",
+        sets: "",
+        reps: "",
+        effort: "",
+        restSeconds: 90,
+        tempo: "",
+        technique: "normal",
+        techniqueDescription: "",
+        loadValue: "",
+        loadUnit: "kg",
+        equipment: "",
+        pattern: "",
+        secondaryMuscles: "",
+        mainLift: false,
+        locked: false,
+        custom: false,
+        weeks: Array.from({ length: Math.max(1, Number(weekCount) || 1) }, () => ""),
+        progression: { weeks: [] }
+      };
+    }
+
+    function coachBuilderRows() {
+      const b = activeCoachBuilder();
+      if (!b) return [];
+      if (!Array.isArray(b.rows)) b.rows = [];
+      b.rows.forEach((row, index) => {
+        if (!row.id) row.id = stableId("exercise", "builder", b.programId || b.code || "new", index, row.exercise || "row");
+        if (!row.group) row.group = "Glutei";
+        const weekCount = activeCoachBuilder()?.weekCount || programWeekCount(ensureCoachProgramSelection().program, ensureCoachProgramSelection().sheet);
+        if (!Array.isArray(row.weeks)) row.weeks = Array.from({ length: Math.max(1, weekCount) }, (_, index) => row[`week${index + 1}`] || "");
+        if (row.weeks.length < weekCount) row.weeks = [...row.weeks, ...Array.from({ length: weekCount - row.weeks.length }, () => "")];
+        const items = coachExercisesForGroup(row.group);
+        if (!row.exercise) row.exercise = items[0]?.name || "";
+        const meta = coachExerciseMeta(row.group, row.exercise);
+        if (!row.som) row.som = meta.som || row.group;
+      });
+      return b.rows;
+    }
+
+    function parseWeekSets(value) {
+      const match = String(value || "").match(/\d+/);
+      return match ? Number(match[0]) : 0;
+    }
+
+    function coachBuilderVolumeRows() {
+      const draft = activeCoachBuilder();
+      const weekCount = Math.max(1, Number(draft?.weekCount) || 1);
+      const totals = new Map();
+      coachBuilderRows().forEach((row) => {
+        if (!row.exercise) return;
+        const weeks = totals.get(row.group) || Array(weekCount).fill(0);
+        row.weeks.forEach((week, index) => { weeks[index] += parseWeekSets(week); });
+        totals.set(row.group, weeks);
+      });
+      return Array.from(totals.entries()).map(([group, weeks]) => ({
+        group,
+        weeks,
+        average: weeks.reduce((sum, value) => sum + value, 0) / Math.max(1, weeks.length)
+      })).filter((row) => row.average > 0);
+    }
+
+    function coachBuilderFeedback() {
+      const rows = coachBuilderRows().filter((row) => row.exercise && row.weeks.some(Boolean));
+      if (!rows.length) return { score: 0, tag: "da compilare", title: "Scheda vuota", text: "Inserisci gruppo, esercizio e almeno una settimana per attivare il feedback." };
+      const duplicates = rows.filter((row, index, list) => list.findIndex((other) => other.group === row.group && other.exercise === row.exercise) !== index);
+      const byGroup = new Map();
+      rows.forEach((row) => {
+        const meta = coachExerciseMeta(row.group, row.exercise);
+        byGroup.set(row.group, [...(byGroup.get(row.group) || []), meta.stimulus || ""]);
+      });
+      const missingBalance = Array.from(byGroup.entries()).filter(([group, stim]) => group !== "Cardio" && !(stim.some((s) => /allungamento|vertical|horizontal|press/.test(s)) && stim.some((s) => /accorciamento|isolamento|posteriore/.test(s))));
+      const score = Math.max(30, Math.min(96, 55 + rows.length * 7 - duplicates.length * 12 - missingBalance.length * 8));
+      if (duplicates.length) return { score, tag: "ridondanza", title: `${rows.length} righe in scheda`, text: `Hai duplicato ${duplicates[0].exercise}. Va bene se e una tecnica speciale, ma scrivilo nelle note.` };
+      if (missingBalance.length) return { score, tag: "da bilanciare", title: `${rows.length} righe in scheda`, text: `${missingBalance[0][0]} sembra poco bilanciato: prova ad avere almeno uno stimolo in allungamento e uno in accorciamento quando ha senso.` };
+      return { score, tag: "buona base", title: `${rows.length} righe in scheda`, text: "Copertura ordinata. Ora controlla volume medio e progressione sulle settimane del programma." };
+    }
+
+    function coachBuilderVolumeHtml() {
+      const rows = coachBuilderVolumeRows();
+      if (!rows.length) return `<div class="athlete-note"><strong>Nessun volume</strong> Compila almeno S1 per vedere il calcolo.</div>`;
+      const max = Math.max(1, ...rows.map((row) => row.average));
+      return `<div class="builder-v24-volume-rows">${rows.map((row) => `
+        <div class="builder-v24-volume-row"><span>${escapeHtml(row.group)}</span><div class="builder-v24-volume-bar"><span style="--w:${Math.round(row.average / max * 100)}%"></span></div><strong>${row.average.toFixed(1)}</strong></div>
+      `).join("")}</div>`;
+    }
+
+    function coachAiState() {
+      state.coach.coachAi = { enabled: true, filter: "all", ignored: [], applied: [], ...(state.coach.coachAi || {}) };
+      return state.coach.coachAi;
+    }
+
+    function coachAiPattern(name = "", metadata = {}) {
+      if (metadata.pattern) return String(metadata.pattern).toLowerCase();
+      const value = normalizeExerciseName(name);
+      if (/rdl|stacco|good morning|hyper|hip thrust|swing|deadlift|hinge/.test(value)) return "hinge";
+      if (/press|military|panca|push|alzate|croci/.test(value)) return "press";
+      if (/squat|pressa|affond|bulgar/.test(value)) return "squat";
+      if (/lat|row|pulley|trazion|pull|tirat/.test(value)) return "pull";
+      if (/curl|extension|abductor|adductor|calf|laterali|face pull/.test(value)) return "isolation";
+      return "unknown";
+    }
+
+    function coachAiExerciseProfile(row = {}) {
+      const name = String(row.exercise || row.name || "").toLowerCase().trim();
+      const meta = row.metadata || row;
+      const group = String(row.group || row.muscle || meta.mainMuscle || "").toLowerCase();
+      if (/leg curl|femor|hamstring/.test(name)) return { type: "isolation", pattern: "knee-flexion", action: "flessione del ginocchio", muscle: "femorali", equipment: meta.equipment || "" };
+      if (/leg extension|quad/.test(name)) return { type: "isolation", pattern: "knee-extension", action: "estensione del ginocchio", muscle: "quadricipiti", equipment: meta.equipment || "" };
+      if (/abductor|hip abduction|cable abduction/.test(name)) return { type: "isolation", pattern: "hip-abduction", action: "abduzione dell'anca", muscle: "glutei", equipment: meta.equipment || "" };
+      if (/adductor|hip adduction/.test(name)) return { type: "isolation", pattern: "hip-adduction", action: "adduzione dell'anca", muscle: "adduttori", equipment: meta.equipment || "" };
+      if (/rdl|romanian deadlift|stacco rumeno/.test(name)) return { type: "multiarticolare", pattern: "hip-hinge", action: "estensione dell'anca", muscle: group.includes("glute") ? "glutei" : "femorali", equipment: meta.equipment || "" };
+      if (/pendulum( squat| machine)?|squat pendulum/.test(name)) return { type: "multiarticolare", pattern: "squat-knee-dominant", action: "estensione del ginocchio e dell'anca", muscle: "quadricipiti e glutei", equipment: "macchina", role: "lower body composto" };
+      if (/chest press|machine press|panca/.test(name)) return { type: "multiarticolare", pattern: "horizontal-press", action: "spinta orizzontale", muscle: "pettorali", equipment: meta.equipment || "" };
+      if (meta.action || meta.jointAction || meta.motorPattern) return { type: meta.exerciseType || "", pattern: String(meta.motorPattern || "unknown").toLowerCase(), action: String(meta.jointAction || meta.action || "").toLowerCase(), muscle: group, equipment: meta.equipment || "" };
+      return { type: "", pattern: "unknown", action: "", muscle: group, equipment: meta.equipment || "" };
+    }
+
+    function coachAiLibraryItems() {
+      return coachExerciseGroups().flatMap((group) => coachExercisesForGroup(group).map((item) => ({ ...item, group, equipment: item.equipment || "", pattern: coachAiPattern(item.name, item) }))).filter((item, index, list) => list.findIndex((other) => normalizeExerciseName(other.name) === normalizeExerciseName(item.name) && other.group === item.group) === index);
+    }
+
+    function coachAiAlternatives(group, excluded = "", pattern = "") {
+      const current = new Set(coachBuilderRows().map((row) => normalizeExerciseName(row.exercise)));
+      return coachAiLibraryItems().filter((item) => item.group === group && normalizeExerciseName(item.name) !== normalizeExerciseName(excluded) && !current.has(normalizeExerciseName(item.name)) && (!pattern || item.pattern === pattern)).slice(0, 5);
+    }
+
+    const COACH_AI_RULES = [
+      { id: "duplicate-exercise", name: "Esercizio duplicato", category: "ridondanza", priority: 90, required: ["esercizi"], confidence: "alta", when: (ctx) => ctx.duplicates.length > 0, build: (ctx) => { const row = ctx.duplicates[0]; const alternatives = coachAiAlternatives(row.group, row.exercise, coachAiPattern(row.exercise)); return { id: "duplicate-exercise", severity: "critical", title: `Ridondanza: ${row.exercise}`, problem: `Lo stesso esercizio compare più volte nella scheda.`, reason: "La duplicazione aumenta il volume locale senza aggiungere automaticamente uno stimolo diverso.", dataUsed: [`${ctx.rows.length} esercizi`, `duplicati: ${row.exercise}`], actionLabel: "Sostituisci variante", action: alternatives[0] ? { type: "replaceExercise", exerciseId: row.id, replacement: alternatives[0].name, muscle: alternatives[0].group } : { type: "none" }, exercise: alternatives[0]?.name || "Nessuna alternativa disponibile", replacement: row.exercise, prescription: { sets: 3, reps: "10-15", rir: "1-2", rest: 90 }, sheetId: ctx.sheet.id, position: ctx.rows.indexOf(row) + 1, alternatives, progression: "Mantieni la prescrizione per due settimane e rivaluta la tecnica.", confidence: alternatives.length ? "alta" : "bassa" }; } },
+      { id: "pattern-overlap", name: "Controllo movimento generico", category: "disattivata", priority: 80, enabled: false, required: ["pattern", "esercizi"], confidence: "nessuna", when: () => false, build: () => null },
+      { id: "specific-overlap", name: "Possibile ridondanza specifica", category: "ridondanza", priority: 82, enabled: true, required: ["muscolo principale", "azione articolare", "pattern specifico"], exceptions: ["muscoli diversi", "azioni articolari diverse", "solo classificazione isolation"], confidence: "media", source: "Regole Barbell Diva", reviewedAt: "2026-07-14", version: "1.0", when: (ctx) => (ctx.overlapGroups || []).length > 0, build: (ctx) => { const group = ctx.overlapGroups[0]; const involved = group.items.map((item) => coachSuggestionExercise(item.row, ctx, "movimento potenzialmente sovrapposto")); return { id: "specific-overlap", severity: "improve", title: `Movimenti potenzialmente simili per ${group.muscle}`, problem: `${involved.length} esercizi allenano lo stesso distretto con ${group.action}. Potrebbero risultare parzialmente ridondanti.`, reason: "Ho trovato lo stesso muscolo principale, la stessa azione articolare e lo stesso pattern specifico. Non significa che uno dei due sia sbagliato: puoi mantenerli entrambi se hanno ruoli diversi.", dataUsed: [`muscolo: ${group.muscle}`, `azione: ${group.action}`, `pattern: ${group.pattern}`], actionLabel: "Valuta sovrapposizione", action: { type: "none" }, exercise: involved[0]?.name || "Nessuno", replacement: "Nessuna sostituzione automatica", prescription: null, sheetId: ctx.sheet.id, position: involved[0]?.position || 1, alternatives: [], involvedExercises: involved, progression: "", confidence: "media" }; } },
+      { id: "focus-gap", name: "Muscolo poco allenato", category: "distribuzione muscolare", priority: 75, required: ["focus", "libreria", "esercizi"], confidence: "media", when: (ctx) => ctx.focusGap, build: (ctx) => { const item = ctx.focusGap; const alternatives = coachAiAlternatives(item.group, "", item.pattern); const pick = alternatives[0]; return { id: "focus-gap", severity: "improve", title: `${item.group} poco allenato`, problem: `La scheda parla di ${item.group}, ma non trovo ancora un esercizio che lo alleni in modo diretto.`, reason: "Ho confrontato l’obiettivo della scheda con i gruppi muscolari degli esercizi inseriti. È un’indicazione pratica, non una diagnosi completa.", dataUsed: [`obiettivo scheda: ${ctx.sheet.focus}`, `esercizi presenti: ${ctx.rows.length}`, `opzioni disponibili: ${coachAiLibraryItems().length}`], actionLabel: "Aggiungi esercizio", action: pick ? { type: "addExercise", muscle: item.group, pattern: item.pattern, equipment: pick.equipment } : { type: "none" }, exercise: pick?.name || "Nessuna opzione compatibile", replacement: "Nessuno", prescription: { sets: 3, reps: "12-20", rir: "1-2", rest: 75 }, sheetId: ctx.sheet.id, position: ctx.rows.length + 1, alternatives, progression: "Doppia progressione 12-20: aumenta le ripetizioni fino a 3x20 a RIR 1-2, poi aumenta il carico del 2,5-5%.", confidence: pick ? "media" : "bassa" }; } },
+      { id: "missing-metadata", name: "Dati esercizio incompleti", category: "dati mancanti", priority: 70, required: ["metadati"], confidence: "bassa", when: (ctx) => ctx.missingMetadata.length > 0, build: (ctx) => { const row = ctx.missingMetadata[0]; return { id: "missing-metadata", severity: "improve", title: `Dati insufficienti per ${row.exercise}`, problem: "Mancano pattern o attrezzatura affidabili.", reason: "Senza questi dati non posso proporre una sostituzione precisa senza inventare informazioni.", dataUsed: ["nome esercizio", "gruppo muscolare"], actionLabel: "Apri dettagli", action: { type: "details", exerciseId: row.id }, exercise: row.exercise, replacement: "Non determinato", prescription: null, sheetId: ctx.sheet.id, position: ctx.rows.indexOf(row) + 1, alternatives: [], progression: "Aggiungi metadati dalla finestra Dettagli esercizio.", confidence: "bassa" }; } },
+      { id: "missing-progression", name: "Progressione iniziale", category: "progressione", priority: 50, required: ["esercizi", "prescrizione"], confidence: "media", when: (ctx) => ctx.rows.some((row) => row.exercise && !row.progression?.weeks?.length), build: (ctx) => { const row = ctx.rows.find((item) => item.exercise && !item.progression?.weeks?.length); const sets = Number(row.sets || 3) || 3; const reps = row.reps || "8-12"; return { id: "missing-progression", severity: "improve", title: `Progressione consigliata: ${row.exercise}`, problem: "L’esercizio non ha ancora una regola di progressione associata.", reason: "Per questa fase preparo una regola descrittiva senza compilare settimane automaticamente.", dataUsed: [`serie: ${sets}`, `ripetizioni: ${reps}`, `tecnica: ${row.technique || "normale"}`], actionLabel: "Associa regola", action: { type: "progression", exerciseId: row.id, progression: { rule: `Doppia progressione ${reps}: mantieni ${sets} serie, aumenta le ripetizioni fino al limite alto a RIR 1-2, poi aumenta il carico del 2,5-5% e riparti dal limite basso.` } }, exercise: row.exercise, replacement: "Nessuna sostituzione", prescription: { sets, reps, rir: row.effort || "1-2", rest: Number(row.restSeconds || 90) }, sheetId: ctx.sheet.id, position: ctx.rows.indexOf(row) + 1, alternatives: [], progression: `Doppia progressione ${reps}: mantieni ${sets} serie, completa il limite alto a RIR 1-2, poi aumenta il carico del 2,5-5%.`, confidence: "media" }; } }
+    ];
+
+    const COACH_AI_KNOWLEDGE_BASE = COACH_AI_RULES.map((rule) => ({ id: rule.id, title: rule.name, description: rule.description || rule.name, category: rule.category, conditions: rule.required || [], exceptions: rule.exceptions || [], requiredData: rule.required || [], confidence: rule.confidence, source: rule.source || "Regole Barbell Diva", reviewedAt: rule.reviewedAt || "2026-07-14", version: rule.version || "1.0", enabled: rule.enabled !== false }));
+    function coachAiRuleReviewSnapshot() {
+      return COACH_AI_KNOWLEDGE_BASE.map((rule) => ({ ...rule, generated: coachAiSuggestions().filter((suggestion) => suggestion.id === rule.id).length, status: rule.enabled ? "attiva" : "disattivata" }));
+    }
+
+    function coachAiContext() {
+      const selection = ensureCoachProgramSelection();
+      const sheet = selection.sheet;
+      if (!sheet) return { program: selection.program, sheet: null, rows: [], duplicates: [], patternRuns: [], missingMetadata: [] };
+      const rows = coachBuilderRows().map((row) => ({ ...row, progression: programRepository.getExerciseById(selection.program.id, sheet.id, row.id)?.progression || { weeks: [] } })).filter((row) => row.exercise);
+      const duplicates = rows.filter((row, index) => rows.findIndex((other) => normalizeExerciseName(other.exercise) === normalizeExerciseName(row.exercise)) !== index);
+      const patternMap = new Map();
+      rows.forEach((row, index) => { const pattern = coachAiPattern(row.exercise, { pattern: row.pattern }); if (pattern !== "unknown") patternMap.set(pattern, [...(patternMap.get(pattern) || []), { row, index }]); });
+      const patternRuns = [...patternMap.entries()].filter(([, items]) => items.length >= 2).map(([pattern, items]) => ({ pattern, count: items.length, positions: items.map((item) => item.index + 1), row: items[items.length - 1].row }));
+      const profileMap = new Map();
+      rows.forEach((row, index) => { const profile = coachAiExerciseProfile(row); if (profile.pattern !== "unknown" && profile.muscle) { const key = `${profile.pattern}|${profile.muscle}`; profileMap.set(key, [...(profileMap.get(key) || []), { row, index, profile }]); } });
+      const overlapGroups = [...profileMap.values()].filter((items) => items.length >= 2).map((items) => ({ items, pattern: items[0].profile.pattern, action: items[0].profile.action, muscle: items[0].profile.muscle }));
+      const missingMetadata = rows.filter((row) => { const profile = coachAiExerciseProfile(row); return !row.equipment && !row.pattern && profile.pattern === "unknown"; });
+      const focusText = String(sheet.focus || "").toLowerCase();
+      const focusGroup = coachExerciseGroups().find((group) => focusText.includes(String(group).toLowerCase()));
+      const focusGap = focusGroup && !rows.some((row) => String(row.group || "").toLowerCase() === focusGroup.toLowerCase()) ? { group: focusGroup, pattern: "isolation" } : null;
+      return { program: selection.program, sheet, rows, duplicates, patternRuns, overlapGroups, missingMetadata, focusGap };
+    }
+
+    function getDisplayProgramName(programId) {
+      return programRepository.getProgramById(programId)?.name || "Programma corrente";
+    }
+    function getDisplaySheetName(programId, sheetId) {
+      const sheet = programRepository.getSheetById(programId, sheetId);
+      return sheet ? `${sheet.code || ""}${sheet.name ? ` — ${sheet.name}` : ""}`.trim() : "Scheda corrente";
+    }
+    function getDisplayExerciseName(programId, sheetId, exerciseId) {
+      return programRepository.getExerciseById(programId, sheetId, exerciseId)?.name || "Esercizio selezionato";
+    }
+    function coachSuggestionExercise(item, context, role = "coinvolto") {
+      const row = item?.row || item;
+      const profile = coachAiExerciseProfile(row);
+      return { id: row?.id || "", name: row?.exercise || row?.name || "Esercizio", sheet: getDisplaySheetName(context?.program?.id, context?.sheet?.id), position: context?.rows?.findIndex((entry) => entry.id === row?.id) + 1 || null, group: profile.muscle || row?.group || row?.muscle || "Gruppo non indicato", pattern: profile.pattern || row?.pattern || "", action: profile.action || "", role };
+    }
+    function coachSuggestionLocation(suggestion) {
+      const programName = getDisplayProgramName(suggestion.programId);
+      const sheetName = getDisplaySheetName(suggestion.programId, suggestion.sheetId);
+      return `${programName} · ${sheetName}${suggestion.position ? ` · posizione ${suggestion.position}` : ""}`;
+    }
+
+    function coachAiAdvancedSuggestions(ctx) {
+      if (!ctx?.sheet) return [];
+      const suggestions = [];
+      const profiles = ctx.rows.map((row, index) => ({ row, index, bio:biomechanicsForExercise(row.exercise, row.biomechanics || row.metadata?.biomechanics) }));
+      const lumbarTotal = profiles.reduce((sum, item) => sum + Number(item.bio.jointDemand?.lumbar || 0) * Math.max(1, Number(item.row.sets || 1)), 0);
+      if (lumbarTotal >= 18) {
+        const involved = profiles.filter((item) => Number(item.bio.jointDemand?.lumbar || 0) >= 3).map((item) => coachSuggestionExercise(item.row, ctx, "richiesta lombare"));
+        suggestions.push({ id:"biomechanics-lumbar-demand", category:"joint-demand", severity:"improve", title:`Richiesta lombare elevata nella ${ctx.sheet.code || ctx.sheet.name}`, problem:`La richiesta lombare stimata è ${lumbarTotal} punti nella scheda ${ctx.sheet.code || ctx.sheet.name}.`, reason:"È una somma prudenziale delle richieste lombari dei singoli esercizi moltiplicate per le serie previste; non è una diagnosi di rischio.", dataUsed:["lumbarDemand", `scheda: ${ctx.sheet.code || ctx.sheet.name}`, `${ctx.rows.length} esercizi`], actionLabel:"Rivedi ordine", action:{type:"none"}, exercise:involved[0]?.name || "Esercizi con richiesta lombare", replacement:"Valuta un esercizio supportato", prescription:null, sheetId:ctx.sheet.id, position:involved[0]?.position || 1, alternatives:[], involvedExercises:involved, progression:"Mantieni i carichi manuali e valuta di anticipare il movimento prioritario o usare una variante più supportata.", confidence:involved.length >= 2 ? "alta" : "media", impact:{ before:`Richiesta lombare: ${lumbarTotal}`, after:"Non calcolato senza una sostituzione confermata" } });
+      }
+      const demandingAfter = profiles.find((item) => item.index > 1 && item.bio.technicalDifficulty >= 4 && item.bio.systemicFatigue >= 4);
+      if (demandingAfter) {
+        suggestions.push({ id:"ordering-technical-demand", category:"ordering", severity:"improve", title:`Ordine da valutare nella ${ctx.sheet.code || ctx.sheet.name}`, problem:`${demandingAfter.row.exercise} è in posizione ${demandingAfter.index + 1} pur avendo difficoltà tecnica e fatica sistemica elevate.`, reason:"I movimenti tecnici e tassanti spesso beneficiano di una posizione iniziale, quando sono il focus della seduta.", dataUsed:["technicalDifficulty", "systemicFatigue", `posizione ${demandingAfter.index + 1}`], actionLabel:"Valuta spostamento", action:{type:"none"}, exercise:demandingAfter.row.exercise, replacement:"Seconda posizione o posizione prioritaria", prescription:null, sheetId:ctx.sheet.id, position:demandingAfter.index + 1, alternatives:[], involvedExercises:[coachSuggestionExercise(demandingAfter.row, ctx, "focus tecnico")], progression:"Nessuna progressione modificata automaticamente.", confidence:"media" });
+      }
+      const volumeRows = typeof advancedVolumeFrequencyRows === "function" ? advancedVolumeFrequencyRows() : [];
+      volumeRows.filter((row) => row.frequency === 1 && row.average >= 12).slice(0, 2).forEach((row) => suggestions.push({ id:`volume-concentrated-${normalizeExerciseName(row.muscle)}`, category:"distribution", severity:"info", title:`${row.muscle}: volume concentrato`, problem:`${row.muscle} registra circa ${row.average.toFixed(1)} serie medie in una sola esposizione settimanale.`, reason:"Il dato deriva dalle serie programmate rilevate nella scheda corrente; il Coach propone una valutazione, non una correzione obbligatoria.", dataUsed:[`muscolo: ${row.muscle}`, `serie dirette: ${row.average.toFixed(1)}`, "frequenza: 1 esposizione"], actionLabel:"Valuta distribuzione", action:{type:"none"}, exercise:row.muscle, replacement:"10 serie Scheda A + 8 serie Scheda C (solo se coerente col programma)", prescription:null, sheetId:ctx.sheet.id, position:1, alternatives:[], involvedExercises:[], progression:"Nessuna modifica automatica.", confidence:"media", impact:{ before:`${row.average.toFixed(1)} serie · 1 esposizione`, after:"Da calcolare dopo una distribuzione confermata" } }));
+      return suggestions;
+    }
+
+    function coachAiSuggestions() {
+      const ctx = coachAiContext();
+      const ignored = new Set(coachAiState().ignored || []);
+      const ruleSuggestions = COACH_AI_RULES.filter((rule) => rule.enabled !== false && rule.id !== "missing-metadata").slice().sort((a, b) => b.priority - a.priority).flatMap((rule) => rule.when(ctx) ? [{ rule, suggestion: rule.build(ctx) }] : []).map((item) => ({ ...item.suggestion, category: item.suggestion.category || (item.rule.id === "specific-overlap" ? "exercise-choice" : item.rule.category || "validation"), programId: ctx.program?.id || "", involvedExercises: item.suggestion.involvedExercises?.length ? item.suggestion.involvedExercises : item.rule.id === "duplicate-exercise" ? ctx.duplicates.map((row) => coachSuggestionExercise(row, ctx, "ripetuto")) : item.suggestion.exercise ? [coachSuggestionExercise({ id: item.suggestion.action?.exerciseId, exercise: item.suggestion.exercise, group: item.suggestion.action?.muscle }, ctx, "proposto")] : [] }));
+      return [...ruleSuggestions, ...coachAiAdvancedSuggestions(ctx)].filter((suggestion) => !ignored.has(suggestion.id));
+    }
+    function coachAiQualityIssues() {
+      const ctx = coachAiContext();
+      return ctx.missingMetadata || [];
+    }
+
+    function coachAiSuggestionHtml(suggestion) {
+      const expanded = coachProgramUi.aiExpanded.has(suggestion.id);
+      const alternatives = expanded ? `<div class="coach-ai-alternatives"><strong>Alternative disponibili:</strong>${suggestion.alternatives.length ? suggestion.alternatives.map((item) => `<button data-ai-alternative="${escapeHtml(item.name)}" data-ai-suggestion="${escapeHtml(suggestion.id)}">${escapeHtml(item.name)} · ${escapeHtml(item.group)}</button>`).join("") : "<span>Dati insufficienti per una raccomandazione precisa.</span>"}</div>` : "";
+      const prescription = suggestion.prescription ? `<p><strong>Prescrizione:</strong> ${suggestion.prescription.sets} serie × ${escapeHtml(suggestion.prescription.reps)} · RIR ${escapeHtml(suggestion.prescription.rir)} · recupero ${suggestion.prescription.rest}s</p>` : "";
+      const involved = suggestion.involvedExercises || [];
+      const involvedHtml = expanded ? `<div class="coach-ai-involved"><strong>Esercizi coinvolti${involved.length ? ` (${involved.length})` : ""}:</strong>${involved.length ? `<ul>${involved.map((item) => `<li><b>${escapeHtml(item.name)}</b><span>${escapeHtml(item.group || "")} ${item.action ? `· ${escapeHtml(item.action)}` : ""} ${item.position ? `· posizione ${item.position}` : ""}</span></li>`).join("")}</ul>` : `<p>Non riesco a identificare con sufficiente precisione gli esercizi coinvolti.</p>`}</div>` : "";
+      const impact = suggestion.impact ? `<p><strong>Impatto previsto:</strong> ${escapeHtml(suggestion.impact.before || "")} → ${escapeHtml(suggestion.impact.after || "")}</p>` : "";
+      const details = expanded ? `<div class="coach-ai-expanded"><p><strong>Cosa ho notato:</strong> ${escapeHtml(suggestion.problem)}</p><p><strong>Perché te lo segnalo:</strong> ${escapeHtml(suggestion.reason)}</p>${involvedHtml}${prescription}<p><strong>Proposta:</strong> ${escapeHtml(suggestion.exercise || "Nessuna modifica")}</p><p><strong>Dove:</strong> ${escapeHtml(coachSuggestionLocation(suggestion))}</p>${impact}${suggestion.progression ? `<p><strong>Progressione:</strong> ${escapeHtml(suggestion.progression)}</p>` : ""}<div class="coach-ai-data"><span>Ho guardato: ${suggestion.dataUsed.map(escapeHtml).join(" · ")}</span></div></div>` : `<p class="coach-ai-collapsed-copy">${escapeHtml(suggestion.problem)}${involved.length ? ` · ${involved.length} esercizi coinvolti` : ""}</p>`;
+      const ignoredCard = coachProgramUi.aiStatusTab === "ignored";
+      return `<article class="coach-ai-card ${suggestion.severity}"><div class="row"><h4>${escapeHtml(suggestion.title)}</h4><span class="chip">${escapeHtml(suggestion.severity === "critical" ? "Alta" : "Media")} · Confidenza ${escapeHtml(suggestion.confidence)}</span></div>${details}<div class="coach-ai-actions">${ignoredCard ? `<button class="apply" data-ai-restore="${escapeHtml(suggestion.id)}">Ripristina suggerimento</button>` : `<button class="apply" data-ai-apply="${escapeHtml(suggestion.id)}">Applica suggerimento</button><button data-ai-ignore="${escapeHtml(suggestion.id)}">Ignora</button><button data-ai-expand="${escapeHtml(suggestion.id)}">${expanded ? "Chiudi dettagli" : "Apri dettagli"}</button><button data-ai-alternatives-toggle="${escapeHtml(suggestion.id)}">Mostra alternative</button>`}</div>${alternatives}</article>`;
+    }
+
+    function coachAiPanelHtml() {
+      const ai = coachAiState();
+      const filter = ai.filter || "all";
+      const suggestions = coachAiSuggestions();
+      const filters = [["all","Tutti"],["critical","Criticità"],["improvements","Miglioramenti"],["duplication","Duplicati"],["progression","Progressioni"],["exercise","Scelte esercizi"],["order","Ordine"],["missing","Qualità dati"],["distribution","Distribuzione"],["joint-demand","Articolazioni"],["validation","Validazione"]];
+      const categoryAliases = { exercise: "exercise-choice", order: "ordering", missing: "data-quality" };
+      const normalizedFilter = categoryAliases[filter] || filter;
+      const matchesFilter = (suggestion) => normalizedFilter === "all" || (normalizedFilter === "critical" && suggestion.severity === "critical") || (normalizedFilter === "improvements" && suggestion.severity === "improve") || suggestion.category === normalizedFilter;
+      const filteredSuggestions = suggestions.filter(matchesFilter);
+      const applied = new Set(ai.applied || []); const ignored = new Set(ai.ignored || []);
+      const statusTab = coachProgramUi.aiStatusTab || "suggestions";
+      const visible = statusTab === "applied" ? Object.values(ai.appliedRecords || {}).filter((item) => applied.has(item.id)).map((item) => ({ ...item, severity: item.severity || "info", confidence: item.confidence || "applicato", alternatives: item.alternatives || [], dataUsed: item.dataUsed || [], involvedExercises: item.involvedExercises || [] })) : statusTab === "ignored" ? Object.values(ai.ignoredRecords || {}).filter((item) => ignored.has(item.id)).map((item) => ({ ...item, severity: item.severity || "info", confidence: item.confidence || "salvato", problem: item.problem || "Puoi ripristinare questo controllo quando vuoi.", alternatives: item.alternatives || [], dataUsed: item.dataUsed || [], progression: item.progression || "", involvedExercises: item.involvedExercises || [] })) : filteredSuggestions.filter((item) => !applied.has(item.id));
+      const quality = coachAiQualityIssues(); const qualityBlock = quality.length ? `<section class="coach-ai-quality"><button type="button" data-ai-quality-toggle aria-expanded="${!!coachProgramUi.qualityExpanded}"><span>Qualità dati</span><b>${quality.length}</b><em>${coachProgramUi.qualityExpanded ? "-" : "+"}</em></button>${coachProgramUi.qualityExpanded ? `<div class="coach-ai-quality-body"><p>Completa i dati di questi esercizi per rendere i consigli più precisi.</p><ul>${quality.map((row) => `<li><span>${escapeHtml(row.exercise)}</span><button type="button" data-exercise-action="details" data-exercise-id="${escapeHtml(row.id)}">Completa dati</button></li>`).join("")}</ul></div>` : ""}</section>` : "";
+      return `<section class="coach-ai-panel"><div class="row"><div><h3 class="coach-section-title">COACH AI <span class="coach-ai-count">${suggestions.length}</span></h3><p class="micro-copy">Consigli brevi: apri solo quello che vuoi approfondire.</p></div><label class="coach-ai-toolbar"><input type="checkbox" data-ai-toggle ${ai.enabled ? "checked" : ""}> Consigli automatici ON/OFF</label></div><div class="coach-ai-status-tabs"><button class="${statusTab === "suggestions" ? "active" : ""}" data-ai-status-tab="suggestions">Suggerimenti ${suggestions.length}</button><button class="${statusTab === "applied" ? "active" : ""}" data-ai-status-tab="applied">Applicati ${ai.applied?.length || 0}</button><button class="${statusTab === "ignored" ? "active" : ""}" data-ai-status-tab="ignored">Ignorati ${ai.ignored?.length || 0}</button></div><div class="coach-ai-filters">${filters.map(([value,label]) => `<button class="coach-ai-filter ${filter === value ? "active" : ""}" data-ai-filter="${value}">${label}</button>`).join("")}</div><div class="coach-ai-scroll-area">${!ai.enabled ? `<div class="coach-ai-empty">Consigli automatici disattivati. Lo storico resta disponibile.</div>` : visible.length ? visible.map(coachAiSuggestionHtml).join("") : `<div class="coach-ai-empty">La scheda è coerente. Non ho modifiche importanti da suggerire.</div>`}${qualityBlock}</div><footer class="coach-ai-footer"><button class="coach-ai-all-button" data-ai-status-tab="suggestions">Vedi tutti i suggerimenti</button></footer></section>`;
+    }
+
+    function coachAiPopupHtml() {
+      const suggestion = coachAiSuggestions().find((item) => item.severity === "critical" || item.severity === "improve");
+      if (!suggestion || coachProgramUi.aiNoticeDismissed.has(suggestion.id)) return "";
+      const total = coachAiSuggestions().length;
+      return `<aside class="coach-ai-popover" role="status" aria-live="polite">${coachMascotHtml()}<div><strong>Ciao Alice! ??</strong><p>Ho analizzato la tua scheda e ho trovato <b>${total} suggerimenti</b> per migliorarla.</p><div><button class="gold-button" data-ai-status-tab="suggestions">Vedi suggerimenti</button><button class="ghost-button" data-coach-ai-dismiss="${escapeHtml(suggestion.id)}">Più tardi</button><button class="coach-ai-close" data-coach-ai-dismiss="${escapeHtml(suggestion.id)}" aria-label="Chiudi popup">×</button></div></div></aside>`;
+    }
+
+    function coachBuilderRowHtml(row, index) {
+      const groups = [...new Set([...coachExerciseGroups(), row.group || "Custom"])];
+      const selected = coachProgramUi.selectedExercises.has(row.id);
+      const locked = !!row.locked;
+      const techniqueOptions = [["normal","Normale"],["top-set","Top set"],["back-off","Back-off"],["drop-set","Drop set"],["stripping","Stripping"],["rest-pause","Rest-pause"],["myo-reps","Myo-reps"],["cluster","Cluster"],["superset","Superset"],["giant-set","Giant set"],["amrap","AMRAP"],["isometric","Isometria"],["lengthened-partials","Parziali in allungamento"],["custom","Personalizzata"]];
+      return `
+        <tr class="phase4-exercise-row ${selected ? "selected" : ""} ${locked ? "locked" : ""}" draggable="${locked ? "false" : "true"}" data-builder-row="${index}" data-exercise-id="${escapeHtml(row.id)}" style="--exercise-accent:${muscleColor(row.group)}">
+          <td data-label="#" class="phase4-order-cell"><input type="checkbox" data-exercise-select="${escapeHtml(row.id)}" ${selected ? "checked" : ""} aria-label="Seleziona ${escapeHtml(row.exercise)}"><button class="drag-handle" type="button" title="Trascina per riordinare" ${locked ? "disabled" : ""}>?</button><input class="order-input" type="number" min="1" value="${index + 1}" data-exercise-position="${escapeHtml(row.id)}" ${locked ? "disabled" : ""}></td>
+          <td data-label="Esercizio"><div class="exercise-name-cell"><input data-builder-row-field="exercise" data-builder-index="${index}" value="${escapeHtml(row.exercise || "")}" ${locked ? "disabled" : ""}>${row.mainLift ? '<span class="phase4-badge main">Principale</span>' : ""}${row.progression?.templateId ? `<button type="button" class="phase4-badge" data-progression-open="${escapeHtml(row.id)}">${escapeHtml(progressionTemplateById(row.progression.templateId)?.name || "Progressione")}</button>` : ""}${locked ? '<span class="phase4-badge">?? Bloccato</span>' : ""}</div></td>
+          <td data-label="Gruppo">
+            <select data-builder-row-field="group" data-builder-index="${index}" ${locked ? "disabled" : ""}>
+              ${groups.map((group) => `<option value="${escapeHtml(group)}" ${group === row.group ? "selected" : ""}>${escapeHtml(group)}</option>`).join("")}
+            </select>
+          </td>
+          <td data-label="Serie"><input type="number" min="0" data-builder-row-field="sets" data-builder-index="${index}" value="${escapeHtml(row.sets)}" ${locked ? "disabled" : ""}></td>
+          <td data-label="Ripetizioni"><input data-builder-row-field="reps" data-builder-index="${index}" value="${escapeHtml(row.reps || "")}" placeholder="10, 8-12, 10/8/6, AMRAP" ${locked ? "disabled" : ""}></td>
+          <td data-label="RIR / RPE"><input data-builder-row-field="effort" data-builder-index="${index}" value="${escapeHtml(row.effort || "")}" placeholder="2, 1-2, RPE 8" ${locked ? "disabled" : ""}></td>
+          <td data-label="Recupero"><div class="rest-field"><input type="number" min="0" step="5" data-builder-row-field="restSeconds" data-builder-index="${index}" value="${escapeHtml(row.restSeconds)}" ${locked ? "disabled" : ""}><span>sec</span></div><div class="rest-presets">${[30,45,60,90,120,180].map((seconds) => `<button type="button" data-rest-preset="${seconds}" data-builder-index="${index}">${seconds}</button>`).join("")}</div></td>
+          <td data-label="Tempo"><input class="${row.tempo && !parseTempo(row.tempo).valid ? "tempo-legacy" : ""}" data-builder-row-field="tempo" data-builder-index="${index}" value="${escapeHtml(row.tempo || "")}" placeholder="3-1-X-0" title="Eccentrica - pausa in allungamento - concentrica - pausa in accorciamento" ${locked ? "disabled" : ""}><div class="rest-presets">${["3-1-X-0","3-0-1-0","2-0-X-0"].map((tempo) => `<button type="button" data-tempo-preset="${tempo}" data-builder-index="${index}">${tempo}</button>`).join("")}</div></td>
+          <td data-label="Tecnica"><select data-builder-row-field="technique" data-builder-index="${index}" ${locked ? "disabled" : ""}>${techniqueOptions.map(([value,label]) => `<option value="${value}" ${row.technique === value ? "selected" : ""}>${label}</option>`).join("")}</select>${row.technique === "custom" ? `<input data-builder-row-field="techniqueDescription" data-builder-index="${index}" value="${escapeHtml(row.techniqueDescription || "")}" placeholder="Descrivi tecnica">` : ""}</td>
+          <td data-label="Carico"><div class="load-field"><input type="number" min="0" step="0.5" data-builder-row-field="loadValue" data-builder-index="${index}" value="${escapeHtml(row.loadValue)}" ${locked ? "disabled" : ""}><select data-builder-row-field="loadUnit" data-builder-index="${index}" ${locked ? "disabled" : ""}>${["kg","lb","%1RM"].map((unit) => `<option ${row.loadUnit === unit ? "selected" : ""}>${unit}</option>`).join("")}</select></div></td>
+          <td data-label="Note"><textarea data-builder-row-field="note" data-builder-index="${index}" placeholder="Setup e indicazioni" ${locked ? "disabled" : ""}>${escapeHtml(row.note || "")}</textarea></td>
+          <td data-label="Azioni"><div class="phase4-row-actions"><button type="button" data-exercise-action="details" data-exercise-id="${escapeHtml(row.id)}" title="Dettagli">Dettagli</button><button type="button" data-progression-open="${escapeHtml(row.id)}" title="Progressione">Settimane</button><button type="button" data-exercise-action="duplicate" data-exercise-id="${escapeHtml(row.id)}" title="Duplica">?</button><button type="button" data-exercise-action="up" data-exercise-id="${escapeHtml(row.id)}" title="Sposta su">?</button><button type="button" data-exercise-action="down" data-exercise-id="${escapeHtml(row.id)}" title="Sposta giù">?</button><button type="button" data-exercise-action="main" data-exercise-id="${escapeHtml(row.id)}" title="Esercizio principale">?</button><button type="button" data-exercise-action="lock" data-exercise-id="${escapeHtml(row.id)}" title="Blocca o sblocca">${locked ? "??" : "??"}</button><button type="button" data-exercise-action="copy" data-exercise-id="${escapeHtml(row.id)}">Copia/Sposta</button><button class="danger-button" type="button" data-exercise-action="delete" data-exercise-id="${escapeHtml(row.id)}">Elimina</button></div></td>
+        </tr>
+      `;
+    }
+
+    function coachWeekCellHtml(exercise, weekNumber, program, sheet) {
+      const week = (exercise.progression?.weeks || []).find((item) => Number(item.weekNumber || item.week) === weekNumber);
+      if (!week) return `<button type="button" class="coach-week-cell empty" data-progression-open="${escapeHtml(exercise.id)}" data-progression-week-number="${weekNumber}" aria-label="Modifica settimana ${weekNumber}"><span>S${weekNumber}</span><small>—</small></button>`;
+      const reps = formatReps(week.reps); const effort = week.rpe?.label ? `RPE ${week.rpe.label}` : week.rir?.label ? `RIR ${week.rir.label}` : "";
+      return `<button type="button" class="coach-week-cell ${week.type === "deload" ? "deload" : ""} ${week.source === "manual" ? "manual" : "auto"}" data-progression-open="${escapeHtml(exercise.id)}" data-progression-week-number="${weekNumber}" aria-label="Modifica settimana ${weekNumber}"><strong>${escapeHtml(week.sets ?? "—")}×${escapeHtml(reps || "—")}</strong>${effort ? `<small>${escapeHtml(effort)}</small>` : ""}${week.prescribedLoad?.value != null ? `<small>${escapeHtml(week.prescribedLoad.value)} ${escapeHtml(week.loadUnit || "kg")}</small>` : ""}<em>${week.source === "manual" ? "manuale" : week.type === "deload" ? "scarico" : "auto"}</em></button>`;
+    }
+    function coachBuilderWeeksGridHtml(rows, weekCount, program, sheet) {
+      const selectedWeek = Number(coachProgramUi.mobileWeek) || 0;
+      const weekNumbers = selectedWeek > 0 ? [selectedWeek] : Array.from({length:weekCount},(_,i)=>i+1);
+      const fixed = `<th rowspan="2" class="week-fixed-order">#</th><th rowspan="2" class="week-fixed-exercise">Esercizio</th><th rowspan="2" class="week-fixed-group">Gruppo</th><th rowspan="2" class="week-fixed-notes">Note</th><th rowspan="2" class="week-fixed-note2">Note 2</th><th rowspan="2" class="week-fixed-recovery">Recupero</th>`;
+      const weekHead = weekNumbers.map((i) => `<th colspan="3" class="week-group week-${i % 2 ? "odd" : "even"}">S${i}</th>`).join("");
+      const weekSub = weekNumbers.map(() => `<th>Serie</th><th>Reps</th><th>RIR/RPE</th>`).join("");
+      const input = (row, week, field, value, type="text") => `<input class="week-inline-input" data-week-grid-field="${field}" data-week-grid-exercise="${escapeHtml(row.id)}" data-week-grid-number="${week}" type="${type}" value="${escapeHtml(value ?? "")}" aria-label="S${week} ${field} ${escapeHtml(row.exercise || "")}">`;
+      const cell = (row, exercise, week) => {
+        const w = (exercise.progression?.weeks || []).find((item) => Number(item.weekNumber || item.week) === week) || {};
+        const tone = `week-${week % 2 ? "odd" : "even"} ${w.type === "deload" ? "week-deload" : ""} ${w.source === "manual" ? "week-manual" : ""}`;
+        return `<td class="week-set ${tone}">${input(row,week,"sets",w.sets,"number")}</td><td class="week-reps ${tone}">${input(row,week,"reps",formatReps(w.reps))}</td><td class="week-rir ${tone}">${input(row,week,"rir",w.rir?.label || w.rpe?.label || "")}</td>`;
+      };
+      const body = rows.map((row,index) => {
+        const exercise = programRepository.getExerciseById(program?.id,sheet?.id,row.id)||row;
+        const p = exercise.prescription || {};
+        const displayName = displayExerciseName(row.exercise || "Esercizio");
+        const note2 = exercise.metadata?.note2 || "";
+        return `<tr><th class="week-row-order">${index + 1}</th><th class="week-row-exercise"><span>${escapeHtml(displayName)}</span></th><td class="week-row-group">${escapeHtml(row.group || "")}</td><td class="week-row-notes"><textarea data-week-grid-base="note" data-week-grid-exercise="${escapeHtml(row.id)}" aria-label="Note ${escapeHtml(displayName)}">${escapeHtml(exercise.note || row.note || "")}</textarea></td><td class="week-row-note2"><textarea data-week-grid-base="note2" data-week-grid-exercise="${escapeHtml(row.id)}" aria-label="Note 2 ${escapeHtml(displayName)}">${escapeHtml(note2)}</textarea></td><td class="week-row-recovery">${escapeHtml(p.rest?.seconds ?? "—")}s</td>${weekNumbers.map((week)=>cell(row,exercise,week)).join("")}</tr>`;
+      }).join("");
+      return `<div class="coach-weeks-view"><div class="coach-weeks-caption"><strong>Progressione settimanale completa</strong><span>${weekCount} settimane · modifica direttamente le celle</span><label class="coach-mobile-week-picker">Settimana<select data-coach-mobile-week><option value="0">Tutte</option>${Array.from({length:weekCount},(_,i)=>`<option value="${i+1}" ${selectedWeek===i+1?"selected":""}>S${i+1}</option>`).join("")}</select></label></div><div class="coach-weeks-scroll"><table class="coach-weeks-grid"><thead><tr>${fixed}${weekHead}</tr><tr>${weekSub}</tr></thead><tbody>${body}</tbody></table></div></div>`;
+    }
+
+    function coachBuilderHtml() {
+      const b = activeCoachBuilder();
+      if (!b) return "";
+      const rows = coachBuilderRows();
+      const selectedCount = coachProgramUi.selectedExercises.size;
+      const selection = ensureCoachProgramSelection();
+      const weekCount = programWeekCount(selection.program, selection.sheet);
+      const builderView = "weeks";
+      return `
+        <section class="coach-builder-strip excel-builder">
+          <div class="row"><h3 class="coach-section-title">EDITOR SCHEDA</h3><span class="chip">${escapeHtml(b.code || "scheda")}</span></div>
+          <div class="builder-v24-shell">
+            <div class="builder-v24-head">
+              <label>Nome scheda<input data-coach-sheet-field="name" value="${escapeHtml(b.name || "")}" placeholder="es. Lower + dorso focus"></label>
+              <label>Codice scheda<input data-coach-sheet-field="code" value="${escapeHtml(b.code || "")}" placeholder="A, AA o personalizzato"></label>
+              <label>Focus<input data-coach-sheet-field="focus" value="${escapeHtml(b.focus || "")}" placeholder="es. Glutei, femorali"></label>
+              <label>Split<input data-coach-sheet-field="split" value="${escapeHtml(b.split || "")}" placeholder="es. Lower / Upper"></label>
+              <label class="full">Note<input data-coach-sheet-field="note" value="${escapeHtml(b.note || "")}" placeholder="Note della scheda"></label>
+              <label>Colore<input data-coach-sheet-field="color" type="color" value="${/^#[0-9a-f]{6}$/i.test(b.color || "") ? escapeHtml(b.color) : "#ff6fcb"}"></label>
+            </div>
+            <div class="builder-v24-toolbar phase4-toolbar"><span class="save-indicator ${coachProgramUi.saveStatus}">${coachProgramUi.saveStatus === "dirty" ? "Modifiche da salvare" : coachProgramUi.saveStatus === "saving" ? "Salvataggio…" : coachProgramUi.saveStatus === "error" ? "Errore salvataggio" : "? Salvato"}</span><div class="builder-v24-actions"><button class="mini-button" type="button" data-exercise-toolbar="undo">? Annulla</button><button class="mini-button" type="button" data-exercise-toolbar="redo">? Ripeti</button><button class="gold-button" type="button" data-builder-add-row>+ Aggiungi esercizio</button></div></div>
+            ${selectedCount ? `<div class="phase4-bulk-toolbar"><strong>${selectedCount} selezionati</strong><button data-exercise-toolbar="duplicate">Duplica</button><button data-exercise-toolbar="copy">Copia/Sposta</button><button data-exercise-toolbar="reorder">Raggruppa in alto</button><button data-exercise-toolbar="rest">Recupero</button><button data-exercise-toolbar="rir">RIR/RPE</button><button data-exercise-toolbar="technique">Tecnica</button><button class="danger-button" data-exercise-toolbar="delete">Elimina</button></div>` : ""}
+            <div class="builder-v24-scroll">
+              ${builderView === "weeks" ? coachBuilderWeeksGridHtml(rows, weekCount, selection.program, selection.sheet) : ""}
+              ${rows.length ? "" : `<div class="sheet-empty-state"><h3>Nessun esercizio ancora inserito</h3><p>Questa scheda è pronta: aggiungi il primo esercizio quando vuoi.</p><button class="gold-button" type="button" data-builder-add-row>+ Aggiungi esercizio</button></div>`}
+              <table class="builder-v24-table phase4-exercise-table coach-compact-hidden">
+                <thead><tr><th>Ordine</th><th>Esercizio</th><th>Gruppo</th><th>Serie</th><th>Ripetizioni</th><th>RIR/RPE</th><th>Recupero</th><th>Tempo</th><th>Tecnica</th><th>Carico prescritto</th><th>Note</th><th>Azioni</th></tr></thead>
+                <tbody>
+                  ${rows.map((row, index) => coachBuilderRowHtml(row, index)).join("")}
+                  <tr class="builder-add-row"><td colspan="12"><button class="builder-add-row-button" type="button" data-builder-add-row>+ Aggiungi esercizio dalla libreria o personalizzato</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <button class="gold-button" style="width:100%;margin-top:12px" id="saveCoachSession">Salva ora</button>
+        </section>
+      `;
+    }
+
+    function coachCreatedSheetPreviewHtml(session) {
+      if (!session?.exercises?.length) return `<div class="reference-row" style="margin-top:12px"><strong>Scheda in creazione</strong>Gli esercizi aggiunti compariranno qui sotto, con la struttura lunga stile Excel.</div>`;
+      const weekCount = Math.max(1, ...session.exercises.map((exercise) => (exercise.weeks || exercise.progression?.weeks || []).length));
+      return `
+        <div class="created-sheet-preview builder-excel-preview">
+          <table class="coach-create-table builder-excel-table">
+            <thead><tr><th>Cod</th><th>Gruppo muscolare</th><th>Esercizio</th><th>Note</th><th>SOM</th><th>Serie avvic.</th>${Array.from({ length: weekCount }, (_, index) => `<th>Week ${index + 1}</th>`).join("")}</tr></thead>
+            <tbody>
+              ${session.exercises.map((exercise, index) => `
+                <tr style="--exercise-accent:${muscleColor(exercise.muscle)}">
+                  <td><span class="exercise-letter">${String.fromCharCode(65 + index)}</span></td>
+                  <td>${escapeHtml(exercise.muscle || "")}</td>
+                  <td>${escapeHtml(displayExerciseName(exercise.name || ""))}</td>
+                  <td>${escapeHtml(exercise.note || "")}</td>
+                  <td>${escapeHtml(exercise.som || "")}</td>
+                  <td>${escapeHtml(exercise.warmup || "")}</td>
+                  ${Array.from({ length: weekCount }, (_, weekIndex) => `<td><span class="week-pill">${escapeHtml(exercise.weeks?.[weekIndex] || formatWeekPrescription(exercise.progression?.weeks?.[weekIndex]) || "")}</span></td>`).join("")}
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+    function coachAthleteViewHtml() {
+      const options = coachAthleteViewOptions();
+      const choice = state.coach.viewChoice || "browse-old";
+      const selected = coachAthleteSelection(choice);
+      const visible = selected.sessions;
+      const showBrowseTabs = selected.mode === "browse-old";
+      const letters = selected.letters || [];
+      const selectedLetter = selected.letter || "A";
+      const weeks = selected.weeks || [];
+      const selectedWeek = selected.week || "all";
+      return `
+        <aside class="athlete-view-panel">
+          <div class="panel-head">
+            <div><h3 class="coach-section-title">VISTA ATLETA</h3><p class="micro-copy">${escapeHtml(selected.label)}</p></div>
+            <select class="athlete-view-select" id="athleteViewSelect">
+              ${options.map((option) => `<option value="${escapeHtml(option.value)}" ${option.value === choice ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}
+            </select>
+          </div>
+          ${showBrowseTabs ? `
+            <div class="athlete-tabs">
+              ${letters.map((letter) => `<button class="athlete-tab ${letter === selectedLetter ? "active" : ""}" data-coach-letter="${escapeHtml(letter)}">Scheda ${escapeHtml(letter)}</button>`).join("")}
+            </div>
+            <div class="week-tabs">
+              <button class="week-tab ${selectedWeek === "all" ? "active" : ""}" data-coach-week="all">Tutte</button>
+              ${weeks.map((week) => `<button class="week-tab ${String(week) === String(selectedWeek) ? "active" : ""}" data-coach-week="${escapeHtml(week)}">S${escapeHtml(week)}</button>`).join("")}
+            </div>
+          ` : ""}
+          <div class="athlete-cards">
+            ${visible.flatMap((session) => (session.exercises || []).map((exercise, index) => athleteExerciseCard(session, exercise, index))).join("") || `<div class="empty-chart">Nessuna scheda trovata per questo filtro.</div>`}
+          </div>
+        </aside>
+      `;
+    }
+
+    function coachAthleteViewOptions() {
+      const phases = availablePhases();
+      const phase = state.coach.editorPhase || state.training.phaseFilter || phases[0] || "Programma";
+      const oldSessions = sessionsForPhase(phase);
+      const options = [
+        { value: "browse-old", label: "Schede vecchie - sfoglia" },
+        { value: "left", label: "Scheda aperta a sinistra" },
+        { value: "builder", label: "Scheda in costruzione" }
+      ];
+      customProgramSheets().forEach((session) => {
+        options.push({ value: `sheet:${session.id}`, label: `Nuova/custom - ${session.code} ${session.name || ""}`.trim() });
+      });
+      oldSessions.forEach((session) => {
+        options.push({ value: `sheet:${session.id}`, label: `Vecchia - ${session.code} ${session.focus || session.name || ""}`.trim() });
+      });
+      return options;
+    }
+
+    function coachAthleteSelection(choice) {
+      if (choice === "left") {
+        const session = (state.coach.activeTab || "create") === "create" ? coachBuilderSessionPreview() : selectedCoachProgramSession();
+        return { mode: "single", label: "Scheda aperta a sinistra", sessions: session ? [session] : [] };
+      }
+      if (choice === "builder") {
+        const session = coachBuilderSessionPreview();
+        return { mode: "single", label: "Scheda in costruzione", sessions: session ? [session] : [] };
+      }
+      if (choice?.startsWith("sheet:")) {
+        const sheetId = choice.slice(6);
+        const session = allProgramSheets().find((item) => item.id === sheetId);
+        return { mode: "single", label: `Scheda ${session?.code || ""}`, sessions: session ? [session] : [] };
+      }
+      const phase = state.coach.editorPhase || state.training.phaseFilter || "Intensificazione";
+      const sessions = sessionsForPhase(phase);
+      const letters = Array.from(new Set(sessions.map((item) => item.letter || sessionLetter(item.code)).filter(Boolean)));
+      const selectedLetter = state.coach.viewLetter || letters[0] || "A";
+      const weeks = Array.from(new Set(sessions.filter((item) => (item.letter || sessionLetter(item.code)) === selectedLetter).map((item) => item.week || 1))).sort((a, b) => a - b);
+      const selectedWeek = state.coach.viewWeek || "all";
+      const visible = sessions.filter((session) => {
+        const sameLetter = (session.letter || sessionLetter(session.code)) === selectedLetter;
+        const sameWeek = selectedWeek === "all" || String(session.week || 1) === String(selectedWeek);
+        return sameLetter && sameWeek;
+      });
+      return { mode: "browse-old", label: `Schede vecchie - ${phase}`, sessions: visible, letters, letter: selectedLetter, weeks, week: selectedWeek };
+    }
+
+    function coachBuilderSessionPreview() {
+      const b = activeCoachBuilder();
+      if (!b) return null;
+      const program = programRepository.getProgramById(b.programId);
+      const rows = coachBuilderRows();
+      return {
+        code: b.code || "Nuova",
+        day: 1,
+        letter: sessionLetter(b.code) || "N",
+        week: 1,
+        name: b.name || "Scheda in costruzione",
+        phase: program?.phase || "Coach custom",
+        focus: b.focus || "Da definire",
+        split: b.split || "",
+        startDate: program?.startDate || todayInput(),
+        note: b.note || `${program?.phase || "Coach custom"} - anteprima builder`,
+        exercises: rows
+          .filter((row) => row.exercise || row.note || row.weeks.some(Boolean))
+          .map((row) => {
+            const weeks = Array.from({ length: Math.max(1, Number(b.programId ? programWeekCount(program, programRepository.getSheetById(b.programId, coachProgramUi.sheetId)) : row.weeks?.length || 1) || 1) }, (_, index) => parseWeekPrescription(row.weeks?.[index], index + 1));
+            const firstWeek = weeks[0];
+            return defineExerciseCompatibility({
+              id: row.id,
+              name: String(row.exercise || "Esercizio custom").trim(),
+              muscle: row.group || "Custom",
+              som: row.som || row.group || "",
+              prescription: {
+                sets: firstWeek.sets,
+                reps: firstWeek.reps,
+                rir: firstWeek.rir,
+                rest: firstWeek.rest,
+                warmup: { sets: numericParts(row.approach)[0] ?? null, label: row.approach || "" },
+                tempo: "coach"
+              },
+              progression: { weeks },
+              note: row.note || "Note esercizio da completare",
+              today: "",
+              ref: "",
+              metadata: { source: "coach-builder" }
+            });
+          })
+      };
+    }
+    function athleteExerciseCard(session, exercise, index) {
+      const history = exerciseHistory(exercise, 1, exercise.jump || "");
+      const latest = history[0];
+      const notes = exerciseNotes(exercise, 1);
+      const maxKg = Math.max(0, ...exerciseHistory(exercise, 99, exercise.jump || "").map((row) => Number(row.maxKg || row.kg || 0)).filter(Number.isFinite));
+      const rm = maxKg ? `1RM ~${Math.round(maxKg)} kg` : "no test";
+      const load = latest ? historyLoadLabel(latest) : "Nessun allenamento loggato.";
+      const note = notes[0]?.text || displayLabel(exercise.today || exercise.note || "Nota coach da impostare.");
+      return `
+        <article class="athlete-card">
+          <div class="athlete-card-head">
+            <span class="exercise-letter">${String.fromCharCode(65 + index)}</span>
+            <div><h4>${escapeHtml(displayExerciseName(exercise.name || ""))}</h4><span class="micro-copy">${escapeHtml(session.code)} - ${escapeHtml(session.focus || "")}</span></div>
+            <span class="rm-pill">${escapeHtml(rm)}</span>
+          </div>
+          <span class="set-pill">S${escapeHtml(session.week || 1)} ${escapeHtml(exercise.sets || "--")}x${escapeHtml(exercise.reps || "--")}</span>
+          <div class="athlete-note"><strong>S${escapeHtml(session.week || 1)}</strong> ${escapeHtml(note)}</div>
+          <p class="micro-copy">${escapeHtml(load)}</p>
+        </article>
+      `;
+    }
+
+    function coachVolumePanelHtml() {
+      return `
+        <div>
+          <div class="row"><h3 class="coach-section-title">VOLUME</h3><span class="chip">coach</span></div>
+          ${advancedVolumeFrequencyHtml()}
+          ${customVolumeHistoryHtml()}
+          ${volumeHistoryHtml()}
+        </div>
+      `;
+    }
+
+    function advancedVolumeFrequencyRows() {
+      const output = [];
+      (state.programs || []).filter((program) => !program.deletedAt).forEach((program) => {
+        const muscleMap = new Map();
+        const sheets = (program.sheets || []).filter((sheet) => !sheet.deletedAt && /^[A-Z]+$/i.test(String(sheet.code || "")));
+        sheets.forEach((sheet) => {
+          const perMuscle = new Map();
+          (sheet.exercises || []).filter((exercise) => !exercise.deletedAt).forEach((exercise) => {
+            const muscle = String(exercise.muscle || exercise.som || "Altro").trim() || "Altro";
+            const weeks = exercise.progression?.weeks || [];
+            const limit = Math.max(1, Number(program.durationWeeks) || weeks.length || 1);
+            const values = Array.from({ length: limit }, (_, index) => Number(weeks[index]?.sets) || (index === 0 ? Number(exercise.prescription?.sets) || 0 : 0));
+            const previous = perMuscle.get(muscle) || Array(limit).fill(0);
+            values.forEach((value, index) => { previous[index] += value; });
+            perMuscle.set(muscle, previous);
+          });
+          perMuscle.forEach((weeks, muscle) => {
+            const row = muscleMap.get(muscle) || { program: program.name, muscle, weeks: [], frequency: 0 };
+            row.weeks = weeks.map((value, index) => (row.weeks[index] || 0) + value);
+            row.frequency += 1;
+            muscleMap.set(muscle, row);
+          });
+        });
+        muscleMap.forEach((row) => {
+          row.average = row.weeks.reduce((sum, value) => sum + value, 0) / Math.max(1, row.weeks.length);
+          row.peak = Math.max(0, ...row.weeks);
+          output.push(row);
+        });
+      });
+      return output.sort((a, b) => b.average - a.average);
+    }
+
+    function advancedVolumeFrequencyHtml() {
+      const rows = advancedVolumeFrequencyRows();
+      if (!rows.length) return `<div class="reference-row">Compila almeno una scheda per calcolare volume e frequenza.</div>`;
+      return `<div class="advanced-volume-card"><div class="row"><div><h4>Volume avanzato e frequenza</h4><p class="micro-copy">Serie allenanti medie per settimana e numero di esposizioni del muscolo.</p></div><span class="chip">${rows.length} distretti</span></div><div class="advanced-volume-table-wrap"><table class="advanced-volume-table"><thead><tr><th>Programma</th><th>Muscolo</th><th>Media serie/settimana</th><th>Picco</th><th>Frequenza</th></tr></thead><tbody>${rows.slice(0, 60).map((row) => `<tr><td>${escapeHtml(row.program)}</td><td>${escapeHtml(row.muscle)}</td><td><strong>${row.average.toFixed(1)}</strong></td><td>${row.peak.toFixed(0)}</td><td>${row.frequency} esposizion${row.frequency === 1 ? "e" : "i"}</td></tr>`).join("")}</tbody></table></div></div>`;
+    }
+
+    function customVolumeHistoryHtml() {
+      const custom = customProgramSheets();
+      if (!custom.length) return `<div class="reference-row">Le schede create dal builder compariranno qui come nuove tabelle volume.</div>`;
+      return `<div class="volume-grid">${custom.map((session) => {
+        const totals = {};
+        (session.exercises || []).forEach((exercise) => {
+          const muscle = exercise.muscle || session.focus || "Custom";
+          const weeks = Array.isArray(exercise.weeks) && exercise.weeks.length ? exercise.weeks : [exercise.sets || "1"];
+          const avg = weeks.reduce((sum, week) => sum + parseWeekSets(week), 0) / Math.max(1, weeks.length || 1);
+          totals[muscle] = (totals[muscle] || 0) + avg;
+        });
+        const max = Math.max(1, ...Object.values(totals));
+        return `<article class="volume-block"><h4><em>"${escapeHtml(session.code)} - ${escapeHtml(session.name)}"</em></h4><p class="micro-copy">Media calcolata sulle settimane della scheda custom.</p>${Object.entries(totals).map(([muscle, total]) => `<div class="volume-row"><span>${escapeHtml(muscle)}</span><div class="bar-track"><div class="bar-fill" style="--w:${Math.round(total / max * 100)}%;--c:${colors.green}"></div></div><strong>${Number(total).toFixed(1)}</strong></div>`).join("")}</article>`;
+      }).join("")}</div>`;
+    }
+
+    function coachFeedbackBoardHtml() {
+      const fatigue = Math.round(averageQuizValue(["fatigue", "effort", "stress"]) || 4);
+      const sorenessMin = Math.round(averageQuizValue(["soreness", "pain"]) || 1);
+      const sorenessMax = Math.max(sorenessMin, Math.round(structuralRisk() / 20));
+      const recovery = Math.max(1, Math.round(readinessScore() / 20));
+      return `
+        <section class="feedback-board">
+          <div class="row"><h3 class="coach-section-title">FEEDBACK POST ALLENAMENTO</h3><span class="chip">ultimi feedback</span></div>
+          <div class="feedback-metrics">
+            <div class="feedback-metric"><span>Fatica media</span><strong>${fatigue}/5</strong></div>
+            <div class="feedback-metric"><span>Dolore minimo</span><strong>${sorenessMin}/5</strong></div>
+            <div class="feedback-metric"><span>Dolore max</span><strong>${sorenessMax}</strong></div>
+            <div class="feedback-metric"><span>Recovery</span><strong>${recovery}/5</strong></div>
+          </div>
+          <div class="form-grid">
+            <label>Titolo<input type="text" id="feedbackTitle" placeholder="es. Lento avanti - gomiti"></label>
+            <label>Tipo
+              <select id="feedbackType">
+                <option value="tecnica">Tecnica</option>
+                <option value="programmazione">Programmazione</option>
+                <option value="recupero">Recupero</option>
+              </select>
+            </label>
+            <label class="full">Nota<textarea id="feedbackText" placeholder="Feedback, cue, modifica scheda, recupero o cose da controllare..."></textarea></label>
+          </div>
+          <button class="ghost-button" style="width:100%;margin-top:10px" id="saveFeedback">Salva feedback</button>
+          <div class="history">
+            ${state.coach.feedback.slice().reverse().slice(0, 5).map((item) => `<div class="history-row"><span>${escapeHtml(item.title)} - ${escapeHtml(item.type)}</span><strong>${escapeHtml(item.date)}</strong></div>`).join("") || `<div class="history-row"><span>Nessun feedback salvato</span><strong>--</strong></div>`}
+          </div>
+        </section>
+      `;
+    }
+
+    function coachQuizReviewHtml() {
+      const p = decisionPriority();
+      return `
+        <div>
+          <div class="row"><h3 class="coach-section-title">REVIEW QUESTIONARIO</h3><span class="chip" style="color:${p.color}">${p.level} - ${escapeHtml(p.label)}</span></div>
+          <div class="mini-bars">
+            ${bar("Prontezza", readinessScore(), colors.green)}
+            ${bar("Risposta", programResponse(), colors.blue)}
+            ${bar("Rischio", structuralRisk(), colors.red)}
+          </div>
+          <div class="history">
+            <div class="history-row"><span>Esercizi sentiti bene</span><strong>${escapeHtml(state.quiz.goodExercises || "--")}</strong></div>
+            <div class="history-row"><span>Esercizi sentiti poco</span><strong>${escapeHtml(state.quiz.weakExercises || "--")}</strong></div>
+            <div class="history-row"><span>Cosa cambiare</span><strong>${escapeHtml(state.quiz.changeExercises || "--")}</strong></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function libraryItems() {
+      const aliasOnlyNames = new Set();
+      Object.entries(EXERCISE_ALIASES).forEach(([canonical, aliases]) => {
+        aliases.forEach((alias) => {
+          if (normalizeExerciseName(alias) !== normalizeExerciseName(canonical)) aliasOnlyNames.add(normalizeExerciseName(alias));
+        });
+      });
+      const coachNames = new Set((state.coach.exerciseLibrary || []).map((item) => normalizeExerciseName(item.name)));
+      const historyItems = state.training.exercises.filter((item) => {
+        if (!aliasOnlyNames.has(normalizeExerciseName(item.name))) return true;
+        return !(state.coach.exerciseLibrary || []).some((coachItem) => exerciseMatches(coachItem.name, item.name) && exerciseMusclesCompatible(coachItem, item));
+      });
+      return state.coach.exerciseLibrary
+        .concat(historyItems.filter((item) => !coachNames.has(normalizeExerciseName(item.name))))
+        .filter((item, index, list) => list.findIndex((row) => row.name === item.name) === index);
+    }
+
+    function workoutHistoryHtml() {
+      const savedHere = state.training.sessions.filter((session) => session.source === "App" || Number(session.id) > 1000000000);
+      const recent = savedHere.slice().sort((a, b) => String(b.dateInput || "").localeCompare(String(a.dateInput || "")) || Number(b.id || 0) - Number(a.id || 0));
+      const selectedCode = currentTrainingContext().session.code;
+      const selectedCount = savedHere.filter((session) => session.sessionCode === selectedCode).length;
+      return `
+        <section class="card" id="workoutHistory">
+          <div class="row"><div><h3>Archivio allenamenti</h3><p class="micro-copy">Il tuo logbook completo: apri una voce per vedere carichi e note.</p></div><span class="chip">${savedHere.length} salvati</span></div>
+          <div class="save-success">${selectedCount ? `? ${escapeHtml(selectedCode)} compare ${selectedCount} ${selectedCount === 1 ? "volta" : "volte"} nello storico.` : `Attenzione: ${escapeHtml(selectedCode)} non risulta ancora nello storico.`}</div>
+          <div class="workout-archive">
+            ${recent.length ? recent.map((session) => `<details class="workout-entry"><summary><span class="workout-code">${escapeHtml(session.sessionCode || "--")}</span><span class="workout-title"><strong>${escapeHtml(session.sessionName || session.sessionCode || "Allenamento")}</strong><small>${escapeHtml(session.date || session.dateInput || "")} · Week ${escapeHtml(session.week || "--")} · ${session.exercises?.length || 0} ${(session.exercises?.length || 0) === 1 ? "esercizio" : "esercizi"}</small></span><span class="sync-badge">${session.cloudSyncedAt ? "Cloud ?" : "Salvato ?"}</span></summary><div class="workout-entry-body">${(session.exercises || []).map((exercise) => `<div class="workout-exercise-row"><span><strong>${escapeHtml(exercise.name)}</strong>${exercise.userNote ? `<br><small>${escapeHtml(exercise.userNote)}</small>` : ""}</span><strong>${escapeHtml(exercise.value || (exercise.kg ? `${exercise.kg} kg` : "nota"))}</strong></div>`).join("") || `<p class="micro-copy">Nessun dettaglio esercizio disponibile.</p>`}</div></details>`).join("") : `<div class="history-row"><span>Nessun allenamento salvato nell'app.</span><strong>--</strong></div>`}
+          </div>
+        </section>
+      `;
+    }
+
+    function annualPhaseHtml() {
+      return `<div class="phase-wheel" aria-label="Programmazione annuale">
+        <div class="phase-center">Programmazione annuale</div>
+        ${ANNUAL_PHASES.map((phase, index) => `<article class="phase-node ${phase.current ? "current" : ""}" style="--i:${index}">
+          <strong>${escapeHtml(displayLabel(phase.phase))}</strong>
+          <span>${escapeHtml(displayLabel(phase.objective))}</span>
+          <small>${escapeHtml(displayPhaseDuration(phase))}</small>
+        </article>`).join("")}
+      </div>`;
+    }
+
+    function volumeHistoryHtml() {
+      return `
+        <section class="card">
+          <div class="row"><h3>Storico volume</h3><span class="chip">${VOLUME_HISTORY.length} blocchi</span></div>
+          ${annualPhaseHtml()}
+          <div class="volume-grid">
+            ${VOLUME_HISTORY.map((block) => {
+              const topRows = block.rows.slice().sort((a, b) => b.total - a.total);
+              const max = Math.max(1, ...topRows.map((row) => row.total));
+              return `<article class="volume-block">
+                <h4><em>"${escapeHtml(displayLabel(block.title))}"</em></h4>
+                ${block.title === "Volume Intensificazione" ? `<p class="micro-copy">Calcolo sulle settimane visibili nel foglio Intensificazione.</p>` : ""}
+                ${topRows.map((row) => `<div class="volume-row"><span>${escapeHtml(row.muscle)}</span><div class="bar-track"><div class="bar-fill" style="--w:${Math.round(row.total / max * 100)}%;--c:${colors.violet}"></div></div><strong>${row.total}</strong></div>`).join("")}
+              </article>`;
+            }).join("")}
+          </div>
+        </section>
+      `;
+    }
+
+    function checkinValue(key) {
+      const saved = Number(state.quiz?.checkin?.[key]);
+      if (Number.isFinite(saved) && saved >= 1 && saved <= 5) return saved;
+      const maps = {
+        energy: { basso: 2, medio: 3, alto: 5 },
+        sleep: { male: 1, ok: 3, bene: 5 },
+        doms: { ok: 1, indolenzita: 3, distrutta: 5 },
+        stress: { basso: 1, medio: 3, alto: 5 },
+        hunger: { bassa: 2, normale: 3, alta: 4, "fame assurda": 5 }
+      };
+      if (key === "energy") return maps.energy[state.quiz.feeling] || 3;
+      if (key === "sleep") return maps.sleep[state.quiz.sleepQuality] || 3;
+      if (key === "doms") return maps.doms[state.quiz.recovery] || 1;
+      if (key === "stress") return maps.stress[state.quiz.stress] || 3;
+      if (key === "hunger") return maps.hunger[state.quiz.hunger] || 3;
+      return 3;
+    }
+
+    function setCheckinValue(key, value) {
+      const clean = clamp(Number(value || 3), 1, 5);
+      if (!state.quiz.checkin) state.quiz.checkin = {};
+      state.quiz.checkin[key] = clean;
+      if (key === "energy") state.quiz.feeling = clean <= 2 ? "basso" : clean >= 4 ? "alto" : "medio";
+      if (key === "sleep") state.quiz.sleepQuality = clean <= 2 ? "male" : clean >= 4 ? "bene" : "ok";
+      if (key === "doms") state.quiz.recovery = clean <= 2 ? "ok" : clean >= 4 ? "distrutta" : "indolenzita";
+      if (key === "stress") state.quiz.stress = clean <= 2 ? "basso" : clean >= 4 ? "alto" : "medio";
+      if (key === "hunger") state.quiz.hunger = clean <= 2 ? "bassa" : clean === 3 ? "normale" : clean === 4 ? "alta" : "fame assurda";
+    }
+
+    function checkinScale(key, label, hint) {
+      const active = checkinValue(key);
+      const icons = { energy: "E", sleep: "S", doms: "D", stress: "!", hunger: "F" };
+      const accents = { energy: colors.pink, sleep: colors.violet, doms: "#ff9c8e", stress: colors.blue, hunger: colors.green };
+      return `<div class="checkin-slider" style="--accent:${accents[key] || colors.pink}">
+        <div class="checkin-slider-icon">${icons[key] || label.slice(0, 1)}</div>
+        <div class="checkin-slider-main">
+          <div class="checkin-slider-top"><span>${label}</span><small>${hint}</small></div>
+          <div class="checkin-scale" data-checkin-scale="${key}" style="--active-pos:${active}">
+            ${[1, 2, 3, 4, 5].map((value) => `<label class="checkin-option ${value === active ? "active" : ""}" aria-label="${label} ${value}"><input type="radio" name="checkin-${key}" value="${value}" data-checkin-input="${key}" ${value === active ? "checked" : ""}><span>${value}</span></label>`).join("")}
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function checkinStatusMeta() {
+      const p = decisionPriority();
+      const trend = exerciseTrendSummary();
+      const risk = structuralRisk();
+      if (p.label === "Sicurezza" || p.label === "Recupero") return { ...p, status: "prudenza", color: colors.orange };
+      if (trend.down >= 2 || p.label === "Calo") return { ...p, status: "da controllare", color: colors.orange };
+      if (risk < 55 && trend.down <= 1) return { ...p, status: "stabile", color: colors.green, text: trend.down === 1 ? `Volume ok. Occhio solo a ${trend.downNames[0] || "un esercizio"}: sembra l'unico dato in calo.` : "Volume ok, carichi stabili e check-in senza segnali pesanti." };
+      return { ...p, status: "monitor", color: colors.blue };
+    }
+
+    function checkinAdvice() {
+      const energy = checkinValue("energy");
+      const sleep = checkinValue("sleep");
+      const doms = checkinValue("doms");
+      const stress = checkinValue("stress");
+      const hunger = checkinValue("hunger");
+      if (sleep <= 2 || doms >= 4 || stress >= 4) {
+        return {
+          title: "Giornata da gestire",
+          text: "Allenati, ma tieni 1-2 RIR in piu, evita test o PR e taglia una serie se senti che la tecnica cala.",
+          color: colors.orange
+        };
+      }
+      if (energy >= 4 && sleep >= 4 && doms <= 2 && stress <= 2) {
+        return {
+          title: "Puoi spingere",
+          text: "Buoni segnali: puoi provare una piccola progressione di carico o reps, restando pulita nella tecnica.",
+          color: colors.green
+        };
+      }
+      if (hunger >= 5 && energy <= 3) {
+        return {
+          title: "Occhio alla benzina",
+          text: "Fame alta ed energia non top: cura il pre-workout e non forzare progressioni aggressive oggi.",
+          color: colors.gold
+        };
+      }
+      return {
+        title: "Mantieni progressione",
+        text: "Segnali medi: fai la scheda prevista, prova a confermare i carichi e aumenta solo dove senti controllo.",
+        color: colors.blue
+      };
+    }
+
+    function checkinSignals() {
+      const energy = checkinValue("energy");
+      const sleep = checkinValue("sleep");
+      const doms = checkinValue("doms");
+      const stress = checkinValue("stress");
+      const hunger = checkinValue("hunger");
+      const wellbeingScore = Math.round((energy + sleep + (6 - doms) + (6 - stress) + Math.min(hunger, 4)) / 5 * 20);
+      const recoveryScore = Math.round((sleep + (6 - doms) + (6 - stress)) / 3 * 20);
+      const checkinHardStop = energy <= 2 || sleep <= 2 || stress >= 4 || doms >= 4;
+      const recoveryHardStop = sleep <= 2 || doms >= 4 || stress >= 4;
+      const checkinLabel = checkinHardStop ? "prudenza" : wellbeingScore < 65 ? "monitor" : "ok";
+      const recoveryLabel = recoveryHardStop ? "basso" : recoveryScore < 65 ? "medio" : "ok";
+      const checkinColor = checkinHardStop ? colors.orange : wellbeingScore < 65 ? colors.blue : colors.green;
+      const recoveryColor = recoveryHardStop ? colors.orange : recoveryScore < 65 ? colors.blue : colors.green;
+      const checkinDetail = [
+        energy <= 2 ? "energia bassa" : "",
+        sleep <= 2 ? "sonno basso" : "",
+        stress >= 4 ? "stress alto" : "",
+        doms >= 4 ? "DOMS pesanti" : ""
+      ].filter(Boolean).join(", ") || `score ${wellbeingScore}/100`;
+      const recoveryDetail = [
+        sleep <= 2 ? "sonno basso" : "",
+        doms >= 4 ? "DOMS pesanti" : "",
+        stress >= 4 ? "stress alto" : ""
+      ].filter(Boolean).join(", ") || `score ${recoveryScore}/100`;
+      return { energy, sleep, doms, stress, hunger, wellbeingScore, recoveryScore, checkinLabel, recoveryLabel, checkinColor, recoveryColor, checkinDetail, recoveryDetail };
+    }
+
+    function checkinTrafficHtml() {
+      const meta = checkinStatusMeta();
+      const trend = exerciseTrendSummary();
+      const signals = checkinSignals();
+      const downText = trend.downNames.length ? trend.downNames.join(", ") : "nessun calo importante";
+      const heroLabel = meta.status === "stabile" ? "Stabile" : meta.status === "prudenza" ? "Prudenza" : meta.status === "da controllare" ? "Check" : "Monitor";
+      const heroText = meta.status === "stabile" ? "Puoi procedere con il piano" : meta.status === "prudenza" ? "Scala se serve e cura la tecnica" : meta.status === "da controllare" ? "Controlla carichi e recupero" : "Allenati, ma ascolta i segnali";
+      return `<section class="card checkin-status-card">
+        <div class="row"><h3>Semaforo allenamento</h3><span class="status-pill" style="--status-color:${meta.color}">${escapeHtml(meta.status)}</span></div>
+        <div class="traffic-hero" style="--traffic-color:${meta.color}">
+          <div class="traffic-hero-icon">~</div>
+          <div><strong>${escapeHtml(heroLabel)}</strong><span>${escapeHtml(heroText)}</span></div>
+        </div>
+        <div class="signal-source-grid">
+          <div class="signal-source" style="--dot:${trend.down >= 2 ? colors.orange : colors.green}"><i>kg</i><div><strong>Carichi: ${trend.down >= 2 ? "da guardare" : "stabili"}</strong>${trend.total ? `${trend.up} su, ${trend.stable} stabili, ${trend.down} giù` : "pochi confronti nel logbook"}</div><span>›</span></div>
+          <div class="signal-source" style="--dot:${signals.checkinColor}"><i>?</i><div><strong>Questionario: ${signals.checkinLabel}</strong>${escapeHtml(signals.checkinDetail)}</div><span>›</span></div>
+          <div class="signal-source" style="--dot:${signals.recoveryColor}"><i>R</i><div><strong>Recupero: ${signals.recoveryLabel}</strong>${escapeHtml(signals.recoveryDetail)}</div><span>›</span></div>
+        </div>
+        ${trend.downNames.length ? `<div class="signal-note"><strong>Da monitorare:</strong> ${escapeHtml(downText)}.</div>` : ""}
+        <div class="signal-note"><strong>Da dove arriva:</strong> logbook ultimi allenamenti, check-in benessere e note dolore/fatica. Dettaglio carichi: ${escapeHtml(downText)}.</div>
+      </section>`;
+    }
+
+    function quizHtml() {
+      const p = checkinStatusMeta();
+      const advice = checkinAdvice();
+      return `
+        <div class="hero-title">
+          <h2>Check-in <span>allenamento</span></h2>
+          <p>Semaforo spiegato e check-in rapido, separati dal workout e dalla zona coach.</p>
+        </div>
+        <div class="checkin-grid">
+          ${checkinTrafficHtml()}
+          <section class="card checkin-form-card">
+            <div class="row"><h3>Check-in benessere</h3><span class="chip">1-5</span></div>
+            <p class="micro-copy" style="margin-top:6px">Come ti senti oggi? Valuta da 1 a 5.</p>
+            <div class="checkin-slider-grid">
+              ${checkinScale("energy", "Energia", "1 scarica - 5 alta")}
+              ${checkinScale("sleep", "Sonno", "1 male - 5 bene")}
+              ${checkinScale("doms", "DOMS", "1 ok - 5 pesanti")}
+              ${checkinScale("stress", "Stress", "1 basso - 5 alto")}
+              ${checkinScale("hunger", "Fame", "1 bassa - 5 alta")}
+            </div>
+            <div class="coach-result" style="border-color:${advice.color};background:color-mix(in srgb, ${advice.color} 10%, transparent)"><strong>${escapeHtml(advice.title)}</strong>${escapeHtml(advice.text)}</div>
+            <button class="gold-button" style="width:100%;margin-top:12px" id="saveQuiz">Salva check-in</button>
+          </section>
+        </div>
+        <section class="card">
+          <button class="ghost-button" style="width:100%" id="exportData">Esporta backup locale</button>
+          <button class="danger-button" style="width:100%;margin-top:8px" id="clearData">Svuota dati</button>
+        </section>
+      `;
+    }
+
+    function choice(value, label, active) {
+      return `<button type="button" class="choice ${value === active ? "active" : ""}" data-choice="${value}">${label}</button>`;
+    }
+
+    function bar(label, value, color) {
+      return `<div class="bar-row"><span>${label}</span><div class="bar-track"><div class="bar-fill" style="--w:${clamp(value, 0, 100)}%;--c:${color}"></div></div><strong>${value || "--"}</strong></div>`;
+    }
+
+    function scoreCard(title, score, text, color) {
+      return `<article class="score-card" style="--accent:${color}"><h3>${title}<span class="score-number">${score || "--"}</span></h3><p>${text}</p></article>`;
+    }
+
+    function toggle(key, value) {
+      return `<div class="toggle-group" data-toggle="${key}">
+        ${["off", "soft", "full"].map((item) => `<button class="${value === item ? "active" : ""}" data-toggle-value="${item}">${item.toUpperCase()}</button>`).join("")}
+      </div>`;
+    }
+
+    function priorityHtml() {
+      const items = [
+        [1, "Sicurezza", colors.red],
+        [2, "Calo", colors.orange],
+        [3, "Aderenza", colors.gold],
+        [4, "Stallo", colors.blue],
+        [5, "OK", colors.green]
+      ];
+      return items.map(([n, label, color]) => `<div class="priority" style="color:${color}"><span>${n}</span><strong>${label}</strong></div>`).join("");
+    }
+
+    function weightChartHtml() {
+      const hasWeight = state.training.sessions.some((session) => session.weight);
+      return hasWeight ? `<canvas id="weightChart" width="360" height="190"></canvas>` : `<div class="empty-chart">Registra peso o sessioni per vedere il grafico.</div>`;
+    }
+
+    function currentDate() {
+      return new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }).format(new Date());
+    }
+
+    function bindScreen() {
+      document.querySelectorAll("[data-screen]").forEach((button) => {
+        if (button.dataset.screenBound) return;
+        button.dataset.screenBound = "true";
+        button.addEventListener("click", () => setScreen(button.dataset.screen));
+      });
+      document.querySelectorAll("[data-screen-target]").forEach((button) => {
+        button.addEventListener("click", () => setScreen(button.dataset.screenTarget));
+      });
+      const logbookSearch = document.getElementById("phase11LogbookSearch");
+      if (logbookSearch) logbookSearch.addEventListener("input", () => {
+        state.ui = { ...(state.ui || {}), logbookSearch: logbookSearch.value };
+        render();
+      });
+      const logbookStatus = document.getElementById("phase11LogbookStatus");
+      if (logbookStatus) logbookStatus.addEventListener("change", () => {
+        state.ui = { ...(state.ui || {}), logbookStatus: logbookStatus.value };
+        render();
+      });
+      document.querySelectorAll("[data-bottom-target]").forEach((button) => {
+        button.addEventListener("click", () => setBottom(button.dataset.bottomTarget));
+      });
+      const nutritionFrame = document.querySelector(".nutrition-frame");
+      if (nutritionFrame) {
+        nutritionFrame.addEventListener("load", pushNutritionDashboardToFrame);
+        setTimeout(pushNutritionDashboardToFrame, 80);
+      }
+      document.querySelectorAll("[data-choice]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.training.feeling = button.dataset.choice;
+          saveState();
+          render();
+        });
+      });
+      document.querySelectorAll("[data-checkin-input]").forEach((input) => {
+        input.addEventListener("change", () => {
+          setCheckinValue(input.dataset.checkinInput, input.value);
+          saveState();
+          render();
+        });
+      });
+      document.querySelectorAll("[data-workout-toggle]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.training.openExercise = state.training.openExercise === button.dataset.workoutToggle ? "" : button.dataset.workoutToggle;
+          renderTrainingOnly();
+        });
+      });
+      document.querySelectorAll("[data-set-kg]").forEach((input) => {
+        input.addEventListener("input", () => {
+          const context = currentTrainingContext();
+          const exercise = context.session.exercises[Number(input.dataset.setKg)];
+          if (!exercise) return;
+          const key = draftKey(context, exercise);
+          const values = draftSetsFor(context, exercise);
+          values[Number(input.dataset.setIndex)] = input.value;
+          state.training.draft[key] = values;
+          saveState();
+        });
+      });
+      document.querySelectorAll("[data-copy-kg]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const context = currentTrainingContext();
+          const exercise = context.session.exercises[Number(button.dataset.copyKg)];
+          const index = Number(button.dataset.copyIndex);
+          if (!exercise) return;
+          const key = draftKey(context, exercise);
+          const values = draftSetsFor(context, exercise);
+          const current = values[index] || "";
+          if (!current || index >= values.length - 1) return;
+          values[index + 1] = current;
+          state.training.draft[key] = values;
+          saveState();
+          renderTrainingOnly();
+          showToast("Kg copiati nella serie successiva.");
+        });
+      });
+      document.querySelectorAll("[data-exercise-note]").forEach((textarea) => {
+        textarea.addEventListener("input", () => {
+          const context = currentTrainingContext();
+          const exercise = context.session.exercises[Number(textarea.dataset.exerciseNote)];
+          if (!exercise) return;
+          if (!state.training.noteDraft) state.training.noteDraft = {};
+          state.training.noteDraft[draftNoteKey(context, exercise)] = textarea.value;
+          saveState();
+        });
+      });
+      document.querySelectorAll("[data-rest-timer]").forEach((button) => {
+        button.addEventListener("click", () => startRestTimer(button.dataset.restTimer));
+      });
+      const trainingDate = document.getElementById("trainingDate");
+      if (trainingDate) {
+        trainingDate.addEventListener("change", () => {
+          state.training.date = trainingDate.value || todayInput();
+          saveState();
+          render();
+        });
+      }
+      const trainingPhase = document.getElementById("trainingPhase");
+      if (trainingPhase) {
+        trainingPhase.addEventListener("change", () => {
+          state.training.phaseFilter = trainingPhase.value;
+          const phaseSessions = sessionsForPhase(trainingPhase.value);
+          state.training.sessionName = phaseSessions[0]?.code || "E5";
+          saveState();
+          render();
+        });
+      }
+      const trainingSession = document.getElementById("trainingSession");
+      if (trainingSession) {
+        trainingSession.addEventListener("change", () => {
+          state.training.sessionName = trainingSession.value;
+          saveState();
+          render();
+        });
+      }
+      document.querySelectorAll("[data-field]").forEach((field) => {
+        field.addEventListener("input", () => setDeepValue(field.dataset.field, field.value));
+        field.addEventListener("change", () => {
+          setDeepValue(field.dataset.field, field.value);
+          if (field.id === "coachBuilderExercise" || field.dataset.field.startsWith("coach.builder.")) render();
+        });
+      });
+      document.querySelectorAll("[data-save-fields]").forEach((button) => {
+        button.addEventListener("click", () => {
+          saveState();
+          showToast("Dati salvati.");
+          render();
+        });
+      });
+      document.querySelectorAll("[data-toggle]").forEach((group) => {
+        group.querySelectorAll("button").forEach((button) => {
+          button.addEventListener("click", () => {
+            const key = group.dataset.toggle;
+            saveState();
+            render();
+          });
+        });
+      });
+      document.querySelectorAll("[data-theme-choice]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.profile.theme = button.dataset.themeChoice;
+          saveState();
+          render();
+          showToast(state.profile.theme === "light" ? "Tema chiaro attivo." : "Tema scuro attivo.");
+        });
+      });
+      document.querySelectorAll("[data-coach-letter]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.coach.viewLetter = button.dataset.coachLetter;
+          state.coach.viewWeek = "all";
+          saveState();
+          render();
+        });
+      });
+      document.querySelectorAll("[data-coach-week]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.coach.viewWeek = button.dataset.coachWeek;
+          saveState();
+          render();
+        });
+      });
+      const athleteViewSelect = document.getElementById("athleteViewSelect");
+      if (athleteViewSelect) {
+        athleteViewSelect.addEventListener("change", () => {
+          state.coach.viewChoice = athleteViewSelect.value;
+          saveState();
+          render();
+        });
+      }
+      document.querySelectorAll("[data-builder-row], [data-builder-row-field], [data-builder-week]").forEach((element) => {
+        element.addEventListener("focusin", () => {
+          const row = element.closest("[data-builder-row]");
+          const draft = activeCoachBuilder();
+          if (row && draft) draft.activeRow = Number(row.dataset.builderRow) || 0;
+        });
+      });
+      document.querySelectorAll("[data-builder-row-field]").forEach((field) => {
+        field.addEventListener("input", () => {
+          const rows = coachBuilderRows();
+          const row = rows[Number(field.dataset.builderIndex)];
+          if (!row) return;
+          row[field.dataset.builderRowField] = field.value;
+          markCoachDraftDirty(undefined, row.id);
+        });
+        field.addEventListener("change", () => {
+          const rows = coachBuilderRows();
+          const row = rows[Number(field.dataset.builderIndex)];
+          if (!row) return;
+          row[field.dataset.builderRowField] = field.value;
+          if (field.dataset.builderRowField === "group") {
+            row.som = row.group;
+          }
+          if (field.dataset.builderRowField === "exercise") {
+            const meta = coachExerciseMeta(row.group, row.exercise);
+            row.som = meta.som || row.som || row.group;
+          }
+          markCoachDraftDirty(undefined, row.id);
+          commitActiveCoachDraft({ immediate: false, quiet: true });
+          render();
+        });
+      });
+      document.querySelectorAll("[data-builder-week]").forEach((field) => {
+        field.addEventListener("input", () => {
+          const rows = coachBuilderRows();
+          const row = rows[Number(field.dataset.builderIndex)];
+          if (!row) return;
+          row.weeks[Number(field.dataset.builderWeek)] = field.value;
+          const draft = activeCoachBuilder(); if (draft) draft.dirtyWeekNumbers.add(`${row.id}:${Number(field.dataset.builderWeek) + 1}`);
+          markCoachDraftDirty(undefined, row.id);
+        });
+        field.addEventListener("change", () => {
+          commitActiveCoachDraft({ immediate: false, quiet: true });
+          render();
+        });
+      });
+      document.querySelectorAll("[data-builder-add-row]").forEach((button) => {
+        button.addEventListener("click", () => {
+          commitActiveCoachDraft({ immediate: true, quiet: true });
+          openCoachModal("exercise-library");
+          render();
+        });
+      });
+      document.querySelectorAll("[data-rest-preset]").forEach((button) => button.addEventListener("click", () => {
+        const row = coachBuilderRows()[Number(button.dataset.builderIndex)];
+        if (!row || row.locked) return;
+        row.restSeconds = Number(button.dataset.restPreset);
+        markCoachDraftDirty(undefined, row.id);
+        render();
+      }));
+      document.querySelectorAll("[data-tempo-preset]").forEach((button) => button.addEventListener("click", () => {
+        const row = coachBuilderRows()[Number(button.dataset.builderIndex)];
+        if (!row || row.locked) return;
+        row.tempo = button.dataset.tempoPreset;
+        markCoachDraftDirty(undefined, row.id);
+        render();
+      }));
+      document.querySelectorAll("[data-exercise-select]").forEach((input) => input.addEventListener("change", () => {
+        if (input.checked) coachProgramUi.selectedExercises.add(input.dataset.exerciseSelect); else coachProgramUi.selectedExercises.delete(input.dataset.exerciseSelect);
+        render();
+      }));
+      document.querySelectorAll("[data-exercise-position]").forEach((input) => input.addEventListener("change", () => {
+        const { program, sheet } = ensureCoachProgramSelection();
+        const ids = programRepository.getExercises(program?.id, sheet?.id).map((item) => item.id);
+        const from = ids.indexOf(input.dataset.exercisePosition);
+        const to = Math.max(0, Math.min(ids.length - 1, Number(input.value || 1) - 1));
+        if (from < 0 || from === to) return;
+        rememberExerciseState(program.id, sheet.id);
+        ids.splice(to, 0, ids.splice(from, 1)[0]);
+        programRepository.reorderExercises(program.id, sheet.id, ids, { immediate: true });
+        discardCoachDraft(program.id, sheet.id);
+        render();
+      }));
+      document.querySelectorAll("[data-exercise-id][draggable='true']").forEach((row) => {
+        row.addEventListener("dragstart", () => { coachProgramUi.draggedExerciseId = row.dataset.exerciseId; });
+        row.addEventListener("dragover", (event) => event.preventDefault());
+        row.addEventListener("drop", (event) => {
+          event.preventDefault();
+          const source = coachProgramUi.draggedExerciseId;
+          const target = row.dataset.exerciseId;
+          const { program, sheet } = ensureCoachProgramSelection();
+          if (!source || source === target) return;
+          const ids = programRepository.getExercises(program.id, sheet.id).map((item) => item.id);
+          rememberExerciseState(program.id, sheet.id);
+          ids.splice(ids.indexOf(target), 0, ids.splice(ids.indexOf(source), 1)[0]);
+          programRepository.reorderExercises(program.id, sheet.id, ids, { immediate: true });
+          discardCoachDraft(program.id, sheet.id);
+          coachProgramUi.draggedExerciseId = "";
+          render();
+        });
+      });
+      document.querySelectorAll("[data-exercise-action]").forEach((button) => button.addEventListener("click", () => {
+        const action = button.dataset.exerciseAction;
+        const id = button.dataset.exerciseId;
+        const { program, sheet } = ensureCoachProgramSelection();
+        const exercise = programRepository.getExerciseById(program?.id, sheet?.id, id);
+        if (!exercise) return;
+        if (action === "details") { openCoachModal("exercise-details", { exerciseId: id }); render(); return; }
+        if (action === "copy") { openCoachModal("exercise-transfer", { exerciseIds: [id] }); render(); return; }
+        if (action === "delete") { openCoachModal("exercise-delete", { exerciseIds: [id] }); render(); return; }
+        if (action === "up" || action === "down") { reorderOneExercise(id, action === "up" ? -1 : 1); render(); return; }
+        rememberExerciseState(program.id, sheet.id);
+        let result;
+        if (action === "duplicate") result = programRepository.duplicateExercise(program.id, sheet.id, id, { immediate: true });
+        if (action === "main") result = programRepository.updateExercise(program.id, sheet.id, id, { metadata: { ...exercise.metadata, mainLift: !exercise.metadata?.mainLift } }, { immediate: true, forceLocked: true });
+        if (action === "lock") result = programRepository.updateExercise(program.id, sheet.id, id, { metadata: { ...exercise.metadata, locked: !exercise.metadata?.locked } }, { immediate: true, forceLocked: true });
+        discardCoachDraft(program.id, sheet.id);
+        if (!result?.ok) showToast("Operazione non completata.");
+        render();
+      }));
+      document.querySelectorAll("[data-exercise-compare]").forEach((button) => button.addEventListener("click", () => {
+        openCoachModal("biomechanics-compare", { exerciseIds:[button.dataset.exerciseCompare] });
+        render();
+      }));
+      const compareSelect = document.getElementById("compareExerciseSelect");
+      if (compareSelect) compareSelect.addEventListener("change", () => {
+        const ids = [...(coachProgramUi.modalData.exerciseIds || [])];
+        if (compareSelect.value && !ids.includes(compareSelect.value) && ids.length < 4) ids.push(compareSelect.value);
+        coachProgramUi.modalData.exerciseIds = ids;
+        render();
+      });
+      document.querySelectorAll("[data-progression-open]").forEach((button) => button.addEventListener("click", () => {
+        const weekNumber = Number(button.dataset.progressionWeekNumber) || 0;
+        openCoachModal("progression-editor", { exerciseId: button.dataset.progressionOpen, weekNumber });
+        render();
+        if (weekNumber > 0) {
+          const target = document.querySelector(`[data-progression-week="${weekNumber - 1}"]`);
+          target?.closest("tr")?.classList.add("coach-week-selected");
+          target?.scrollIntoView?.({ block: "center", inline: "nearest" });
+          target?.focus?.();
+        }
+      }));
+      document.querySelectorAll("[data-coach-builder-view]").forEach((button) => button.addEventListener("click", () => { coachProgramUi.builderView = button.dataset.coachBuilderView; render(); }));
+      document.querySelectorAll("[data-coach-mobile-week]").forEach((select) => select.addEventListener("change", () => { coachProgramUi.mobileWeek = Number(select.value) || 0; render(); }));
+      document.querySelectorAll("[data-week-grid-field]").forEach((input) => input.addEventListener("change", () => {
+        const { program, sheet } = ensureCoachProgramSelection();
+        const exerciseId = input.dataset.weekGridExercise; const weekNumber = Number(input.dataset.weekGridNumber); const current = programRepository.getExerciseById(program?.id, sheet?.id, exerciseId);
+        if (!current || !weekNumber) return;
+        const weeks = (current.progression?.weeks || []).map((week) => ({ ...week }));
+        let week = weeks.find((item) => Number(item.weekNumber || item.week) === weekNumber);
+        if (!week) { week = parseWeekPrescription({}, weekNumber); weeks.push(week); }
+        const field = input.dataset.weekGridField;
+        if (field === "sets") week.sets = optionalNumber(input.value);
+        if (field === "reps") week.reps = parseReps(input.value);
+        if (field === "rir") { week.rir = parseRir(input.value); week.rpe = parseRir(/^RPE/i.test(input.value) ? input.value.replace(/^RPE\s*/i, "") : ""); }
+        week.weekNumber = weekNumber; weeks.sort((a,b) => Number(a.weekNumber || 0) - Number(b.weekNumber || 0));
+        programRepository.updateExercise(program.id, sheet.id, exerciseId, { progression: { ...(current.progression || {}), weeks } }, { immediate: true, forceLocked: true });
+        coachProgramUi.saveStatus = "saved"; render();
+      }));
+      document.querySelectorAll("[data-week-grid-base='note']").forEach((input) => input.addEventListener("change", () => {
+        const { program, sheet } = ensureCoachProgramSelection(); const exerciseId = input.dataset.weekGridExercise; const current = programRepository.getExerciseById(program?.id, sheet?.id, exerciseId); if (!current) return;
+        programRepository.updateExercise(program.id, sheet.id, exerciseId, { note: input.value }, { immediate: true, forceLocked: true }); render();
+      }));
+      document.querySelectorAll("[data-week-grid-base='note2']").forEach((input) => input.addEventListener("change", () => {
+        const { program, sheet } = ensureCoachProgramSelection(); const exerciseId = input.dataset.weekGridExercise; const current = programRepository.getExerciseById(program?.id, sheet?.id, exerciseId); if (!current) return;
+        programRepository.updateExercise(program.id, sheet.id, exerciseId, { metadata: { ...(current.metadata || {}), note2: input.value } }, { immediate: true, forceLocked: true }); render();
+      }));
+      document.querySelectorAll("[data-progression-generate]").forEach((button) => button.addEventListener("click", () => {
+        const { program, sheet } = ensureCoachProgramSelection();
+        const ex = programRepository.getExerciseById(program?.id, sheet?.id, coachProgramUi.modalData.exerciseId);
+        const templateId = document.getElementById("progressionTemplateId")?.value || "maintenance";
+        const duration = Math.max(1, Number(document.getElementById("progressionDuration")?.value || programWeekCount(program, sheet)));
+        coachProgramUi.modalData.weeks = generateProgressionWeeks(ex, templateId, duration);
+        coachProgramUi.modalData.templateId = templateId;
+        render();
+      }));
+      document.querySelectorAll("[data-progression-week]").forEach((input) => input.addEventListener("change", () => {
+        const index = Number(input.dataset.progressionWeek);
+        const field = input.dataset.progressionField;
+        const weeks = coachProgramUi.modalData.weeks || [];
+        if (!weeks[index]) weeks[index] = parseWeekPrescription({}, index + 1);
+        const week = weeks[index];
+        if (field === "sets") week.sets = optionalNumber(input.value);
+        if (field === "reps") week.reps = parseReps(input.value);
+        if (field === "rir") week.rir = parseRir(input.value);
+        if (field === "rpe") week.rpe = parseRir(input.value);
+        if (field === "load") week.prescribedLoad = parsePrescribedLoad({ value: optionalNumber(input.value), unit: week.loadUnit || "kg" });
+        if (field === "rest") week.restSeconds = optionalNumber(input.value);
+        if (field === "type") week.type = input.value;
+        if (field === "notes") week.notes = input.value;
+        week.source = "manual";
+        coachProgramUi.modalData.weeks = weeks;
+      }));
+      document.querySelectorAll("[data-exercise-toolbar]").forEach((button) => button.addEventListener("click", () => {
+        const action = button.dataset.exerciseToolbar;
+        const ids = [...coachProgramUi.selectedExercises];
+        if (action === "undo" || action === "redo") { restoreExerciseHistory(action); render(); return; }
+        if (!ids.length) return;
+        if (action === "copy") openCoachModal("exercise-transfer", { exerciseIds: ids });
+        else if (action === "delete") openCoachModal("exercise-delete", { exerciseIds: ids });
+        else if (["rest","rir","technique"].includes(action)) openCoachModal("exercise-bulk-value", { kind: action });
+        else if (action === "duplicate") {
+          const { program, sheet } = ensureCoachProgramSelection();
+          rememberExerciseState(program.id, sheet.id);
+          ids.forEach((id) => programRepository.duplicateExercise(program.id, sheet.id, id, { save: false }));
+          commitProgramCollection(state.programs, { immediate: true });
+          discardCoachDraft(program.id, sheet.id);
+          coachProgramUi.selectedExercises.clear();
+        } else if (action === "reorder") {
+          const { program, sheet } = ensureCoachProgramSelection();
+          rememberExerciseState(program.id, sheet.id);
+          const current = programRepository.getExercises(program.id, sheet.id).map((item) => item.id);
+          const selected = current.filter((id) => coachProgramUi.selectedExercises.has(id));
+          const others = current.filter((id) => !coachProgramUi.selectedExercises.has(id));
+          programRepository.reorderExercises(program.id, sheet.id, [...selected, ...others], { immediate: true });
+          discardCoachDraft(program.id, sheet.id);
+        }
+        render();
+      }));
+      const copyBuilderWeeks = document.getElementById("copyBuilderWeeks");
+      if (copyBuilderWeeks) {
+        copyBuilderWeeks.addEventListener("click", () => {
+          const draft = activeCoachBuilder();
+          const rows = coachBuilderRows();
+          const index = Number(draft?.activeRow || 0);
+          if (draft) draft.copiedWeeks = [...(rows[index]?.weeks || [])];
+          showToast("Progressione copiata.");
+        });
+      }
+      const pasteBuilderWeeks = document.getElementById("pasteBuilderWeeks");
+      if (pasteBuilderWeeks) {
+        pasteBuilderWeeks.addEventListener("click", () => {
+          const draft = activeCoachBuilder();
+          const rows = coachBuilderRows();
+          const index = Number(draft?.activeRow || 0);
+          if (!draft || !rows[index] || !Array.isArray(draft.copiedWeeks)) return showToast("Copia prima una progressione.");
+          rows[index].weeks = [...draft.copiedWeeks];
+          markCoachDraftDirty(undefined, rows[index].id);
+          commitActiveCoachDraft({ immediate: true, quiet: true });
+          render();
+        });
+      }
+      const clearBuilderRow = document.getElementById("clearBuilderRow");
+      if (clearBuilderRow) {
+        clearBuilderRow.addEventListener("click", () => {
+          const draft = activeCoachBuilder();
+          const rows = coachBuilderRows();
+          const index = Number(draft?.activeRow || 0);
+          if (!rows[index]) return;
+          rows[index] = { ...emptyBuilderRow(rows[index].group || "Glutei"), id: rows[index].id };
+          if (draft) draft.activeRow = index;
+          markCoachDraftDirty(undefined, rows[index].id);
+          commitActiveCoachDraft({ immediate: true, quiet: true });
+          render();
+        });
+      }
+      document.querySelectorAll("[data-coach-tab]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.coach.activeTab = button.dataset.coachTab;
+          saveState();
+          render();
+        });
+      });
+      document.querySelectorAll("[data-toggle-athlete-view]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.coach.athleteView = !state.coach.athleteView;
+          if (!state.coach.athleteLayout) state.coach.athleteLayout = "compact";
+          saveState();
+          render();
+        });
+      });
+      document.querySelectorAll("[data-athlete-layout]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.coach.athleteLayout = button.dataset.athleteLayout || "compact";
+          saveState();
+          render();
+        });
+      });
+      const saveWorkout = document.getElementById("saveWorkout");
+      if (saveWorkout) saveWorkout.addEventListener("click", saveWorkoutSession);
+      const saveQuiz = document.getElementById("saveQuiz");
+      if (saveQuiz) {
+        saveQuiz.addEventListener("click", () => {
+          saveState();
+          const p = decisionPriority();
+          showToast(`Check-in salvato: ${p.level} - ${p.label}`);
+          render();
+        });
+      }
+      const unlockCoach = document.getElementById("unlockCoach");
+      if (unlockCoach) unlockCoach.addEventListener("click", unlockCoachStudio);
+      const coachPinInput = document.getElementById("coachPinInput");
+      if (coachPinInput) {
+        coachPinInput.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") unlockCoachStudio();
+        });
+      }
+      const coachEditorPhase = document.getElementById("coachEditorPhase");
+      const coachProgramSelect = document.getElementById("coachProgramSelect");
+      if (coachProgramSelect) {
+        coachProgramSelect.addEventListener("change", () => {
+          selectCoachProgram(coachProgramSelect.value);
+          render();
+        });
+      }
+      document.querySelectorAll("[data-program-action]").forEach((button) => {
+        button.addEventListener("click", () => {
+          handleProgramAction(button.dataset.programAction);
+          render();
+        });
+      });
+      document.querySelectorAll("[data-select-sheet]").forEach((button) => {
+        button.addEventListener("click", () => {
+          selectCoachSheet(button.dataset.selectSheet);
+          render();
+        });
+      });
+      document.querySelectorAll("[data-sheet-menu]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          coachProgramUi.sheetMenuId = coachProgramUi.sheetMenuId === button.dataset.sheetMenu ? "" : button.dataset.sheetMenu;
+          coachProgramUi.allSheetsOpen = false;
+          render();
+        });
+      });
+      document.querySelectorAll("[data-sheet-action]").forEach((button) => {
+        button.addEventListener("click", () => {
+          handleSheetAction(button.dataset.sheetAction, button.dataset.sheetId || coachProgramUi.sheetId);
+          render();
+        });
+      });
+      document.querySelectorAll("[data-close-sheet-menu]").forEach((button) => {
+        button.addEventListener("click", () => {
+          coachProgramUi.sheetMenuId = "";
+          render();
+        });
+      });
+      const allSheetsToggle = document.querySelector("[data-toggle-all-sheets]");
+      if (allSheetsToggle) {
+        allSheetsToggle.addEventListener("click", () => {
+          coachProgramUi.allSheetsOpen = !coachProgramUi.allSheetsOpen;
+          coachProgramUi.sheetMenuId = "";
+          render();
+        });
+      }
+      const allSheetsSearch = document.getElementById("allSheetsSearch");
+      if (allSheetsSearch) {
+        allSheetsSearch.addEventListener("input", () => {
+          const query = allSheetsSearch.value.trim().toLowerCase();
+          document.querySelectorAll("[data-sheet-search]").forEach((item) => {
+            item.hidden = query && !String(item.dataset.sheetSearch || "").includes(query);
+          });
+        });
+      }
+      document.querySelectorAll("[data-sheet-scroll]").forEach((button) => {
+        button.addEventListener("click", () => {
+          document.getElementById("programSheetTabs")?.scrollBy({ left: Number(button.dataset.sheetScroll) * 320, behavior: "smooth" });
+        });
+      });
+      document.querySelectorAll("[data-sheet-tab-id]").forEach((tab) => {
+        tab.addEventListener("dragstart", () => {
+          coachProgramUi.draggedSheetId = tab.dataset.sheetTabId;
+          tab.classList.add("dragging");
+        });
+        tab.addEventListener("dragover", (event) => event.preventDefault());
+        tab.addEventListener("drop", (event) => {
+          event.preventDefault();
+          const { program, sheets } = ensureCoachProgramSelection();
+          const sourceId = coachProgramUi.draggedSheetId;
+          const targetId = tab.dataset.sheetTabId;
+          if (!program || !sourceId || sourceId === targetId) return;
+          const ids = sheets.map((item) => item.id);
+          const from = ids.indexOf(sourceId);
+          const to = ids.indexOf(targetId);
+          const [moved] = ids.splice(from, 1);
+          ids.splice(to, 0, moved);
+          programRepository.reorderSheets(program.id, ids, { immediate: true });
+          coachProgramUi.draggedSheetId = "";
+          render();
+          showToast("Ordine schede aggiornato.");
+        });
+        tab.addEventListener("dragend", () => {
+          coachProgramUi.draggedSheetId = "";
+          tab.classList.remove("dragging");
+        });
+      });
+      const modalClose = document.querySelector("[data-coach-modal-close]");
+      if (modalClose) modalClose.addEventListener("click", () => { closeCoachModal(); render(); });
+      const modalSave = document.querySelector("[data-coach-modal-save]");
+      if (modalSave) modalSave.addEventListener("click", () => { saveCoachUiModal(); render(); });
+      const aiToggle = document.querySelector("[data-ai-toggle]");
+      if (aiToggle) aiToggle.addEventListener("change", () => { coachAiState().enabled = aiToggle.checked; render(); });
+      document.querySelectorAll("[data-ai-filter]").forEach((button) => button.addEventListener("click", () => { coachAiState().filter = button.dataset.aiFilter || "all"; render(); }));
+      document.querySelectorAll("[data-ai-ignore]").forEach((button) => button.addEventListener("click", () => { const ai = coachAiState(); const suggestion = coachAiSuggestions().find((item) => item.id === button.dataset.aiIgnore); ai.ignored = [...new Set([...(ai.ignored || []), button.dataset.aiIgnore])]; ai.ignoredRecords = { ...(ai.ignoredRecords || {}), [button.dataset.aiIgnore]: suggestion ? clone(suggestion) : { id: button.dataset.aiIgnore, title: "Suggerimento ignorato" } }; state.coach.coachAi = ai; render(); showToast("Suggerimento ignorato."); }));
+      document.querySelectorAll("[data-ai-alternatives-toggle]").forEach((button) => button.addEventListener("click", () => { const id = button.dataset.aiAlternativesToggle; if (coachProgramUi.aiExpanded.has(id)) coachProgramUi.aiExpanded.delete(id); else coachProgramUi.aiExpanded.add(id); render(); }));
+      document.querySelectorAll("[data-ai-apply]").forEach((button) => button.addEventListener("click", () => { const suggestion = coachAiSuggestions().find((item) => item.id === button.dataset.aiApply); if (!suggestion) return; openCoachModal("coach-ai-confirm", { suggestion }); render(); }));
+      document.querySelectorAll("[data-coach-ai-dismiss]").forEach((button) => button.addEventListener("click", () => { coachProgramUi.aiNoticeDismissed.add(button.dataset.coachAiDismiss); render(); }));
+      document.querySelectorAll("[data-ai-alternative]").forEach((button) => button.addEventListener("click", () => { const suggestion = coachAiSuggestions().find((item) => item.id === button.dataset.aiSuggestion); const alternative = suggestion?.alternatives.find((item) => item.name === button.dataset.aiAlternative); if (!suggestion || !alternative) return; const next = clone(suggestion); next.exercise = alternative.name; next.action = { ...(next.action || {}), replacement: alternative.name, muscle: alternative.group, type: next.action?.type === "addExercise" ? "addExercise" : "replaceExercise" }; openCoachModal("coach-ai-confirm", { suggestion: next }); render(); }));
+      document.querySelectorAll("[data-ai-expand]").forEach((button) => button.addEventListener("click", () => { const id = button.dataset.aiExpand; if (coachProgramUi.aiExpanded.has(id)) coachProgramUi.aiExpanded.delete(id); else coachProgramUi.aiExpanded.add(id); render(); }));
+      document.querySelectorAll("[data-ai-status-tab]").forEach((button) => button.addEventListener("click", () => { coachProgramUi.aiStatusTab = button.dataset.aiStatusTab; const opensDrawer = button.closest(".coach-ai-popover") || button.closest(".coach-mascot-button") || button.closest(".coach-ai-floating"); if (opensDrawer) { coachProgramUi.aiDrawerOpen = true; document.body.classList.add("ai-drawer-open"); const first = coachAiSuggestions()[0]; if (first) coachProgramUi.aiNoticeDismissed.add(first.id); } render(); }));
+      document.querySelectorAll("[data-ai-drawer-close]").forEach((button) => button.addEventListener("click", () => { coachProgramUi.aiDrawerOpen = false; document.body.classList.remove("ai-drawer-open"); render(); }));
+      document.querySelectorAll("[data-ai-quality-toggle]").forEach((button) => button.addEventListener("click", () => { coachProgramUi.qualityExpanded = !coachProgramUi.qualityExpanded; render(); }));
+      document.querySelectorAll("[data-ai-restore]").forEach((button) => button.addEventListener("click", () => { const ai = coachAiState(); ai.ignored = (ai.ignored || []).filter((id) => id !== button.dataset.aiRestore); if (ai.ignoredRecords) delete ai.ignoredRecords[button.dataset.aiRestore]; state.coach.coachAi = ai; coachProgramUi.aiStatusTab = "suggestions"; render(); showToast("Suggerimento ripristinato."); }));
+      const librarySearch = document.getElementById("exerciseLibrarySearch");
+      if (librarySearch) librarySearch.addEventListener("input", () => {
+        coachProgramUi.libraryQuery = librarySearch.value;
+        clearTimeout(coachProgramUi.librarySearchTimer);
+        coachProgramUi.librarySearchTimer = setTimeout(render, 180);
+      });
+      const libraryMuscle = document.getElementById("exerciseLibraryMuscle");
+      if (libraryMuscle) libraryMuscle.addEventListener("change", () => { coachProgramUi.libraryMuscle = libraryMuscle.value; render(); });
+      document.querySelectorAll("[data-library-add]").forEach((button) => button.addEventListener("click", () => {
+        const { program, sheet } = ensureCoachProgramSelection();
+        rememberExerciseState(program.id, sheet.id);
+        const created = programRepository.createExercise(program.id, sheet.id, { name: button.dataset.libraryAdd, muscle: button.dataset.libraryGroup, som: button.dataset.libraryGroup, prescription: { sets: null, reps: parseReps(""), rir: parseRir(""), rest: parseRest({ seconds: 90 }), tempo: parseTempo(""), technique: parseTechnique("normal"), prescribedLoad: parsePrescribedLoad(null) }, metadata: { custom: false } }, { immediate: true });
+        if (created.ok) { closeCoachModal(); discardCoachDraft(program.id, sheet.id); showToast("Esercizio aggiunto."); }
+        render();
+      }));
+      const customExerciseButton = document.querySelector("[data-exercise-custom]");
+      if (customExerciseButton) customExerciseButton.addEventListener("click", () => { openCoachModal("exercise-custom"); render(); });
+      document.querySelectorAll("[data-coach-sheet-field]").forEach((field) => {
+        field.addEventListener("input", () => {
+          const draft = activeCoachBuilder();
+          if (!draft) return;
+          draft[field.dataset.coachSheetField] = field.value;
+          markCoachDraftDirty();
+        });
+        field.addEventListener("change", () => {
+          commitActiveCoachDraft({ immediate: true });
+          render();
+        });
+      });
+      if (coachEditorPhase) {
+        coachEditorPhase.addEventListener("change", () => {
+          state.coach.editorPhase = coachEditorPhase.value;
+          state.coach.editorCode = sessionsForPhase(coachEditorPhase.value)[0]?.code || "";
+          saveState();
+          render();
+        });
+      }
+      const coachEditorCode = document.getElementById("coachEditorCode");
+      if (coachEditorCode) {
+        coachEditorCode.addEventListener("change", () => {
+          state.coach.editorCode = coachEditorCode.value;
+          saveState();
+          render();
+        });
+      }
+      const saveCoach = document.getElementById("saveCoachSession");
+      if (saveCoach) saveCoach.addEventListener("click", saveCoachSession);
+      const saveEditedProgram = document.getElementById("saveEditedProgram");
+      if (saveEditedProgram) saveEditedProgram.addEventListener("click", saveEditedProgramSession);
+      document.querySelectorAll("[data-edit-exercise]").forEach((field) => {
+        field.addEventListener("change", () => {
+          const session = selectedCoachProgramSession();
+          const exercise = session?.exercises?.[Number(field.dataset.editExercise)];
+          if (!exercise) return;
+          const ownerProgram = findProgramForSheet(session.id);
+          if (!ownerProgram) return;
+          const key = field.dataset.editKey;
+          const value = field.value.trim();
+          const changes = {};
+          if (key === "muscle") {
+            const first = coachExercisesForGroup(value)[0] || {};
+            changes.muscle = value;
+            changes.name = first.name || exercise.name || "";
+            changes.note = first.note || exercise.note || "";
+          } else {
+            changes[key] = value;
+          }
+          if (key === "name") {
+            const group = coachEditorExerciseGroup({ ...exercise, name: value });
+            const libraryItem = coachExercisesForGroup(group).find((item) => item.name === value || normalizeExerciseName(item.name) === normalizeExerciseName(value));
+            if (libraryItem) {
+              changes.muscle = libraryItem.som || exercise.muscle || group;
+              if (!exercise.note && libraryItem.note) changes.note = libraryItem.note;
+            }
+          }
+          programRepository.updateExercise(ownerProgram.id, session.id, exercise.id, changes);
+          state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
+          if (key === "muscle") setTimeout(render, 0);
+        });
+      });
+      const saveFeedback = document.getElementById("saveFeedback");
+      if (saveFeedback) saveFeedback.addEventListener("click", saveCoachFeedback);
+      const exportData = document.getElementById("exportData");
+      if (exportData) exportData.addEventListener("click", exportBackup);
+      const importData = document.getElementById("importData");
+      if (importData) importData.addEventListener("change", (event) => importBackup(event.target.files?.[0]));
+      const progressExercise = document.getElementById("progressExercise");
+      if (progressExercise) {
+        progressExercise.addEventListener("change", () => {
+          state.training.selected = progressExercise.value;
+          saveState();
+          render();
+        });
+      }
+      const clearData = document.getElementById("clearData");
+      if (clearData) clearData.addEventListener("click", clearAllData);
+      const googleLoginButton = document.getElementById("googleLoginButton");
+      if (googleLoginButton) {
+        googleLoginButton.addEventListener("click", () => {
+          signInWithGoogle(googleLoginButton.dataset.loginMode || "popup");
+        });
+      }
+      const googleRedirectButton = document.getElementById("googleRedirectButton");
+      if (googleRedirectButton) {
+        googleRedirectButton.addEventListener("click", () => {
+          signInWithGoogle("redirect");
+        });
+      }
+      const uploadLocalCloud = document.getElementById("uploadLocalCloud");
+      if (uploadLocalCloud) uploadLocalCloud.addEventListener("click", uploadThisDeviceToCloud);
+      const downloadCloudLocal = document.getElementById("downloadCloudLocal");
+      if (downloadCloudLocal) downloadCloudLocal.addEventListener("click", downloadCloudToThisDevice);
+      const googleLogoutButton = document.getElementById("googleLogoutButton");
+      if (googleLogoutButton) googleLogoutButton.addEventListener("click", signOutGoogle);
+      const googleInfoButton = document.getElementById("googleInfoButton");
+      if (googleInfoButton) googleInfoButton.addEventListener("click", () => {
+        showToast(firebaseConfigured() ? "Puoi accedere con Google." : "Manca solo la configurazione Firebase.");
+      });
+      const continueLocalButton = document.getElementById("continueLocalButton");
+      if (continueLocalButton) {
+        continueLocalButton.addEventListener("click", () => {
+          localLoginBypass = true;
+          localStorage.setItem(`${STORE_KEY}.loginBypass`, "1");
+          showToast("Modalità locale attiva. Puoi usare l'app.");
+          render();
+        });
+      }
+    }
+
+    function setDeepValue(path, value) {
+      const parts = path.split(".");
+      let target = state;
+      while (parts.length > 1) target = target[parts.shift()];
+      target[parts[0]] = value;
+      saveState();
+    }
+
+    async function saveWorkoutSession() {
+      const saveButton = document.getElementById("saveWorkout");
+      if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.textContent = "Salvataggio...";
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
+      const context = currentTrainingContext();
+      const exercises = context.session.exercises
+        .map((exercise) => {
+          const setValues = draftSetsFor(context, exercise).map((value) => String(value || "").trim());
+          const userNote = String(draftNoteFor(context, exercise) || "").trim();
+          const numericValues = setValues
+            .map((value) => number(value.replace(",", "."), null))
+            .filter((value) => Number.isFinite(value));
+          if (!numericValues.length && !userNote) return null;
+          const avg = numericValues.length ? numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length : 0;
+          return {
+            name: exercise.name,
+            kg: Math.round(avg * 100) / 100,
+            maxKg: numericValues.length ? Math.max(...numericValues) : 0,
+            value: numericValues.length ? `${setValues.filter(Boolean).join(" / ")} kg` : "",
+            setValues,
+            userNote,
+            date: shortDate(context.date),
+            sets: exercise.sets,
+            reps: exercise.reps,
+            sessionCode: context.session.code
+          };
+        })
+        .filter(Boolean);
+      if (!exercises.length) {
+        showToast("Inserisci almeno un carico o una nota.");
+        if (saveButton) {
+          saveButton.disabled = false;
+          saveButton.textContent = "Salva Sessione";
+        }
+        return;
+      }
+      const total = exercises.reduce((sum, item) => {
+        const values = Array.isArray(item.setValues) ? item.setValues : [];
+        return sum + values
+          .map((value) => number(String(value).replace(",", "."), 0))
+          .reduce((innerSum, value) => innerSum + value, 0);
+      }, 0);
+      const existingIndex = state.training.sessions.findIndex((session) =>
+        (session.source === "App" || Number(session.id) > 1000000000) &&
+        session.dateInput === context.date && session.sessionCode === context.session.code
+      );
+      const savedSession = {
+        id: existingIndex >= 0 ? state.training.sessions[existingIndex].id : Date.now(),
+        source: "App",
+        date: shortDate(context.date),
+        dateInput: context.date,
+        phase: context.phase,
+        week: context.session.week || context.week,
+        programId: findProgramForSheet(context.session.id)?.id || "",
+        sheetId: context.session.id,
+        sessionCode: context.session.code,
+        sessionName: context.session.name,
+        feeling: state.training.feeling,
+        total: Math.round(total * 100) / 100,
+        weight: state.metrics.weight,
+        exercises
+      };
+      if (existingIndex >= 0) state.training.sessions[existingIndex] = savedSession;
+      else state.training.sessions.push(savedSession);
+      trainingHistoryIndexCache = null;
+      context.session.exercises.forEach((exercise) => {
+        delete state.training.draft[draftKey(context, exercise)];
+        if (state.training.noteDraft) delete state.training.noteDraft[draftNoteKey(context, exercise)];
+      });
+      state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
+      state.training.sessionName = "auto";
+      state.training.lastSavedMessage = `${context.session.name} salvata sul dispositivo il ${shortDate(context.date)}. Sincronizzazione in corso...`;
+      saveState({ cloud: false, immediate: true });
+      renderTrainingOnly();
+      showToast("Allenamento salvato sul dispositivo. Sincronizzo...");
+      let cloudSaved = false;
+      if (cloudUser && dbService && state.profile.account?.syncReady) {
+        clearTimeout(cloudSaveTimer);
+        savedSession.cloudSyncedAt = new Date().toISOString();
+        cloudSaved = await saveCloudState();
+      }
+      if (cloudSaved) {
+        state.training.lastSavedMessage = `${context.session.name} salvata e sincronizzata su PC e telefono il ${shortDate(context.date)}.`;
+        saveState({ cloud: false, immediate: true });
+        showToast(existingIndex >= 0 ? "Allenamento aggiornato e sincronizzato ?" : "Allenamento salvato e sincronizzato ?");
+      } else {
+        delete savedSession.cloudSyncedAt;
+        state.training.lastSavedMessage = `${context.session.name} salvata sul dispositivo il ${shortDate(context.date)}. Il cloud verrà ritentato automaticamente.`;
+        saveState();
+        showToast("Salvato sul dispositivo; cloud in attesa.");
+      }
+      renderTrainingOnly();
+      setTimeout(() => document.getElementById("workoutSaveConfirmation")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+    }
+
+    function shortDate(value = todayInput()) {
+      return new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" }).format(parseInputDate(value));
+    }
+
+    function recoveryOptions(rest) {
+      const text = String(rest || "");
+      const values = [];
+      const add = (seconds) => {
+        const value = Number(seconds);
+        if (Number.isFinite(value) && value > 0 && value <= 360 && !values.includes(value)) values.push(value);
+      };
+      for (const match of text.matchAll(/(\d+)\s*-\s*(\d+)\s*['']/g)) {
+        add(Number(match[1]) * 60);
+        add(Number(match[2]) * 60);
+      }
+      for (const match of text.matchAll(/(\d+)\s*['']\s*(\d{1,2})/g)) add(Number(match[1]) * 60 + Number(match[2]));
+      for (const match of text.matchAll(/(\d+)\s*,\s*(\d{1,2})/g)) add(Number(match[1]) * 60 + Number(match[2]));
+      for (const match of text.matchAll(/(\d+)\s*(?:sec|s|''|")/gi)) add(Number(match[1]));
+      for (const match of text.matchAll(/(\d+)\s*[''](?![''])/g)) add(Number(match[1]) * 60);
+      add(90);
+      add(120);
+      return values.slice(0, 4);
+    }
+
+    function shortRestLabel(seconds) {
+      const value = Number(seconds) || 0;
+      if (value % 60 === 0) return `${value / 60}m`;
+      if (value > 60) return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, "0")}`;
+      return `${value}s`;
+    }
+
+    function recoveryButtons(rest) {
+      return recoveryOptions(rest).map((seconds) => `<button class="ghost-button" data-rest-timer="${seconds}">${shortRestLabel(seconds)}</button>`).join("");
+    }
+
+    function formatTimer(seconds) {
+      const value = Math.max(0, Number(seconds) || 0);
+      const minutes = String(Math.floor(value / 60)).padStart(2, "0");
+      const rest = String(value % 60).padStart(2, "0");
+      return `${minutes}:${rest}`;
+    }
+
+    function startRestTimer(seconds) {
+      clearInterval(timerHandle);
+      state.training.timerRemaining = Number(seconds) || 0;
+      saveState();
+      renderTimerDisplay();
+      timerHandle = setInterval(() => {
+        state.training.timerRemaining = Math.max(0, (state.training.timerRemaining || 0) - 1);
+        renderTimerDisplay();
+        if (state.training.timerRemaining <= 0) {
+          clearInterval(timerHandle);
+          showToast("Recupero finito.");
+        }
+        saveState();
+      }, 1000);
+    }
+
+    function renderTimerDisplay() {
+      document.querySelectorAll("[data-rest-display]").forEach((timer) => {
+        timer.textContent = formatTimer(state.training.timerRemaining || 0);
+      });
+    }
+
+    function markCoachDraftDirty(sheetId = coachProgramUi.sheetId, rowId = "") {
+      if (sheetId) coachProgramUi.dirtySheets.add(sheetId);
+      const draft = activeCoachBuilder();
+      if (rowId && draft) draft.dirtyRows.add(rowId);
+      coachProgramUi.saveStatus = "dirty";
+      clearTimeout(coachProgramUi.autoSaveTimer);
+      coachProgramUi.autoSaveTimer = setTimeout(() => {
+        coachProgramUi.saveStatus = "saving";
+        const ok = commitActiveCoachDraft({ immediate: false, quiet: true });
+        coachProgramUi.saveStatus = ok ? "saved" : "error";
+        const indicator = document.querySelector(".save-indicator");
+        if (indicator) {
+          indicator.className = `save-indicator ${coachProgramUi.saveStatus}`;
+          indicator.textContent = ok ? "? Salvato" : "Errore salvataggio";
+        }
+      }, 650);
+    }
+
+    function commitActiveCoachDraft(options = {}) {
+      const { program, sheet } = ensureCoachProgramSelection();
+      const draft = activeCoachBuilder();
+      if (!program || !sheet || !draft) return false;
+      for (const row of draft.rows || []) {
+        if (!row.id || !draft.dirtyRows?.has(row.id)) continue;
+        const current = programRepository.getExerciseById(program.id, sheet.id, row.id);
+        if (!current) continue;
+        const canonicalWeeks = current.progression?.weeks || [];
+        const exercisePatch = {
+          name: row.exercise || current.name,
+          muscle: row.group || current.muscle,
+          note: row.note || "",
+          som: row.som || "",
+          prescription: {
+            ...current.prescription,
+            sets: optionalNumber(row.sets),
+            reps: parseReps(row.reps),
+            rir: /^\s*RPE/i.test(row.effort || "") ? parseRir("") : parseRir(row.effort),
+            rpe: /^\s*RPE/i.test(row.effort || "") ? parseRir(String(row.effort).replace(/^\s*RPE\s*/i, "")) : parseRir(""),
+            rest: parseRest({ seconds: optionalNumber(row.restSeconds), label: "" }),
+            tempo: parseTempo(row.tempo),
+            technique: parseTechnique({ type: row.technique, description: row.techniqueDescription }),
+            prescribedLoad: parsePrescribedLoad({ value: row.loadValue, unit: row.loadUnit }),
+            warmup: { ...(current.prescription?.warmup || {}), label: row.approach || "" }
+          },
+          metadata: { ...(current.metadata || {}), equipment: row.equipment || "", pattern: row.pattern || "", secondaryMuscles: String(row.secondaryMuscles || "").split(",").map((item) => item.trim()).filter(Boolean), mainLift: !!row.mainLift, locked: !!row.locked, custom: !!row.custom },
+          progression: (Array.from(draft.dirtyWeekNumbers || []).some((key) => String(key).startsWith(`${row.id}:`)) || (row.weeks || []).some((value, index) => String(value || "") !== String(canonicalWeeks[index] ? formatWeekPrescription(canonicalWeeks[index]) : ""))) ? { ...(current.progression || {}), weeks: (row.weeks || []).slice(0, Math.max(canonicalWeeks.length, (row.weeks || []).reduce((last, value, index) => String(value || "").trim() ? index + 1 : last, 0))).map((value, index) => {
+            const week = parseWeekPrescription(value || canonicalWeeks[index] || "", index + 1, current.prescription);
+            if (index === 0) {
+              const legacyEdited = typeof value === "string" && value.trim();
+              week.sets = legacyEdited ? week.sets : (optionalNumber(row.sets) ?? week.sets);
+              week.reps = legacyEdited ? week.reps : parseReps(row.reps);
+              week.rir = parseRir(row.effort);
+              week.restSeconds = optionalNumber(row.restSeconds) ?? week.restSeconds;
+            }
+            return week;
+          }) } : undefined
+        };
+        if (!exercisePatch.progression) delete exercisePatch.progression;
+        const result = programRepository.updateExercise(program.id, sheet.id, row.id, exercisePatch, { save: false, forceLocked: true });
+        if (!result.ok) {
+          if (!options.quiet) showToast("Controlla i dati dell’esercizio prima di cambiare scheda.");
+          return false;
+        }
+      }
+      const result = programRepository.updateSheet(program.id, sheet.id, {
+        name: String(draft.name || "").trim() || sheet.name,
+        code: String(draft.code || "").trim(),
+        focus: String(draft.focus || "").trim(),
+        split: String(draft.split || "").trim(),
+        note: String(draft.note || "").trim(),
+        color: String(draft.color || "").trim(),
+        source: sheet.source === "imported" ? "customized" : sheet.source
+      }, { immediate: options.immediate !== false });
+      if (!result.ok) {
+        if (!options.quiet) showToast(result.errors.some((error) => error.code === "duplicate") ? "Questo codice è già usato nello stesso programma." : "Scheda non salvata: controlla nome e codice.");
+        return false;
+      }
+      if (options.immediate !== false) discardCoachDraft(program.id, sheet.id);
+      else {
+        draft.dirtyRows.clear();
+        draft.dirtyBaseFields.clear();
+        draft.dirtyWeekNumbers.clear();
+        coachProgramUi.dirtySheets.delete(sheet.id);
+      }
+      coachProgramUi.saveStatus = "saved";
+      if (!options.quiet) showToast("Scheda salvata.");
+      state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
+      return true;
+    }
+
+    function exerciseHistoryFor(programId, sheetId) {
+      const key = coachSheetDraftKey(programId, sheetId);
+      if (!coachProgramUi.histories.has(key)) coachProgramUi.histories.set(key, { undo: [], redo: [] });
+      return coachProgramUi.histories.get(key);
+    }
+
+    function rememberExerciseState(programId, sheetId) {
+      commitActiveCoachDraft({ immediate: true, quiet: true });
+      const history = exerciseHistoryFor(programId, sheetId);
+      history.undo.push(clone(programRepository.getSheetById(programId, sheetId)?.exercises || []));
+      if (history.undo.length > 50) history.undo.shift();
+      history.redo = [];
+    }
+
+    function restoreExerciseHistory(direction) {
+      const { program, sheet } = ensureCoachProgramSelection();
+      if (!program || !sheet) return false;
+      const history = exerciseHistoryFor(program.id, sheet.id);
+      const source = direction === "undo" ? history.undo : history.redo;
+      const target = direction === "undo" ? history.redo : history.undo;
+      if (!source.length) return false;
+      target.push(clone(sheet.exercises || []));
+      const result = programRepository.updateSheet(program.id, sheet.id, { exercises: source.pop() }, { immediate: true });
+      discardCoachDraft(program.id, sheet.id);
+      coachProgramUi.selectedExercises.clear();
+      return result.ok;
+    }
+
+    function reorderOneExercise(exerciseId, delta) {
+      const { program, sheet } = ensureCoachProgramSelection();
+      const ids = programRepository.getExercises(program?.id, sheet?.id).map((item) => item.id);
+      const index = ids.indexOf(exerciseId);
+      const target = Math.max(0, Math.min(ids.length - 1, index + delta));
+      if (index < 0 || target === index) return false;
+      rememberExerciseState(program.id, sheet.id);
+      ids.splice(target, 0, ids.splice(index, 1)[0]);
+      const result = programRepository.reorderExercises(program.id, sheet.id, ids, { immediate: true });
+      discardCoachDraft(program.id, sheet.id);
+      return result.ok;
+    }
+
+    function openCoachModal(type, data = {}) {
+      coachProgramUi.modal = type;
+      coachProgramUi.modalData = data;
+      coachProgramUi.sheetMenuId = "";
+    }
+
+    function closeCoachModal() {
+      coachProgramUi.modal = "";
+      coachProgramUi.modalData = {};
+    }
+
+    function handleProgramAction(action) {
+      const { program } = ensureCoachProgramSelection();
+      if (action === "new") return openCoachModal("program-new");
+      if (!program) return;
+      if (action === "edit") return openCoachModal("program-edit", { programId: program.id });
+      if (action === "delete") return openCoachModal("program-delete", { programId: program.id });
+      if (action === "duplicate") {
+        commitActiveCoachDraft({ immediate: true, quiet: true });
+        const duplicated = programRepository.duplicateProgram(program.id, { immediate: true });
+        if (!duplicated.ok) return showToast("Programma non duplicato.");
+        coachProgramUi.programId = duplicated.value.id;
+        coachProgramUi.sheetId = programRepository.getSheets(duplicated.value.id)[0]?.id || "";
+        return showToast("Programma duplicato.");
+      }
+      if (action === "activate") {
+        programRepository.getPrograms().filter((item) => item.status === "active" && item.id !== program.id).forEach((item) => {
+          programRepository.updateProgram(item.id, { status: "available" }, { save: false });
+        });
+        programRepository.updateProgram(program.id, { status: "active" }, { immediate: true });
+        return showToast("Programma attivo aggiornato.");
+      }
+      if (action === "archive") {
+        programRepository.updateProgram(program.id, { status: program.status === "archived" ? "draft" : "archived" }, { immediate: true });
+        return showToast(program.status === "archived" ? "Programma riaperto." : "Programma archiviato.");
+      }
+    }
+
+    function reorderOneSheet(programId, sheetId, direction) {
+      const sheets = programRepository.getSheets(programId);
+      const from = sheets.findIndex((item) => item.id === sheetId);
+      const to = Math.max(0, Math.min(sheets.length - 1, from + direction));
+      if (from < 0 || from === to) return false;
+      const ids = sheets.map((item) => item.id);
+      const [moved] = ids.splice(from, 1);
+      ids.splice(to, 0, moved);
+      return programRepository.reorderSheets(programId, ids, { immediate: true }).ok;
+    }
+
+    function copySheetToProgram(sourceProgramId, sheetId, targetProgramId) {
+      const source = programRepository.getSheetById(sourceProgramId, sheetId);
+      if (!source) return repositoryResult(false, null, [validationIssue("sheetId", "not-found", "Scheda sorgente non trovata.", sheetId)]);
+      const targetSheets = programRepository.getSheets(targetProgramId);
+      const now = new Date().toISOString();
+      return programRepository.createSheet(targetProgramId, {
+        ...clone(source),
+        id: newEntityId("sheet"),
+        code: uniqueSheetCode(source.code, targetSheets),
+        name: source.name,
+        order: targetSheets.length,
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: "",
+        exercises: (source.exercises || []).filter((exercise) => !exercise.deletedAt).map((exercise, index) => ({
+          ...clone(exercise),
+          id: newEntityId("exercise"),
+          order: index,
+          createdAt: now,
+          updatedAt: now,
+          deletedAt: ""
+        }))
+      }, { immediate: true });
+    }
+
+    function handleSheetAction(action, sheetId = coachProgramUi.sheetId) {
+      const { program, sheets } = ensureCoachProgramSelection();
+      if (!program) return;
+      if (action === "new") return openCoachModal("sheet-new", { programId: program.id });
+      const sheet = programRepository.getSheetById(program.id, sheetId);
+      if (!sheet) return;
+      if (action === "rename" || action === "edit") return openCoachModal(action === "rename" ? "sheet-rename" : "sheet-edit", { sheetId });
+      if (action === "delete") return openCoachModal("sheet-delete", { sheetId });
+      if (action === "position") return openCoachModal("sheet-position", { sheetId });
+      if (action === "copy" || action === "move") return openCoachModal(action === "copy" ? "sheet-copy" : "sheet-move", { sheetId });
+      if (action === "duplicate") {
+        commitActiveCoachDraft({ immediate: true, quiet: true });
+        const duplicated = programRepository.duplicateSheet(program.id, sheetId, { immediate: true });
+        if (!duplicated.ok) return showToast("Scheda non duplicata.");
+        coachProgramUi.sheetId = duplicated.value.id;
+        coachProgramUi.lastSheetByProgram.set(program.id, duplicated.value.id);
+        return showToast("Scheda duplicata con nuovi ID.");
+      }
+      if (action === "left" || action === "right") {
+        if (reorderOneSheet(program.id, sheetId, action === "left" ? -1 : 1)) showToast("Ordine schede aggiornato.");
+        return;
+      }
+      if (action === "archive") {
+        const updated = programRepository.updateSheet(program.id, sheetId, { status: sheet.status === "archived" ? "active" : "archived" }, { immediate: true });
+        if (updated.ok) showToast(sheet.status === "archived" ? "Scheda riattivata." : "Scheda archiviata.");
+      }
+    }
+
+    function saveCoachUiModal() {
+      const type = coachProgramUi.modal;
+      const { program, sheets } = ensureCoachProgramSelection();
+      if (type === "program-new" || type === "program-edit") {
+        const data = {
+          name: document.getElementById("programModalName")?.value.trim(),
+          phase: document.getElementById("programModalPhase")?.value.trim(),
+          durationWeeks: Number(document.getElementById("programModalDuration")?.value || 0),
+          status: document.getElementById("programModalStatus")?.value || "draft",
+          source: type === "program-new" ? "custom" : program?.source
+        };
+        const result = type === "program-new"
+          ? programRepository.createProgram(data, { immediate: true })
+          : programRepository.updateProgram(program.id, data, { immediate: true });
+        if (!result.ok) return showToast("Controlla nome e durata del programma.");
+        coachProgramUi.programId = result.value.id;
+        coachProgramUi.sheetId = programRepository.getSheets(result.value.id)[0]?.id || "";
+        closeCoachModal();
+        return showToast(type === "program-new" ? "Programma creato." : "Programma aggiornato.");
+      }
+      if (type === "program-delete") {
+        const deletedId = program.id;
+        programRepository.deleteProgram(deletedId, { immediate: true });
+        coachProgramUi.programId = "";
+        coachProgramUi.sheetId = "";
+        closeCoachModal();
+        ensureCoachProgramSelection();
+        return showToast("Programma eliminato.");
+      }
+      if (type === "exercise-custom" || type === "exercise-details") {
+        const sheet = programRepository.getSheetById(program?.id, coachProgramUi.sheetId);
+        const id = coachProgramUi.modalData.exerciseId;
+        const current = id ? programRepository.getExerciseById(program.id, sheet.id, id) : null;
+        const data = {
+          name: document.getElementById("exerciseModalName")?.value.trim(),
+          muscle: document.getElementById("exerciseModalMuscle")?.value.trim() || "Custom",
+          note: document.getElementById("exerciseModalNotes")?.value.trim() || "",
+          metadata: { ...(current?.metadata || {}), custom: type === "exercise-custom" ? true : !!current?.metadata?.custom, equipment: document.getElementById("exerciseModalEquipment")?.value.trim() || "", pattern: document.getElementById("exerciseModalPattern")?.value.trim() || "", secondaryMuscles: String(document.getElementById("exerciseModalSecondary")?.value || "").split(",").map((item) => item.trim()).filter(Boolean), mainLift: !!document.getElementById("exerciseModalMain")?.checked, locked: !!document.getElementById("exerciseModalLocked")?.checked }
+        };
+        if (!data.name) return showToast("Inserisci il nome dell’esercizio.");
+        rememberExerciseState(program.id, sheet.id);
+        const result = type === "exercise-custom" ? programRepository.createExercise(program.id, sheet.id, data, { immediate: true }) : programRepository.updateExercise(program.id, sheet.id, id, data, { immediate: true, forceLocked: true });
+        if (!result.ok) return showToast("Esercizio non salvato.");
+        discardCoachDraft(program.id, sheet.id);
+        closeCoachModal();
+        return showToast(type === "exercise-custom" ? "Esercizio personalizzato aggiunto." : "Dettagli aggiornati.");
+      }
+      if (type === "exercise-delete") {
+        const sheet = programRepository.getSheetById(program?.id, coachProgramUi.sheetId);
+        const ids = coachProgramUi.modalData.exerciseIds || [];
+        rememberExerciseState(program.id, sheet.id);
+        ids.forEach((id) => programRepository.deleteExercise(program.id, sheet.id, id, { save: false, forceLocked: true }));
+        commitProgramCollection(state.programs, { immediate: true });
+        coachProgramUi.selectedExercises.clear();
+        discardCoachDraft(program.id, sheet.id);
+        closeCoachModal();
+        return showToast(`${ids.length} ${ids.length === 1 ? "esercizio eliminato" : "esercizi eliminati"}.`);
+      }
+      if (type === "exercise-bulk-value") {
+        const sheet = programRepository.getSheetById(program?.id, coachProgramUi.sheetId);
+        const kind = coachProgramUi.modalData.kind;
+        const value = document.getElementById("exerciseBulkValue")?.value.trim() || "";
+        rememberExerciseState(program.id, sheet.id);
+        [...coachProgramUi.selectedExercises].forEach((id) => {
+          const current = programRepository.getExerciseById(program.id, sheet.id, id);
+          if (!current) return;
+          const prescription = { ...current.prescription };
+          if (kind === "rest") prescription.rest = parseRest({ seconds: optionalNumber(value) });
+          if (kind === "rir") { prescription.rir = /^RPE/i.test(value) ? parseRir("") : parseRir(value); prescription.rpe = /^RPE/i.test(value) ? parseRir(value.replace(/^RPE\s*/i, "")) : parseRir(""); }
+          if (kind === "technique") prescription.technique = parseTechnique(value);
+          programRepository.updateExercise(program.id, sheet.id, id, { prescription }, { save: false, forceLocked: true });
+        });
+        commitProgramCollection(state.programs, { immediate: true });
+        discardCoachDraft(program.id, sheet.id);
+        closeCoachModal();
+        return showToast("Valore applicato alla selezione.");
+      }
+      if (type === "progression-editor") {
+        const targetSheet = programRepository.getSheetById(program?.id, coachProgramUi.sheetId);
+        const exerciseId = coachProgramUi.modalData.exerciseId;
+        const current = programRepository.getExerciseById(program?.id, targetSheet?.id, exerciseId);
+        if (!current || !targetSheet) return showToast("Esercizio non trovato.");
+        const templateId = document.getElementById("progressionTemplateId")?.value || coachProgramUi.modalData.templateId || "maintenance";
+        const duration = Math.max(1, Number(document.getElementById("progressionDuration")?.value || programWeekCount(program, targetSheet)));
+        const mode = document.getElementById("progressionApplyMode")?.value || "replace";
+        const weeks = (coachProgramUi.modalData.weeks || generateProgressionWeeks(current, templateId, duration)).slice(0, duration);
+        const generated = mode === "empty-only" ? generateProgressionWeeks(current, templateId, duration, {}, current.progression?.weeks || []).map((week, index) => current.progression?.weeks?.[index] || week) : weeks;
+        const manualWeeks = generated.filter((week) => week.source === "manual").map((week) => week.weekNumber);
+        rememberExerciseState(program.id, targetSheet.id);
+        const result = programRepository.updateExercise(program.id, targetSheet.id, exerciseId, { progression: { ...(current.progression || {}), templateId, rule: { templateId, kind: progressionTemplateById(templateId)?.rules?.kind || "custom" }, weeks: generated, manualWeeks } }, { immediate: true, forceLocked: true });
+        if (!result.ok) return showToast("Progressione non valida: controlla i valori.");
+        discardCoachDraft(program.id, targetSheet.id);
+        closeCoachModal();
+        return showToast("Progressione salvata.");
+      }
+      if (type === "exercise-transfer") {
+        const sourceSheet = programRepository.getSheetById(program?.id, coachProgramUi.sheetId);
+        const ids = coachProgramUi.modalData.exerciseIds || [];
+        const [targetProgramId, targetSheetId] = String(document.getElementById("exerciseTransferSheet")?.value || "").split("|");
+        const mode = document.getElementById("exerciseTransferMode")?.value || "copy";
+        const options = { position: Math.max(0, Number(document.getElementById("exerciseTransferPosition")?.value || 1) - 1), resetLoad: !!document.getElementById("exerciseTransferResetLoad")?.checked, resetNotes: !!document.getElementById("exerciseTransferResetNotes")?.checked, resetProgressions: !!document.getElementById("exerciseTransferResetProgressions")?.checked, resetTechnique: !!document.getElementById("exerciseTransferResetTechnique")?.checked, forceLocked: true, save: false };
+        rememberExerciseState(program.id, sourceSheet.id);
+        let ok = true;
+        ids.forEach((id, index) => {
+          const method = mode === "move" ? "moveExercise" : "copyExercise";
+          const result = programRepository[method](program.id, sourceSheet.id, id, targetProgramId, targetSheetId, { ...options, position: options.position + index });
+          ok = ok && result.ok;
+        });
+        commitProgramCollection(state.programs, { immediate: true });
+        coachProgramUi.selectedExercises.clear();
+        discardCoachDraft(program.id, sourceSheet.id);
+        closeCoachModal();
+        return showToast(ok ? `Esercizi ${mode === "move" ? "spostati" : "copiati"}.` : "Alcuni esercizi non sono stati trasferiti.");
+      }
+      if (type === "coach-ai-confirm") {
+        const suggestion = coachProgramUi.modalData.suggestion || {};
+        const action = suggestion.action || {};
+        const targetSheet = programRepository.getSheetById(program?.id, suggestion.sheetId || coachProgramUi.sheetId);
+        if (!program || !targetSheet) return showToast("Scheda destinazione non trovata.");
+        rememberExerciseState(program.id, targetSheet.id);
+        let result = { ok: false };
+        if (action.type === "addExercise") {
+          result = programRepository.createExercise(program.id, targetSheet.id, { name: suggestion.exercise, muscle: action.muscle || "Custom", som: action.muscle || "Custom", order: suggestion.position || programRepository.getExercises(program.id, targetSheet.id).length, prescription: { sets: suggestion.prescription?.sets || 3, reps: parseReps(suggestion.prescription?.reps || "10-15"), rir: parseRir(suggestion.prescription?.rir || "1-2"), rest: parseRest({ seconds: suggestion.prescription?.rest || 90 }), technique: parseTechnique("normal"), prescribedLoad: parsePrescribedLoad(null) }, metadata: { coachAiSuggested: true, pattern: action.pattern || "", equipment: action.equipment || "" } }, { immediate: true });
+        } else if (action.type === "replaceExercise") {
+          const current = programRepository.getExerciseById(program.id, targetSheet.id, action.exerciseId);
+          result = current ? programRepository.updateExercise(program.id, targetSheet.id, action.exerciseId, { name: action.replacement, muscle: action.muscle || current.muscle, som: action.muscle || current.som, note: `${current.note || ""}${current.note ? "\n" : ""}Sostituito da Coach AI: ${action.replacement}` }, { immediate: true, forceLocked: true }) : { ok: false };
+        } else if (action.type === "updateExercise") {
+          result = programRepository.updateExercise(program.id, targetSheet.id, action.exerciseId, action.changes || {}, { immediate: true, forceLocked: true });
+        } else if (action.type === "progression") {
+          const current = programRepository.getExerciseById(program.id, targetSheet.id, action.exerciseId);
+          if (current) {
+            const templateId = action.templateId || "double-progression";
+            const weeks = generateProgressionWeeks(current, templateId, programWeekCount(program, targetSheet), action.parameters || {}, current.progression?.weeks || []);
+            result = programRepository.updateExercise(program.id, targetSheet.id, action.exerciseId, { metadata: { ...current.metadata, coachAiProgression: action.progression || templateId }, progression: { ...(current.progression || {}), templateId, rule: { templateId, kind: progressionTemplateById(templateId)?.rules?.kind || "custom" }, weeks } }, { immediate: true, forceLocked: true });
+          } else result = { ok: false };
+        } else if (action.type === "details") {
+          closeCoachModal();
+          openCoachModal("exercise-details", { exerciseId: action.exerciseId });
+          return showToast("Completa i metadati dell’esercizio.");
+        }
+        if (!result.ok) return showToast("Suggerimento non applicato: dati insufficienti o esercizio bloccato.");
+        const aiRecord = coachAiState();
+        aiRecord.applied = [...new Set([...(aiRecord.applied || []), suggestion.id])];
+        aiRecord.appliedRecords = { ...(aiRecord.appliedRecords || {}), [suggestion.id]: clone(suggestion) };
+        state.coach.coachAi = aiRecord;
+        closeCoachModal();
+        discardCoachDraft(program.id, targetSheet.id);
+        return showToast("Suggerimento applicato e salvato.");
+      }
+      const sheetId = coachProgramUi.modalData.sheetId || coachProgramUi.sheetId;
+      const targetSheet = programRepository.getSheetById(program?.id, sheetId);
+      if (type === "sheet-new" || type === "sheet-edit" || type === "sheet-rename") {
+        const data = {
+          name: document.getElementById("sheetModalName")?.value.trim(),
+          code: document.getElementById("sheetModalCode")?.value.trim()
+        };
+        if (type !== "sheet-rename") Object.assign(data, {
+          focus: document.getElementById("sheetModalFocus")?.value.trim() || "",
+          split: document.getElementById("sheetModalSplit")?.value.trim() || "",
+          note: document.getElementById("sheetModalNote")?.value.trim() || "",
+          color: document.getElementById("sheetModalColor")?.value || ""
+        });
+        const result = type === "sheet-new"
+          ? programRepository.createSheet(program.id, data, { immediate: true })
+          : programRepository.updateSheet(program.id, sheetId, data, { immediate: true });
+        if (!result.ok) return showToast(result.errors.some((error) => error.code === "duplicate") ? "Codice già usato in questo programma." : "Controlla nome e codice della scheda.");
+        discardCoachDraft(program.id, result.value.id);
+        coachProgramUi.sheetId = result.value.id;
+        coachProgramUi.lastSheetByProgram.set(program.id, result.value.id);
+        closeCoachModal();
+        return showToast(type === "sheet-new" ? "Scheda creata." : "Scheda aggiornata.");
+      }
+      if (type === "sheet-position") {
+        const desired = Math.max(1, Math.min(sheets.length, Number(document.getElementById("sheetModalPosition")?.value || 1))) - 1;
+        const ids = sheets.map((item) => item.id);
+        const from = ids.indexOf(sheetId);
+        const [moved] = ids.splice(from, 1);
+        ids.splice(desired, 0, moved);
+        programRepository.reorderSheets(program.id, ids, { immediate: true });
+        closeCoachModal();
+        return showToast("Posizione aggiornata.");
+      }
+      if (type === "sheet-copy" || type === "sheet-move") {
+        const targetProgramId = document.getElementById("sheetModalTargetProgram")?.value;
+        const copied = copySheetToProgram(program.id, sheetId, targetProgramId);
+        if (!copied.ok) return showToast("Operazione non completata.");
+        if (type === "sheet-move") programRepository.deleteSheet(program.id, sheetId, { immediate: true });
+        coachProgramUi.programId = targetProgramId;
+        coachProgramUi.sheetId = copied.value.id;
+        coachProgramUi.lastSheetByProgram.set(targetProgramId, copied.value.id);
+        closeCoachModal();
+        return showToast(type === "sheet-copy" ? "Scheda copiata." : "Scheda spostata.");
+      }
+      if (type === "sheet-delete") {
+        const index = sheets.findIndex((item) => item.id === sheetId);
+        const fallback = sheets[index - 1] || sheets[index + 1] || null;
+        programRepository.deleteSheet(program.id, sheetId, { immediate: true });
+        discardCoachDraft(program.id, sheetId);
+        coachProgramUi.sheetId = fallback?.id || "";
+        if (fallback) coachProgramUi.lastSheetByProgram.set(program.id, fallback.id);
+        closeCoachModal();
+        return showToast("Scheda eliminata.");
+      }
+    }
+
+    function selectedCoachProgramSession() {
+      const { sheet } = ensureCoachProgramSelection();
+      return sheet ? allProgramSheets().find((item) => item.id === sheet.id) || sheet : null;
+    }
+
+    function saveEditedProgramSession() {
+      const session = selectedCoachProgramSession();
+      if (!session) return;
+      const ownerProgram = findProgramForSheet(session.id);
+      if (!ownerProgram) return showToast("Programma della scheda non trovato.");
+      document.querySelectorAll("[data-edit-exercise]").forEach((field) => {
+        const exercise = session.exercises[Number(field.dataset.editExercise)];
+        if (!exercise) return;
+        const key = field.dataset.editKey;
+        const value = field.value.trim();
+        programRepository.updateExercise(ownerProgram.id, session.id, exercise.id, { [key]: key === "name" ? value.replaceAll(" ", "_") : value }, { save: false });
+      });
+      const latest = programRepository.getSheetById(ownerProgram.id, session.id);
+      const result = programRepository.updateSheet(ownerProgram.id, session.id, {
+        name: document.getElementById("coachSessionName")?.value.trim() || latest.name,
+        focus: document.getElementById("coachSessionFocus")?.value.trim() || latest.focus,
+        note: document.getElementById("coachSessionNote")?.value.trim() || latest.note,
+        source: latest.source === "custom" ? "custom" : "customized"
+      }, { immediate: true });
+      if (!result.ok) return showToast("Modifica non salvata: controlla i dati della scheda.");
+      state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
+      if (state.training.sessionName === result.value.code) state.training.selected = result.value.exercises[0]?.name || state.training.selected;
+      showToast(`${session.code} aggiornata.`);
+      render();
+    }
+
+    function saveCoachSession() {
+      if (!commitActiveCoachDraft({ immediate: true })) return;
+      state.coach.viewChoice = "builder";
+      render();
+    }
+    function unlockCoachStudio() {
+      const pin = document.getElementById("coachPinInput")?.value || "";
+      if (pin === state.profile.coachPin) {
+        state.profile.mode = "coach";
+        activeScreen = "coach";
+        activeBottom = "coach";
+        saveState();
+        render();
+        showToast("Coach Studio sbloccato.");
+      } else {
+        showToast("PIN non corretto.");
+      }
+    }
+
+    function saveCoachFeedback() {
+      const title = document.getElementById("feedbackTitle")?.value.trim();
+      const type = document.getElementById("feedbackType")?.value || "tecnica";
+      const text = document.getElementById("feedbackText")?.value.trim();
+      if (!title && !text) {
+        showToast("Scrivi un feedback.");
+        return;
+      }
+      state.coach.feedback.push({
+        id: Date.now(),
+        date: shortDate(),
+        type,
+        title: title || "Feedback coach",
+        text: text || "",
+        status: "aperto"
+      });
+      saveState();
+      showToast("Feedback salvato.");
+      render();
+    }
+
+    function exportBackup() {
+      const payload = createBackupPayload();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `alice-method-backup-${shortDate().replaceAll("/", "-")}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showToast("Backup esportato.");
+    }
+
+    function toShortDateFromIso(value) {
+      if (!value) return shortDate();
+      const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return match ? `${match[3]}/${match[2]}/${match[1]}` : String(value);
+    }
+
+    function numericSetValues(values) {
+      return (Array.isArray(values) ? values : [])
+        .map((value) => number(String(value ?? "").replace(",", "."), null))
+        .filter((value) => Number.isFinite(value));
+    }
+
+    function convertPinkLogbookBackup(incoming) {
+      const rows = Array.isArray(incoming?.history) ? incoming.history : [];
+      const groups = new Map();
+      rows.forEach((row, index) => {
+        const values = numericSetValues(row.sets);
+        if (!values.length) return;
+        const dateInput = row.date || todayInput();
+        const code = row.card || row.sessionCode || "Log";
+        const key = `${dateInput}__${code}`;
+        if (!groups.has(key)) {
+          groups.set(key, {
+            id: `pink-${dateInput}-${code}`,
+            date: toShortDateFromIso(dateInput),
+            dateInput,
+            phase: row.phaseName || "Logbook rosa",
+            week: row.week || "",
+            sessionCode: code,
+            sessionName: `Logbook ${code}`,
+            feeling: "importato",
+            total: 0,
+            weight: "",
+            note: "",
+            exercises: []
+          });
+        }
+        const session = groups.get(key);
+        const avg = number(row.average, values.reduce((sum, value) => sum + value, 0) / values.length);
+        session.total += avg;
+        session.exercises.push({
+          name: row.exercise || `Esercizio ${index + 1}`,
+          kg: Math.round(avg * 100) / 100,
+          maxKg: Math.max(...values),
+          value: `${values.join(" / ")} kg`,
+          setValues: values.map((value) => String(value).replace(".", ",")),
+          date: toShortDateFromIso(dateInput),
+          sessionCode: code,
+          sets: "",
+          reps: "",
+          notes: row.notes || "",
+          userNote: row.userNote || ""
+        });
+      });
+      return { training: { sessions: Array.from(groups.values()).map((session) => ({ ...session, total: Math.round(session.total * 100) / 100 })) } };
+    }
+
+    function normalizeImportedBackup(parsed) {
+      const incoming = parsed?.state || parsed || {};
+      if (Array.isArray(incoming.history) && !incoming.training) return convertPinkLogbookBackup(incoming);
+      return incoming;
+    }
+
+    function createBackupPayload() {
+      flushStateSave();
+      return {
+        app: APP_NAME,
+        exportedAt: new Date().toISOString(),
+        schemaVersion: DATA_SCHEMA_VERSION,
+        state: { ...clone(state), programs: programRepository.exportData() }
+      };
+    }
+
+    function importBackupSnapshot(parsed) {
+      const migration = runSchemaMigrations(normalizeImportedBackup(parsed));
+      if (!migration.ok) return repositoryResult(false, null, migration.errors.map((message) => validationIssue("backup", "migration", message)));
+      const incoming = migration.state;
+      const previous = clone(state);
+      const merged = mergeState(clone(baseState), previous);
+      mergeState(merged, incoming);
+      merged.training.sessions = mergeUniqueSessions(
+        baseState.training.sessions,
+        previous.training?.sessions || [],
+        incoming.training?.sessions || [],
+        merged.training?.sessions || []
+      );
+      const programs = mergeProgramCollections(previous.programs || [], incoming.programs || []);
+      state = merged;
+      const importedPrograms = programRepository.importData(programs, { replace: true, save: false });
+      hydrateStateModel(state);
+      state.training.exercises = buildExerciseIndex(allProgramSheets(state), state.training.sessions);
+      saveState({ immediate: true });
+      return repositoryResult(importedPrograms.ok, state, importedPrograms.errors, [...migration.warnings, ...importedPrograms.warnings]);
+    }
+
+    function sessionFingerprint(session) {
+      return [
+        session.dateInput || session.date,
+        session.sessionCode || "",
+        (session.exercises || []).map((exercise) => `${normalizeExerciseName(exercise.name)}:${historyLoadLabel(exercise)}:${exercise.userNote || ""}:${exercise.notes || ""}`).join("|")
+      ].join("__");
+    }
+
+    function mergeUniqueSessions(...lists) {
+      const seen = new Set();
+      const sessions = [];
+      lists.flat().filter(Boolean).forEach((session) => {
+        const key = sessionFingerprint(session);
+        if (seen.has(key)) return;
+        seen.add(key);
+        sessions.push(session);
+      });
+      return sessions.sort((a, b) => String(a.dateInput || a.date || "").localeCompare(String(b.dateInput || b.date || "")));
+    }
+
+    function importBackup(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          const imported = importBackupSnapshot(parsed);
+          if (!imported.ok && !imported.value) throw new Error("Backup non importabile.");
+          render();
+          showToast(`Backup importato: ${state.training.sessions.length} sessioni totali.`);
+        } catch (error) {
+          showToast("Backup non valido.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function renderEngine() {
+      const engineScores = document.getElementById("engineScores");
+      const priorityTree = document.getElementById("priorityTree");
+      if (!engineScores || !priorityTree) return;
+      const p = decisionPriority();
+      engineScores.innerHTML = [
+        scoreCard("Carichi", performanceScore(), "Trend dei carichi e progressione per esercizio.", colors.gold),
+        scoreCard("Aderenza", adherenceScore(), "Qualita di compilazione e frequenza dei log.", colors.green),
+        scoreCard("Rischio", structuralRisk(), "Stress, sonno, dolore e sovraccarico percepito.", structuralRisk() > 65 ? colors.red : colors.orange),
+        scoreCard("Risposta programma", programResponse(), p.text, colors.blue)
+      ].join("");
+      priorityTree.innerHTML = priorityHtml();
+    }
+
+    function drawCharts() {
+      drawProgressChart();
+      drawWeightChart();
+    }
+
+    function prepCanvas(id) {
+      const canvas = document.getElementById(id);
+      if (!canvas) return null;
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(300, Math.round(rect.width));
+      const height = Number(canvas.getAttribute("height")) || 190;
+      canvas.width = width * ratio;
+      canvas.height = height * ratio;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(ratio, ratio);
+      return { ctx, width, height };
+    }
+
+    function drawProgressChart() {
+      const prep = prepCanvas("progressChart");
+      if (!prep) return;
+      const meta = selectedExerciseMeta();
+      const values = exerciseHistory(meta, 999, meta.jump)
+        .slice()
+        .reverse()
+        .map((exercise) => Number.isFinite(exercise.maxKg) ? exercise.maxKg : exercise.kg)
+        .filter((value) => Number.isFinite(value));
+      const cleanValues = values.filter((value) => Number.isFinite(value));
+      drawLine(prep, cleanValues, colors.gold, "Salva almeno due sessioni per vedere la curva.");
+    }
+
+    function drawWeightChart() {
+      const prep = prepCanvas("weightChart");
+      if (!prep) return;
+      const values = state.training.sessions
+        .map((session) => number(session.weight, null))
+        .filter((value) => value != null && value > 0);
+      drawLine(prep, values, colors.blue, "Registra il peso per vedere il trend.");
+    }
+
+    function drawLine(prep, values, color, emptyText) {
+      const { ctx, width, height } = prep;
+      ctx.clearRect(0, 0, width, height);
+      if (values.length < 2) {
+        ctx.fillStyle = "rgba(255,255,255,.03)";
+        roundRect(ctx, 0, 0, width, height, 14);
+        ctx.fill();
+        ctx.fillStyle = "#8f8b85";
+        ctx.font = "13px Segoe UI, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(emptyText, width / 2, height / 2);
+        return;
+      }
+      const min = Math.min(...values) - 1;
+      const max = Math.max(...values) + 1;
+      const range = Math.max(1, max - min);
+      ctx.strokeStyle = "rgba(255,111,203,.12)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 5; i++) {
+        const y = 18 + i * ((height - 42) / 4);
+        ctx.beginPath();
+        ctx.moveTo(8, y);
+        ctx.lineTo(width - 8, y);
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      values.forEach((value, index) => {
+        const x = 14 + index * ((width - 28) / Math.max(1, values.length - 1));
+        const y = 18 + (max - value) / range * (height - 42);
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      values.forEach((value, index) => {
+        const x = 14 + index * ((width - 28) / Math.max(1, values.length - 1));
+        const y = 18 + (max - value) / range * (height - 42);
+        ctx.fillStyle = "#08050d";
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      });
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      const rr = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y, x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x, y + h, rr);
+      ctx.arcTo(x, y + h, x, y, rr);
+      ctx.arcTo(x, y, x + w, y, rr);
+      ctx.closePath();
+    }
+
+    function clearAllData() {
+      state = clone(baseState);
+      saveState({ immediate: true });
+      activeScreen = "dashboard";
+      activeBottom = "home";
+      render();
+      showToast("Dati svuotati.");
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 2300);
+    }
+
+    document.querySelectorAll(".top-tab").forEach((button) => {
+      button.addEventListener("click", () => setScreen(button.dataset.screen));
+    });
+
+    document.querySelectorAll(".nav-button").forEach((button) => {
+      button.addEventListener("click", () => setBottom(button.dataset.bottom));
+    });
+
+    document.querySelectorAll(".rail-dot").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (button.dataset.jump) setScreen(button.dataset.jump);
+        if (button.dataset.bottom) setBottom(button.dataset.bottom);
+      });
+    });
+
+    document.getElementById("helpButton").addEventListener("click", () => {
+      showToast("Schede, storico e volume sono presi dal tuo Excel.");
+    });
+
+    document.getElementById("modeButton").addEventListener("click", () => {
+      if (state.profile.mode === "coach") {
+        state.profile.mode = "athlete";
+        activeScreen = "dashboard";
+        activeBottom = "home";
+        saveState();
+        render();
+        showToast("Modalità atleta.");
+        return;
+      }
+      setScreen("coach");
+    });
+
+    document.getElementById("themeButton").addEventListener("click", () => {
+      state.profile.theme = state.profile.theme === "light" ? "dark" : "light";
+      saveState();
+      render();
+      showToast(state.profile.theme === "light" ? "Tema chiaro attivo." : "Tema scuro attivo.");
+    });
+
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (sessionStorage.getItem("atlas-v75-reload")) return;
+        sessionStorage.setItem("atlas-v75-reload", "1");
+        location.reload();
+      });
+      navigator.serviceWorker.register("./service-worker.js?v=57", { updateViaCache: "none" })
+        .then((registration) => registration.update())
+        .catch(() => {});
+    }
+
+    window.addEventListener("message", (event) => {
+      const frame = document.querySelector(".nutrition-frame");
+      if (frame && event.source !== frame.contentWindow) return;
+      const message = event.data || {};
+      if (message.type === "barbell-diva:nutrition-save") receiveNutritionDashboard(message.state);
+    });
+    window.addEventListener("resize", drawCharts);
+    window.addEventListener("focus", refreshCloudIfSynced);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refreshCloudIfSynced();
+    });
+    initFirebase();
+    render();
+  </script>
+</body>
+</html>
+
+
+
+
+
+

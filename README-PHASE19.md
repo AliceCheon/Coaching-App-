@@ -1,18 +1,30 @@
-# Barbell Diva v112 — Fase 19 Workout Mode Pro
+# Progressioni Fase 20A
 
-Build finale: `v112-phase19` · schema dati `5` · cache PWA `atlas-app-v112-phase19.10`.
+## Supportate con strategia esplicita
 
-Aprire `index.html` tramite hosting HTTP/HTTPS. La Fase 18 approvata è conservata separatamente nella cartella `barbell-diva-v111-fase18-finale-approvata` e nel file `Backup-Barbell-Diva-v111-pre-Phase19.zip`.
+1. `double-progression` — aumenta il carico solo dopo consolidamento del limite alto; altrimenti consolida le ripetizioni.
+2. `linear-load` — incremento di carico con target, aderenza e margine sufficienti.
+3. `linear-reps` — modifica solo le ripetizioni.
+4. `linear-sets` — aggiunge al massimo una serie quando il segnale è stabile.
+5. `rir-progression` — modifica solo il target RIR.
+6. `top-set-backoff` — top set e back-off restano segmenti distinti.
+7. `volume-progression` — modifica prudenziale del numero di serie.
+8. `intensity-progression` — incremento di carico vincolato all'aderenza.
+9. `undulating` — avanza la struttura settimanale già definita senza inventare valori.
+10. `pyramid` — conserva la struttura e propone soltanto l'avanzamento previsto.
+11. `reverse-pyramid` — conserva la struttura e propone soltanto l'avanzamento previsto.
+12. `density` — riduce il recupero di 10 secondi senza cambiare insieme altre dimensioni.
+13. `recovery-decreasing` — riduzione prudente del recupero.
+14. `maintenance` — mantiene la prescrizione.
+15. `deload` — simula riduzione di serie/carico e aumento del margine, senza applicazione automatica.
 
-## Novità principali
+## Non supportate
 
-- Sessione attiva separata dal Logbook, con journal locale, autosave, pausa, ripresa e recupero dopo chiusura.
-- Workout Pro mobile, una serie alla volta, con carico, ripetizioni, RIR, note, warm-up, timer, tecniche, gruppi, sostituzioni, riordino e undo.
-- Salvataggio definitivo nel Logbook solo dopo conferma e dopo verifica del repository locale.
-- Nuova sezione Impostazioni per Diva Bot, Experience, Workout Pro, backup/ripristino, diagnostica e account/sync.
-- Messaggi e personalità originali di Diva Bot preservati; profilo visualizzato come Alice.
-- Correzione del falso errore generico di salvataggio quando il cloud è sincronizzato ma lo spazio locale è insufficiente.
-- Correzione del movimento di Diva Bot al click sulla spunta della serie.
-- Correzione mirata della Scheda F dal 20/07/2026 al 16/07/2026.
+- `custom`: il motore restituisce `unsupportedProgression` e non inventa regole.
 
-Per dettagli tecnici vedere `DATA_SCHEMA_V5.md`, `MIGRATIONS.md`, `MODULARIZATION_PLAN.md`, `CHANGELOG-PHASE19.md` e `TEST-REPORT-PHASE19.md`.
+## Regole conservative comuni
+
+- Una prestazione negativa isolata non diventa automaticamente regressione.
+- Plateau e regressione richiedono più sedute comparabili.
+- Dolore, fatica, readiness bassa, sedute incomplete, sostituzioni e anomalie riducono confidenza o bloccano la progressione.
+- Warm-up, drop set, rest-pause, cluster, myo-reps e parziali non vengono mescolati alle serie normali; top set e back-off restano analizzabili ma distinti.
