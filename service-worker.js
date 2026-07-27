@@ -1,20 +1,14 @@
-const CACHE_NAME = "atlas-app-v142-improvements";
+const CACHE_NAME = "atlas-app-v144";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./nutrizione/index.html",
-  "./photo-store.js",
   "./manifest.webmanifest",
   "./app-icon.png",
   "./app-icon-192.png",
   "./app-icon-512.png",
   "./apple-touch-icon.png",
   "./coach-mascot.svg",
-  "./dashboard-alimentazione-backup-2026-07-15.json",
-  "./food-backup.js",
   "./atlas-nunito-sans.ttf",
-  "./workout-pro.css",
-  "./workout-pro.js",
   "./coach-studio.css",
   "./coach-program-editor-19.8.css",
   "./exercise-library-19.8.js",
@@ -27,7 +21,8 @@ const APP_SHELL = [
   "./coach-ai3-programming.js",
   "./coach-studio.js",
   "./sync-reliability.js",
-  "./programming-engine.js"
+  "./programming-engine.js",
+  "./app-config-v144.js"
 ];
 
 self.addEventListener("install", (event) => {
