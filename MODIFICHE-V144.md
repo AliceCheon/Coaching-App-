@@ -1,10 +1,25 @@
-# Limiti Fase 20A
+# File modificati v144
 
-- Nessuna UI di suggerimenti: è compito della Fase 20B.
-- Nessuna modifica automatica delle schede.
-- Nessuna diagnosi medica; dolore e fatica producono solo cautele e riduzione della confidenza.
-- Progressioni `custom` non interpretate senza una strategia esplicita.
-- Dati insufficienti producono `insufficientData`, mai valori inventati.
-- Serie speciali non equivalenti non vengono aggregate come serie normali.
-- Confronti tra attrezzature, varianti o unità incompatibili vengono ridotti o esclusi.
-- Firebase, Wake Lock, microfono e notifiche dipendono da account, rete e permessi del dispositivo.
+## Applicazione
+
+- `index.html` — rimozione riferimenti ai moduli esclusi, build/cache, backup automatici, diagnostica completa;
+- `service-worker.js` — cache v144 e shell alleggerita;
+- `manifest.webmanifest` — URL v144;
+- `app-config-v144.js` — nuovo modulo di configurazione build/cache/limiti;
+- `.github/workflows/tests.yml` — esecuzione della suite v144.
+
+## Test e documentazione
+
+- `tests/v144-core.test.mjs` — nuova suite coerente con la struttura corrente;
+- `CHANGELOG-V144.md`;
+- `TEST-REPORT-V144.md`;
+- `MODIFICHE-V144.md`.
+
+## File rimossi dal pacchetto
+
+- `nutrizione/index.html`;
+- `food-backup.js`;
+- `photo-store.js`;
+- `workout-pro.js`;
+- `workout-pro.css`;
+- `dashboard-alimentazione-backup-2026-07-15.json`.

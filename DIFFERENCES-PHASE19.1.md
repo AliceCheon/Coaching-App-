@@ -1,15 +1,21 @@
-# Mappa video/spec → build
+# Differenze tra v112 Fase 19 e v113 Fase 19.1
 
-| Richiesta | Implementazione |
-|---|---|
-| Editor denso con giornate compatte | `index.html`, `coach-program-editor-19.8.css` |
-| Settimane rapide | tab settimana dell'editor Coach |
-| Apertura/chiusura giornata | `data-day-toggle`, espandi/chiudi tutte |
-| Modifica inline | `updateInlineExerciseField`, salvataggio debounced |
-| Menu contestuale esercizio | `.coach-row-more` |
-| Progressioni | modal `progression-editor`, badge e rimozione |
-| Anteprima atleta | `coachStudioReferenceHtml`, pannello laterale desktop |
-| Filtro muscolare | `coachExerciseMuscleTokens` |
-| Coach su telefono | escluso intenzionalmente dalla barra mobile |
+| Area | v112 | v113 Fase 19.1 |
+|---|---|---|
+| Modalità | Flusso d'ingresso diverso, renderer sostanzialmente condiviso | Cinque renderer e un dispatcher distinti |
+| Pro | Una serie alla volta | Confermato, con marker DOM dedicato |
+| Compatta | Non realmente distinta | Tutte le serie dell'esercizio corrente e prossimi esercizi |
+| Rapida | Non realmente distinta | Tutti gli esercizi e tutte le serie in forma minima |
+| Libera | Avvio dedicato ma composizione limitata | Composizione, riordino, gruppi, serie e sessione vuota |
+| Cambio vista | Non completo | Pro/Compatta/Rapida senza ricreare la sessione né perdere dati o timer |
+| Diva Bot | Elemento della pagina sottostante | Overlay separato che riusa il bot esistente, trascinabile e persistente |
+| Build/cache | v112 / phase19.10 | `v113-phase19.1` / `atlas-app-v113-phase19.1` |
+| Schema dati | 5 | 5, invariato |
 
-La registrazione è stata usata come riferimento visivo iniziale; il player disponibile nella sessione non ha consentito di scorrere i fotogrammi successivi, quindi i dettagli funzionali sono stati ricavati dal documento di Nina e dal codice reale v144.
+## Compatibilità verificata
+
+- Confronto strutturale delle dichiarazioni nominate: 666 nella base v112, 687 nella build v113, 0 mancanti e 21 aggiunte.
+- Nessuna cancellazione o trasformazione distruttiva dei dati.
+- Lo storico Logbook e il journal della sessione attiva mantengono i percorsi di lettura e scrittura esistenti.
+- Il salvataggio finale continua a passare dalla conferma; `viewMode` viene registrata come informazione aggiuntiva.
+- La migrazione da backup schema 4 verso schema 5 resta disponibile.

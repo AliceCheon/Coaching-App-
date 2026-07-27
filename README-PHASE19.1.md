@@ -1,14 +1,14 @@
-# Inventario iniziale per la pulizia Codex
+# Barbell Diva v113 — Fase 19.1
 
-Nessun file è stato eliminato. Prima della cancellazione serve la conferma esplicita di Alice sui percorsi esatti.
+Correzione funzionale delle modalità Workout e integrazione di Diva Bot nell'overlay della sessione.
 
-## Versioni Barbell Diva individuate
+- Build: `v113-phase19.1`
+- Schema dati: `5` invariato
+- Cache PWA: `atlas-app-v113-phase19.1`
+- Modalità reali: Pro, Compatta, Rapida e Libera
+- Cambio vista senza perdere sessione, valori o timer
+- Diva Bot riusata dall'app, trascinabile e stabile durante le spunte
 
-- `barbell-diva-v111-modal-keyboard-fix` — circa 17,22 MB.
-- `Backup-Barbell-Diva-v111-pre-Phase19.zip` — circa 7,08 MB.
-- `barbell-diva-v113-fase19.1-functional-fix` — circa 17,36 MB.
-- `Barbell-Diva-v113-Fase19.1-Correzione-Funzionale.zip` — circa 7,13 MB.
-- `Backup-Barbell-Diva-v113-pre-Fase19.2.zip` — circa 7,13 MB; identico byte per byte al pacchetto v113 precedente e utile come backup nominato.
-- La cartella di lavoro con nome storico `barbell-diva-v112-fase19-workout-pro` diventa la sorgente della v114 e potrà essere rimossa dopo la verifica del pacchetto finale.
+Aprire `index.html` tramite HTTP/HTTPS. Dopo l'aggiornamento, se una vecchia schermata resta visibile, chiudere e riaprire l'app oppure ricaricare una volta: il nuovo service worker installerà la cache v113.
 
-Strategia consigliata: conservare il pacchetto v114, il backup JSON personale e un solo ZIP milestone; eliminare cartelle build vecchie e ZIP duplicati soltanto dopo che Alice ha verificato apertura e Logbook sul proprio dispositivo.
+Dettagli: `CHANGELOG-PHASE19.1.md`, `DIFFERENCES-PHASE19.1.md` e `TEST-REPORT-PHASE19.1.md`.

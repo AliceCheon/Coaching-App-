@@ -1,16 +1,12 @@
-# Changelog v144 Coach rebuild
+# Changelog Fase 20A
 
-## Correzioni incluse
-
-- rimossa la voce Coach dalla navigazione mobile; il Coach resta desktop-only;
-- mantenuto l'editor compatto a giornate richiudibili con anteprima atleta laterale;
-- preservato il salvataggio inline debounced, senza ridisegnare la pagina a ogni carattere;
-- centralizzato il perimetro del filtro muscolare includendo primari, secondari, stabilizzatori, regione target, priorità e alias;
-- aggiunta gestione esplicita della rimozione della progressione dalla riga esercizio;
-- reso il menu azioni più sicuro in altezza e con rispetto della modalità movimento ridotto;
-- mantenuta la separazione tra moduli legacy e app principale, senza reintrodurre Nutrizione o Workout Pro;
-- aggiunti test statici dedicati e documentazione di consegna GitHub.
-
-## Limiti dichiarati
-
-Non ho dichiarato verificata la sincronizzazione Firebase tra due dispositivi reali: il browser locale ha verificato il percorso UI e l'assenza di errori, ma serve ancora il test con account/rete reali.
+- Build aggiornata a `v115-phase20a`; schema dati 5 conservato.
+- Aggiunto motore isolato `programming-engine.js` e relativo asset offline.
+- Aggiunti modelli normalizzati, comparabilità, aderenza, confidenza, trend e anomalie.
+- Aggiunte strategie esplicite per 15 progressioni esistenti; `custom` resta dichiarata non supportata.
+- Aggiunte API di lettura, simulazione, refresh, invalidazione e decisione per la futura UI 20B.
+- Cache derivata invalidata dopo modifica programmi, salvataggio seduta e ripristino backup.
+- Decisioni del motore incluse nello stato/backup/cloud; risultati derivati ricostruibili e non duplicati.
+- Corretto Workout Pro Pro mobile per ridurre scorrimento e dimensioni eccessive.
+- Corretto il trattamento dei valori mancanti e della readiness 0–10 nelle analisi.
+- Conservate tutte le 496 funzioni dichiarate della v114; aggiunte 46 funzioni tecniche (44 nel motore, 2 di integrazione).
