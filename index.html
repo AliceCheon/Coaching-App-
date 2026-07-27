@@ -6205,6 +6205,7 @@
     };
     let coachModalRenderingPortal = false;
     window.__coachModalDiagnostics = coachProgramUi.modalDiagnostics;
+    window.__coachPerfMetrics = window.__coachPerfMetrics || { globalRenders:0, coachRenderDurations:[], localBoardUpdates:0, localSideUpdates:0 };
 
     function clone(obj) {
       return JSON.parse(JSON.stringify(obj));
@@ -10205,6 +10206,8 @@
     }
 
     function render() {
+      const coachRenderStarted = performance.now();
+      window.__coachPerfMetrics.globalRenders += 1;
       coachProgramUi.modalDiagnostics.globalRenders += 1;
       if (coachProgramUi.modal) coachProgramUi.modalDiagnostics.globalRendersWithModal += 1;
       cancelPremiumMetricAnimations();
@@ -10260,6 +10263,7 @@
       if (lastRenderedScreen && lastRenderedScreen !== activeScreen && premiumMotionEnabled()) { screen.classList.remove("screen-enter"); requestAnimationFrame(() => screen.classList.add("screen-enter")); }
       ensureCoachMascotFallbacks();
       bindScreen();
+      if (activeScreen === "coach") bindCoachEditorDelegation();
       bindModalController();
       bindPremiumMetrics();
       if (activeScreen === "training") {
@@ -10274,10 +10278,13 @@
           noteDivaBotWorkoutInteraction();
         }
       }
-      renderEngine();
-      drawCharts();
+      if (activeScreen !== "coach") {
+        renderEngine();
+        drawCharts();
+      }
       lastRenderedScreen = activeScreen;
       restoreCoachViewport(coachViewport);
+      if (activeScreen === "coach") { window.__coachPerfMetrics.coachRenderDurations.push(Number((performance.now() - coachRenderStarted).toFixed(2))); if (window.__coachPerfMetrics.coachRenderDurations.length > 40) window.__coachPerfMetrics.coachRenderDurations.shift(); }
     }
 
     function renderTrainingOnly() {
@@ -11038,6 +11045,12 @@
     }
 
     function renderCoachAfterFeedback(message = "Aggiorno…") {
+      if (activeScreen === "coach" && document.querySelector(".coach-editor-layout") && /anteprima|pannello|analisi|settimana/i.test(String(message))) {
+        showCoachBusyFeedback(message);
+        renderCoachSidePanelLocal();
+        setTimeout(() => document.getElementById("coachImmediateFeedback")?.remove(), 80);
+        return;
+      }
       showCoachBusyFeedback(message);
       requestAnimationFrame(() => setTimeout(() => {
         render();
@@ -11813,7 +11826,7 @@
         const members=currentGroup?exercises.filter((item)=>item.metadata?.setGroupId===currentGroup):[current];
         members.forEach((item)=>programRepository.updateExercise(programId,sheetId,item.id,{metadata:{...(item.metadata||{}),setType:"exercise",setGroupId:""},prescription:{...(item.prescription||{}),technique:parseTechnique({type:"normal",groupId:""})}},{save:false,forceLocked:true}));
         commitProgramCollection(state.programs,{immediate:true});
-        discardCoachDraft(programId,sheetId); render(); return showToast("Collegamento rimosso.");
+        discardCoachDraft(programId,sheetId); renderCoachProgramBoardLocal(); return showToast("Collegamento rimosso.");
       }
       const wanted=({superset:2,multiset:3,alternative:2,circuit:4})[kind]||2;
       if(exercises.length<2)return showToast("Servono almeno due esercizi per creare un gruppo.");
@@ -11823,7 +11836,7 @@
       const techniqueType=kind==="superset"?"superset":kind==="multiset"||kind==="circuit"?"giant-set":"normal";
       members.forEach((item)=>programRepository.updateExercise(programId,sheetId,item.id,{metadata:{...(item.metadata||{}),setType:kind,setGroupId:groupId},prescription:{...(item.prescription||{}),technique:parseTechnique({type:techniqueType,groupId})}},{save:false,forceLocked:true}));
       commitProgramCollection(state.programs,{immediate:true});
-      discardCoachDraft(programId,sheetId); render();
+      discardCoachDraft(programId,sheetId); renderCoachProgramBoardLocal();
       showToast(`${coachSetGroupLabel(kind)} creata con ${members.length} esercizi.`);
     }
 
@@ -11890,6 +11903,117 @@
       });
       const volume=document.querySelector(".coach-board-volume"); if(volume)volume.outerHTML=coachProgramVolumeHtml(program,next);
       const bot=document.querySelector(".program-board-bot span"); if(bot)bot.textContent=`Controllo la settimana ${next}; i suoni restano spenti finché non li attivi.`;
+    }
+
+    function renderCoachProgramBoardLocal() {
+      if (activeScreen !== "coach") return false;
+      const board = document.querySelector(".coach-program-board");
+      const { program } = ensureCoachProgramSelection();
+      if (!board || !program) return false;
+      const started = performance.now();
+      board.outerHTML = coachProgramBoardHtml(program);
+      const next = document.querySelector(".coach-program-board");
+      if (next) next.dataset.localDelegated = "1";
+      coachProgramUi.modalDiagnostics.localBoardUpdates = (coachProgramUi.modalDiagnostics.localBoardUpdates || 0) + 1;
+      window.__coachPerfMetrics.localBoardUpdates += 1;
+      coachProgramUi.modalDiagnostics.operationDurations.localBoard = Number((performance.now() - started).toFixed(2));
+      return !!next;
+    }
+
+    function bindCoachEditorDelegation() {
+      const editor = document.querySelector(".coach-editor");
+      if (!editor || editor.dataset.localDelegatedBound === "1") return;
+      editor.dataset.localDelegatedBound = "1";
+      editor.addEventListener("input", (event) => {
+        const board = event.target.closest(".coach-program-board");
+        if (board?.dataset.localDelegated !== "1") return;
+        const input = event.target.closest("[data-inline-exercise-field]");
+        if (input) updateInlineExerciseField(input, false);
+      });
+      editor.addEventListener("change", (event) => {
+        const board = event.target.closest(".coach-program-board");
+        if (board?.dataset.localDelegated !== "1") return;
+        const input = event.target.closest("[data-inline-exercise-field]");
+        if (input) return updateInlineExerciseField(input, true);
+        const week = event.target.closest("[data-program-week]");
+        if (week) return switchCoachProgramWeek(week.dataset.programWeek);
+      });
+      editor.addEventListener("click", (event) => {
+        const board = event.target.closest(".coach-program-board");
+        if (board?.dataset.localDelegated !== "1") return;
+        const dayToggle = event.target.closest("[data-day-toggle]");
+        if (dayToggle) {
+          const card = dayToggle.closest("[data-board-sheet]"), panel = card?.querySelector(".coach-program-day-table"), expanded = dayToggle.getAttribute("aria-expanded") !== "true";
+          card?.classList.toggle("is-expanded", expanded); card?.classList.toggle("is-collapsed", !expanded);
+          if (panel) panel.hidden = !expanded;
+          dayToggle.setAttribute("aria-expanded", String(expanded));
+          if (expanded) coachProgramUi.expandedSheetIds.add(dayToggle.dataset.dayToggle); else coachProgramUi.expandedSheetIds.delete(dayToggle.dataset.dayToggle);
+          return;
+        }
+        const week = event.target.closest("[data-program-week]");
+        if (week) return switchCoachProgramWeek(week.dataset.programWeek);
+        const expandAll = event.target.closest("[data-days-expand-all]");
+        if (expandAll) { document.querySelectorAll("[data-board-sheet]").forEach((card) => { card.classList.add("is-expanded"); card.classList.remove("is-collapsed"); card.querySelector(".coach-program-day-table")?.removeAttribute("hidden"); card.querySelector("[data-day-toggle]")?.setAttribute("aria-expanded","true"); coachProgramUi.expandedSheetIds.add(card.dataset.boardSheet); }); return; }
+        const collapseAll = event.target.closest("[data-days-collapse-all]");
+        if (collapseAll) { document.querySelectorAll("[data-board-sheet]").forEach((card) => { card.classList.add("is-collapsed"); card.classList.remove("is-expanded"); card.querySelector(".coach-program-day-table")?.setAttribute("hidden",""); card.querySelector("[data-day-toggle]")?.setAttribute("aria-expanded","false"); coachProgramUi.expandedSheetIds.delete(card.dataset.boardSheet); }); return; }
+        const add = event.target.closest("[data-program-board-add-kind]");
+        if (add) { selectCoachSheet(add.dataset.sheetId); coachProgramUi.pendingAddKind = add.dataset.programBoardAddKind || "exercise"; return openCoachModalLocally("exercise-library", { sheetId:add.dataset.sheetId }); }
+        const note = event.target.closest("[data-inline-note-open]");
+        if (note) { selectCoachSheet(note.dataset.sheetId); return openCoachModalLocally("exercise-note", { sheetId:note.dataset.sheetId, exerciseId:note.dataset.inlineNoteOpen, weekNumber:Number(note.dataset.weekNumber)||1 }); }
+        const replace = event.target.closest("[data-inline-replace]");
+        if (replace) { selectCoachSheet(replace.dataset.sheetId); coachProgramUi.pendingAddKind="exercise"; return openCoachModalLocally("exercise-library", { sheetId:replace.dataset.sheetId, replaceExerciseId:replace.dataset.inlineReplace }); }
+        const copy = event.target.closest("[data-inline-copy]");
+        if (copy) { const exercise=programRepository.getExerciseById(coachProgramUi.programId,copy.dataset.sheetId,copy.dataset.inlineCopy); if(exercise){coachProgramUi.clipboardExercise=clone(exercise);showToast("Esercizio copiato: scegli la giornata e premi Incolla.");} return; }
+        const paste = event.target.closest("[data-inline-paste]");
+        if (paste && coachProgramUi.clipboardExercise) { const source=coachProgramUi.clipboardExercise, now=new Date().toISOString(); const result=programRepository.createExercise(coachProgramUi.programId,paste.dataset.sheetId,{...clone(source),id:newEntityId("exercise"),name:`${source.name} copia`,createdAt:now,updatedAt:now,deletedAt:""},{immediate:true}); if(result.ok){showToast("Esercizio incollato.");renderCoachProgramBoardLocal();} return; }
+        const progression = event.target.closest("[data-progression-open]");
+        if (progression) { selectCoachSheet(progression.dataset.sheetId || coachProgramUi.sheetId); return openCoachModalLocally("progression-editor", { programId:coachProgramUi.programId, sheetId:progression.dataset.sheetId, exerciseId:progression.dataset.progressionOpen, weekNumber:Number(progression.dataset.progressionWeekNumber)||0 }); }
+        const actionButton = event.target.closest("[data-exercise-action]");
+        if (actionButton) {
+          const action = actionButton.dataset.exerciseAction, id = actionButton.dataset.exerciseId;
+          if (actionButton.dataset.sheetId) selectCoachSheet(actionButton.dataset.sheetId);
+          const { program, sheet } = ensureCoachProgramSelection(), exercise = programRepository.getExerciseById(program?.id, sheet?.id, id);
+          if (!exercise) return;
+          if (action === "details") return openCoachModalLocally("exercise-details", { sheetId:sheet.id, exerciseId:id });
+          if (action === "delete") return openCoachModalLocally("exercise-delete", { exerciseIds:[id] });
+          if (action === "copy") return openCoachModalLocally("exercise-transfer", { exerciseIds:[id] });
+          if (action === "up" || action === "down") { reorderOneExercise(id, action === "up" ? -1 : 1); return renderCoachProgramBoardLocal(); }
+          rememberExerciseState(program.id, sheet.id); let result;
+          if (action === "duplicate") result = programRepository.duplicateExercise(program.id, sheet.id, id, { immediate:true });
+          if (action === "main") result = programRepository.updateExercise(program.id, sheet.id, id, { metadata:{ ...(exercise.metadata||{}), mainLift:!exercise.metadata?.mainLift } }, { immediate:true, forceLocked:true });
+          if (action === "lock") result = programRepository.updateExercise(program.id, sheet.id, id, { metadata:{ ...(exercise.metadata||{}), locked:!exercise.metadata?.locked } }, { immediate:true, forceLocked:true });
+          discardCoachDraft(program.id, sheet.id); if (!result?.ok) showToast("Operazione non completata."); else renderCoachProgramBoardLocal();
+          return;
+        }
+        const removeProgression = event.target.closest("[data-progression-remove]");
+        if (removeProgression) {
+          const sheetId=removeProgression.dataset.sheetId||coachProgramUi.sheetId, current=programRepository.getExerciseById(coachProgramUi.programId,sheetId,removeProgression.dataset.progressionRemove);
+          if (current) { programRepository.updateExercise(coachProgramUi.programId,sheetId,current.id,{progression:{...(current.progression||{}),templateId:"",rule:null,weeks:[],manualWeeks:[]}},{immediate:true,forceLocked:true}); renderCoachProgramBoardLocal(); showToast(`Progressione rimossa da ${current.name||"esercizio"}.`); }
+          return;
+        }
+        const setGroup = event.target.closest("[data-set-group-action], [data-set-group-quick]");
+        if (setGroup) return applyCoachSetGroupAction(setGroup.dataset.sheetId, setGroup.dataset.exerciseId || setGroup.dataset.setGroupQuick, setGroup.dataset.setGroupAction || (setGroup.classList.contains("active") ? "unlink" : "superset"));
+      });
+    }
+
+    function renderCoachSidePanelLocal() {
+      const layout = document.querySelector(".coach-editor-layout");
+      if (!layout || !document.querySelector(".coach-editor")) return false;
+      const studio = coachStudioState();
+      layout.classList.toggle("reference-open", !!studio.referenceOpen);
+      layout.classList.toggle("ai-open", !!studio.aiOpen);
+      let side = layout.querySelector(".coach-editor-side");
+      if (!studio.referenceOpen && !studio.aiOpen) { side?.remove(); return true; }
+      if (!side) { side = document.createElement("aside"); side.className = "coach-editor-side"; layout.appendChild(side); }
+      side.innerHTML = `${studio.referenceOpen ? coachStudioReferenceHtml() : ""}${studio.aiOpen ? coachAi2PageHtml(true) : ""}`;
+      side.querySelector("[data-studio-panel-close]")?.addEventListener("click", () => { const panel=side.querySelector("[data-studio-panel-close]")?.dataset.studioPanelClose; if(panel){studio[`${panel}Open`]=false;renderCoachSidePanelLocal();} });
+      side.querySelector("[data-studio-reference-program]")?.addEventListener("change", (event) => { studio.referenceProgramId=event.target.value; renderCoachSidePanelLocal(); });
+      side.querySelector("[data-studio-reference-week]")?.addEventListener("change", (event) => { coachProgramUi.referenceWeek=Number(event.target.value)||1; renderCoachSidePanelLocal(); });
+      if (studio.aiOpen) bindAthleteIntelligenceUi();
+      side.dataset.localUpdatedAt=String(performance.now());
+      coachProgramUi.modalDiagnostics.localSideUpdates = (coachProgramUi.modalDiagnostics.localSideUpdates || 0) + 1;
+      window.__coachPerfMetrics.localSideUpdates += 1;
+      return true;
     }
 
     function programStatusLabel(status) {
@@ -14768,9 +14892,9 @@
         const exercise = programRepository.getExerciseById(program?.id, sheet?.id, id);
         if (!exercise) return;
         if (action === "details") { openCoachModalLocally("exercise-details", { sheetId:sheet?.id, exerciseId:id }); return; }
-        if (action === "copy") { openCoachModal("exercise-transfer", { exerciseIds: [id] }); render(); return; }
-        if (action === "delete") { openCoachModal("exercise-delete", { exerciseIds: [id] }); render(); return; }
-        if (action === "up" || action === "down") { reorderOneExercise(id, action === "up" ? -1 : 1); render(); return; }
+         if (action === "copy") { openCoachModalLocally("exercise-transfer", { exerciseIds: [id] }); return; }
+         if (action === "delete") { openCoachModalLocally("exercise-delete", { exerciseIds: [id] }); return; }
+         if (action === "up" || action === "down") { reorderOneExercise(id, action === "up" ? -1 : 1); renderCoachProgramBoardLocal(); return; }
         rememberExerciseState(program.id, sheet.id);
         let result;
         if (action === "duplicate") result = programRepository.duplicateExercise(program.id, sheet.id, id, { immediate: true });
@@ -14778,7 +14902,7 @@
         if (action === "lock") result = programRepository.updateExercise(program.id, sheet.id, id, { metadata: { ...exercise.metadata, locked: !exercise.metadata?.locked } }, { immediate: true, forceLocked: true });
         discardCoachDraft(program.id, sheet.id);
         if (!result?.ok) showToast("Operazione non completata.");
-        render();
+         renderCoachProgramBoardLocal();
       }));
       document.querySelectorAll("[data-exercise-compare]").forEach((button) => button.addEventListener("click", () => {
         openCoachModal("biomechanics-compare", { exerciseIds:[button.dataset.exerciseCompare] });
@@ -15914,7 +16038,7 @@
       modalRoot.dataset.localBound="1";
       coachProgramUi.modalDiagnostics.listenerBinds += 1;
       host.querySelectorAll("[data-coach-modal-close]").forEach((button)=>button.addEventListener("click",()=>{closeCoachModal();renderCoachModalPortal();}));
-      host.querySelector("[data-coach-modal-save]")?.addEventListener("click",()=>{saveCoachUiModal();if(!coachProgramUi.modal)render();});
+       host.querySelector("[data-coach-modal-save]")?.addEventListener("click",()=>{saveCoachUiModal();if(!coachProgramUi.modal)refreshCoachAfterLocalModal();});
       host.querySelector("[data-progression-remove]")?.addEventListener("click",(event)=>{
         const {program}=ensureCoachProgramSelection(),sheet=programRepository.getSheetById(program?.id,coachProgramUi.modalData.sheetId||coachProgramUi.sheetId),id=event.currentTarget.dataset.progressionRemove,current=programRepository.getExerciseById(program?.id,sheet?.id,id);
         if(!current)return;programRepository.updateExercise(program.id,sheet.id,id,{progression:{...(current.progression||{}),templateId:"",rule:null,weeks:[],manualWeeks:[]}},{immediate:true,forceLocked:true});closeCoachModal();showToast(`Progressione rimossa da ${current.name}.`);render();
@@ -15935,7 +16059,7 @@
         const weekIndex=confirmation.indices[confirmation.cursor];confirmation.decisions[weekIndex]=choice.dataset.progressionConfirmChoice;confirmation.cursor+=1;
         if(confirmation.cursor<confirmation.indices.length)return renderProgressionConfirmation(host);
         host.querySelector("[data-progression-confirm-panel]").hidden=true;
-        saveCoachUiModal();if(!coachProgramUi.modal)render();
+         saveCoachUiModal();if(!coachProgramUi.modal)refreshCoachAfterLocalModal();
       });
       const updateLibraryResults=()=>{
         const list=host.querySelector(".technical-picker-list");if(!list)return;
@@ -15948,13 +16072,19 @@
       host.querySelector("#exerciseLibrarySpecific")?.addEventListener("change",(event)=>{coachProgramUi.librarySpecific=event.target.value;updateLibraryResults();});
       host.querySelector(".technical-picker-list")?.addEventListener("click",(event)=>{
         const profileButton=event.target.closest("[data-library-profile]");
-        if(profileButton){const profile=technicalExerciseLibrary().find((item)=>item.id===profileButton.dataset.libraryProfile),result=profile?addTechnicalExerciseToActiveSheet(profile):{ok:false};if(result.ok){const replacing=!!coachProgramUi.modalData?.replaceExerciseId;closeCoachModal();showToast(replacing?"Esercizio sostituito; dati conservati.":"Esercizio aggiunto.");render();}return;}
+         if(profileButton){const profile=technicalExerciseLibrary().find((item)=>item.id===profileButton.dataset.libraryProfile),result=profile?addTechnicalExerciseToActiveSheet(profile):{ok:false};if(result.ok){const replacing=!!coachProgramUi.modalData?.replaceExerciseId;closeCoachModal();showToast(replacing?"Esercizio sostituito; dati conservati.":"Esercizio aggiunto.");refreshCoachAfterLocalModal();}return;}
         const info=event.target.closest("[data-lab-open]");if(info)openCoachModalLocally("technical-profile",{exerciseId:info.dataset.labOpen});
       });
     }
 
     function openCoachModalLocally(type,data={}) {
       openCoachModal(type,data);renderCoachModalPortal();bindLocallyRenderedCoachModal();bindModalController();
+    }
+
+    function refreshCoachAfterLocalModal() {
+      renderCoachModalPortal();
+      if (activeScreen === "coach" && document.querySelector(".coach-program-board")) renderCoachProgramBoardLocal();
+      else render();
     }
 
     function handleProgramAction(action) {
