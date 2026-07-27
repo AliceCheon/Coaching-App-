@@ -7,24 +7,25 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v142-improvements">
+  <link rel="manifest" href="manifest.webmanifest?v=v144">
   <link rel="icon" href="app-icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <!-- Preload critical font for faster text rendering -->
   <link rel="preload" href="atlas-nunito-sans.ttf" as="font" type="font/ttf" crossorigin="crossorigin" fetchpriority="high">
-  <link rel="stylesheet" href="coach-studio.css?v=v142-improvements">
-  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v142-improvements">
-  <script src="exercise-library-19.8.js?v=v142-improvements"></script>
-  <script src="master-exercise-library.js?v=v142-improvements"></script>
-  <script src="athlete-context.js?v=v142-improvements"></script>
-  <script src="coach-ai-engine-2.js?v=v142-improvements"></script>
-  <script src="knowledge-graph.js?v=v142-improvements"></script>
-  <script src="decision-rules.js?v=v142-improvements"></script>
-  <script src="decision-engine.js?v=v142-improvements"></script>
-  <script src="coach-ai3-programming.js?v=v142-improvements"></script>
-  <script type="module" src="programming-engine.js?v=v142-improvements"></script>
-  <script type="module" src="sync-reliability.js?v=v142-improvements"></script>
-  <script src="coach-studio.js?v=v142-improvements"></script>
+  <link rel="stylesheet" href="coach-studio.css?v=v144">
+  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v144">
+  <script src="exercise-library-19.8.js?v=v144"></script>
+  <script src="master-exercise-library.js?v=v144"></script>
+  <script src="athlete-context.js?v=v144"></script>
+  <script src="coach-ai-engine-2.js?v=v144"></script>
+  <script src="knowledge-graph.js?v=v144"></script>
+  <script src="decision-rules.js?v=v144"></script>
+  <script src="decision-engine.js?v=v144"></script>
+  <script src="coach-ai3-programming.js?v=v144"></script>
+  <script type="module" src="programming-engine.js?v=v144"></script>
+  <script type="module" src="sync-reliability.js?v=v144"></script>
+  <script src="app-config-v144.js?v=v144"></script>
+  <script src="coach-studio.js?v=v144"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -3372,6 +3373,7 @@
     .phase11-hero p { margin:4px 0; }
     .phase11-summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:10px; }
     .phase11-summary-card { display:flex; align-items:center; gap:10px; padding:13px; border-top:2px solid var(--summary-accent); }
+    .phase11-summary-grid > .phase11-summary-card:nth-child(5) { display:none; }
     .phase11-summary-card > div { min-width:0; }
     .phase11-summary-card span:not(.summary-icon), .phase11-summary-card strong, .phase11-summary-card small { display:block; }
     .phase11-summary-card span:not(.summary-icon) { color:var(--text-secondary); font-size:.68rem; }
@@ -4827,24 +4829,14 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="./photo-store.js?v=v142-improvements"></script>
-  <script src="./food-backup.js"></script>
   <script>
     const STORE_KEY = "alice-method-app.v8";
     const COACH_DRAFT_RECOVERY_PREFIX = `${STORE_KEY}.coachDraft.`;
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = "v142-improvements";
-    const FIREBASE_CONFIG = {
-      apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
-      authDomain: "barbell-diva.firebaseapp.com",
-      projectId: "barbell-diva",
-      storageBucket: "barbell-diva.firebasestorage.app",
-      messagingSenderId: "411536425865",
-      appId: "1:411536425865:web:17bcd9f10b6ba1a9b49758",
-      measurementId: "G-FNKXLKQFT8"
-    };
+    const APP_BUILD = window.BarbellDivaV144Config?.build || "v144";
+    const FIREBASE_CONFIG = window.BarbellDivaV144Config?.firebase || {};
     const CLOUD_COLLECTION = "barbellDivaAccounts";
     const APP_NAME = "Barbell diva";
     const DIVA_QUOTES = [
@@ -5865,7 +5857,7 @@
     const BACKUP_SCHEMA_VERSION = 1;
     const BACKUP_HISTORY_KEY = "alice-method-app.v8.backup-history.v1";
     const BACKUP_BUILD_KEY = "alice-method-app.v8.backup-build.v1";
-    const MAX_AUTOMATIC_BACKUPS = 20;
+    const MAX_AUTOMATIC_BACKUPS = 5;
     const PRE_V55_BACKUP_KEY = "alice-method-app.pre-v55-backup";
     const PRE_WEEK_CONSOLIDATION_BACKUP_KEY = "barbell-diva.pre-week-consolidation-backup";
     const PROGRAM_STATUSES = new Set(["draft", "available", "active", "archived", "deleted"]);
@@ -14141,7 +14133,56 @@
       document.querySelector("[data-ai3-undo]")?.addEventListener("click",()=>{const u=coachProgramUi.ai3Undo;if(!u)return;const current=programRepository.getProgramById(u.programId);if(!current)return showToast("Programma da ripristinare non trovato.");if(window.BarbellDivaCoachAI3.hash(current)!==u.afterFingerprint)return showToast("Il programma è cambiato dopo l’intervento: annullamento automatico bloccato per proteggere le modifiche successive.");const result=programRepository.updateProgram(u.programId,{sheets:u.beforeProgram.sheets},{immediate:true});if(!result.ok)return showToast("Ripristino non riuscito.");const previous=(state.coachAi3?.history||[]).find(x=>x.id===u.historyId)||{};coachAi3HistoryRecord({...previous,id:u.historyId,programId:u.programId,status:"undone",undoneAt:new Date().toISOString()});coachProgramUi.ai3Undo=null;coachAi2Cache={fingerprint:"",result:null};saveState({immediate:true});showToast("Modifica Coach AI annullata: programma ripristinato.");render();});
     }
 
+    async function createV144DiagnosticReport() {
+      let cacheNames = [];
+      try { cacheNames = await caches.keys(); } catch (error) { cacheNames = [`non disponibile: ${error?.message || error}`]; }
+      let storage = "non disponibile";
+      try { storage = `${new Blob([JSON.stringify(localStorage)]).size} byte localStorage`; } catch (error) { storage = "non leggibile"; }
+      let quota = "non disponibile";
+      try { const estimate = await navigator.storage?.estimate?.(); if (estimate) quota = `${estimate.usage || 0}/${estimate.quota || 0} byte`; } catch (error) {}
+      const sync = typeof reliableSyncStats === "function" ? reliableSyncStats() : {};
+      const report = [
+        `Barbell Diva ${APP_BUILD}`,
+        `Schema dati: ${DATA_SCHEMA_VERSION}`,
+        `Cache: ${cacheNames.join(", ") || "nessuna"}`,
+        `Service worker: ${navigator.serviceWorker?.controller ? "attivo" : "non controllato"}`,
+        `Firebase: ${state.profile.account?.syncReady ? "pronto" : "solo locale"}`,
+        `Rete: ${navigator.onLine ? "online" : "offline"}`,
+        `Ultimo salvataggio: ${state.meta?.updatedAt || state.training?.lastSavedMessage || "non disponibile"}`,
+        `Ultima sincronizzazione: ${state.profile.account?.lastCloudSyncAt || "non disponibile"}`,
+        `Elementi in coda: ${Number(sync.pending || 0) + Number(sync.syncing || 0) + Number(sync.failed || 0)}`,
+        `Backup validi: ${readBackupHistory().length}`,
+        `Spazio localStorage: ${storage}`,
+        `Spazio stimato browser: ${quota}`,
+        `Programmi/schede/esercizi: ${state.programs?.length || 0}/${state.programs?.reduce((sum, p) => sum + (p.sheets?.length || 0), 0) || 0}/${state.training?.exercises?.length || 0}`
+      ].join("\\n");
+      return report;
+    }
+
+    function bindV144Diagnostics() {
+      const page = [...document.querySelectorAll(".coach-studio-page")].find((item) => /Diagnostica/.test(item.textContent || ""));
+      if (!page || page.querySelector("[data-diagnostics-full-check]")) return;
+      const host = page.querySelector(".coach-studio-card") || page;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "gold-button";
+      button.dataset.diagnosticsFullCheck = "true";
+      button.textContent = "Controllo completo";
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        button.textContent = "Controllo in corso…";
+        try {
+          const report = await createV144DiagnosticReport();
+          await navigator.clipboard?.writeText?.(report);
+          showToast("Controllo completato: report copiato negli appunti.");
+        } catch (error) { showToast(`Controllo non completato: ${error?.message || error}`, "error"); }
+        finally { button.disabled = false; button.textContent = "Controllo completo"; }
+      });
+      host.appendChild(button);
+    }
+
     function bindScreen() {
+      bindV144Diagnostics();
       bindGlobalDivaBot();
       bindAnimatedTooltips();
       bindAthleteIntelligenceUi();
@@ -15432,12 +15473,19 @@
       });
       saveState({ cloud: false, immediate: true });
       renderTrainingOnly();
+      playDivaBotSound("soft");
       showToast("Allenamento verificato sul dispositivo. Sincronizzo...");
       let cloudSaved = false;
       if (cloudUser && dbService && state.profile.account?.syncReady) {
         clearTimeout(cloudSaveTimer);
-        savedSession.cloudSyncedAt = new Date().toISOString();
-        cloudSaved = await saveCloudState();
+        try {
+          savedSession.cloudSyncedAt = new Date().toISOString();
+          cloudSaved = await saveCloudState();
+        } catch (error) {
+          delete savedSession.cloudSyncedAt;
+          reliableSyncUi.lastError = String(error?.message || "Sincronizzazione rimandata");
+          cloudSaved = false;
+        }
       }
       if (cloudSaved) {
         persistWorkoutJournalSession(savedSession);
