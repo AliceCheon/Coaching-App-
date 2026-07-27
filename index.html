@@ -12,7 +12,7 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <!-- Preload critical font for faster text rendering -->
   <link rel="preload" href="atlas-nunito-sans.ttf" as="font" type="font/ttf" crossorigin="crossorigin" fetchpriority="high">
-  <link rel="stylesheet" href="coach-studio.css?v=v144">
+  <link rel="stylesheet" href="coach-studio.css?v=video-structure-1">
   <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v144">
   <script src="exercise-library-19.8.js?v=v144"></script>
   <script src="master-exercise-library.js?v=v144"></script>
@@ -4735,6 +4735,9 @@
     .missing-field-guide small { color:var(--muted); line-height:1.35; }
     .missing-field-guide em { padding:3px 7px; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-size:.7rem; font-style:normal; }
     @media (max-width:700px) { .exercise-detail-status,.progression-confirm-compare { grid-template-columns:1fr; } }
+  </style>
+  <style id="coach-video-layout-overrides">
+    @media (min-width:981px){body.coach-mode .stage{grid-template-columns:minmax(0,1fr)!important;padding:14px!important}body.coach-mode .desktop-rail{display:none!important}body.coach-mode .phone-shell{grid-column:1!important}}
   </style>
 </head>
 <body>
@@ -11008,6 +11011,21 @@
       ["diagnostics","⚙","Diagnostica"], ["settings","☰","Impostazioni Coach"]
     ];
 
+    const COACH_VIDEO_NAV = [
+      ["Home", "dashboard", "⌂", []],
+      ["Clienti", "athlete", "♟", []],
+      ["Allenamento", "programs", "⚑", [["Programmi", "programs"], ["Completato", "programs"], ["Workout", "programs"], ["Progressioni", "progressions"], ["Libreria esercizi", "library"]]],
+      ["Nutrizione", "nutrition", "⚑", []],
+      ["Agenda", "agenda", "▦", []],
+      ["Questionari", "questionnaires", "✓", []],
+      ["Prenotazioni", "bookings", "▣", []],
+      ["Pacchetti", "packages", "♧", []],
+      ["Bacheca", "board", "⚑", []],
+      ["Business", "business", "▤", []],
+      ["Abbonamenti", "subscriptions", "▭", []],
+      ["Impostazioni", "settings", "⚙", []]
+    ];
+
     function coachStudioState() {
       state.coach.studio = window.BarbellDivaCoachStudio.normalizeStudio(state.coach.studio);
       return state.coach.studio;
@@ -11086,7 +11104,9 @@
       const studio = coachStudioState();
       const route = studio.route;
       const parent = route === "program" ? "programs" : route === "questionnaire" ? "questionnaires" : route;
+      const videoMenu = COACH_VIDEO_NAV.map(([label,key,icon,children])=>`<section class="coach-video-nav-group"><button type="button" class="coach-video-nav-item ${(key===parent||children.some(([,childKey])=>childKey===parent))?"active":""}" data-coach-studio-route="${key}"><span>${icon}</span><strong>${escapeHtml(label)}</strong>${children.length?`<em>${(key===parent||children.some(([,childKey])=>childKey===parent))?"⌃":"⌄"}</em>`:""}</button>${children.length&&(key===parent||parent==="progressions"||parent==="library")?`<div class="coach-video-subnav">${children.map(([childLabel,childKey])=>`<button type="button" class="${childKey===parent?"active":""}" data-coach-studio-route="${childKey}">${escapeHtml(childLabel)}</button>`).join("")}</div>`:""}</section>`).join("");
       return `<div class="coach-studio-shell">
+        <aside class="coach-video-sidebar" aria-label="Menu Coach"><div class="coach-video-logo"><img src="app-icon-192.png" alt=""><strong>Coach Studio</strong><button type="button" aria-label="Comprimi menu">«</button></div><div class="coach-video-quick"><span>⌕</span><span>♟</span></div><nav>${videoMenu}</nav><button class="coach-video-start" type="button" data-coach-studio-route="programs">🚀 Per iniziare</button></aside>
         <main class="coach-studio-main">
           <header class="coach-studio-topbar"><div class="coach-studio-breadcrumb"><strong>Coach Studio</strong><span>/</span><strong>${escapeHtml(coachStudioTitle(route))}</strong></div><div class="coach-studio-top-actions">${route==="programs"?`<button class="gold-button" type="button" data-program-action="new">+ Programma</button>`:""}</div><nav class="coach-studio-workspace-nav" aria-label="Strumenti Coach Studio">${COACH_STUDIO_NAV.map(([key,,label])=>`<button type="button" class="${parent===key?"active":""}" data-coach-studio-route="${key}">${escapeHtml(label)}</button>`).join("")}</nav></header>
           ${content}
@@ -11245,10 +11265,10 @@
       const selection = ensureCoachProgramSelection();
       if (!selection.program) return coachStudioProgramsHtml();
       studio.programId = selection.program.id;
-      studio.editorView="weekly"; const sideOpen=studio.referenceOpen||studio.aiOpen;
+      studio.editorView="weekly"; const sideOpen=true;
       const linked=activeAthleteIntelligence(selection.program.id);
       const contextSummary=`<div class="athlete-context-strip program-context-summary"><span><b>Atleta</b>${escapeHtml(linked.athlete?.general?.name||"Non collegato")}</span><span><b>Strategia</b>${escapeHtml(linked.strategy?.name||"Scheda libera")}</span><span><b>Blocco</b>${escapeHtml(linked.programLink?.blockType||linked.strategy?.blockType||"libero")}</span><span><b>Nutrizione</b>${escapeHtml(linked.nutrition?.phase||"non definita")}</span><button class="ghost-button" data-coach-studio-route="strategy">Modifica collegamento</button></div>`;
-      const editorBody=`${contextSummary}<div class="coach-editor-layout unified ${studio.referenceOpen?"reference-open":""} ${studio.aiOpen?"ai-open":""}"><div>${coachProgramBoardHtml(selection.program)}</div>${sideOpen?`<aside class="coach-editor-side">${studio.referenceOpen?coachStudioReferenceHtml():""}${studio.aiOpen?coachAi2PageHtml(true):""}</aside>`:""}</div>`;
+      const editorBody=`${contextSummary}<div class="coach-editor-layout unified reference-open ${studio.aiOpen?"ai-open":""}"><div>${coachProgramBoardHtml(selection.program)}</div><aside class="coach-editor-side">${coachStudioReferenceHtml()}${studio.aiOpen?coachAi2PageHtml(true):""}</aside></div><button type="button" class="coach-statistics-fab" data-coach-volume-focus aria-label="Statistiche programma">▥</button>`;
       return `<section class="coach-studio-page coach-editor coach-editor-weekly">${coachStudioPageHead("Editor programma",selection.program.name,"Un’unica tavola settimanale: modifica, progressioni e controlli restano nello stesso punto.",`<button class="ghost-button" data-coach-studio-route="programs">← Programmi</button>`)}<div class="coach-editor-toolbar"><div class="coach-editor-save-state"><span class="save-dot"></span><strong data-coach-save-label>${coachProgramUi.saveStatus==="saving"?"Salvataggio…":"Salvato"}</strong></div><div class="quick-actions"><button class="gold-button" data-program-action="save">Salva</button><button class="ghost-button" data-program-list-action="save-as" data-program-id="${escapeHtml(selection.program.id)}">Salva come</button><button class="ghost-button" data-program-list-action="duplicate" data-program-id="${escapeHtml(selection.program.id)}">Duplica</button><button class="ghost-button" data-program-action="edit">Informazioni</button><button class="ghost-button ${studio.referenceOpen?"active":""}" data-studio-panel-toggle="reference">Anteprima atleta</button><button class="gold-button ${studio.aiOpen?"active":""}" data-studio-panel-toggle="ai">${coachMascotHtml()} Coach AI</button></div></div>${editorBody}${coachUiModalHtml()}</section>`;
     }
 
@@ -14321,6 +14341,7 @@
         button.addEventListener("click", () => setScreen(button.dataset.screenTarget));
       });
       document.querySelectorAll("[data-coach-studio-route]").forEach((button) => button.addEventListener("click", () => coachStudioNavigate(button.dataset.coachStudioRoute)));
+      document.querySelector("[data-coach-volume-focus]")?.addEventListener("click",()=>document.querySelector(".coach-board-volume")?.scrollIntoView({behavior:"smooth",block:"center"}));
       document.querySelector("[data-coach-studio-menu]")?.addEventListener("click", () => { const studio=coachStudioState(); studio.sidebarOpen = !studio.sidebarOpen; render(); });
       document.querySelectorAll("[data-coach-studio-program]").forEach((button) => button.addEventListener("click", () => coachStudioNavigate("program", { programId:button.dataset.coachStudioProgram })));
       document.querySelector("[data-coach-folder-new]")?.addEventListener("click",()=>{openCoachModal("folder-new");render();});

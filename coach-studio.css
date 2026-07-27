@@ -365,3 +365,25 @@ body.wp19-open #globalDivaBotHost{display:none}
 .sync-success{margin:12px 0 0;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--success) 12%,var(--card));border:1px solid color-mix(in srgb,var(--success) 35%,var(--line));color:color-mix(in srgb,var(--success) 76%,var(--text));font-weight:800}
 .coach-stats-card small,.coach-statistics small,.coach-studio-kpi small,.coach-kpi small{color:color-mix(in srgb,var(--text) 72%,var(--muted));font-weight:750}
 @media(max-width:720px){.duplicate-resolution-card{grid-template-columns:1fr}.duplicate-resolution-card .quick-actions{display:grid;grid-template-columns:1fr 1fr}}
+
+/* Coach video layout: palette Barbell Diva, structure inspired by the reference screenshots. */
+@media(min-width:981px){
+  .coach-studio-shell{display:grid!important;grid-template-columns:184px minmax(0,1fr)!important;gap:16px!important;align-items:start!important}
+  .coach-video-sidebar{position:sticky;top:0;display:flex;flex-direction:column;min-height:calc(100dvh - 28px);padding:12px 9px;background:linear-gradient(180deg,color-mix(in srgb,var(--purple-primary) 86%,var(--surface) 14%),color-mix(in srgb,var(--pink-primary) 42%,var(--surface) 58%));border-radius:18px;box-shadow:var(--shadow-raised);color:#fff}
+  .coach-video-logo{display:grid;grid-template-columns:30px 1fr 24px;align-items:center;gap:7px;padding:3px 2px 14px;border-bottom:1px solid rgba(255,255,255,.22)}
+  .coach-video-logo img{width:28px;height:28px;object-fit:contain}.coach-video-logo strong{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase}.coach-video-logo button{border:0;background:transparent;color:#fff;font-size:1rem;cursor:pointer}
+  .coach-video-quick{display:flex;gap:22px;padding:12px 10px 9px;font-size:1.05rem;border-bottom:1px solid rgba(255,255,255,.22)}
+  .coach-video-sidebar nav{display:grid;gap:2px;padding-top:9px}.coach-video-nav-group{display:grid;gap:2px}
+  .coach-video-nav-item{display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:7px;width:100%;padding:8px 7px;border:0;border-radius:9px;background:transparent;color:#fff;text-align:left;font:inherit;font-size:.72rem;cursor:pointer}.coach-video-nav-item span{font-size:.9rem;text-align:center}.coach-video-nav-item em{font-style:normal;font-size:.75rem}.coach-video-nav-item:hover,.coach-video-nav-item.active{background:color-mix(in srgb,var(--pink-primary) 70%,#fff 30%);box-shadow:inset 3px 0 0 var(--pink-soft)}
+  .coach-video-subnav{display:grid;gap:2px;padding:1px 0 5px 27px}.coach-video-subnav button{border:0;background:transparent;color:rgba(255,255,255,.86);padding:6px 7px;border-radius:7px;text-align:left;font:inherit;font-size:.68rem;cursor:pointer}.coach-video-subnav button:hover,.coach-video-subnav button.active{background:rgba(255,255,255,.16);color:#fff;font-weight:800}
+  .coach-video-start{margin-top:auto;border:0;border-radius:9px;background:var(--surface);color:var(--purple-primary);padding:8px 7px;font:inherit;font-size:.7rem;font-weight:850;cursor:pointer}.coach-video-start:hover{background:var(--pink-soft);color:#fff}
+  .coach-studio-main{min-width:0!important}.coach-studio-workspace-nav{display:none!important}
+}
+@media(max-width:980px){.coach-video-sidebar{display:none!important}}
+@media(min-width:981px){
+  body.coach-mode .desktop-rail{display:none!important}
+  body.coach-mode .stage{grid-template-columns:minmax(0,1fr)!important;padding:14px!important}
+  body.coach-mode .phone-shell{grid-column:1!important}
+  .coach-statistics-fab{position:fixed;right:28px;bottom:26px;z-index:60;width:42px;height:42px;border:0;border-radius:11px;background:linear-gradient(135deg,var(--pink-primary),var(--purple-primary));color:#fff;font-size:1.1rem;box-shadow:0 10px 24px color-mix(in srgb,var(--pink-primary) 30%,transparent);cursor:pointer}
+  .coach-statistics-fab:hover{transform:translateY(-2px);filter:brightness(1.08)}
+}
