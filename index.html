@@ -12,7 +12,7 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <!-- Preload critical font for faster text rendering -->
   <link rel="preload" href="atlas-nunito-sans.ttf" as="font" type="font/ttf" crossorigin="crossorigin" fetchpriority="high">
-  <link rel="stylesheet" href="coach-studio.css?v=coach-nav-clean-5">
+  <link rel="stylesheet" href="coach-studio.css?v=coach-nav-clean-6">
   <link rel="stylesheet" href="coach-program-editor-19.8.css?v=athlete-side-5">
   <script src="exercise-library-19.8.js?v=v144"></script>
   <script src="master-exercise-library.js?v=v144"></script>
@@ -11211,7 +11211,7 @@
       if(!reference) reference=programs.find((item)=>item.id!==studio.programId)||programs[0]; if(reference) studio.referenceProgramId=reference.id;
       const sheets=reference?programRepository.getSheets(reference.id):[];
       const weekCount=Math.max(1,Number(reference?.durationWeeks)||1); coachProgramUi.referenceWeek=Math.min(weekCount,Math.max(1,Number(coachProgramUi.referenceWeek)||1));
-      return `<section class="coach-reference-panel"><div class="row"><div><h3>Anteprima atleta</h3><p class="micro-copy">Sola lettura · nessuna modifica possibile</p></div><button class="mini-button" data-studio-panel-close="reference">Chiudi</button></div><div class="coach-reference-selectors"><select data-studio-reference-program>${programs.map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id===reference?.id?"selected":""}>${escapeHtml(item.name)}</option>`).join("")}</select><select data-studio-reference-week>${Array.from({length:weekCount},(_,i)=>`<option value="${i+1}" ${coachProgramUi.referenceWeek===i+1?"selected":""}>Settimana ${i+1}</option>`).join("")}</select></div>${sheets.map((sheet,index)=>`<details class="coach-reference-sheet" ${index===0?"open":""}><summary>${escapeHtml(sheet.code)} · ${escapeHtml(sheet.name||sheet.focus||"Scheda")}</summary>${programRepository.getExercises(reference.id,sheet.id).map((exercise)=>{const p=coachWeekPrescription(exercise,coachProgramUi.referenceWeek);return `<div class="coach-reference-exercise"><strong>${escapeHtml(displayExerciseName(exercise.name||exercise.exercise||"Esercizio"))}</strong><span>${escapeHtml(p.sets||"—")} × ${escapeHtml(p.reps||"—")}</span><small>${escapeHtml(exercise.muscle||exercise.som||"")} · recupero ${escapeHtml(p.restSeconds||"—")}s${p.note?` · ${escapeHtml(p.note)}`:""}</small></div>`}).join("")}</details>`).join("")}</section>`;
+      return `<section class="coach-reference-panel"><div class="row"><div><h3>Anteprima atleta</h3><p class="micro-copy">Sola lettura · nessuna modifica possibile</p></div><button type="button" class="mini-button" data-studio-panel-close="reference">Chiudi</button></div><div class="coach-reference-selectors"><select data-studio-reference-program>${programs.map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id===reference?.id?"selected":""}>${escapeHtml(item.name)}</option>`).join("")}</select><select data-studio-reference-week>${Array.from({length:weekCount},(_,i)=>`<option value="${i+1}" ${coachProgramUi.referenceWeek===i+1?"selected":""}>Settimana ${i+1}</option>`).join("")}</select></div>${sheets.map((sheet,index)=>`<details class="coach-reference-sheet" ${index===0?"open":""}><summary>${escapeHtml(sheet.code)} · ${escapeHtml(sheet.name||sheet.focus||"Scheda")}</summary>${programRepository.getExercises(reference.id,sheet.id).map((exercise)=>{const p=coachWeekPrescription(exercise,coachProgramUi.referenceWeek);return `<div class="coach-reference-exercise"><strong>${escapeHtml(displayExerciseName(exercise.name||exercise.exercise||"Esercizio"))}</strong><span>${escapeHtml(p.sets||"—")} × ${escapeHtml(p.reps||"—")}</span><small>${escapeHtml(exercise.muscle||exercise.som||"")} · recupero ${escapeHtml(p.restSeconds||"—")}s${p.note?` · ${escapeHtml(p.note)}`:""}</small></div>`}).join("")}</details>`).join("")}</section>`;
     }
 
     function coachExecutionTypeOptions(selected) {
@@ -11293,7 +11293,7 @@
       studio.editorView="weekly"; const sideOpen=true;
       const linked=activeAthleteIntelligence(selection.program.id);
       const contextSummary=`<div class="athlete-context-strip program-context-summary"><span><b>Atleta</b>${escapeHtml(linked.athlete?.general?.name||"Non collegato")}</span><span><b>Strategia</b>${escapeHtml(linked.strategy?.name||"Scheda libera")}</span><span><b>Blocco</b>${escapeHtml(linked.programLink?.blockType||linked.strategy?.blockType||"libero")}</span><span><b>Nutrizione</b>${escapeHtml(linked.nutrition?.phase||"non definita")}</span><button class="ghost-button" data-coach-studio-route="strategy">Modifica collegamento</button></div>`;
-      const editorBody=`${contextSummary}<div class="coach-editor-layout unified ${studio.referenceOpen?"reference-open":""} ${studio.aiOpen?"ai-open":""}"><div>${coachProgramBoardHtml(selection.program)}</div><aside class="coach-editor-side">${coachStudioReferenceHtml()}${studio.aiOpen?coachAi2PageHtml(true):""}</aside></div><div class="coach-statistics-launch-row"><button type="button" class="coach-statistics-fab" data-coach-volume-focus aria-label="Statistiche programma">▥ Statistiche</button></div>`;
+      const editorBody=`${contextSummary}<div class="coach-editor-layout unified ${studio.referenceOpen?"reference-open":""} ${studio.aiOpen?"ai-open":""}"><div>${coachProgramBoardHtml(selection.program)}</div>${studio.referenceOpen||studio.aiOpen?`<aside class="coach-editor-side">${studio.referenceOpen?coachStudioReferenceHtml():""}${studio.aiOpen?coachAi2PageHtml(true):""}</aside>`:""}</div><div class="coach-statistics-launch-row"><button type="button" class="coach-statistics-fab" data-coach-volume-focus aria-label="Statistiche programma">▥ Statistiche</button></div>`;
       return `<section class="coach-studio-page coach-editor coach-editor-weekly">${coachStudioPageHead("Editor programma",selection.program.name,"Un’unica tavola settimanale: modifica, progressioni e controlli restano nello stesso punto.",`<button class="ghost-button" data-coach-studio-route="programs">← Programmi</button>`)}<div class="coach-editor-toolbar"><div class="coach-editor-save-state"><span class="save-dot"></span><strong data-coach-save-label>${coachProgramUi.saveStatus==="saving"?"Salvataggio…":"Salvato"}</strong></div><div class="quick-actions"><button class="gold-button" data-program-action="save">Salva</button><button class="ghost-button" data-program-list-action="save-as" data-program-id="${escapeHtml(selection.program.id)}">Salva come</button><button class="ghost-button" data-program-list-action="duplicate" data-program-id="${escapeHtml(selection.program.id)}">Duplica</button><button class="ghost-button" data-program-action="edit">Informazioni</button><button class="ghost-button ${studio.referenceOpen?"active":""}" data-studio-panel-toggle="reference">Anteprima atleta</button><button class="gold-button ${studio.aiOpen?"active":""}" data-studio-panel-toggle="ai">${coachMascotHtml()} Coach AI</button></div></div>${editorBody}${coachUiModalHtml()}</section>`;
     }
 
@@ -12041,6 +12041,40 @@
       });
     }
 
+    function closeCoachSidePanelLocal(panel, trigger = null) {
+      const studio = coachStudioState();
+      const key = `${panel}Open`;
+      if (!(key in studio)) return false;
+      studio[key] = false;
+      const layout = trigger?.closest(".coach-editor-layout") || document.querySelector(".coach-editor-layout");
+      if (!layout) return false;
+      const side = trigger?.closest(".coach-editor-side") || layout.querySelector(".coach-editor-side");
+      const startedAt = performance.now();
+      side?.classList.add("is-closing");
+      if (side) {
+        side.style.visibility = "hidden";
+        side.style.opacity = "0";
+        side.style.pointerEvents = "none";
+      }
+      document.querySelector(`[data-studio-panel-toggle="${CSS.escape(panel)}"]`)?.classList.remove("active");
+      window.__coachPerfMetrics.lastSideCloseVisualMs = performance.now() - startedAt;
+      setTimeout(() => {
+        layout.classList.remove(`${panel}-open`);
+        if (panel === "reference") side?.querySelector(".coach-reference-panel")?.remove();
+        else if (panel === "ai") side?.querySelector(".coach-ai-196")?.remove();
+        if (!studio.referenceOpen && !studio.aiOpen) side?.remove();
+        else {
+          side?.classList.remove("is-closing");
+          if (side) {
+            side.style.visibility = "";
+            side.style.opacity = "";
+            side.style.pointerEvents = "";
+          }
+        }
+      }, 0);
+      return true;
+    }
+
     function renderCoachSidePanelLocal() {
       const layout = document.querySelector(".coach-editor-layout");
       if (!layout || !document.querySelector(".coach-editor")) return false;
@@ -12051,7 +12085,11 @@
       if (!studio.referenceOpen && !studio.aiOpen) { side?.remove(); return true; }
       if (!side) { side = document.createElement("aside"); side.className = "coach-editor-side"; layout.appendChild(side); }
       side.innerHTML = `${studio.referenceOpen ? coachStudioReferenceHtml() : ""}${studio.aiOpen ? coachAi2PageHtml(true) : ""}`;
-      side.querySelector("[data-studio-panel-close]")?.addEventListener("click", () => { const panel=side.querySelector("[data-studio-panel-close]")?.dataset.studioPanelClose; if(panel){studio[`${panel}Open`]=false;renderCoachSidePanelLocal();} });
+      side.querySelectorAll("[data-studio-panel-close]").forEach((button) => button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeCoachSidePanelLocal(button.dataset.studioPanelClose, button);
+      }));
       side.querySelector("[data-studio-reference-program]")?.addEventListener("change", (event) => { studio.referenceProgramId=event.target.value; renderCoachSidePanelLocal(); });
       side.querySelector("[data-studio-reference-week]")?.addEventListener("change", (event) => { coachProgramUi.referenceWeek=Number(event.target.value)||1; renderCoachSidePanelLocal(); });
       if (studio.aiOpen) bindAthleteIntelligenceUi();
@@ -14398,7 +14436,11 @@
         if(panel==="ai"){studio.aiOpen=!studio.aiOpen;studio.referenceOpen=false;}
         renderCoachAfterFeedback(panel==="ai"?"Preparo l’analisi…":"Apro l’anteprima…");
       }));
-      document.querySelectorAll("[data-studio-panel-close]").forEach((button)=>button.addEventListener("click",()=>{const studio=coachStudioState();studio[`${button.dataset.studioPanelClose}Open`]=false;renderCoachAfterFeedback("Chiudo il pannello…");}));
+      document.querySelectorAll("[data-studio-panel-close]").forEach((button)=>button.addEventListener("click",(event)=>{
+        event.preventDefault();
+        event.stopPropagation();
+        closeCoachSidePanelLocal(button.dataset.studioPanelClose,button);
+      }));
       document.querySelector("[data-studio-reference-program]")?.addEventListener("change",(event)=>{coachStudioState().referenceProgramId=event.target.value;renderCoachAfterFeedback("Aggiorno l’anteprima…");});
       document.querySelector("[data-studio-reference-week]")?.addEventListener("change",(event)=>{coachProgramUi.referenceWeek=Number(event.target.value)||1;renderCoachAfterFeedback("Aggiorno la settimana…");});
       document.querySelectorAll("[data-program-week]").forEach((button)=>button.addEventListener("click",()=>switchCoachProgramWeek(button.dataset.programWeek)));
