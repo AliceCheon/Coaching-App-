@@ -16,6 +16,10 @@ const checks = [
   ["Rimozione progressione gestita", html.includes('data-progression-remove') && html.includes("Progressione rimossa")],
   ["Filtro muscoli centralizzato", html.includes("function coachExerciseMuscleTokens") && html.includes("coachExerciseMuscleTokens(item)")],
   ["Riduzione movimento rispettata", editorCss.includes("prefers-reduced-motion")],
+  ["Pannello Coach aggiornabile localmente", html.includes("renderCoachSidePanelLocal") && html.includes("renderCoachAfterFeedback")],
+  ["Board Coach aggiornabile localmente", html.includes("renderCoachProgramBoardLocal") && html.includes("bindCoachEditorDelegation")],
+  ["Grafici globali esclusi dal render Coach", html.includes('if (activeScreen !== "coach")') && html.includes("renderEngine()") && html.includes("drawCharts()")],
+  ["Modal salvata senza render globale quando possibile", html.includes("refreshCoachAfterLocalModal")],
   ["Nessun modulo Workout Pro standalone", !fs.existsSync(new URL("workout-pro.js", root))],
   ["Nessun modulo Nutrizione standalone", !fs.existsSync(new URL("nutrizione/index.html", root))],
 ];
