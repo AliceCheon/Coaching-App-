@@ -1,65 +1,12 @@
-param(
-  [Parameter(Mandatory = $true)][string]$Root,
-  [int]$Port = 8767
-)
+# Changelog — Fase 19.2
 
-$rootPath = [System.IO.Path]::GetFullPath($Root).TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
-$mimeTypes = @{
-  '.html' = 'text/html; charset=utf-8'
-  '.js' = 'text/javascript; charset=utf-8'
-  '.mjs' = 'text/javascript; charset=utf-8'
-  '.css' = 'text/css; charset=utf-8'
-  '.json' = 'application/json; charset=utf-8'
-  '.webmanifest' = 'application/manifest+json; charset=utf-8'
-  '.svg' = 'image/svg+xml'
-  '.png' = 'image/png'
-  '.jpg' = 'image/jpeg'
-  '.jpeg' = 'image/jpeg'
-  '.webp' = 'image/webp'
-  '.ico' = 'image/x-icon'
-}
+Build `v114-phase19.2`, schema dati `5` invariato, cache `atlas-app-v114-phase19.2`.
 
-$listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
-$listener.Start()
+- I test DOM sono ora isolati: non leggono né scrivono il journal della sessione attiva e non chiamano il salvataggio reale dell'app.
+- Il ripristino completo o della sola sezione Logbook unisce le sedute esistenti e quelle del backup; non sostituisce più lo storico corrente con quello di un backup più vecchio.
+- L'esportazione scarica sempre il backup verificato anche quando lo spazio locale non permette di conservarne una copia aggiuntiva nella cronologia interna.
+- Il recupero dal journal durevole riapplica la correzione della Scheda F al 16/07/2026 dopo il caricamento asincrono.
+- La marcatura del backup pre-aggiornamento viene registrata soltanto se la copia è stata realmente salvata.
+- Aggiunto `Avvia-Barbell-Diva.cmd`, che mantiene l'origine stabile `http://127.0.0.1:8767` e impedisce la falsa perdita di dati causata dall'apertura diretta di versioni diverse con `file://`.
 
-try {
-  while ($true) {
-    $client = $listener.AcceptTcpClient()
-    try {
-      $stream = $client.GetStream()
-      $reader = [System.IO.StreamReader]::new($stream, [System.Text.Encoding]::ASCII, $false, 8192, $true)
-      $requestLine = $reader.ReadLine()
-      if ([string]::IsNullOrWhiteSpace($requestLine)) { continue }
-      while (($header = $reader.ReadLine()) -ne $null -and $header -ne '') { }
-
-      $parts = $requestLine.Split(' ')
-      $requestTarget = if ($parts.Count -ge 2) { $parts[1] } else { '/' }
-      $pathOnly = $requestTarget.Split('?')[0]
-      $relativePath = [System.Uri]::UnescapeDataString($pathOnly).TrimStart('/').Replace('/', [System.IO.Path]::DirectorySeparatorChar)
-      if ([string]::IsNullOrWhiteSpace($relativePath)) { $relativePath = 'index.html' }
-      $candidate = [System.IO.Path]::GetFullPath((Join-Path $rootPath $relativePath))
-
-      if (-not $candidate.StartsWith($rootPath, [System.StringComparison]::OrdinalIgnoreCase) -or -not (Test-Path -LiteralPath $candidate -PathType Leaf)) {
-        $body = [System.Text.Encoding]::UTF8.GetBytes('404 - File non trovato')
-        $status = '404 Not Found'
-        $contentType = 'text/plain; charset=utf-8'
-      } else {
-        $body = [System.IO.File]::ReadAllBytes($candidate)
-        $status = '200 OK'
-        $extension = [System.IO.Path]::GetExtension($candidate).ToLowerInvariant()
-        $contentType = if ($mimeTypes.ContainsKey($extension)) { $mimeTypes[$extension] } else { 'application/octet-stream' }
-      }
-
-      $headers = "HTTP/1.1 $status`r`nContent-Type: $contentType`r`nContent-Length: $($body.Length)`r`nCache-Control: no-cache`r`nConnection: close`r`n`r`n"
-      $headerBytes = [System.Text.Encoding]::ASCII.GetBytes($headers)
-      $stream.Write($headerBytes, 0, $headerBytes.Length)
-      $stream.Write($body, 0, $body.Length)
-      $stream.Flush()
-    } catch {
-    } finally {
-      $client.Dispose()
-    }
-  }
-} finally {
-  $listener.Stop()
-}
+Il backup del 17/07/2026 fornito da Alice contiene 36 sedute e quattro Schede F storiche, fino al 24/06/2026. Non contiene la Scheda F completa del 16/07/2026; per recuperarla integralmente occorre un'esportazione dal dispositivo che la conserva.

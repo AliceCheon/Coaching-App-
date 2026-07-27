@@ -1,20 +1,7 @@
-# Barbell Diva v144 · Coach rebuild
+# Barbell Diva v144
 
-Questa cartella è la copia GitHub-ready della v144 finale con la rifinitura del Coach Studio.
+Build GitHub-ready focalizzata sul Logbook professionale, Coach, sincronizzazione e sicurezza dati.
 
-## Regola di prodotto
+Nutrizione e Workout Pro sono stati rimossi dal pacchetto. I dati legacy già presenti nel browser non vengono cancellati: restano compatibili con migrazioni e backup, ma non vengono più caricati come moduli dell'app.
 
-Coach Studio è disponibile nella navigazione desktop. Non è stato aggiunto alla barra di navigazione del telefono, come richiesto da Alice. Nutrizione e Workout Pro restano fuori dall'app principale.
-
-## Avvio locale
-
-Aprire `Avvia-Barbell-Diva.cmd` oppure eseguire `Avvia-Barbell-Diva.ps1`. Per GitHub Pages è sufficiente pubblicare il contenuto della cartella come sito statico.
-
-## Verifica
-
-```text
-node tests/v144-core.test.mjs
-node tests/coach-v144-rebuild.test.mjs
-```
-
-Le prove browser hanno verificato caricamento dell'editor Coach e assenza di errori JavaScript; resta consigliata una prova finale su telefono reale per le schermate non-Coach e una prova Firebase con l'account reale.
+Per pubblicare: carica il contenuto di questa cartella nel repository GitHub e abilita GitHub Pages. Il workflow in `.github/workflows/tests.yml` esegue `tests/v144-core.test.mjs`.

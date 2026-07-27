@@ -1,22 +1,30 @@
-# Piano di modularizzazione
+# Progressioni Fase 20A
 
-La Fase 19 non riscrive l'app e non introduce framework. Mantiene il nucleo della Fase 18 in `index.html` e aggiunge due moduli isolati:
+## Supportate con strategia esplicita
 
-- `workout-pro.js`: modello della sessione attiva, persistenza, timer, flusso operativo e integrazione Logbook;
-- `workout-pro.css`: layout immersivo, mobile, safe area, focus e responsive.
+1. `double-progression` — aumenta il carico solo dopo consolidamento del limite alto; altrimenti consolida le ripetizioni.
+2. `linear-load` — incremento di carico con target, aderenza e margine sufficienti.
+3. `linear-reps` — modifica solo le ripetizioni.
+4. `linear-sets` — aggiunge al massimo una serie quando il segnale è stabile.
+5. `rir-progression` — modifica solo il target RIR.
+6. `top-set-backoff` — top set e back-off restano segmenti distinti.
+7. `volume-progression` — modifica prudenziale del numero di serie.
+8. `intensity-progression` — incremento di carico vincolato all'aderenza.
+9. `undulating` — avanza la struttura settimanale già definita senza inventare valori.
+10. `pyramid` — conserva la struttura e propone soltanto l'avanzamento previsto.
+11. `reverse-pyramid` — conserva la struttura e propone soltanto l'avanzamento previsto.
+12. `density` — riduce il recupero di 10 secondi senza cambiare insieme altre dimensioni.
+13. `recovery-decreasing` — riduzione prudente del recupero.
+14. `maintenance` — mantiene la prescrizione.
+15. `deload` — simula riduzione di serie/carico e aumento del margine, senza applicazione automatica.
 
-## Confini mantenuti
+## Non supportate
 
-- Il repository principale, Firebase, backup, diagnostica e Safe Mode restano nel core.
-- Workout Pro richiama le funzioni pubbliche già esistenti per contesto, storico, repository, rendering e cloud.
-- I tick dei timer aggiornano solo nodi locali; input continui usano debounce; le azioni critiche salvano subito.
-- La sync cloud avviene al salvataggio finale, non a ogni carattere o secondo.
+- `custom`: il motore restituisce `unsupportedProgression` e non inventa regole.
 
-## Passi futuri compatibili
+## Regole conservative comuni
 
-1. Estrarre repository e migrazioni dal grande script inline senza cambiare API.
-2. Estrarre Dashboard, Programmi, Logbook e Impostazioni in moduli nativi ES.
-3. Aggiungere test di contratto per il repository e fixture versionate dei backup.
-4. Aggiungere test browser reali su iOS Safari e Android Chrome per Wake Lock, voce e sospensione OS.
-
-Ogni estrazione dovrà mantenere `index.html` come entry point, migrare in modo additivo e confrontare l'elenco delle funzioni prima/dopo.
+- Una prestazione negativa isolata non diventa automaticamente regressione.
+- Plateau e regressione richiedono più sedute comparabili.
+- Dolore, fatica, readiness bassa, sedute incomplete, sostituzioni e anomalie riducono confidenza o bloccano la progressione.
+- Warm-up, drop set, rest-pause, cluster, myo-reps e parziali non vengono mescolati alle serie normali; top set e back-off restano analizzabili ma distinti.

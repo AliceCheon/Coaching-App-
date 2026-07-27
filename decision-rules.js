@@ -1,109 +1,14 @@
-(function (global) {
+(function(root,factory){const api=factory();if(typeof module==="object"&&module.exports)module.exports=api;root.BarbellDivaDecisionRules=api;})(typeof globalThis!=="undefined"?globalThis:window,function(){
   "use strict";
-
-  const ROUTES = Object.freeze([
-    "dashboard", "programs", "program", "athlete", "strategy", "library", "progressions", "ai",
-    "questionnaires", "questionnaire", "statistics", "archive", "diagnostics",
-    "settings", "legacy"
-  ]);
-
-  const DEFAULT_FILTERS = Object.freeze({ query: "", status: "all", phase: "all", folder: "all", sort: "updated" });
-
-  function cleanRoute(value) {
-    const route = String(value || "programs").toLowerCase();
-    if (route === "dashboard" || route === "legacy") return "programs";
-    return ROUTES.includes(route) ? route : "programs";
-  }
-
-  function normalizeStudio(value) {
-    const input = value && typeof value === "object" ? value : {};
-    return {
-      route: cleanRoute(input.route),
-      programId: String(input.programId || ""),
-      questionnaireId: String(input.questionnaireId || ""),
-      filters: { ...DEFAULT_FILTERS, ...(input.filters || {}) },
-      editorView: "weekly",
-      sidebarOpen: false,
-      folders: Array.isArray(input.folders) ? input.folders.map(String).filter(Boolean) : [],
-      referenceOpen: !!input.referenceOpen,
-      referenceProgramId: String(input.referenceProgramId || ""),
-      infoOpen: !!input.infoOpen,
-      aiOpen: !!input.aiOpen,
-      programWeek: Math.max(1, Number(input.programWeek) || 1),
-      lastVisitedAt: input.lastVisitedAt || null
-    };
-  }
-
-  function programMetrics(programs) {
-    const list = Array.isArray(programs) ? programs.filter((item) => !item?.deletedAt) : [];
-    const sheets = list.flatMap((program) => (program.sheets || []).filter((item) => !item?.deletedAt));
-    const exercises = sheets.flatMap((sheet) => (sheet.exercises || []).filter((item) => !item?.deletedAt));
-    return {
-      programs: list.length,
-      active: list.filter((item) => item.status === "active").length,
-      drafts: list.filter((item) => !item.status || item.status === "draft" || item.status === "available").length,
-      archived: list.filter((item) => item.status === "archived").length,
-      sheets: sheets.length,
-      exercises: exercises.length
-    };
-  }
-
-  function filterPrograms(programs, filters) {
-    const f = { ...DEFAULT_FILTERS, ...(filters || {}) };
-    const query = String(f.query || "").trim().toLocaleLowerCase("it");
-    const filtered = (Array.isArray(programs) ? programs : []).filter((program) => {
-      if (program?.deletedAt) return false;
-      if (f.status !== "all" && (program.status || "draft") !== f.status) return false;
-      if (f.phase !== "all" && String(program.phase || "") !== f.phase) return false;
-      if (f.folder !== "all" && String(program.folder || "") !== f.folder) return false;
-      const haystack = [program.name, program.phase, program.description, program.id].join(" ").toLocaleLowerCase("it");
-      return !query || haystack.includes(query);
-    });
-    return filtered.sort((a, b) => {
-      if (f.sort === "name") return String(a.name || "").localeCompare(String(b.name || ""), "it");
-      if (f.sort === "status") return String(a.status || "draft").localeCompare(String(b.status || "draft"), "it");
-      return String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || ""));
-    });
-  }
-
-  function createQuestionnaire(overrides) {
-    const now = new Date().toISOString();
-    return {
-      id: `questionnaire-${Date.now().toString(36)}`,
-      title: "Nuovo questionario",
-      type: "check-in",
-      active: true,
-      visibility: "all",
-      recurrence: "always",
-      questions: [],
-      createdAt: now,
-      updatedAt: now,
-      ...(overrides || {})
-    };
-  }
-
-  function statistics(programs, sessions) {
-    const metrics = programMetrics(programs);
-    const history = Array.isArray(sessions) ? sessions : [];
-    const completed = history.filter((item) => !item?.deletedAt);
-    const totalVolume = completed.reduce((sum, session) => sum + (Number(session.total) || 0), 0);
-    const byProgram = (Array.isArray(programs) ? programs : []).filter((program) => !program?.deletedAt).map((program) => ({
-      id: program.id,
-      name: program.name || "Programma",
-      sheets: (program.sheets || []).filter((item) => !item?.deletedAt).length,
-      exercises: (program.sheets || []).reduce((sum, sheet) => sum + (sheet.exercises || []).filter((item) => !item?.deletedAt).length, 0)
-    }));
-    return { ...metrics, completed: completed.length, totalVolume, byProgram };
-  }
-
-  global.BarbellDivaCoachStudio = Object.freeze({
-    version: "19.7",
-    routes: ROUTES,
-    cleanRoute,
-    normalizeStudio,
-    filterPrograms,
-    programMetrics,
-    createQuestionnaire,
-    statistics
-  });
-})(window);
+  const VERSION="23.0.0",list=v=>Array.isArray(v)?v:[],norm=v=>String(v||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[_-]+/g," ").trim();
+  const decision=(data)=>({priority:"media",severity:"info",confidence:"media",dataUsed:[],suggestion:"",conditions:[],effects:[],...data});
+  const RULES=[
+    {id:"safety.active-limitations",category:"safety",dependencies:["limitations","programming","exercise-knowledge"],evaluate(c){const athlete=c.context.athlete||{},active=[...list(athlete.pains),...list(athlete.motorLimitations)].filter(x=>x.status!=="risolto");if(!active.length)return[];return[decision({category:"limitations",priority:"massima",severity:"warning",confidence:"alta",title:"Limitazioni attive prima dell'ottimizzazione",rationale:`${active.length} segnalazioni attive hanno precedenza su volume e intensità.`,suggestion:"Verifica tolleranza, pattern aggravanti e alternative prima di aumentare lo stimolo.",dataUsed:active.map(x=>({label:x.area||x.movement,value:x.status,source:"athlete"})),conditions:[{expression:"activeLimitations > 0",value:true}],effects:[{axis:"training-load",target:"athlete",direction:-1}]})];}},
+    {id:"recovery.deload-convergence",category:"recovery",dependencies:["history","performance","nutrition","strategy"],evaluate(c){if(c.analysis.deload?.decision!=="recommended")return[];return[decision({category:"deload",priority:"alta",severity:"warning",confidence:c.analysis.deload.confidence,title:"Segnali convergenti: deload da valutare",rationale:c.analysis.deload.reason,suggestion:"Riduci temporaneamente volume e/o intensità mantenendo la specificità tecnica.",dataUsed:list(c.analysis.deload.signals).map(x=>({label:x.key,value:x.label,source:x.source})),conditions:[{expression:"deload.decision === recommended",value:true}],effects:[{axis:"volume",target:"program",direction:-1},{axis:"intensity",target:"program",direction:-1}]})];}},
+    {id:"nutrition.cut-fatigue",category:"nutrition",dependencies:["nutrition","performance","history"],evaluate(c){const phase=norm(c.context.nutrition?.phase),bad=c.analysis.deload?.signals?.length>=2;if(!["cut","mini cut"].includes(phase)||!bad)return[];return[decision({category:"fatigue",priority:"alta",severity:"warning",confidence:"alta",title:"Cut e recupero sfavorevole",rationale:`La fase ${c.context.nutrition.phase} coincide con almeno due segnali di fatica o performance.`,suggestion:"Proteggi la performance: evita aumenti di volume finché i segnali non migliorano.",dataUsed:[{label:"Fase nutrizionale",value:c.context.nutrition.phase,source:"nutrition"},{label:"Segnali",value:c.analysis.deload.signals.length,source:"calculated"}],conditions:[{expression:"nutrition in cut && fatigueSignals >= 2",value:true}],effects:[{axis:"volume",target:"program",direction:-1}]})];}},
+    {id:"strategy.priority-underdosed",category:"strategy",dependencies:["athlete","strategy","programming","exercise-knowledge"],evaluate(c){return list(c.context.athlete?.muscles?.priorities).filter(x=>["alta","massima"].includes(x.level)).flatMap(item=>{const muscle=norm(item.muscle),sets=c.analysis.metrics.directSets?.[muscle]||0,freq=c.analysis.metrics.frequency?.[muscle]||0;if(sets>=6&&freq>=2)return[];return[decision({category:"strategy",priority:item.level==="massima"?"alta":"media",severity:"info",confidence:"alta",title:`Priorità ${item.muscle}: stimolo da verificare`,rationale:`Priorità ${item.level}, ${sets} serie dirette e frequenza ${freq}.`,suggestion:"Se recupero e limitazioni lo consentono, rialloca serie o frequenza verso la priorità.",dataUsed:[{label:"Priorità",value:item.level,source:"athlete"},{label:"Serie",value:sets,source:"calculated"},{label:"Frequenza",value:freq,source:"calculated"}],conditions:[{expression:"priority high && (sets < 6 || frequency < 2)",value:true}],effects:[{axis:"volume",target:muscle,direction:1}]})];});}},
+    {id:"performance.stalled-progression",category:"performance",dependencies:["performance","progressions","history"],evaluate(c){return list(c.analysis.metrics?.exerciseAnalyses).filter(x=>["stalled","regression","declining"].includes(x.trend?.status)).slice(0,6).map(x=>decision({category:"exercise-performance",priority:x.trend.status==="stalled"?"alta":"massima",severity:"warning",confidence:x.trend.confidence,title:`${x.name}: ${x.trend.status==="stalled"?"stallo confermato":"regressione da approfondire"}`,rationale:`${x.trend.reason} ${x.progression.reason}`,suggestion:"Controlla recupero, prescrizione e progressione prima di aumentare il carico.",dataUsed:[{label:"Trend",value:x.trend.status,source:"calculated"},{label:"Variazione",value:x.trend.changePct,source:"calculated"},{label:"Progressione",value:x.progression.status,source:"progressions"}],conditions:[{expression:"trend in stalled|regression|declining",value:true}],effects:[{axis:"intensity",target:x.masterExerciseId||x.id,direction:-1}],actions:[{type:"openProgressions",label:"Apri progressione",sheetId:x.sheetId,exerciseId:x.id}],sheetId:x.sheetId,exerciseId:x.id}));}},
+    {id:"equipment.unavailable",category:"feasibility",dependencies:["equipment","programming","exercise-knowledge"],evaluate(c){const available=new Set(list(c.context.athlete?.equipment?.items).map(norm));if(!available.size)return[];return list(c.analysis.metrics?.exercisesRaw).flatMap(ex=>{const required=list(ex.masterRecord?.equipment?.required).map(norm),missing=required.filter(x=>x&&!available.has(x));if(!missing.length)return[];return[decision({category:"equipment",priority:"alta",severity:"warning",confidence:"alta",title:`${ex.name}: attrezzatura non disponibile`,rationale:`Richiede ${missing.join(", ")}, non presente nel profilo atleta.`,suggestion:"Sostituisci con una variante compatibile della Master Exercise Library.",dataUsed:[{label:"Richiesta",value:missing.join(", "),source:"master-library"},{label:"Disponibile",value:[...available].join(", "),source:"athlete"}],conditions:[{expression:"requiredEquipment not subset of availableEquipment",value:true}],effects:[{axis:"exercise-selection",target:ex.masterExerciseId||ex.id,direction:-1}],actions:[{type:"openLibrary",label:"Apri Master Library"}],sheetId:ex.sheetId,exerciseId:ex.id})];});}}
+  ];
+  return{VERSION,RULES,decision};
+});
