@@ -12,7 +12,6 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <!-- Preload critical font for faster text rendering -->
   <link rel="preload" href="atlas-nunito-sans.ttf" as="font" type="font/ttf" crossorigin="crossorigin" fetchpriority="high">
-  <link rel="stylesheet" href="workout-pro.css?v=v142-improvements">
   <link rel="stylesheet" href="coach-studio.css?v=v142-improvements">
   <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v142-improvements">
   <script src="exercise-library-19.8.js?v=v142-improvements"></script>
@@ -26,7 +25,6 @@
   <script type="module" src="programming-engine.js?v=v142-improvements"></script>
   <script type="module" src="sync-reliability.js?v=v142-improvements"></script>
   <script src="coach-studio.js?v=v142-improvements"></script>
-  <script defer src="workout-pro.js?v=v142-improvements"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4784,7 +4782,6 @@
           <button class="top-tab" data-screen="progress">Analisi progressi</button>
           <button class="top-tab" data-screen="logbook">Logbook</button>
           <button class="top-tab coach-tab" data-screen="coach">Coach</button>
-          <button class="top-tab" data-screen="nutrition">Nutrizione</button>
           <button class="top-tab" data-screen="quiz">Check-in</button>
           <button class="top-tab" data-screen="settings">Impostazioni</button>
         </div>
@@ -4811,10 +4808,6 @@
           <button class="nav-button coach-nav" data-bottom="coach">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M7 16h10"/><path d="M9 3h6"/></svg>
             Coach
-          </button>
-          <button class="nav-button" data-bottom="nutrition">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19c5-9 9-14 16-14"/><path d="M5 5c5 2 8 6 9 12"/><path d="M4 19c7 1 13-2 16-14"/></svg>
-            Nutrizione
           </button>
           <button class="nav-button" data-bottom="quiz">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -5905,13 +5898,6 @@
         hunger: "",
         cycle: "ok"
       },
-      nutrition: {
-        kcal: "",
-        protein: "",
-        water: "",
-        context: "soft",
-        dashboard: {}
-      },
       body: {
         waist: "",
         hip: "",
@@ -5943,13 +5929,6 @@
         noteDraft: {},
         timerRemaining: 0,
         activeWorkout: null,
-        workoutProPreferences: {
-          loadStepByEquipment: { barbell: 2.5, dumbbell: 1, machine: 5, cable: 2.5, bodyweight: 1, unilateral: 1 },
-          wakeLockEnabled: false,
-          voiceEnabled: false,
-          soundEnabled: false,
-          notificationsEnabled: false
-        },
         contextMode: "auto",
         manualWeek: null,
         manualSessionCode: "",
@@ -6075,17 +6054,6 @@
 
     try { releaseObsoleteLocalBackups(); } catch (error) {}
 
-    (function hydrateNutritionPhotosOnBoot() {
-      const store = window.BarbellDivaPhotoStore;
-      const photos = state?.nutrition?.dashboard?.photos;
-      if (!store || !Array.isArray(photos) || !photos.length) return;
-      store.hydratePhotoList(photos).then((hydrated) => {
-        if (!state.nutrition?.dashboard) return;
-        state.nutrition.dashboard.photos = hydrated;
-        try { pushNutritionDashboardToFrame(); } catch (error) {}
-        try { if (typeof render === "function") render(); } catch (error) {}
-      });
-    })();
     state.training.date = todayInput();
     state.training.sessionName = "auto";
     hydrateStateModel(state);
@@ -6150,7 +6118,7 @@
     state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
     if (state.profile.coachPin === "2507") state.profile.coachPin = "ettorino1";
     const initialHash = String(location.hash || "").replace("#", "");
-    const initialScreens = new Set(["dashboard", "training", "progress", "logbook", "nutrition", "quiz", "coach", "settings"]);
+    const initialScreens = new Set(["dashboard", "training", "progress", "logbook", "quiz", "coach", "settings"]);
     let activeScreen = initialScreens.has(initialHash) ? initialHash : "dashboard";
     let activeBottom = activeScreen === "training" ? "workout" : activeScreen === "dashboard" ? "home" : activeScreen;
     let lastRenderedScreen = "";
@@ -6182,7 +6150,6 @@
     let cloudOperationState = { status: "idle", message: "", progress: 0 };
     const premiumAsyncUi = { visibleLoads:new Set(), timers:new Map(), metricFrames:new Map(), metricValues:new Map(), save:{ status:"local", message:"Salvato sul dispositivo" } };
     let clearDataArmedUntil = 0;
-    let nutritionPhotosUnsubscribe = null;
     let authReady = false;
     let premiumBootReady = false;
     let premiumBootStartedAt = Date.now();
@@ -7397,14 +7364,6 @@
       const migrated = clone(input || {});
       migrated.training = migrated.training || {};
       if (!Object.prototype.hasOwnProperty.call(migrated.training, "activeWorkout")) migrated.training.activeWorkout = null;
-      migrated.training.workoutProPreferences = {
-        loadStepByEquipment: { barbell:2.5, dumbbell:1, machine:5, cable:2.5, bodyweight:1, unilateral:1 },
-        wakeLockEnabled:false,
-        voiceEnabled:false,
-        soundEnabled:false,
-        notificationsEnabled:false,
-        ...(migrated.training.workoutProPreferences || {})
-      };
       migrated.meta = { ...(migrated.meta || {}), schemaVersion:5, workoutProMigrationAt:new Date().toISOString() };
       return migrated;
     }
@@ -7634,14 +7593,6 @@
       target.training.exerciseTabs = target.training.exerciseTabs && typeof target.training.exerciseTabs === "object" ? target.training.exerciseTabs : {};
       target.training.setDone = target.training.setDone && typeof target.training.setDone === "object" ? target.training.setDone : {};
       if (!Object.prototype.hasOwnProperty.call(target.training, "activeWorkout")) target.training.activeWorkout = null;
-      target.training.workoutProPreferences = {
-        loadStepByEquipment: { barbell:2.5, dumbbell:1, machine:5, cable:2.5, bodyweight:1, unilateral:1 },
-        wakeLockEnabled:false,
-        voiceEnabled:false,
-        soundEnabled:false,
-        notificationsEnabled:false,
-        ...(target.training.workoutProPreferences || {})
-      };
       target.programming = {
         engineVersion: "20A.1",
         decisions: {},
@@ -8773,7 +8724,7 @@
         if (selections.checkins) next.quiz = clone(incoming.quiz || next.quiz || {});
         if (selections.settings) { next.profile = mergeState(next.profile || {}, incoming.profile || {}); next.metrics = clone(incoming.metrics || {}); next.nutrition = clone(incoming.nutrition || {}); next.body = clone(incoming.body || {}); }
         if (selections.coachAi) next.coach = { ...next.coach, coachAi:clone(incoming.coach?.coachAi || {}) };
-        if (selections.divaBot) next.ui = { ...next.ui, ...Object.fromEntries(["workoutMascotVisible","workoutMascotPosition","workoutProMascotPosition","divaBotPersonality","divaBotBubbles","divaBotCelebrations","divaBotSounds"].map((key) => [key, incoming.ui?.[key]]).filter(([, value]) => value !== undefined)) };
+        if (selections.divaBot) next.ui = { ...next.ui, ...Object.fromEntries(["workoutMascotVisible","workoutMascotPosition","divaBotPersonality","divaBotBubbles","divaBotCelebrations","divaBotSounds"].map((key) => [key, incoming.ui?.[key]]).filter(([, value]) => value !== undefined)) };
         if (selections.exerciseLab) next.coach = { ...next.coach, exerciseLibrary:clone(incoming.coach?.exerciseLibrary || []) };
       }
       dataSafetyRestoring = true;
@@ -8783,16 +8734,6 @@
         if (!safetyBackup.ok) return safetyBackup;
         if (!writeLocalStateSnapshot(next, { touch:true, cloud:false })) return { ok:false, error:"Ripristino annullato: impossibile salvare i dati verificati." };
         state = next; dataSafetyUi.restorePreview = null; recoveryBootError = null; recoveryBootPayload = ""; render();
-        const photoStore = window.BarbellDivaPhotoStore;
-        const restoredPhotos = state.nutrition?.dashboard?.photos;
-        if (photoStore && Array.isArray(restoredPhotos) && restoredPhotos.length) {
-          photoStore.hydratePhotoList(restoredPhotos).then((hydrated) => {
-            if (!state.nutrition?.dashboard) return;
-            state.nutrition.dashboard.photos = hydrated;
-            try { pushNutritionDashboardToFrame(); } catch (error) {}
-            render();
-          });
-        }
         return { ok:true, migration:verified.migration };
       } finally { dataSafetyRestoring = false; }
     }
@@ -8814,28 +8755,6 @@
       return Array.from(rows.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
     }
 
-    function mergeNutritionDashboard(current = {}, incoming = {}) {
-      const merged = { ...(current || {}), ...(incoming || {}) };
-      merged.log = mergeRowsByKey(current.log, incoming.log, (row) => row.date || JSON.stringify(row));
-      const measures = new Map();
-      [...(Array.isArray(current.measures) ? current.measures : []), ...(Array.isArray(incoming.measures) ? incoming.measures : [])]
-        .filter(Boolean)
-        .forEach((row) => {
-          const key = row.date || JSON.stringify(row);
-          measures.set(key, { ...(measures.get(key) || {}), ...row });
-        });
-      merged.measures = Array.from(measures.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
-      const photoRows = new Map();
-      [...(Array.isArray(current.photos) ? current.photos : []), ...(Array.isArray(incoming.photos) ? incoming.photos : [])]
-        .filter((photo) => photo && (photo.front || photo.side || photo.back))
-        .forEach((photo) => {
-          const key = photo.id || `${photo.date || ""}|${photo.notes || ""}`;
-          photoRows.set(key, { ...(photoRows.get(key) || {}), ...photo });
-        });
-      merged.photos = Array.from(photoRows.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
-      return merged;
-    }
-
     function mergeCloudAndLocalState(localState = {}, cloudState = {}) {
       localState = migrateStateSchema(localState);
       cloudState = migrateStateSchema(cloudState);
@@ -8850,161 +8769,10 @@
         ...(older.training?.sessions || []),
         ...(newer.training?.sessions || [])
       ]).sessions;
-      if (!merged.nutrition) merged.nutrition = {};
-      merged.nutrition.dashboard = mergeNutritionDashboard(
-        older.nutrition?.dashboard || {},
-        newer.nutrition?.dashboard || {}
-      );
       hydrateStateModel(merged);
       repairSequentialWorkoutWeeks(merged);
       merged.training.exercises = buildExerciseIndex(allProgramSheets(merged), merged.training.sessions);
       return merged;
-    }
-
-    function nutritionPhotoId(photo = {}) {
-      if (photo.id) return String(photo.id).replace(/-(front|side|back)$/, "");
-      const text = [photo.date || "", photo.notes || ""].join("|");
-      let hash = 0;
-      for (let index = 0; index < text.length; index += 1) {
-        hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
-      }
-      return `photo-${Math.abs(hash).toString(36)}-${String(photo.date || "no-date").replace(/[^a-z0-9-]/gi, "-")}`;
-    }
-
-    function splitNutritionPhotosForCloud(payload) {
-      const photos = Array.isArray(payload.nutrition?.dashboard?.photos) ? payload.nutrition.dashboard.photos : [];
-      if (payload.nutrition?.dashboard) payload.nutrition.dashboard.photos = [];
-      return photos;
-    }
-
-    function nutritionPhotosCollection() {
-      const doc = cloudDocument();
-      return doc ? doc.collection("nutritionPhotos") : null;
-    }
-
-    async function saveNutritionPhotosToCloud(photos = []) {
-      const collection = nutritionPhotosCollection();
-      if (!collection) return;
-      const validPhotos = photos.filter((photo) => photo && (photo.front || photo.side || photo.back));
-      const pieces = validPhotos.flatMap((photo) => ["front", "side", "back"].filter((slot) => photo[slot]).map((slot) => ({
-        id: `${nutritionPhotoId(photo)}-${slot}`,
-        baseId: nutritionPhotoId(photo), date: photo.date || "", notes: photo.notes || "", slot, image: photo[slot]
-      })));
-      const writes = pieces.map((piece) => collection.doc(piece.id).set({ ...piece, updatedAt: new Date().toISOString() }));
-      await Promise.all(writes);
-    }
-
-    function nutritionPhotosFromSnapshot(snapshot) {
-      const grouped = new Map();
-      snapshot.forEach((item) => {
-        const photo = item.data();
-        if (!photo) return;
-        if (photo.slot && photo.image) {
-          const id = photo.baseId || String(item.id).replace(/-(front|side|back)$/, "");
-          grouped.set(id, { ...(grouped.get(id) || {}), id, date: photo.date || "", notes: photo.notes || "", [photo.slot]: photo.image });
-        } else if (photo.front || photo.side || photo.back) {
-          const id = nutritionPhotoId(photo);
-          grouped.set(id, { ...(grouped.get(id) || {}), ...photo, id });
-        }
-      });
-      return Array.from(grouped.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
-    }
-
-    async function loadNutritionPhotosFromCloud() {
-      const collection = nutritionPhotosCollection();
-      if (!collection) return [];
-      const snapshot = await withTimeout(collection.get(), 5000);
-      return nutritionPhotosFromSnapshot(snapshot);
-    }
-
-    function stopNutritionPhotosRealtime() {
-      if (typeof nutritionPhotosUnsubscribe === "function") nutritionPhotosUnsubscribe();
-      nutritionPhotosUnsubscribe = null;
-    }
-
-    function startNutritionPhotosRealtime() {
-      stopNutritionPhotosRealtime();
-      const collection = nutritionPhotosCollection();
-      if (!collection || !state.profile.account?.syncReady) return;
-      nutritionPhotosUnsubscribe = collection.onSnapshot((snapshot) => {
-        const cloudPhotos = nutritionPhotosFromSnapshot(snapshot);
-        if (!state.nutrition) state.nutrition = {};
-        const before = JSON.stringify(state.nutrition.dashboard?.photos || []);
-        state.nutrition.dashboard = mergeNutritionDashboard(state.nutrition.dashboard || {}, { photos: cloudPhotos });
-        if (JSON.stringify(state.nutrition.dashboard.photos || []) === before) return;
-        writeLocalStateSnapshot(state, { touch: false, cloud: false });
-        pushNutritionDashboardToFrame();
-      }, () => {});
-    }
-
-    function nutritionPayloadHasUserData(payload = {}) {
-      return !!(
-        (Array.isArray(payload.photos) && payload.photos.length) ||
-        (Array.isArray(payload.log) && payload.log.length) ||
-        (Array.isArray(payload.measures) && payload.measures.some((row) => String(row.source || "").toLowerCase() === "app"))
-      );
-    }
-
-    async function receiveNutritionDashboard(payload) {
-      if (!payload || typeof payload !== "object") return;
-      if (!nutritionPayloadHasUserData(payload)) return;
-      if (!state.nutrition) state.nutrition = {};
-      const before = JSON.stringify(state.nutrition.dashboard || {});
-      state.nutrition.dashboard = mergeNutritionDashboard(state.nutrition.dashboard || {}, payload);
-      state.athleteIntelligence = window.BarbellDivaAthleteContext.syncNutrition(athleteIntelligenceStore(), athleteIntelligenceStore().activeAthleteId, { ...state.nutrition, dashboard:state.nutrition.dashboard });
-      if (JSON.stringify(state.nutrition.dashboard || {}) !== before) {
-        saveState({ cloud: false });
-        if (cloudUser && dbService && state.profile.account?.syncReady) {
-          clearTimeout(cloudSaveTimer);
-          const synced = await saveCloudState();
-          const frame = document.querySelector(".nutrition-frame");
-          frame?.contentWindow?.postMessage({ type: "barbell-diva:nutrition-synced", ok: synced }, window.location.origin);
-        } else scheduleCloudSave();
-      }
-    }
-
-    const BUNDLED_NUTRITION_BACKUP = "./dashboard-alimentazione-backup-2026-07-15.json";
-
-    async function importBundledNutritionBackup() {
-      state.migrations = state.migrations || {};
-      if (Number(state.migrations.nutritionBackup15Jul2026 || 0) >= 1) return false;
-      try {
-        let parsed = window.BARBELL_DIVA_FOOD_BACKUP || null;
-        if (!parsed) {
-          if (typeof fetch !== "function") throw new Error("Caricamento backup Food non disponibile");
-          const response = await fetch(BUNDLED_NUTRITION_BACKUP, { cache:"no-store" });
-          if (!response.ok) throw new Error(`Backup Food non disponibile (${response.status})`);
-          parsed = await response.json();
-        }
-        const payload = parsed?.state || parsed;
-        if (!nutritionPayloadHasUserData(payload)) throw new Error("Backup Food privo di dati utente");
-        if (!state.nutrition) state.nutrition = {};
-        const local = state.nutrition.dashboard || {};
-        // Il backup costituisce la base; i dati già presenti nell'app restano prioritari.
-        state.nutrition.dashboard = mergeNutritionDashboard(payload, local);
-        state.migrations.nutritionBackup15Jul2026 = 1;
-        state.migrations.nutritionBackup15Jul2026ImportedAt = new Date().toISOString();
-        state.migrations.nutritionBackup15Jul2026Summary = {
-          log:(payload.log || []).length,
-          measures:(payload.measures || []).length,
-          photos:(payload.photos || []).length
-        };
-        saveState({ immediate:true });
-        pushNutritionDashboardToFrame();
-        if (activeScreen === "nutrition" || activeScreen === "dashboard") render();
-        return true;
-      } catch (error) {
-        return false;
-      }
-    }
-
-    function pushNutritionDashboardToFrame() {
-      const frame = document.querySelector(".nutrition-frame");
-      if (!frame?.contentWindow) return;
-      frame.contentWindow.postMessage({
-        type: "barbell-diva:nutrition-load",
-        state: state.nutrition?.dashboard || {}
-      }, window.location.origin);
     }
 
     function firebaseConfigured() {
@@ -9069,13 +8837,11 @@
               startCloudStateRealtime();
               startReliableSessionsRealtime();
               scheduleReliableSync(100);
-              startNutritionPhotosRealtime();
             }
           });
         } else {
           stopCloudStateRealtime();
           stopReliableSessionsRealtime();
-          stopNutritionPhotosRealtime();
         }
       });
       return true;
@@ -9177,7 +8943,6 @@
         lastCloudError = "";
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
         render();
-        setTimeout(pushNutritionDashboardToFrame, 0);
       }, (error) => {
         lastCloudError = cloudErrorText(error, "aggiornamento automatico");
         state.profile.account.cloudStatus = "errore cloud";
@@ -9211,7 +8976,6 @@
       });
       const { programs: currentPrograms = [], ...stateWithoutPrograms } = state;
       const payload = clone(stateWithoutPrograms);
-      const nutritionPhotos = splitNutritionPhotosForCloud(payload);
       let rootStateSaved = false;
       try {
         const cloudUpdatedAt = new Date().toISOString();
@@ -9239,13 +9003,6 @@
             programsUpdatedAt: programRevision,
             state: { meta: { ...(payload.meta || {}), programsUpdatedAt: programRevision, cloudProgramsUpdatedAt: programRevision, cloudProgramRevisions: revisions } }
           }, { merge: true }), 15000);
-        }
-        try {
-          await saveNutritionPhotosToCloud(nutritionPhotos);
-        } catch (photoError) {
-          // Le foto hanno una raccolta separata: un problema lì non deve
-          // impedire la sincronizzazione di schede, logbook e check-in.
-          lastCloudError = "Schede sincronizzate; alcune foto Food attendono un nuovo tentativo.";
         }
         lastCloudSnapshotAt = cloudUpdatedAt;
         if (!lastCloudError?.startsWith("Schede sincronizzate")) lastCloudError = "";
@@ -9288,9 +9045,6 @@
           recoverWorkoutJournal(state);
           const cloudFDateCorrections = correctAliceWorkoutF16Jul2026(state);
           state.migrations.aliceWorkoutF16Jul2026Corrected = Number(state.migrations.aliceWorkoutF16Jul2026Corrected || 0) + cloudFDateCorrections;
-          const nutritionPhotos = await loadNutritionPhotosFromCloud().catch(() => []);
-          if (!state.nutrition) state.nutrition = {};
-          state.nutrition.dashboard = mergeNutritionDashboard(state.nutrition.dashboard || {}, { photos: nutritionPhotos });
           state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
           lastCloudSnapshotAt = String(snapshot.data()?.updatedAt || lastCloudSnapshotAt);
           lastCloudError = "";
@@ -9300,7 +9054,6 @@
             if (!options.silent) showToast(lastPersistenceError?.message || "Dati cloud scaricati, ma il PC non riesce ancora a salvarli.");
             return false;
           }
-          setTimeout(pushNutritionDashboardToFrame, 0);
           if (!options.silent) showToast("Dati cloud caricati.");
         } else {
           state.profile.account.cloudStatus = "sync";
@@ -9326,7 +9079,6 @@
       loadCloudState({ silent: true }).then(() => {
         saveState({ cloud: false });
         render();
-        setTimeout(pushNutritionDashboardToFrame, 0);
       });
     }
 
@@ -9588,7 +9340,6 @@
       startCloudStateRealtime();
       startReliableSessionsRealtime();
       scheduleReliableSync(100);
-      startNutritionPhotosRealtime();
       writeLocalStateSnapshot(state, { touch: false, cloud: false });
       showToast("Questo dispositivo e stato caricato nel cloud.");
       setCloudOperation("success", `Sincronizzazione completata alle ${new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}.`, 100);
@@ -9622,7 +9373,6 @@
       startCloudStateRealtime();
       startReliableSessionsRealtime();
       scheduleReliableSync(100);
-      startNutritionPhotosRealtime();
       render();
       setCloudOperation(reconciled ? "success" : "error", reconciled ? `Sincronizzazione completata alle ${new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}.` : (lastCloudError || "Dati scaricati; upload locale in attesa."), reconciled ? 100 : 0);
       showToast(reconciled ? "Dati uniti e sincronizzati su PC e telefono." : (lastCloudError || "Dati scaricati; caricamento delle modifiche locali in attesa."));
@@ -9648,7 +9398,6 @@
       if (!authService) return;
       stopCloudStateRealtime();
       stopReliableSessionsRealtime();
-      stopNutritionPhotosRealtime();
       await authService.signOut();
       showToast("Account scollegato. I dati locali restano qui.");
     }
@@ -10390,7 +10139,7 @@
         saveState();
       }
       activeScreen = screen;
-      const bottomMap = { dashboard: "home", training: "workout", progress: "progress", logbook: "logbook", nutrition: "nutrition", volume: "volume", quiz: "quiz", coach: "coach" };
+      const bottomMap = { dashboard: "home", training: "workout", progress: "progress", logbook: "logbook", volume: "volume", quiz: "quiz", coach: "coach" };
       activeBottom = bottomMap[screen] || "home";
       render();
     }
@@ -10401,7 +10150,6 @@
       if (bottom === "workout") activeScreen = "training";
       if (bottom === "progress") activeScreen = "progress";
       if (bottom === "logbook") activeScreen = "logbook";
-      if (bottom === "nutrition") activeScreen = "nutrition";
       if (bottom === "volume") {
         state.profile.mode = "coach";
         state.coach.unlocked = true;
@@ -10504,7 +10252,6 @@
         training: ["Allenamento", state.profile.phase],
         progress: ["Analisi progressi", "Trend carichi e score"],
         logbook: ["Logbook", "Storico allenamenti e PR"],
-        nutrition: ["Nutrizione", "Dashboard alimentazione"],
         volume: ["Volume", "Programmazione annuale"],
         quiz: ["Check-in", "Semaforo e benessere"],
         coach: ["Coach", "Back office"],
@@ -10517,7 +10264,6 @@
       if (activeScreen === "training") screen.innerHTML = trainingHtml();
       if (activeScreen === "progress") screen.innerHTML = progressHtml();
       if (activeScreen === "logbook") screen.innerHTML = logbookHtml();
-      if (activeScreen === "nutrition") screen.innerHTML = nutritionHtml();
       if (activeScreen === "volume") screen.innerHTML = volumeScreenHtml();
       if (activeScreen === "quiz") screen.innerHTML = quizHtml();
       if (activeScreen === "coach") screen.innerHTML = coachHtml();
@@ -10746,11 +10492,6 @@
       </div>`;
     }
 
-    function workoutProSettingsHtml() {
-      const preferences = state.training?.workoutProPreferences || {};
-      return `<section class="card" aria-labelledby="workoutProSettingsTitle"><div class="row"><div><span class="section-eyebrow">Allenamento</span><h3 id="workoutProSettingsTitle">Workout Pro</h3></div><span class="chip">v115</span></div><div class="training-context-grid"><label><input type="checkbox" data-workout-pro-setting="wakeLockEnabled" ${preferences.wakeLockEnabled ? "checked" : ""}> Mantieni schermo attivo durante la sessione</label><label><input type="checkbox" data-workout-pro-setting="notificationsEnabled" ${preferences.notificationsEnabled ? "checked" : ""}> Notifiche al termine del timer</label><label><input type="checkbox" data-workout-pro-setting="voiceEnabled" ${preferences.voiceEnabled ? "checked" : ""}> Controllo vocale sperimentale</label><label><input type="checkbox" data-workout-pro-setting="soundEnabled" ${preferences.soundEnabled ? "checked" : ""}> Suono timer</label></div><p class="micro-copy">Schermo, microfono e notifiche vengono attivati soltanto dopo una tua azione esplicita e solo se il browser li supporta.</p></section>`;
-    }
-
     function reliableSyncPanelHtml(){
       initReliableSync();const stats=reliableSyncStats(),status=refreshReliableSyncStatus(),labels={synced:"Sincronizzato",syncing:"Sincronizzazione in corso",offline:"Offline: salvo in coda",error:"Cloud in attesa",conflict:"Conflitto da controllare",local:"Solo su questo dispositivo"},diag=reliableSyncUi.diagnostics;
       const candidates=(diag?.pairs||[]).map((pair,index)=>`<article class="duplicate-resolution-card"><div><strong>Confronto ${index+1}</strong><p>${escapeHtml(pair.left.label)}</p><small>${escapeHtml(pair.left.details||"")} · ${escapeHtml(backupDateLabel(pair.left.completedAt))}</small></div><div><p>${escapeHtml(pair.right.label)}</p><small>${escapeHtml(pair.right.details||"")} · ${escapeHtml(backupDateLabel(pair.right.completedAt))}</small></div><div class="quick-actions"><button class="ghost-button" data-duplicate-keep="${escapeHtml(pair.left.id)}" data-duplicate-remove="${escapeHtml(pair.right.id)}">Mantieni la prima</button><button class="ghost-button" data-duplicate-keep="${escapeHtml(pair.right.id)}" data-duplicate-remove="${escapeHtml(pair.left.id)}">Mantieni la seconda</button></div></article>`).join("");
@@ -10758,7 +10499,7 @@
     }
 
     function settingsHtml() {
-      return `<div class="phase11-dashboard settings-screen"><section class="phase11-hero card"><div><span class="section-eyebrow">Tutto in un posto</span><h2>Impostazioni</h2><p>Preferenze dell'app, Diva Bot, protezione dati e sincronizzazione.</p></div><span class="chip">${APP_BUILD}</span></section>${divaBotSettingsHtml()}${experienceSettingsHtml()}${workoutProSettingsHtml()}${reliableSyncPanelHtml()}${dataProtectionHtml()}${accountCardHtml()}</div>`;
+      return `<div class="phase11-dashboard settings-screen"><section class="phase11-hero card"><div><span class="section-eyebrow">Tutto in un posto</span><h2>Impostazioni</h2><p>Preferenze dell'app, Diva Bot, protezione dati e sincronizzazione.</p></div><span class="chip">${APP_BUILD}</span></section>${divaBotSettingsHtml()}${experienceSettingsHtml()}${reliableSyncPanelHtml()}${dataProtectionHtml()}${accountCardHtml()}</div>`;
     }
 
     function dashboardSummaryCard(icon, label, value, detail, color, metric = null) {
@@ -10841,7 +10582,6 @@
         progress:"Guardiamo i progressi insieme: anche i passi piccoli contano.",
         logbook:"Custodisco io lo storico, tu pensa a diventare fortissima.",
         coach:"Sono qui nel Coach Studio: programmiamo qualcosa di bellissimo.",
-        nutrition:"Ti faccio compagnia anche qui, senza toccare il tuo piano.",
         quiz:"Check-in tranquillo: ascoltiamo come stai davvero.",
         settings:"Qui puoi decidere anche che carattere devo avere ✨"
       };
@@ -11234,14 +10974,6 @@
         <div class="section-eyebrow" style="margin:0">Storico carichi esercizio</div>
         ${rows.length ? rows.map((row) => `<div class="history-row"><span>${escapeHtml(historyLoadLabel(row))}</span><strong>${escapeHtml(row.date)} - ${escapeHtml(row.sessionCode || "")}</strong></div>`).join("") : emptyStateHtml({ title:"Nessun dato progressi", description:"Registra una seduta con questo esercizio per vedere il trend.", actionLabel:"Vai all’allenamento", action:"training", icon:"↗" })}
       </div>`;
-    }
-
-    function nutritionHtml() {
-      return `
-        <div class="hero-title">
-         
-        </section>
-      `;
     }
 
     function volumeScreenHtml() {
@@ -14659,11 +14391,6 @@
       document.querySelectorAll("[data-bottom-target]").forEach((button) => {
         button.addEventListener("click", () => setBottom(button.dataset.bottomTarget));
       });
-      const nutritionFrame = document.querySelector(".nutrition-frame");
-      if (nutritionFrame) {
-        nutritionFrame.addEventListener("load", pushNutritionDashboardToFrame);
-        setTimeout(pushNutritionDashboardToFrame, 80);
-      }
       document.querySelectorAll("[data-choice]").forEach((button) => {
         button.addEventListener("click", () => {
           state.training.feeling = button.dataset.choice;
@@ -17004,12 +16731,6 @@
         .catch(() => {});
     }
 
-    window.addEventListener("message", (event) => {
-      const frame = document.querySelector(".nutrition-frame");
-      if (frame && event.source !== frame.contentWindow) return;
-      const message = event.data || {};
-      if (message.type === "barbell-diva:nutrition-save") receiveNutritionDashboard(message.state);
-    });
     window.addEventListener("popstate", () => { if (applyCoachStudioDeepLink()) render(); });
     let chartResizeFrame = null;
     function scheduleChartRedraw() {
@@ -17048,7 +16769,6 @@
       premiumBootSafetyTimer = setTimeout(() => { premiumBootReady = true; finishPremiumBoot(); }, 1800);
       requestAnimationFrame(() => { if (!firebaseBootStarted || authReady) markPremiumBootReady(); });
     }
-    importBundledNutritionBackup();
   </script>
 </body>
 </html>
