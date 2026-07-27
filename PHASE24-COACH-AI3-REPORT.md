@@ -1,99 +1,36 @@
-# Fase 24 — Coach AI 3.0 Intelligent Programming
+# Migrazioni Fase 19
 
-Build: `v131-phase24.0-coach-ai3`  
-Schema dati: `10`  
-Motore: `coach-ai3-programming.js` 3.0.0
+## v4 → v5
 
-## Architettura
+`migrateV4ToV5()` aggiunge valori sicuri senza eliminare o rinominare campi precedenti:
 
-Coach AI 3.0 non sostituisce il Decision Engine della Fase 23: lo usa come fonte deterministica. Il flusso è:
+- `training.activeWorkout = null` quando assente;
+- `training.workoutProPreferences` con permessi disattivati;
+- `meta.schemaVersion = 5`.
 
-1. Knowledge Graph raccoglie programma, storico, profilo atleta, strategia e Master Exercise Library.
-2. Decision Engine produce metriche, score, regole applicate, confidenza e traccia decisionale.
-3. Coach AI 3.0 trasforma le decisioni applicabili in proposte operative.
-4. Ogni proposta espone tre strategie: conservativa, bilanciata e aggressiva.
-5. La simulazione lavora su una copia isolata dello stato e ricalcola il Decision Engine.
-6. Solo il pulsante **Applica questa modifica** scrive nel programma reale.
+`hydrateStateModel()` completa i default anche per backup vecchi o parziali. Il formato di esportazione esistente non viene sostituito: i backup precedenti attraversano la pipeline di migrazione già presente.
 
-## Revisione del programma
+La riparazione delle progressioni importate non forza più Recovery Mode quando mancano dati non essenziali: conserva lo stato migrato e registra un avviso di audit.
 
-La pagina Coach AI mostra:
+## Correzione dati Alice
 
-- Program Score e completezza;
-- volume settimanale e copertura delle progressioni;
-- stato della fatica/deload;
-- problemi di ordine, ridondanza, recupero e volume;
-- andamento reale dei singoli esercizi;
-- dati usati, regole applicate, priorità e confidenza.
+`correctAliceWorkoutF16Jul2026()` corregge la registrazione confermata della Scheda F (anche se il codice storico contiene il numero settimana) quando la data normalizzata è `2026-07-20`. La nuova data è `2026-07-16`, anche sulle righe esercizio. Timestamp tecnici di salvataggio/sync non vengono falsificati.
 
-Le informazioni mancanti restano visibili e non vengono inventate.
+La correzione è idempotente per condizione: viene ricontrollata anche dopo un merge cloud tardivo, ma una voce già al 16 luglio non corrisponde più al filtro e non viene toccata di nuovo. `migrations.aliceWorkoutF16Jul2026Corrected` conserva il conteggio delle correzioni applicate.
 
-## Proposte intelligenti
+Il controllo viene ripetuto dopo il recupero del journal locale e dopo i merge cloud iniziale/realtime, perché una safety copy o una copia remota può essere reinserita nello storico dopo la prima idratazione dello stato.
 
-Le operazioni supportate dal motore includono:
+L'Archivio allenamenti applica infine lo stesso controllo prima del rendering e salva subito l'eventuale correzione: questo copre anche journal o callback asincrone arrivate dopo un render precedente.
 
-- revisione di recupero, RIR e numero di serie;
-- collegamento di una progressione;
-- incremento mirato del volume per una priorità;
-- riordino degli esercizi;
-- sostituzione tramite record compatibili della Master Exercise Library.
+## Compatibilità
 
-Le sostituzioni vengono ordinate per muscolo principale, pattern, attrezzatura disponibile, relazioni tra esercizi, stabilità e richiesta sistemica. Le limitazioni dichiarate sono considerate come contesto prudenziale; il sistema non formula diagnosi.
+- Nessuna funzione dichiarata della Fase 18 è stata rimossa: 490 su 490 presenti.
+- Le sessioni storiche continuano ad aprirsi con i campi mancanti trattati come opzionali.
+- Warm-up, tecniche, gruppi e audit sono campi additivi.
+- Il salvataggio definitivo usa ancora il repository e la sync cloud esistenti.
+# Fase 20A — migrazione compatibile schema 5
 
-## Simulazione prima/dopo
-
-Prima dell'applicazione vengono mostrati:
-
-- Program Score prima/dopo;
-- serie settimanali prima/dopo;
-- distribuzione del volume muscolare modificata;
-- frequenza prima/dopo;
-- indicatore di fatica sistemica;
-- numero e tipo esatto delle operazioni;
-- vantaggi, limiti, dati e regole della strategia scelta.
-
-La simulazione usa una copia dello stato: non modifica il programma, il Logbook o le progressioni salvate.
-
-## Applicazione, protezioni e annullamento
-
-- L'applicazione è possibile soltanto dopo la simulazione e una conferma esplicita.
-- Viene applicata esclusivamente l'opzione selezionata.
-- Prima della scrittura viene confrontata l'impronta del programma: se nel frattempo è cambiato, l'applicazione viene bloccata.
-- L'annullamento è consentito soltanto se non esistono modifiche successive, per evitare di sovrascrivere lavoro più recente.
-- Il programma precedente viene ripristinato integralmente tramite il repository canonico.
-
-## Storico decisioni
-
-Lo schema 10 aggiunge `coachAi3.history`. Ogni interazione registra:
-
-- proposta e opzione;
-- programma e impronta di partenza;
-- stato `suggested`, `accepted`, `rejected` o `undone`;
-- data di proposta e delle successive decisioni;
-- impronta successiva per l'annullamento protetto.
-
-Lo storico viene incluso nei normali salvataggi, sincronizzazione ed export dati.
-
-## Verifiche eseguite
-
-- parsing del modulo e del JavaScript inline;
-- generazione di tre opzioni operative per proposta;
-- assenza di mutazioni durante analisi e simulazione;
-- conservazione della forma canonica dei recuperi (`rest.seconds`);
-- patch limitata al solo esercizio bersaglio;
-- confronto score, volume, fatica, frequenza e muscoli;
-- stati completi dello storico;
-- integrazione build/schema/cache PWA;
-- apertura reale della pagina Coach AI nel browser;
-- rendering reale di 7 proposte sul programma corrente;
-- apertura reale della simulazione e verifica dei controlli di conferma.
-
-Test automatici Fase 24: **5/5 superati**.
-
-## Limiti dichiarati
-
-- Il Coach AI opera solo sui dati presenti; incompletezza della Master Library o del profilo riduce la precisione.
-- Il Program Score è un supporto decisionale, non una valutazione medica o una garanzia di risultato.
-- L'annullamento automatico viene bloccato dopo modifiche successive intenzionalmente.
-- Le proposte non sostituiscono il giudizio del coach: restano sempre facoltative.
-
+- `phase20AProgramming = 1` inizializza in modo idempotente il nodo opzionale `programming`.
+- Backup schema 4/5 senza il nodo vengono caricati con default conservativi.
+- Nessuna seduta, scheda, progressione o decisione precedente viene rimossa.
+- Nessun incremento di schema è necessario perché l'estensione è opzionale e retrocompatibile.
