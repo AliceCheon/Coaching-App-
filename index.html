@@ -7,26 +7,27 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v1451">
+  <link rel="manifest" href="manifest.webmanifest?v=v1452">
   <link rel="icon" href="app-icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <!-- Preload critical font for faster text rendering -->
   <link rel="preload" href="atlas-nunito-sans.ttf" as="font" type="font/ttf" crossorigin="crossorigin" fetchpriority="high">
   <link rel="stylesheet" href="coach-studio.css?v=coach-nav-clean-6">
   <link rel="stylesheet" href="coach-program-editor-19.8.css?v=athlete-side-5">
-  <link rel="stylesheet" href="coach-tools-v1451.css?v=v1451">
-  <script src="exercise-library-19.8.js?v=v1451"></script>
-  <script src="master-exercise-library.js?v=v1451"></script>
-  <script src="athlete-context.js?v=v1451"></script>
-  <script src="coach-ai-engine-2.js?v=v1451"></script>
-  <script src="knowledge-graph.js?v=v1451"></script>
-  <script src="decision-rules.js?v=v1451"></script>
-  <script src="decision-engine.js?v=v1451"></script>
-  <script src="coach-ai3-programming.js?v=v1451"></script>
-  <script type="module" src="programming-engine.js?v=v1451"></script>
-  <script type="module" src="sync-reliability.js?v=v1451"></script>
-  <script src="app-config-v144.js?v=v1451"></script>
-  <script src="coach-studio.js?v=v1451"></script>
+  <link rel="stylesheet" href="coach-tools-v1451.css?v=v1451-contrast">
+  <link rel="stylesheet" href="unified-sidebar-v1452.css?v=v1452">
+  <script src="exercise-library-19.8.js?v=v1452"></script>
+  <script src="master-exercise-library.js?v=v1452"></script>
+  <script src="athlete-context.js?v=v1452"></script>
+  <script src="coach-ai-engine-2.js?v=v1452"></script>
+  <script src="knowledge-graph.js?v=v1452"></script>
+  <script src="decision-rules.js?v=v1452"></script>
+  <script src="decision-engine.js?v=v1452"></script>
+  <script src="coach-ai3-programming.js?v=v1452"></script>
+  <script type="module" src="programming-engine.js?v=v1452"></script>
+  <script type="module" src="sync-reliability.js?v=v1452"></script>
+  <script src="app-config-v144.js?v=v1452"></script>
+  <script src="coach-studio.js?v=v1452"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4746,10 +4747,18 @@
       <button class="rail-collapse" type="button" data-main-nav-toggle aria-label="Comprimi navigazione">‹</button>
       <nav class="rail-navigation">
         <button class="rail-dot active" data-jump="dashboard" title="Dashboard" aria-label="Dashboard"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z"/></svg><span>Dashboard</span></button>
-        <button class="rail-dot" data-jump="training" title="Allenamento" aria-label="Allenamento"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 6v12M18 6v12M3 10v4M21 10v4M6 12h12"/></svg><span>Allenamento</span></button>
+        <button class="rail-dot" data-jump="training" title="Workout del giorno" aria-label="Workout del giorno"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 6v12M18 6v12M3 10v4M21 10v4M6 12h12"/></svg><span>Workout del giorno</span></button>
+        <section class="rail-coach-group">
+          <button class="rail-dot rail-coach-toggle" type="button" data-unified-training-toggle aria-expanded="true" title="Allenamento" aria-label="Apri menu Allenamento"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M7 16h10"/><path d="M9 3h6"/></svg><span>Allenamento</span><em>⌃</em></button>
+          <div class="rail-coach-subnav">
+            <button type="button" data-main-coach-route="programs">Programmi</button>
+            <button type="button" data-main-coach-route="progressions">Progressioni</button>
+            <button type="button" data-main-coach-route="library">Libreria esercizi</button>
+            <button type="button" data-main-coach-route="ai">Coach AI</button>
+          </div>
+        </section>
         <button class="rail-dot" data-jump="progress" title="Analisi progressi" aria-label="Analisi progressi"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 3 5-7"/></svg><span>Analisi progressi</span></button>
         <button class="rail-dot" data-jump="logbook" title="Logbook" aria-label="Logbook"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M5 4h14v16H5z"/><path d="M8 2v4M16 2v4M8 10h8M8 14h5"/></svg><span>Logbook</span></button>
-        <button class="rail-dot" data-bottom="coach" title="Coach Studio" aria-label="Coach Studio"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M7 16h10"/><path d="M9 3h6"/></svg><span>Coach Studio</span></button>
         <button class="rail-dot" data-bottom="quiz" title="Check-in" aria-label="Check-in"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Check-in</span></button>
         <button class="rail-dot" data-jump="settings" title="Impostazioni" aria-label="Impostazioni"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg><span>Impostazioni</span></button>
         <button class="rail-dot diva-rail-toggle" data-global-diva-toggle title="Nascondi Diva Bot" aria-label="Nascondi Diva Bot" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="5" y="7" width="14" height="11" rx="4"/><path d="M12 7V4M9 12h.01M15 12h.01M9 16c2 1 4 1 6 0"/></svg><span>Diva Bot</span></button>
@@ -4781,7 +4790,7 @@
 
         <div class="top-tabs" aria-label="Sezioni principali">
           <button class="top-tab active" data-screen="dashboard">Dashboard</button>
-          <button class="top-tab" data-screen="training">Allenamento</button>
+          <button class="top-tab" data-screen="training">Workout del giorno</button>
           <button class="top-tab" data-screen="progress">Analisi progressi</button>
           <button class="top-tab" data-screen="logbook">Logbook</button>
           <button class="top-tab coach-tab" data-screen="coach">Coach</button>
@@ -4798,7 +4807,7 @@
           </button>
           <button class="nav-button" data-bottom="workout">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 6v12M18 6v12M3 10v4M21 10v4M6 12h12"/></svg>
-            Allenamento
+            Workout
           </button>
           <button class="nav-button" data-bottom="progress">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 3 5-7"/></svg>
@@ -4832,7 +4841,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = window.BarbellDivaV144Config?.build || "v145.1";
+    const APP_BUILD = window.BarbellDivaV144Config?.build || "v145.2";
     const FIREBASE_CONFIG = window.BarbellDivaV144Config?.firebase || {};
     const CLOUD_COLLECTION = "barbellDivaAccounts";
     const APP_NAME = "Barbell diva";
@@ -10164,6 +10173,25 @@
       render();
     }
 
+    function openCoachRouteFromMainNav(route) {
+      if (!coachDesktopAllowed()) {
+        activeScreen="dashboard"; activeBottom="home"; state.profile.mode="athlete";
+        showToast("La programmazione Coach si usa da PC.");
+        return render();
+      }
+      const next=window.BarbellDivaCoachStudio.cleanRoute(route);
+      activeScreen="coach";
+      activeBottom="coach";
+      state.profile.mode="coach";
+      state.coach.unlocked=true;
+      state.ui=state.ui||{};
+      state.ui.mainCoachMenuOpen=true;
+      state.coach.studio=window.BarbellDivaCoachStudio.normalizeStudio({...state.coach.studio,route:next,sidebarOpen:false,lastVisitedAt:new Date().toISOString()});
+      history.pushState({coachRoute:next},"",`#coach/${next}`);
+      saveState({cloud:false});
+      render();
+    }
+
     function coachDesktopAllowed() {
       return !!window.matchMedia?.("(min-width: 981px)")?.matches;
     }
@@ -10242,12 +10270,12 @@
       }
       const titleMap = {
         dashboard: [APP_NAME, OPENING_QUOTE],
-        training: ["Allenamento", state.profile.phase],
+        training: ["Workout del giorno", state.profile.phase],
         progress: ["Analisi progressi", "Trend carichi e score"],
         logbook: ["Logbook", "Storico allenamenti e PR"],
         volume: ["Volume", "Programmazione annuale"],
         quiz: ["Check-in", "Semaforo e benessere"],
-        coach: ["Coach", "Back office"],
+        coach: ["Allenamento", "Programmi, progressioni e Coach AI"],
         settings: ["Impostazioni", "App, dati e sincronizzazione"]
       };
       document.getElementById("appTitle").textContent = titleMap[activeScreen][0];
@@ -10310,6 +10338,16 @@
         const isBottom = button.dataset.bottom === activeBottom;
         button.classList.toggle("active", isTop || isBottom);
       });
+      const studioRoute=activeScreen==="coach"?(coachStudioState().route==="program"?"programs":coachStudioState().route):"";
+      document.querySelector("[data-unified-training-toggle]")?.classList.toggle("active",activeScreen==="coach");
+      document.querySelectorAll("[data-main-coach-route]").forEach((button)=>button.classList.toggle("active",button.dataset.mainCoachRoute===studioRoute));
+      const menuOpen=state.ui?.mainCoachMenuOpen!==false;
+      const unifiedToggle=document.querySelector("[data-unified-training-toggle]");
+      const unifiedSubnav=document.querySelector(".rail-coach-subnav");
+      unifiedToggle?.setAttribute("aria-expanded",String(menuOpen));
+      unifiedSubnav?.classList.toggle("is-collapsed",!menuOpen);
+      const unifiedArrow=unifiedToggle?.querySelector("em");
+      if(unifiedArrow) unifiedArrow.textContent=menuOpen?"⌃":"⌄";
     }
 
     function dashboardWorkoutStats() {
@@ -11023,6 +11061,10 @@
       const studio = coachStudioState();
       const next = window.BarbellDivaCoachStudio.cleanRoute(route);
       Object.assign(studio, data, { route: next, sidebarOpen:false, lastVisitedAt:new Date().toISOString() });
+      if(next==="program"){
+        state.ui=state.ui||{};
+        state.ui.mainNavCollapsed=true;
+      }
       if (data.programId) {
         const exists = programRepository.getPrograms().some((program) => program.id === data.programId);
         if (exists) { coachProgramUi.programId = data.programId; studio.programId = data.programId; }
@@ -11077,7 +11119,11 @@
       activeScreen = "coach"; activeBottom = "coach"; state.profile.mode = "coach"; state.coach.unlocked = true;
       const route = window.BarbellDivaCoachStudio.cleanRoute(decodeURIComponent(match[1]));
       const studio = window.BarbellDivaCoachStudio.normalizeStudio({ ...state.coach.studio, route, sidebarOpen:false });
-      if (match[2] && route === "program") studio.programId = decodeURIComponent(match[2]);
+      if (match[2] && route === "program") {
+        studio.programId = decodeURIComponent(match[2]);
+        state.ui=state.ui||{};
+        state.ui.mainNavCollapsed=true;
+      }
       if (match[2] && route === "questionnaire") studio.questionnaireId = decodeURIComponent(match[2]);
       state.coach.studio = studio;
       return true;
@@ -11092,12 +11138,9 @@
       const studio = coachStudioState();
       const route = studio.route;
       const parent = route === "program" ? "programs" : route === "questionnaire" ? "questionnaires" : route;
-      const trainingMenuOpen = studio.trainingMenuOpen !== false;
-      const videoMenu = COACH_VIDEO_NAV.map(([label,key,icon,children])=>`<section class="coach-video-nav-group"><button type="button" class="coach-video-nav-item ${(key===parent||children.some(([,childKey])=>childKey===parent))?"active":""}" data-coach-menu-toggle aria-expanded="${trainingMenuOpen}"><span>${icon}</span><strong>${escapeHtml(label)}</strong>${children.length?`<em>${trainingMenuOpen?"⌃":"⌄"}</em>`:""}</button>${children.length?`<div class="coach-video-subnav ${trainingMenuOpen?"":"is-collapsed"}">${children.map(([childLabel,childKey])=>`<button type="button" class="${childKey===parent?"active":""} ${["progressions","library"].includes(childKey)?"coach-subnav-emphasis":""}" data-coach-studio-route="${childKey}">${escapeHtml(childLabel)}</button>`).join("")}</div>`:""}</section>`).join("");
-      return `<div class="coach-studio-shell">
-        <aside class="coach-video-sidebar" aria-label="Menu Coach"><div class="coach-video-logo"><img src="app-icon-192.png" alt=""><strong>Coach Studio</strong><button type="button" data-coach-exit aria-label="Torna a Barbell Diva">←</button></div><nav>${videoMenu}</nav><button class="coach-video-exit" type="button" data-coach-exit>← Barbell Diva</button></aside>
+      return `<div class="coach-studio-shell unified-main-navigation">
         <main class="coach-studio-main">
-          <header class="coach-studio-topbar"><div class="coach-studio-breadcrumb"><strong>Coach Studio</strong><span>/</span><strong>${escapeHtml(coachStudioTitle(route))}</strong></div><div class="coach-studio-top-actions">${route==="programs"?`<button class="gold-button" type="button" data-program-action="new">+ Programma</button>`:""}</div><nav class="coach-studio-workspace-nav" aria-label="Strumenti Coach Studio">${COACH_STUDIO_NAV.map(([key,,label])=>`<button type="button" class="${parent===key?"active":""}" data-coach-studio-route="${key}">${escapeHtml(label)}</button>`).join("")}</nav></header>
+          <header class="coach-studio-topbar"><div class="coach-studio-breadcrumb"><strong>Allenamento</strong><span>/</span><strong>${escapeHtml(coachStudioTitle(route))}</strong></div><div class="coach-studio-top-actions">${route==="programs"?`<button class="gold-button" type="button" data-program-action="new">+ Programma</button>`:""}</div><nav class="coach-studio-workspace-nav" aria-label="Strumenti Allenamento">${COACH_STUDIO_NAV.map(([key,,label])=>`<button type="button" class="${parent===key?"active":""}" data-coach-studio-route="${key}">${escapeHtml(label)}</button>`).join("")}</nav></header>
           ${content}
         </main>
       </div>`;
@@ -11363,7 +11406,7 @@
         <td data-label="Esercizio"><div class="coach-inline-name"><button class="drag-handle" title="Trascina per riordinare">⋮⋮</button><button type="button" class="set-link-button ${exercise.metadata?.setGroupId?"active":""}" data-set-group-quick="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Crea superserie con l’esercizio successivo" aria-label="Crea superserie">↗</button><span class="program-exercise-letter">${escapeHtml(positionLabel)}</span><div class="coach-exercise-title"><button type="button" class="coach-exercise-name-text" data-inline-replace="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Sostituisci ${escapeHtml(displayExerciseName(exercise.name||"Esercizio"))}">${escapeHtml(displayExerciseName(exercise.name||"Esercizio"))}</button><button type="button" class="coach-name-edit" data-exercise-name-edit aria-label="Modifica nome">✎</button>${f("name",displayExerciseName(exercise.name||"Esercizio"),"text",'class="coach-name-input" hidden')}</div></div><div class="coach-inline-sub"><strong>${escapeHtml(exercise.muscle||exercise.som||"Gruppo da definire")}</strong><span>${escapeHtml((exercise.metadata?.secondaryMuscles||[]).join(", ")||"Secondari")}</span></div></td>
         <td data-label="Tipo"><select data-inline-exercise-field="executionType" ${attrs}>${coachExecutionTypeOptions(executionType)}</select></td><td data-label="Serie">${f("sets",p.sets,"number",'min="0"')}</td><td data-label="Rip/tempo">${f("reps",p.reps,"text",'placeholder="8-12"')}</td><td data-label="Rec">${f("restSeconds",p.restSeconds,"number",'min="0" step="5"')}</td><td data-label="Carico"><div class="coach-inline-load">${f("loadValue",p.loadValue,"number",'min="0" step="0.5"')}<select data-inline-exercise-field="loadUnit" ${attrs}>${["kg","lb","%1RM"].map((unit)=>`<option ${p.loadUnit===unit?"selected":""}>${unit}</option>`).join("")}</select></div></td><td data-label="RPE">${f("rpe",p.rpe)}</td><td data-label="RIR">${f("rir",p.rir)}</td><td data-label="TUT">${f("tempo",p.tempo,"text",'placeholder="3-1-X-0"')}</td>
         <td data-label="Note"><button type="button" class="coach-inline-note" data-inline-note-open="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-week-number="${weekNumber}"><span>✎</span><em>${escapeHtml(p.note||"Aggiungi nota")}</em></button></td>
-        <td data-label="Azioni"><div class="coach-inline-actions">${progression}<button data-exercise-action="details" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Dettagli e video">ⓘ</button><details class="coach-row-more"><summary title="Altre azioni" aria-label="Altre azioni">•••</summary><div><button data-inline-replace="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}">⇄ Sostituisci</button><button data-exercise-action="duplicate" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">▣ Duplica</button><button data-exercise-action="up" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">↑ Sposta su</button><button data-exercise-action="down" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">↓ Sposta giù</button><button data-inline-copy="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}">⧉ Copia</button><button data-set-group-action="superset" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">🔗 Superserie</button><button class="danger" data-exercise-action="delete" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">⌫ Elimina</button></div></details></div></td>
+        <td data-label="Azioni"><div class="coach-inline-actions">${progression}<button data-exercise-action="details" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Dettagli e video">ⓘ</button><details class="coach-row-more"><summary title="Altre azioni" aria-label="Altre azioni">•••</summary><div><button data-exercise-action="duplicate" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">▣ Duplica</button><button data-exercise-action="up" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">↑ Sposta su</button><button data-exercise-action="down" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">↓ Sposta giù</button><button data-inline-copy="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}">⧉ Copia</button><button data-set-group-action="superset" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">🔗 Superserie</button><button class="danger" data-exercise-action="delete" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">⌫ Elimina</button></div></details></div></td>
       </tr>`;
     }
 
@@ -11411,9 +11454,7 @@
       if (!selection.program) return coachStudioProgramsHtml();
       studio.programId = selection.program.id;
       studio.editorView="weekly"; const sideOpen=true;
-      const linked=activeAthleteIntelligence(selection.program.id);
-      const contextSummary=`<div class="athlete-context-strip program-context-summary"><span><b>Atleta</b>${escapeHtml(linked.athlete?.general?.name||"Non collegato")}</span><span><b>Strategia</b>${escapeHtml(linked.strategy?.name||"Scheda libera")}</span><span><b>Blocco</b>${escapeHtml(linked.programLink?.blockType||linked.strategy?.blockType||"libero")}</span><span><b>Nutrizione</b>${escapeHtml(linked.nutrition?.phase||"non definita")}</span><button class="ghost-button" data-coach-studio-route="strategy">Modifica collegamento</button></div>`;
-      const editorBody=`${coachProgramToolsToolbarHtml(selection.program)}${contextSummary}<div class="coach-editor-layout unified ${studio.referenceOpen?"reference-open":""} ${studio.aiOpen?"ai-open":""}"><div>${coachProgramBoardHtml(selection.program)}</div>${studio.referenceOpen||studio.aiOpen?`<aside class="coach-editor-side">${studio.referenceOpen?coachStudioReferenceHtml():""}${studio.aiOpen?coachAi2PageHtml(true):""}</aside>`:""}</div><div class="coach-statistics-launch-row"><button type="button" class="coach-statistics-fab" data-coach-volume-focus aria-label="Statistiche programma">▥ Statistiche</button></div>`;
+      const editorBody=`${coachProgramToolsToolbarHtml(selection.program)}<div class="coach-editor-layout unified ${studio.referenceOpen?"reference-open":""} ${studio.aiOpen?"ai-open":""}"><div>${coachProgramBoardHtml(selection.program)}</div>${studio.referenceOpen||studio.aiOpen?`<aside class="coach-editor-side">${studio.referenceOpen?coachStudioReferenceHtml():""}${studio.aiOpen?coachAi2PageHtml(true):""}</aside>`:""}</div><div class="coach-statistics-launch-row"><button type="button" class="coach-statistics-fab" data-coach-volume-focus aria-label="Statistiche programma">▥ Statistiche</button></div>`;
       return `<section class="coach-studio-page coach-editor coach-editor-weekly">${coachStudioPageHead("Editor programma",selection.program.name,"Un’unica tavola settimanale: modifica, progressioni e controlli restano nello stesso punto.",`<button class="ghost-button" data-coach-studio-route="programs">← Programmi</button>`)}<div class="coach-editor-toolbar"><div class="coach-editor-save-state"><span class="save-dot"></span><strong data-coach-save-label>${coachProgramUi.saveStatus==="saving"?"Salvataggio…":"Salvato"}</strong></div><div class="quick-actions"><button class="gold-button" data-program-action="save">Salva</button><button class="ghost-button" data-program-list-action="save-as" data-program-id="${escapeHtml(selection.program.id)}">Salva come</button><button class="ghost-button" data-program-list-action="duplicate" data-program-id="${escapeHtml(selection.program.id)}">Duplica</button><button class="ghost-button" data-program-action="edit">Informazioni</button><button class="ghost-button ${studio.referenceOpen?"active":""}" data-studio-panel-toggle="reference">Anteprima atleta</button><button class="gold-button ${studio.aiOpen?"active":""}" data-studio-panel-toggle="ai">${coachMascotHtml()} Coach AI</button></div></div>${editorBody}${coachUiModalHtml()}</section>`;
     }
 
@@ -17110,8 +17151,27 @@
         if (button.dataset.bottom) setBottom(button.dataset.bottom);
       });
     });
+    document.querySelector("[data-unified-training-toggle]")?.addEventListener("click",()=>{
+      state.ui=state.ui||{};
+      state.ui.mainCoachMenuOpen=state.ui.mainCoachMenuOpen===false;
+      const open=state.ui.mainCoachMenuOpen;
+      const toggle=document.querySelector("[data-unified-training-toggle]");
+      const submenu=document.querySelector(".rail-coach-subnav");
+      submenu?.classList.toggle("is-collapsed",!open);
+      toggle?.setAttribute("aria-expanded",String(open));
+      const arrow=toggle?.querySelector("em");
+      if(arrow) arrow.textContent=open?"⌃":"⌄";
+      saveState({cloud:false});
+    });
+    document.querySelectorAll("[data-main-coach-route]").forEach((button)=>button.addEventListener("click",()=>openCoachRouteFromMainNav(button.dataset.mainCoachRoute)));
     document.querySelector("[data-main-nav-toggle]")?.addEventListener("click",()=>{
-      state.ui=state.ui||{}; state.ui.mainNavCollapsed=!state.ui.mainNavCollapsed; saveState({cloud:false}); render();
+      state.ui=state.ui||{};
+      state.ui.mainNavCollapsed=!state.ui.mainNavCollapsed;
+      document.body.classList.toggle("nav-collapsed",state.ui.mainNavCollapsed);
+      const toggle=document.querySelector("[data-main-nav-toggle]");
+      toggle?.setAttribute("aria-label",state.ui.mainNavCollapsed?"Espandi navigazione":"Comprimi navigazione");
+      if(toggle) toggle.title=state.ui.mainNavCollapsed?"Espandi barra laterale":"Comprimi barra laterale";
+      saveState({cloud:false});
     });
 
     document.getElementById("helpButton").addEventListener("click", () => {

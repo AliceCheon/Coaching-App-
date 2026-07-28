@@ -6,7 +6,7 @@ const html = fs.readFileSync(new URL("index.html", root), "utf8");
 const editorCss = fs.readFileSync(new URL("coach-program-editor-19.8.css", root), "utf8");
 
 const checks = [
-  ["Coach desktop rail presente", html.includes('data-bottom="coach"')],
+  ["Coach integrato nella barra principale", html.includes('data-main-coach-route="programs"') && html.includes("rail-coach-subnav")],
   ["Coach assente dalla barra telefono", !html.includes('class="nav-button coach-nav" data-bottom="coach"')],
   ["Editor a griglia con anteprima laterale", html.includes("coach-layout-grid") && html.includes("coach-reference-panel")],
   ["Anteprima atleta in sola lettura", html.includes("Sola lettura") && html.includes("data-studio-panel-close=\"reference\"")],
