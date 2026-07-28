@@ -12,7 +12,7 @@ const failures = [];
 const check = (condition, message) => { if (!condition) failures.push(message); };
 
 check(config.includes('build: "v146.1"'), "La build non è v146.1.");
-check(serviceWorker.includes('const CACHE_NAME = "atlas-app-v1461c1"'), "La cache PWA non è v146.1 correttiva.");
+check(serviceWorker.includes('const CACHE_NAME = "atlas-app-v1461c5"'), "La cache PWA non è v146.1 correttiva.");
 check(html.includes("data-unified-training-toggle"), "Allenamento non è più un menu espandibile nella barra principale.");
 for (const unwanted of ["Completato", "Workout", "Pacchetti", "Abbonamenti"]) {
   check(!html.includes(`["${unwanted}"`), `Voce Coach indesiderata reintrodotta: ${unwanted}.`);
