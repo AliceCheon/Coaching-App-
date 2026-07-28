@@ -25,4 +25,4 @@ const checks = [
 ];
 
 for (const [name, ok] of checks) assert.equal(ok, true, name);
-console.log(JSON.stringify({ ok:true, build:"v144-coach-rebuild", checks:checks.length, mobileCoach:false }));
+console.log(JSON.stringify({ ok:true, build:"v145-coach-safe", checks:checks.length, mobileCoach:false }));
