@@ -7,6 +7,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const html = read("index.html");
 const enhancer = read("coach-schede-v146-enhance.js");
+const restyle = read("coach-schede-restyle-v146.css");
 const config = read("app-config-v144.js");
 const manifest = read("manifest.webmanifest");
 const sw = read("service-worker.js");
@@ -14,12 +15,12 @@ const workflow = read(".github/workflows/tests.yml");
 const check = (condition, message) => assert.ok(condition, message);
 
 check(config.includes('build: "v146.1"'), "build v146.1 mancante");
-check(config.includes('cache: "atlas-app-v1461"'), "cache v146.1 mancante");
-check(sw.includes('const CACHE_NAME = "atlas-app-v1461"'), "service worker non aggiornato");
+check(config.includes('cache: "atlas-app-v1461c1"'), "cache contrasto v146.1 mancante");
+check(sw.includes('const CACHE_NAME = "atlas-app-v1461c1"'), "service worker contrasto non aggiornato");
 check(sw.includes('"./coach-schede-restyle-v146.css"'), "CSS v146 non precaricato");
 check(sw.includes('"./coach-schede-v146-enhance.js"'), "JS v146 non precaricato");
-check(manifest.includes("index.html?v=v1461"), "manifest non aggiornato");
-check(html.includes("coach-schede-restyle-v146.css?v=v1461"), "CSS senza cache bust v146.1");
+check(manifest.includes("index.html?v=v1461c1"), "manifest contrasto non aggiornato");
+check(html.includes("coach-schede-restyle-v146.css?v=v1461c1"), "CSS senza cache bust contrasto");
 check(html.includes("coach-schede-v146-enhance.js?v=v1461"), "JS senza cache bust v146.1");
 
 check(html.includes("window.BarbellDivaV146Bridge={"), "bridge correttivo mancante");
@@ -37,10 +38,13 @@ check(html.includes("exerciseMedia(exerciseName)"), "risoluzione media esercizio
 check(enhancer.includes("BarbellDivaV146Bridge?.exerciseMedia"), "thumbnail non usa la libreria reale");
 
 check(workflow.includes("v1461-corrections.test.mjs"), "test v146.1 non eseguito da GitHub");
+check(restyle.includes('body[data-theme="light"] .schede-v146-duration-pill'), "contrasto durata tema chiaro mancante");
+check(restyle.includes('body[data-theme="light"] .schede-v146-day-footer button'), "contrasto pulsanti footer tema chiaro mancante");
+check(restyle.includes('body[data-theme="light"] .coach-editor-weekly button:disabled'), "contrasto controlli disabilitati tema chiaro mancante");
 
 console.log(JSON.stringify({
   ok: true,
   build: "v146.1",
-  checks: 21,
-  corrections: "circuit/trend/media/rename/cache/ci"
+  checks: 24,
+  corrections: "circuit/trend/media/rename/cache/ci/light-contrast"
 }));
