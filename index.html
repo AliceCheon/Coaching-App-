@@ -7,25 +7,26 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v145">
+  <link rel="manifest" href="manifest.webmanifest?v=v1451">
   <link rel="icon" href="app-icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <!-- Preload critical font for faster text rendering -->
   <link rel="preload" href="atlas-nunito-sans.ttf" as="font" type="font/ttf" crossorigin="crossorigin" fetchpriority="high">
   <link rel="stylesheet" href="coach-studio.css?v=coach-nav-clean-6">
   <link rel="stylesheet" href="coach-program-editor-19.8.css?v=athlete-side-5">
-  <script src="exercise-library-19.8.js?v=v145"></script>
-  <script src="master-exercise-library.js?v=v145"></script>
-  <script src="athlete-context.js?v=v145"></script>
-  <script src="coach-ai-engine-2.js?v=v145"></script>
-  <script src="knowledge-graph.js?v=v145"></script>
-  <script src="decision-rules.js?v=v145"></script>
-  <script src="decision-engine.js?v=v145"></script>
-  <script src="coach-ai3-programming.js?v=v145"></script>
-  <script type="module" src="programming-engine.js?v=v145"></script>
-  <script type="module" src="sync-reliability.js?v=v145"></script>
-  <script src="app-config-v144.js?v=v145"></script>
-  <script src="coach-studio.js?v=v145"></script>
+  <link rel="stylesheet" href="coach-tools-v1451.css?v=v1451">
+  <script src="exercise-library-19.8.js?v=v1451"></script>
+  <script src="master-exercise-library.js?v=v1451"></script>
+  <script src="athlete-context.js?v=v1451"></script>
+  <script src="coach-ai-engine-2.js?v=v1451"></script>
+  <script src="knowledge-graph.js?v=v1451"></script>
+  <script src="decision-rules.js?v=v1451"></script>
+  <script src="decision-engine.js?v=v1451"></script>
+  <script src="coach-ai3-programming.js?v=v1451"></script>
+  <script type="module" src="programming-engine.js?v=v1451"></script>
+  <script type="module" src="sync-reliability.js?v=v1451"></script>
+  <script src="app-config-v144.js?v=v1451"></script>
+  <script src="coach-studio.js?v=v1451"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4831,7 +4832,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = window.BarbellDivaV144Config?.build || "v145";
+    const APP_BUILD = window.BarbellDivaV144Config?.build || "v145.1";
     const FIREBASE_CONFIG = window.BarbellDivaV144Config?.firebase || {};
     const CLOUD_COLLECTION = "barbellDivaAccounts";
     const APP_NAME = "Barbell diva";
@@ -6202,6 +6203,7 @@
       ,ai3Undo: null
       ,ai3SelectedOption: {}
       ,ai3Expanded: true
+      ,weekCopyUndo: null
     };
     let coachModalRenderingPortal = false;
     window.__coachModalDiagnostics = coachProgramUi.modalDiagnostics;
@@ -11206,6 +11208,124 @@
       modal?.querySelector(".coach-statistics-modal")?.focus();
     }
 
+    function coachProgramToolsToolbarHtml(program) {
+      const week=Math.max(1,Number(coachStudioState().programWeek)||1);
+      const undo=coachProgramUi.weekCopyUndo?.programId===program.id;
+      return `<div class="coach-week-tools" aria-label="Strumenti settimana"><span>Strumenti settimana ${week}</span><div><button type="button" data-coach-week-copy>⧉ Copia settimana</button><button type="button" data-coach-week-undo ${undo?"":"disabled"}>↶ Annulla copia</button><button type="button" data-coach-week-compare>⇄ Confronta</button><button type="button" data-coach-week-trend>⌁ Trend</button></div></div>`;
+    }
+
+    function coachToolsModalShell(title,subtitle,body,actions="") {
+      return `<div class="coach-tools-backdrop" data-coach-tools-close><section class="coach-tools-modal" role="dialog" aria-modal="true" aria-labelledby="coachToolsTitle" onclick="event.stopPropagation()" tabindex="-1"><header><div><span class="section-eyebrow">STRUMENTI PROGRAMMA</span><h2 id="coachToolsTitle">${escapeHtml(title)}</h2>${subtitle?`<p>${escapeHtml(subtitle)}</p>`:""}</div><button type="button" class="round-button" data-coach-tools-close aria-label="Chiudi">×</button></header><div class="coach-tools-body">${body}</div>${actions?`<footer>${actions}</footer>`:""}</section></div>`;
+    }
+
+    function closeCoachToolsModal() {
+      document.querySelector(".coach-tools-backdrop")?.remove();
+    }
+
+    function mountCoachToolsModal(html) {
+      closeCoachToolsModal();
+      document.body.insertAdjacentHTML("beforeend",html);
+      const modal=document.querySelector(".coach-tools-backdrop");
+      modal?.querySelectorAll("[data-coach-tools-close]").forEach((button)=>button.addEventListener("click",closeCoachToolsModal));
+      modal?.querySelector(".coach-tools-modal")?.focus();
+      return modal;
+    }
+
+    function openCoachWeekCopyModal() {
+      const {program}=ensureCoachProgramSelection();
+      if(!program) return showToast("Apri prima un programma.");
+      const weekCount=Math.max(1,Number(program.durationWeeks)||1);
+      if(weekCount<2) return showToast("Aggiungi almeno due settimane per usare la copia.");
+      const source=Math.max(1,Math.min(weekCount,Number(coachStudioState().programWeek)||1));
+      const target=source<weekCount?source+1:source-1;
+      const options=Array.from({length:weekCount},(_,index)=>index+1).filter((week)=>week!==source).map((week)=>`<option value="${week}" ${week===target?"selected":""}>Settimana ${week}</option>`).join("");
+      const body=`<div class="coach-tools-form"><label>Da settimana<input value="Settimana ${source}" disabled></label><label>A settimana<select data-coach-copy-target>${options}</select></label><label>Progressione carico %<input type="number" data-coach-copy-percent value="0" min="-50" max="50" step="0.5"><small>Facoltativa: modifica solo i carichi numerici copiati.</small></label></div>`;
+      const modal=mountCoachToolsModal(coachToolsModalShell("Copia settimana",`Copia tutte le prescrizioni della settimana ${source} senza ricreare l'editor.`,body,`<button type="button" class="ghost-button" data-coach-tools-close>Annulla</button><button type="button" class="gold-button" data-coach-copy-confirm>Conferma copia</button>`));
+      modal?.querySelector("[data-coach-copy-confirm]")?.addEventListener("click",()=>{
+        const targetWeek=Number(modal.querySelector("[data-coach-copy-target]")?.value);
+        const percent=Number(modal.querySelector("[data-coach-copy-percent]")?.value)||0;
+        copyCoachProgramWeek(source,targetWeek,percent);
+      });
+    }
+
+    function copyCoachProgramWeek(sourceWeek,targetWeek,loadPercent=0) {
+      const {program}=ensureCoachProgramSelection();
+      const weekCount=Math.max(1,Number(program?.durationWeeks)||1);
+      if(!program||sourceWeek===targetWeek||sourceWeek<1||targetWeek<1||sourceWeek>weekCount||targetWeek>weekCount) return showToast("Settimane non valide.");
+      const beforeSheets=clone(program.sheets);
+      const copiedSheets=clone(program.sheets);
+      copiedSheets.forEach((sheet)=>(sheet.exercises||[]).forEach((exercise)=>{
+        const fallback=exercise.prescription||{};
+        const weeks=Array.isArray(exercise.progression?.weeks)?clone(exercise.progression.weeks):[];
+        while(weeks.length<weekCount) weeks.push(parseWeekPrescription(null,weeks.length+1,fallback));
+        const source=parseWeekPrescription(weeks[sourceWeek-1],sourceWeek,fallback);
+        const prescribedLoad=clone(source.prescribedLoad||parsePrescribedLoad(null));
+        if(Number.isFinite(Number(prescribedLoad.value))) prescribedLoad.value=Math.round(Number(prescribedLoad.value)*(1+loadPercent/100)*100)/100;
+        weeks[targetWeek-1]=parseWeekPrescription({...clone(source),id:stableId("week-copy",exercise.id,targetWeek,Date.now()),week:targetWeek,weekNumber:targetWeek,prescribedLoad,loadUnit:prescribedLoad.unit||source.loadUnit||"kg",source:"week-copy"},targetWeek,fallback);
+        exercise.progression={...(exercise.progression||{}),weeks,manualWeeks:[...new Set([...(exercise.progression?.manualWeeks||[]),targetWeek])]};
+      }));
+      const result=programRepository.updateProgram(program.id,{sheets:copiedSheets},{immediate:true});
+      if(!result.ok) return showToast("Copia non riuscita: i dati originali sono rimasti invariati.","error");
+      coachProgramUi.weekCopyUndo={programId:program.id,beforeSheets,sourceWeek,targetWeek,createdAt:Date.now()};
+      coachStudioState().programWeek=targetWeek;
+      closeCoachToolsModal();
+      renderCoachProgramBoardLocal();
+      updateCoachWeekUndoButton();
+      showToast(`Settimana ${sourceWeek} copiata in settimana ${targetWeek}${loadPercent?` con carico ${loadPercent>0?"+":""}${loadPercent}%`:""}.`);
+    }
+
+    function undoCoachProgramWeekCopy() {
+      const undo=coachProgramUi.weekCopyUndo;
+      const {program}=ensureCoachProgramSelection();
+      if(!undo||!program||undo.programId!==program.id) return showToast("Non c'è una copia da annullare.");
+      const result=programRepository.updateProgram(program.id,{sheets:clone(undo.beforeSheets)},{immediate:true});
+      if(!result.ok) return showToast("Ripristino non riuscito.","error");
+      coachStudioState().programWeek=undo.sourceWeek;
+      coachProgramUi.weekCopyUndo=null;
+      renderCoachProgramBoardLocal();
+      updateCoachWeekUndoButton();
+      showToast("Copia annullata: la scheda precedente è stata ripristinata.");
+    }
+
+    function updateCoachWeekUndoButton() {
+      const button=document.querySelector("[data-coach-week-undo]");
+      if(button) button.disabled=coachProgramUi.weekCopyUndo?.programId!==coachProgramUi.programId;
+    }
+
+    function openCoachWeekCompareModal() {
+      const {program}=ensureCoachProgramSelection();
+      if(!program) return showToast("Apri prima un programma.");
+      const count=Math.max(1,Number(program.durationWeeks)||1);
+      if(count<2) return showToast("Servono almeno due settimane da confrontare.");
+      const current=Math.max(1,Math.min(count,Number(coachStudioState().programWeek)||1));
+      const other=current<count?current+1:current-1;
+      const weekOptions=(selected)=>Array.from({length:count},(_,index)=>index+1).map((week)=>`<option value="${week}" ${week===selected?"selected":""}>Settimana ${week}</option>`).join("");
+      const body=`<div class="coach-compare-selectors"><label>Prima settimana<select data-coach-compare-a>${weekOptions(current)}</select></label><label>Seconda settimana<select data-coach-compare-b>${weekOptions(other)}</select></label></div><div data-coach-compare-results></div>`;
+      const modal=mountCoachToolsModal(coachToolsModalShell("Confronta settimane","Volume per gruppo muscolare e differenze, senza modificare la scheda.",body));
+      const refresh=()=>{
+        const a=Number(modal.querySelector("[data-coach-compare-a]")?.value)||1,b=Number(modal.querySelector("[data-coach-compare-b]")?.value)||2;
+        const rowsA=coachProgramVolumeRows(program,a),rowsB=coachProgramVolumeRows(program,b),mapA=new Map(rowsA.map((item)=>[item.muscle,item.sets])),mapB=new Map(rowsB.map((item)=>[item.muscle,item.sets]));
+        const muscles=[...new Set([...mapA.keys(),...mapB.keys()])].sort((x,y)=>(mapB.get(y)||0)-(mapB.get(x)||0));
+        const totalA=rowsA.reduce((sum,item)=>sum+item.sets,0),totalB=rowsB.reduce((sum,item)=>sum+item.sets,0);
+        modal.querySelector("[data-coach-compare-results]").innerHTML=`<div class="coach-compare-kpis"><article><span>Settimana ${a}</span><strong>${totalA}</strong><small>serie totali</small></article><article><span>Settimana ${b}</span><strong>${totalB}</strong><small>serie totali</small></article><article><span>Differenza</span><strong class="${totalB-totalA>0?"positive":totalB-totalA<0?"negative":""}">${totalB-totalA>0?"+":""}${totalB-totalA}</strong><small>serie</small></article></div><div class="coach-compare-table"><div class="head"><span>Gruppo</span><span>S${a}</span><span>S${b}</span><span>Δ</span></div>${muscles.map((muscle)=>{const av=mapA.get(muscle)||0,bv=mapB.get(muscle)||0,d=bv-av;return `<div><strong>${escapeHtml(muscle)}</strong><span>${av}</span><span>${bv}</span><span class="${d>0?"positive":d<0?"negative":""}">${d>0?"+":""}${d}</span></div>`}).join("")||`<p class="micro-copy">Nessuna serie da confrontare.</p>`}</div>`;
+      };
+      modal?.querySelectorAll("[data-coach-compare-a],[data-coach-compare-b]").forEach((select)=>select.addEventListener("change",refresh));
+      refresh();
+    }
+
+    function openCoachWeekTrendModal() {
+      const {program}=ensureCoachProgramSelection();
+      if(!program) return showToast("Apri prima un programma.");
+      const count=Math.max(1,Number(program.durationWeeks)||1);
+      const values=Array.from({length:count},(_,index)=>({week:index+1,total:coachProgramVolumeRows(program,index+1).reduce((sum,item)=>sum+item.sets,0)}));
+      const max=Math.max(1,...values.map((item)=>item.total)),width=720,height=250,left=44,right=20,top=25,bottom=45,plotW=width-left-right,plotH=height-top-bottom;
+      const x=(index)=>left+(values.length===1?plotW/2:index*plotW/(values.length-1)),y=(value)=>top+plotH-(value/max*plotH);
+      const points=values.map((item,index)=>`${x(index)},${y(item.total)}`).join(" ");
+      const svg=`<svg class="coach-tools-trend" viewBox="0 0 ${width} ${height}" role="img" aria-label="Trend delle serie programmate"><line x1="${left}" y1="${top+plotH}" x2="${width-right}" y2="${top+plotH}"></line><polyline points="${points}"></polyline>${values.map((item,index)=>`<circle cx="${x(index)}" cy="${y(item.total)}" r="6"></circle><text x="${x(index)}" y="${height-15}">S${item.week}</text><text class="value" x="${x(index)}" y="${Math.max(16,y(item.total)-12)}">${item.total}</text>`).join("")}</svg>`;
+      const body=`<div class="coach-trend-summary"><strong>${values.reduce((sum,item)=>sum+item.total,0)}</strong><span>serie programmate nell'intero programma</span></div>${svg}`;
+      mountCoachToolsModal(coachToolsModalShell("Trend del programma","Andamento delle serie totali settimana per settimana.",body));
+    }
+
     function coachStudioReferenceHtml() {
       const studio=coachStudioState(); const programs=coachProgramsForUi(); let reference=programs.find((item)=>item.id===studio.referenceProgramId);
       if(!reference) reference=programs.find((item)=>item.id!==studio.programId)||programs[0]; if(reference) studio.referenceProgramId=reference.id;
@@ -11240,7 +11360,7 @@
       const f=(field,value,type="text",extra="")=>`<input type="${type}" ${extra} data-inline-exercise-field="${field}" ${attrs} value="${escapeHtml(value??"")}">`;
       const progression=exercise.progression?.templateId?`<button class="progression-badge" data-progression-open="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Progressione attiva">↗ ${escapeHtml(progressionTemplateById(exercise.progression.templateId)?.name||"Progressione")}</button>`:`<button data-progression-open="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Crea progressione">↗</button>`;
       return `<tr class="coach-inline-exercise ${exercise.metadata?.setGroupId?"in-set-group":""} ${coachProgramUi.highlightExerciseId===exercise.id?"just-progressed":""}" draggable="true" data-inline-row ${attrs}>
-        <td data-label="Esercizio"><div class="coach-inline-name"><button class="drag-handle" title="Trascina per riordinare">⋮⋮</button><button type="button" class="set-link-button ${exercise.metadata?.setGroupId?"active":""}" data-set-group-quick="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Crea superserie con l’esercizio successivo" aria-label="Crea superserie">↗</button><span class="program-exercise-letter">${escapeHtml(positionLabel)}</span><div class="coach-exercise-title"><span class="coach-exercise-name-text" title="${escapeHtml(displayExerciseName(exercise.name||"Esercizio"))}">${escapeHtml(displayExerciseName(exercise.name||"Esercizio"))}</span><button type="button" class="coach-name-edit" data-exercise-name-edit aria-label="Modifica nome">✎</button>${f("name",displayExerciseName(exercise.name||"Esercizio"),"text",'class="coach-name-input" hidden')}</div></div><div class="coach-inline-sub"><strong>${escapeHtml(exercise.muscle||exercise.som||"Gruppo da definire")}</strong><span>${escapeHtml((exercise.metadata?.secondaryMuscles||[]).join(", ")||"Secondari")}</span></div></td>
+        <td data-label="Esercizio"><div class="coach-inline-name"><button class="drag-handle" title="Trascina per riordinare">⋮⋮</button><button type="button" class="set-link-button ${exercise.metadata?.setGroupId?"active":""}" data-set-group-quick="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Crea superserie con l’esercizio successivo" aria-label="Crea superserie">↗</button><span class="program-exercise-letter">${escapeHtml(positionLabel)}</span><div class="coach-exercise-title"><button type="button" class="coach-exercise-name-text" data-inline-replace="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" title="Sostituisci ${escapeHtml(displayExerciseName(exercise.name||"Esercizio"))}">${escapeHtml(displayExerciseName(exercise.name||"Esercizio"))}</button><button type="button" class="coach-name-edit" data-exercise-name-edit aria-label="Modifica nome">✎</button>${f("name",displayExerciseName(exercise.name||"Esercizio"),"text",'class="coach-name-input" hidden')}</div></div><div class="coach-inline-sub"><strong>${escapeHtml(exercise.muscle||exercise.som||"Gruppo da definire")}</strong><span>${escapeHtml((exercise.metadata?.secondaryMuscles||[]).join(", ")||"Secondari")}</span></div></td>
         <td data-label="Tipo"><select data-inline-exercise-field="executionType" ${attrs}>${coachExecutionTypeOptions(executionType)}</select></td><td data-label="Serie">${f("sets",p.sets,"number",'min="0"')}</td><td data-label="Rip/tempo">${f("reps",p.reps,"text",'placeholder="8-12"')}</td><td data-label="Rec">${f("restSeconds",p.restSeconds,"number",'min="0" step="5"')}</td><td data-label="Carico"><div class="coach-inline-load">${f("loadValue",p.loadValue,"number",'min="0" step="0.5"')}<select data-inline-exercise-field="loadUnit" ${attrs}>${["kg","lb","%1RM"].map((unit)=>`<option ${p.loadUnit===unit?"selected":""}>${unit}</option>`).join("")}</select></div></td><td data-label="RPE">${f("rpe",p.rpe)}</td><td data-label="RIR">${f("rir",p.rir)}</td><td data-label="TUT">${f("tempo",p.tempo,"text",'placeholder="3-1-X-0"')}</td>
         <td data-label="Note"><button type="button" class="coach-inline-note" data-inline-note-open="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}" data-week-number="${weekNumber}"><span>✎</span><em>${escapeHtml(p.note||"Aggiungi nota")}</em></button></td>
         <td data-label="Azioni"><div class="coach-inline-actions">${progression}<button data-exercise-action="details" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}" title="Dettagli e video">ⓘ</button><details class="coach-row-more"><summary title="Altre azioni" aria-label="Altre azioni">•••</summary><div><button data-inline-replace="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}">⇄ Sostituisci</button><button data-exercise-action="duplicate" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">▣ Duplica</button><button data-exercise-action="up" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">↑ Sposta su</button><button data-exercise-action="down" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">↓ Sposta giù</button><button data-inline-copy="${escapeHtml(exercise.id)}" data-sheet-id="${escapeHtml(sheet.id)}">⧉ Copia</button><button data-set-group-action="superset" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">🔗 Superserie</button><button class="danger" data-exercise-action="delete" data-sheet-id="${escapeHtml(sheet.id)}" data-exercise-id="${escapeHtml(exercise.id)}">⌫ Elimina</button></div></details></div></td>
@@ -11293,7 +11413,7 @@
       studio.editorView="weekly"; const sideOpen=true;
       const linked=activeAthleteIntelligence(selection.program.id);
       const contextSummary=`<div class="athlete-context-strip program-context-summary"><span><b>Atleta</b>${escapeHtml(linked.athlete?.general?.name||"Non collegato")}</span><span><b>Strategia</b>${escapeHtml(linked.strategy?.name||"Scheda libera")}</span><span><b>Blocco</b>${escapeHtml(linked.programLink?.blockType||linked.strategy?.blockType||"libero")}</span><span><b>Nutrizione</b>${escapeHtml(linked.nutrition?.phase||"non definita")}</span><button class="ghost-button" data-coach-studio-route="strategy">Modifica collegamento</button></div>`;
-      const editorBody=`${contextSummary}<div class="coach-editor-layout unified ${studio.referenceOpen?"reference-open":""} ${studio.aiOpen?"ai-open":""}"><div>${coachProgramBoardHtml(selection.program)}</div>${studio.referenceOpen||studio.aiOpen?`<aside class="coach-editor-side">${studio.referenceOpen?coachStudioReferenceHtml():""}${studio.aiOpen?coachAi2PageHtml(true):""}</aside>`:""}</div><div class="coach-statistics-launch-row"><button type="button" class="coach-statistics-fab" data-coach-volume-focus aria-label="Statistiche programma">▥ Statistiche</button></div>`;
+      const editorBody=`${coachProgramToolsToolbarHtml(selection.program)}${contextSummary}<div class="coach-editor-layout unified ${studio.referenceOpen?"reference-open":""} ${studio.aiOpen?"ai-open":""}"><div>${coachProgramBoardHtml(selection.program)}</div>${studio.referenceOpen||studio.aiOpen?`<aside class="coach-editor-side">${studio.referenceOpen?coachStudioReferenceHtml():""}${studio.aiOpen?coachAi2PageHtml(true):""}</aside>`:""}</div><div class="coach-statistics-launch-row"><button type="button" class="coach-statistics-fab" data-coach-volume-focus aria-label="Statistiche programma">▥ Statistiche</button></div>`;
       return `<section class="coach-studio-page coach-editor coach-editor-weekly">${coachStudioPageHead("Editor programma",selection.program.name,"Un’unica tavola settimanale: modifica, progressioni e controlli restano nello stesso punto.",`<button class="ghost-button" data-coach-studio-route="programs">← Programmi</button>`)}<div class="coach-editor-toolbar"><div class="coach-editor-save-state"><span class="save-dot"></span><strong data-coach-save-label>${coachProgramUi.saveStatus==="saving"?"Salvataggio…":"Salvato"}</strong></div><div class="quick-actions"><button class="gold-button" data-program-action="save">Salva</button><button class="ghost-button" data-program-list-action="save-as" data-program-id="${escapeHtml(selection.program.id)}">Salva come</button><button class="ghost-button" data-program-list-action="duplicate" data-program-id="${escapeHtml(selection.program.id)}">Duplica</button><button class="ghost-button" data-program-action="edit">Informazioni</button><button class="ghost-button ${studio.referenceOpen?"active":""}" data-studio-panel-toggle="reference">Anteprima atleta</button><button class="gold-button ${studio.aiOpen?"active":""}" data-studio-panel-toggle="ai">${coachMascotHtml()} Coach AI</button></div></div>${editorBody}${coachUiModalHtml()}</section>`;
     }
 
@@ -14419,7 +14539,16 @@
         history.replaceState({}, "", location.pathname + location.search + "#dashboard");
         render();
       }));
-      document.querySelector("[data-coach-volume-focus]")?.addEventListener("click",openCoachProgramStatisticsModal);
+      if(document.body.dataset.coachToolActionsBound!=="1"){
+        document.body.dataset.coachToolActionsBound="1";
+        document.body.addEventListener("click",(event)=>{
+          if(event.target.closest("[data-coach-volume-focus]")) return openCoachProgramStatisticsModal();
+          if(event.target.closest("[data-coach-week-copy]")) return openCoachWeekCopyModal();
+          if(event.target.closest("[data-coach-week-undo]")) return undoCoachProgramWeekCopy();
+          if(event.target.closest("[data-coach-week-compare]")) return openCoachWeekCompareModal();
+          if(event.target.closest("[data-coach-week-trend]")) return openCoachWeekTrendModal();
+        });
+      }
       document.querySelector("[data-coach-studio-menu]")?.addEventListener("click", () => { const studio=coachStudioState(); studio.sidebarOpen = !studio.sidebarOpen; render(); });
       document.querySelectorAll("[data-coach-studio-program]").forEach((button) => button.addEventListener("click", () => coachStudioNavigate("program", { programId:button.dataset.coachStudioProgram })));
       document.querySelector("[data-coach-folder-new]")?.addEventListener("click",()=>{openCoachModal("folder-new");render();});
