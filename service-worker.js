@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v145";
+const CACHE_NAME = "atlas-app-v1451";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -11,6 +11,7 @@ const APP_SHELL = [
   "./atlas-nunito-sans.ttf",
   "./coach-studio.css",
   "./coach-program-editor-19.8.css",
+  "./coach-tools-v1451.css",
   "./exercise-library-19.8.js",
   "./master-exercise-library.js",
   "./athlete-context.js",
