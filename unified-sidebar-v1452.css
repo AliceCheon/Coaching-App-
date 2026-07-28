@@ -1,6 +1,74 @@
 /* v145.2 — una sola barra Barbell Diva per app e programmazione Coach. */
 @media (min-width: 981px) {
   .desktop-rail {
+    position: relative;
+    overflow: visible;
+  }
+
+  .rail-collapse {
+    top: 14px !important;
+    right: -17px !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: 36px !important;
+    height: 36px !important;
+    border: 2px solid rgba(255,255,255,.78) !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, var(--pink-primary), var(--purple-primary)) !important;
+    color: #fff !important;
+    font-size: 1.15rem !important;
+    line-height: 1 !important;
+    box-shadow: 0 8px 22px rgba(20,6,30,.38) !important;
+    z-index: 50;
+  }
+
+  body.nav-collapsed .rail-collapse {
+    top: 14px !important;
+    right: -17px !important;
+    left: auto !important;
+  }
+
+  .coach-editor-nav-restore {
+    display: none;
+  }
+
+  body.coach-mode.coach-editor-nav-hidden .desktop-rail {
+    display: none !important;
+  }
+
+  body.coach-mode.coach-editor-nav-hidden .stage {
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding-left: 14px !important;
+  }
+
+  body.coach-mode.coach-editor-nav-hidden .phone-shell {
+    grid-column: 1 !important;
+  }
+
+  body.coach-mode.coach-editor-nav-hidden .coach-editor-nav-restore {
+    position: fixed;
+    left: 9px;
+    top: 92px;
+    z-index: 10030;
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 46px;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,.72);
+    border-radius: 0 14px 14px 0;
+    background: linear-gradient(145deg, var(--pink-primary), var(--purple-primary));
+    color: #fff;
+    font-size: 1.4rem;
+    box-shadow: 0 10px 26px rgba(36,10,50,.28);
+  }
+
+  body.coach-mode.coach-editor-nav-hidden .coach-editor-nav-restore:hover {
+    transform: translateX(3px);
+    filter: brightness(1.08);
+  }
+
+  .desktop-rail {
     background:
       radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--pink-primary) 20%, transparent), transparent 27%),
       linear-gradient(180deg, color-mix(in srgb, var(--purple-primary) 32%, #2b1740), #281637 58%, #351a47);

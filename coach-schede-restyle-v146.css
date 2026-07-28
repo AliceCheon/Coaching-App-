@@ -581,7 +581,7 @@ body.schede-hide-advanced .coach-editor-weekly .coach-inline-exercise td.col-cel
   place-items: center;
 }
 .coach-editor-weekly .coach-inline-name .coach-exercise-name-text {
-  font-size: .78rem !important;
+  font-size: .86rem !important;
   font-weight: 800 !important;
   color: var(--text);
   line-height: 1.2;
@@ -596,7 +596,33 @@ body.schede-hide-advanced .coach-editor-weekly .coach-inline-exercise td.col-cel
   color: var(--pink-primary);
 }
 /* Nascondo il sub (muscolo/secondari) sotto il nome — non è nell'immagine */
-.coach-editor-weekly .coach-inline-sub { display: none !important; }
+.coach-editor-weekly .coach-inline-sub {
+  display: flex !important;
+  align-items: center;
+  gap: 6px !important;
+  margin: 2px 0 0 62px !important;
+  padding: 0 !important;
+  min-width: 0;
+  color: #7b6778;
+  font-size: .58rem !important;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.coach-editor-weekly .coach-inline-sub strong {
+  color: var(--purple-primary);
+  font-size: .61rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.coach-editor-weekly .coach-inline-sub span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.coach-editor-weekly .coach-inline-sub span::before {
+  content: "Secondario: ";
+  opacity: .72;
+}
 
 /* Load unit compact */
 .coach-editor-weekly .coach-inline-load {
@@ -656,6 +682,82 @@ body.schede-hide-advanced .coach-editor-weekly .coach-inline-exercise td.col-cel
   gap: 3px !important;
   flex-wrap: nowrap !important;
   justify-content: flex-end !important;
+}
+.coach-editor-weekly .coach-row-action-icon {
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+.coach-editor-weekly .coach-inline-actions .progression-badge {
+  color: var(--purple-primary) !important;
+}
+.coach-editor-weekly .coach-inline-actions .progression-badge::first-letter {
+  color: inherit !important;
+  font-size: inherit;
+}
+.coach-editor-weekly .coach-row-add-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+.coach-editor-weekly .coach-row-add-menu > summary {
+  list-style: none;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--purple-primary) 20%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--surface-raised) 70%, transparent);
+  color: var(--text);
+  cursor: pointer;
+}
+.coach-editor-weekly .coach-row-add-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.coach-editor-weekly .coach-row-add-menu > summary:hover {
+  border-color: var(--pink-primary);
+  background: linear-gradient(135deg, var(--pink-primary), var(--purple-primary));
+  color: #fff;
+}
+.coach-editor-weekly .coach-row-add-menu > div {
+  position: absolute;
+  z-index: 120;
+  right: 0;
+  top: 28px;
+  width: 145px;
+  display: none;
+  gap: 2px;
+  padding: 7px;
+  border: 1px solid color-mix(in srgb, var(--purple-primary) 25%, var(--border));
+  border-radius: 12px;
+  background: var(--surface-raised);
+  box-shadow: 0 18px 42px rgba(30,10,42,.24);
+}
+.coach-editor-weekly .coach-row-add-menu[open] > div,
+.coach-editor-weekly .coach-row-add-menu:hover > div,
+.coach-editor-weekly .coach-row-add-menu:focus-within > div {
+  display: grid;
+}
+.coach-editor-weekly .coach-row-add-menu > div button {
+  width: 100%;
+  min-height: 32px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: .7rem;
+  font-weight: 750;
+  text-align: left;
+}
+.coach-editor-weekly .coach-row-add-menu > div button:hover {
+  background: color-mix(in srgb, var(--pink-primary) 13%, var(--surface));
+  color: var(--pink-primary);
+}
+.coach-editor-weekly .coach-inline-exercise td:last-child {
+  position: relative;
+  overflow: visible !important;
 }
 .coach-editor-weekly .coach-inline-actions > button,
 .coach-editor-weekly .coach-row-more > summary {
@@ -983,4 +1085,102 @@ body[data-theme="light"] .coach-tools-trend text {
 
 body[data-theme="light"] .coach-tools-trend text.value {
   fill: #8b246d !important;
+}
+
+/* -----------------------------------------------------------
+   13. v146.1 Coach UX - focus, azioni e Trend utile
+   ----------------------------------------------------------- */
+.coach-editor-weekly .schede-v146-focus-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+}
+.coach-editor-weekly .schede-v146-focus-pills > span {
+  max-width: 105px;
+  overflow: hidden;
+  padding: 3px 7px;
+  border: 1px solid color-mix(in srgb, var(--purple-primary) 24%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--purple-primary) 9%, var(--surface-raised));
+  color: color-mix(in srgb, var(--purple-primary) 72%, var(--text));
+  font-size: .58rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.coach-editor-weekly .coach-inline-actions .progression-badge {
+  max-width: none !important;
+  color: var(--text) !important;
+  font-size: .68rem !important;
+  text-indent: 0 !important;
+}
+.coach-editor-weekly .coach-inline-actions .progression-badge::after {
+  content: none !important;
+}
+.coach-statistics-launch-row {
+  gap: 10px;
+  align-items: center;
+}
+.coach-trend-launch {
+  background: color-mix(in srgb, var(--surface-raised) 86%, var(--purple-primary) 14%) !important;
+  color: var(--text) !important;
+  border-color: color-mix(in srgb, var(--purple-primary) 35%, var(--border)) !important;
+  box-shadow: none !important;
+}
+.coach-trend-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 16px 0 12px;
+}
+.coach-trend-filters button {
+  padding: 7px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.coach-trend-filters button.active {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--pink-primary), var(--purple-primary));
+  color: #fff;
+}
+.coach-trend-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 16px;
+}
+.coach-trend-kpis article {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-raised) 92%, var(--pink-primary) 8%);
+}
+.coach-trend-kpis span,
+.coach-trend-kpis small,
+.coach-trend-kpis strong { display: block; }
+.coach-trend-kpis span,
+.coach-trend-kpis small { color: var(--text-muted); }
+.coach-trend-kpis span { font-size: .68rem; }
+.coach-trend-kpis strong { margin: 4px 0; color: var(--purple-primary); font-size: 1.45rem; }
+.coach-trend-kpis strong.positive { color: #16a468; }
+.coach-trend-kpis strong.negative { color: #dc4776; }
+.coach-trend-current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 5px;
+}
+.coach-trend-current span { color: var(--text); font-weight: 900; }
+.coach-trend-current small { color: var(--text-muted); }
+@media (max-width: 720px) {
+  .coach-trend-kpis { grid-template-columns: 1fr; }
+  .coach-editor-weekly .schede-v146-focus-pills > span:nth-child(n+3) { display: none; }
 }

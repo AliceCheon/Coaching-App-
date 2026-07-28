@@ -60,6 +60,14 @@
     return null;
   }
 
+  function extractFocus(text) {
+    if (!text) return [];
+    const parts = String(text).split("·").map((item) => item.trim()).filter(Boolean);
+    const focus = parts.at(-1) || "";
+    if (/^\d+\s*(esercizi|serie|min)/i.test(focus)) return [];
+    return focus.split(/,|\/|\+/).map((item) => item.trim()).filter(Boolean).slice(0, 3);
+  }
+
   // Applica trasformazioni a un blocco .coach-editor-weekly
   function enhanceEditor(root) {
     if (!root) return;
@@ -113,29 +121,14 @@
       // 5) Video thumbnail al posto di ⓘ (details)
       const detailsBtn = tr.querySelector('[data-exercise-action="details"]');
       if (detailsBtn && !detailsBtn.dataset.schedeV146Bound) {
-        const nameEl = tr.querySelector(".coach-exercise-name-text");
-        const name = nameEl ? nameEl.textContent.trim() : "";
-        const video = getVideoForExercise(name);
-        if (video) {
-          detailsBtn.classList.add("schede-v146-video-thumb");
-          // Se è un URL immagine (jpg/png/webp) uso come background, altrimenti mostro il play
-          if (/\.(jpg|jpeg|png|webp)(\?|$)/i.test(video)) {
-            detailsBtn.style.backgroundImage = `url("${video.replace(/"/g, '\\"')}")`;
-          }
-          detailsBtn.setAttribute("title", `Video: ${name}`);
-        }
         detailsBtn.dataset.schedeV146Bound = "1";
       }
 
-      // 6) Trend button per riga (bind al modal Trend settimana esistente)
-      const actionsCell = tr.querySelector(".coach-inline-actions");
-      if (actionsCell && !actionsCell.querySelector(".schede-v146-row-trend")) {
-        const trendBtn = document.createElement("button");
-        trendBtn.type = "button";
-        trendBtn.className = "schede-v146-row-trend";
-        trendBtn.title = "Progressione di questo esercizio";
-        trendBtn.textContent = "↗";
-        trendBtn.addEventListener("click", (ev) => {
+      // 6) Storico pesi del singolo esercizio.
+      const historyBtn = tr.querySelector("[data-schede-weight-history]");
+      if (historyBtn && !historyBtn.dataset.schedeHistoryBound) {
+        historyBtn.dataset.schedeHistoryBound = "1";
+        historyBtn.addEventListener("click", (ev) => {
           ev.stopPropagation();
           const nm = tr.querySelector(".coach-exercise-name-text");
           if (nm) window.__lastTrendExerciseName = nm.textContent.trim();
@@ -148,12 +141,37 @@
             );
             return;
           }
-          const trendTrigger = document.querySelector("[data-coach-week-trend]");
-          if (trendTrigger) trendTrigger.click();
         });
-        const overflow = actionsCell.querySelector(".coach-row-more");
-        if (overflow) actionsCell.insertBefore(trendBtn, overflow);
-        else actionsCell.appendChild(trendBtn);
+      }
+
+      // 6a) Muscoli dalla Libreria; se incompleti li completa Coach AI.
+      const nameEl = tr.querySelector(".coach-exercise-name-text");
+      const muscleRow = tr.querySelector(".coach-inline-sub");
+      if (nameEl && muscleRow) {
+        const primaryEl = muscleRow.querySelector("strong");
+        const secondaryEl = muscleRow.querySelector("span");
+        const fallbackSecondary = secondaryEl?.textContent.trim() === "Secondari"
+          ? []
+          : (secondaryEl?.textContent || "").split(",");
+        const metadata =
+          window.BarbellDivaV146Bridge?.ensureExerciseMuscles?.(
+            tr.getAttribute("data-program-id"),
+            tr.getAttribute("data-sheet-id"),
+            tr.getAttribute("data-exercise-id"),
+          ) ||
+          window.BarbellDivaV146Bridge?.exerciseMuscles?.(
+            nameEl.textContent.trim(),
+            primaryEl?.textContent.trim() || "",
+            fallbackSecondary,
+          );
+        if (metadata) {
+          if (primaryEl) primaryEl.textContent = metadata.primary;
+          if (secondaryEl) secondaryEl.textContent = metadata.secondary.length ? metadata.secondary.join(", ") : "Nessun secondario";
+          muscleRow.dataset.muscleSource = metadata.source;
+          muscleRow.title = metadata.source === "coach-ai"
+            ? "Muscoli completati da Coach AI usando la Libreria esercizi"
+            : "Muscoli dalla Libreria esercizi";
+        }
       }
 
       // 6b) Save-check: flash verde sull'input dopo modifica (attesa 400ms)
@@ -220,6 +238,22 @@
           if (trigger) trigger.click();
         });
         nameEl.after(editBtn);
+      }
+      if (dayTitle && small && !dayTitle.querySelector(".schede-v146-focus-pills")) {
+        const focus = extractFocus(small.textContent);
+        if (focus.length) {
+          const wrap = document.createElement("span");
+          wrap.className = "schede-v146-focus-pills";
+          wrap.setAttribute("aria-label", `Gruppi principali: ${focus.join(", ")}`);
+          focus.forEach((muscle) => {
+            const pill = document.createElement("span");
+            pill.textContent = muscle;
+            wrap.appendChild(pill);
+          });
+          const duration = dayTitle.querySelector(".schede-v146-duration-pill");
+          if (duration) dayTitle.insertBefore(wrap, duration);
+          else dayTitle.appendChild(wrap);
+        }
       }
     });
 
