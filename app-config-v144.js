@@ -1,8 +1,8 @@
-// Configurazione minima condivisa della build v145.2.
+// Configurazione minima condivisa della build v146.1.
 (function (root) {
   root.BarbellDivaV144Config = Object.freeze({
-    build: "v145.2",
-    cache: "atlas-app-v1452",
+    build: "v146.1",
+    cache: "atlas-app-v1461",
     backupAutomaticLimit: 5,
     legacyModulesRemoved: ["nutrizione", "workout-pro"],
     firebase: Object.freeze({

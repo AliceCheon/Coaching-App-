@@ -7,7 +7,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest?v=v1452">
+  <link rel="manifest" href="manifest.webmanifest?v=v1461">
   <link rel="icon" href="app-icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <!-- Preload critical font for faster text rendering -->
@@ -15,19 +15,21 @@
   <link rel="stylesheet" href="coach-studio.css?v=coach-nav-clean-6">
   <link rel="stylesheet" href="coach-program-editor-19.8.css?v=athlete-side-5">
   <link rel="stylesheet" href="coach-tools-v1451.css?v=v1451-contrast">
-  <link rel="stylesheet" href="unified-sidebar-v1452.css?v=v1452">
-  <script src="exercise-library-19.8.js?v=v1452"></script>
-  <script src="master-exercise-library.js?v=v1452"></script>
-  <script src="athlete-context.js?v=v1452"></script>
-  <script src="coach-ai-engine-2.js?v=v1452"></script>
-  <script src="knowledge-graph.js?v=v1452"></script>
-  <script src="decision-rules.js?v=v1452"></script>
-  <script src="decision-engine.js?v=v1452"></script>
-  <script src="coach-ai3-programming.js?v=v1452"></script>
-  <script type="module" src="programming-engine.js?v=v1452"></script>
-  <script type="module" src="sync-reliability.js?v=v1452"></script>
-  <script src="app-config-v144.js?v=v1452"></script>
-  <script src="coach-studio.js?v=v1452"></script>
+  <link rel="stylesheet" href="unified-sidebar-v1452.css?v=v1461">
+  <link rel="stylesheet" href="coach-schede-restyle-v146.css?v=v1461">
+  <script src="exercise-library-19.8.js?v=v1461"></script>
+  <script src="master-exercise-library.js?v=v1461"></script>
+  <script src="athlete-context.js?v=v1461"></script>
+  <script src="coach-ai-engine-2.js?v=v1461"></script>
+  <script src="knowledge-graph.js?v=v1461"></script>
+  <script src="decision-rules.js?v=v1461"></script>
+  <script src="decision-engine.js?v=v1461"></script>
+  <script src="coach-ai3-programming.js?v=v1461"></script>
+  <script type="module" src="programming-engine.js?v=v1461"></script>
+  <script type="module" src="sync-reliability.js?v=v1461"></script>
+  <script src="app-config-v144.js?v=v1461"></script>
+  <script src="coach-studio.js?v=v1461"></script>
+  <script defer src="coach-schede-v146-enhance.js?v=v1461"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -4841,7 +4843,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
-    const APP_BUILD = window.BarbellDivaV144Config?.build || "v145.2";
+    const APP_BUILD = window.BarbellDivaV144Config?.build || "v146.1";
     const FIREBASE_CONFIG = window.BarbellDivaV144Config?.firebase || {};
     const CLOUD_COLLECTION = "barbellDivaAccounts";
     const APP_NAME = "Barbell diva";
@@ -11369,6 +11371,25 @@
       mountCoachToolsModal(coachToolsModalShell("Trend del programma","Andamento delle serie totali settimana per settimana.",body));
     }
 
+    function openCoachExerciseTrendModal(programId,sheetId,exerciseId) {
+      const program=programRepository.getProgramById(programId||coachProgramUi.programId);
+      const sheet=programRepository.getSheetById(program?.id,sheetId);
+      const exercise=programRepository.getExerciseById(program?.id,sheet?.id,exerciseId);
+      if(!program||!sheet||!exercise) return showToast("Esercizio non trovato.");
+      const count=Math.max(1,programWeekCount(program,sheet));
+      const values=Array.from({length:count},(_,index)=>{
+        const week=index+1,p=coachWeekPrescription(exercise,week);
+        return {week,sets:Number(p.sets)||0,reps:String(p.reps||"—"),load:Number(p.loadValue)||0,unit:String(p.loadUnit||"kg")};
+      });
+      const max=Math.max(1,...values.map((item)=>item.sets)),width=720,height=250,left=44,right=20,top=25,bottom=45,plotW=width-left-right,plotH=height-top-bottom;
+      const x=(index)=>left+(values.length===1?plotW/2:index*plotW/(values.length-1)),y=(value)=>top+plotH-(value/max*plotH);
+      const points=values.map((item,index)=>`${x(index)},${y(item.sets)}`).join(" ");
+      const svg=`<svg class="coach-tools-trend" viewBox="0 0 ${width} ${height}" role="img" aria-label="Trend delle serie di ${escapeHtml(displayExerciseName(exercise.name||"Esercizio"))}"><line x1="${left}" y1="${top+plotH}" x2="${width-right}" y2="${top+plotH}"></line><polyline points="${points}"></polyline>${values.map((item,index)=>`<circle cx="${x(index)}" cy="${y(item.sets)}" r="6"></circle><text x="${x(index)}" y="${height-15}">S${item.week}</text><text class="value" x="${x(index)}" y="${Math.max(16,y(item.sets)-12)}">${item.sets}</text>`).join("")}</svg>`;
+      const rows=values.map((item)=>`<div><strong>Settimana ${item.week}</strong><span>${item.sets}</span><span>${escapeHtml(item.reps)}</span><span>${item.load?`${item.load} ${escapeHtml(item.unit)}`:"—"}</span></div>`).join("");
+      const body=`<div class="coach-trend-summary"><strong>${values.reduce((sum,item)=>sum+item.sets,0)}</strong><span>serie programmate per questo esercizio</span></div>${svg}<div class="coach-compare-table"><div class="head"><span>Settimana</span><span>Serie</span><span>Rip.</span><span>Peso</span></div>${rows}</div>`;
+      mountCoachToolsModal(coachToolsModalShell(`Trend · ${displayExerciseName(exercise.name||"Esercizio")}`,"Andamento programmato del singolo esercizio.",body));
+    }
+
     function coachStudioReferenceHtml() {
       const studio=coachStudioState(); const programs=coachProgramsForUi(); let reference=programs.find((item)=>item.id===studio.referenceProgramId);
       if(!reference) reference=programs.find((item)=>item.id!==studio.programId)||programs[0]; if(reference) studio.referenceProgramId=reference.id;
@@ -16353,6 +16374,31 @@
     function openCoachModalLocally(type,data={}) {
       openCoachModal(type,data);renderCoachModalPortal();bindLocallyRenderedCoachModal();bindModalController();
     }
+
+    window.BarbellDivaV146Bridge={
+      openSheetEdit(sheetId){
+        if(!sheetId)return;
+        selectCoachSheet(sheetId);
+        openCoachModalLocally("sheet-edit",{sheetId});
+      },
+      openExerciseLibrary(sheetId,kind="exercise"){
+        if(!sheetId)return;
+        selectCoachSheet(sheetId);
+        coachProgramUi.pendingAddKind=kind;
+        openCoachModalLocally("exercise-library",{sheetId});
+      },
+      openExerciseTrend(programId,sheetId,exerciseId){
+        openCoachExerciseTrendModal(programId,sheetId,exerciseId);
+      },
+      closeModal(){
+        closeCoachModal();
+        renderCoachModalPortal();
+      },
+      exerciseMedia(exerciseName){
+        const profile=technicalExerciseLibrary().find((item)=>normalizeExerciseName(item.name)===normalizeExerciseName(exerciseName));
+        return profile?.videoUrl||profile?.video||profile?.media?.videoUrl||profile?.media?.video||profile?.thumbnail||null;
+      }
+    };
 
     function refreshCoachAfterLocalModal() {
       renderCoachModalPortal();
