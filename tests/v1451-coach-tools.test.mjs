@@ -31,4 +31,4 @@ check(css.includes("color: var(--muted, #725f80)"), "contrasto testo secondario 
 check(!html.includes('class="athlete-context-strip program-context-summary"'), "riepilogo atleta superfluo ancora presente nell'editor");
 check(!html.includes("/api/coach/state"), "sync esterno incompatibile reintrodotto");
 
-console.log(JSON.stringify({ok:true,build:"v145.2",checks:18,features:"copy/undo/compare/trend/replace/contrast"}));
+console.log(JSON.stringify({ok:true,build:"v146.1",checks:18,features:"copy/undo/compare/trend/replace/contrast"}));

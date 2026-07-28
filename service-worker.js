@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v1452";
+const CACHE_NAME = "atlas-app-v1461";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -13,6 +13,7 @@ const APP_SHELL = [
   "./coach-program-editor-19.8.css",
   "./coach-tools-v1451.css",
   "./unified-sidebar-v1452.css",
+  "./coach-schede-restyle-v146.css",
   "./exercise-library-19.8.js",
   "./master-exercise-library.js",
   "./athlete-context.js",
@@ -24,7 +25,8 @@ const APP_SHELL = [
   "./coach-studio.js",
   "./sync-reliability.js",
   "./programming-engine.js",
-  "./app-config-v144.js"
+  "./app-config-v144.js",
+  "./coach-schede-v146-enhance.js"
 ];
 
 self.addEventListener("install", (event) => {
