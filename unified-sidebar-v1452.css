@@ -1,0 +1,133 @@
+/* v145.2 — una sola barra Barbell Diva per app e programmazione Coach. */
+@media (min-width: 981px) {
+  .desktop-rail {
+    background:
+      radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--pink-primary) 20%, transparent), transparent 27%),
+      linear-gradient(180deg, color-mix(in srgb, var(--purple-primary) 32%, #2b1740), #281637 58%, #351a47);
+    border-color: rgba(255, 255, 255, .15);
+  }
+
+  .rail-brand strong {
+    color: #fff8fd;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.13rem;
+    font-weight: 700;
+    letter-spacing: -.025em;
+  }
+
+  .rail-brand span {
+    color: #e2ccec;
+  }
+
+  .rail-brand .rail-logo {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1rem;
+    box-shadow: 0 8px 22px rgba(255, 61, 145, .24);
+  }
+
+  .rail-navigation {
+    align-content: start;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.24) transparent;
+  }
+
+  .rail-dot {
+    color: #eadbf1 !important;
+  }
+
+  .rail-dot:hover,
+  .rail-dot.active {
+    color: #fff !important;
+    background: linear-gradient(100deg, color-mix(in srgb, var(--pink-primary) 82%, #fff 18%), color-mix(in srgb, var(--purple-primary) 76%, #fff 24%)) !important;
+    border-color: rgba(255,255,255,.2) !important;
+  }
+
+  .rail-coach-group {
+    display: grid;
+    gap: 4px;
+  }
+
+  .rail-coach-toggle em {
+    margin-left: auto;
+    color: #f7dceb;
+    font-size: .72rem;
+    font-style: normal;
+  }
+
+  .rail-coach-subnav {
+    display: grid;
+    gap: 2px;
+    margin: 1px 5px 5px 21px;
+    padding: 2px 0 2px 16px;
+    border-left: 1px solid rgba(255,255,255,.22);
+  }
+
+  .rail-coach-subnav.is-collapsed {
+    display: none;
+  }
+
+  .rail-coach-subnav button {
+    min-height: 31px;
+    padding: 6px 9px;
+    border: 0;
+    border-radius: 9px;
+    color: #e8d8ef;
+    background: transparent;
+    font: inherit;
+    font-size: .72rem;
+    font-weight: 760;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .rail-coach-subnav button:hover {
+    color: #fff;
+    background: rgba(255,255,255,.1);
+  }
+
+  .rail-coach-subnav button.active {
+    color: #32163d;
+    background: linear-gradient(90deg, #ffd4e8, #e7d5ff);
+    box-shadow: 0 7px 17px rgba(13,5,22,.18);
+    font-weight: 900;
+  }
+
+  body.nav-collapsed .rail-coach-subnav,
+  body.nav-collapsed .rail-coach-toggle em {
+    display: none !important;
+  }
+
+  .coach-studio-shell.unified-main-navigation {
+    display: block !important;
+    min-height: auto !important;
+  }
+
+  .coach-studio-shell.unified-main-navigation > .coach-studio-main {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .coach-video-sidebar {
+    display: none !important;
+  }
+
+  body.coach-mode .desktop-rail {
+    display: flex !important;
+  }
+
+  body.coach-mode .phone-shell {
+    grid-column: 2 !important;
+  }
+
+  body.coach-mode.nav-collapsed .phone-shell {
+    grid-column: 2 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail-dot,
+  .rail-coach-subnav button {
+    transition: none !important;
+  }
+}

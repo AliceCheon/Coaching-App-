@@ -23,9 +23,12 @@ for (const marker of [
 ]) check(html.includes(marker), `strumento Coach mancante: ${marker}`);
 
 check(html.includes('class="coach-exercise-name-text" data-inline-replace='), "il nome esercizio non apre la sostituzione");
-check(html.includes("coach-tools-v1451.css?v=v1451"), "foglio stile strumenti non caricato");
+check(html.includes("coach-tools-v1451.css?v=v1451-contrast"), "foglio stile strumenti non caricato");
 check(sw.includes('"./coach-tools-v1451.css"'), "foglio stile strumenti non precaricato");
 check(css.includes("@media (prefers-reduced-motion: reduce)"), "manca la riduzione animazioni");
+check(css.includes("color: var(--text, #2a1638)"), "contrasto testo strumenti non collegato al tema");
+check(css.includes("color: var(--muted, #725f80)"), "contrasto testo secondario non collegato al tema");
+check(!html.includes('class="athlete-context-strip program-context-summary"'), "riepilogo atleta superfluo ancora presente nell'editor");
 check(!html.includes("/api/coach/state"), "sync esterno incompatibile reintrodotto");
 
-console.log(JSON.stringify({ok:true,build:"v145.1",checks:15,features:"copy/undo/compare/trend/replace"}));
+console.log(JSON.stringify({ok:true,build:"v145.2",checks:18,features:"copy/undo/compare/trend/replace/contrast"}));

@@ -11,7 +11,7 @@
 }
 
 .coach-week-tools > span {
-  color: var(--text-muted, #bbaec8);
+  color: var(--muted, #725f80);
   font-size: .76rem;
   font-weight: 900;
   letter-spacing: .04em;
@@ -29,7 +29,7 @@
   padding: 6px 11px;
   border: 1px solid color-mix(in srgb, var(--purple-primary) 28%, transparent);
   border-radius: 10px;
-  color: var(--text-main, #fff);
+  color: var(--text, #2a1638);
   background: color-mix(in srgb, var(--surface) 88%, var(--purple-primary) 12%);
   font: inherit;
   font-size: .78rem;
@@ -86,7 +86,7 @@
   overflow: auto;
   border: 1px solid color-mix(in srgb, var(--purple-primary) 30%, transparent);
   border-radius: 24px;
-  color: var(--text-main, #fff);
+  color: var(--text, #2a1638);
   background: linear-gradient(145deg, color-mix(in srgb, var(--surface-raised) 96%, #fff 4%), var(--surface));
   box-shadow: 0 30px 90px rgba(0, 0, 0, .42);
   animation: coachToolsEnter 190ms cubic-bezier(.2, .8, .2, 1) both;
@@ -116,7 +116,7 @@
 }
 
 .coach-tools-modal p {
-  color: var(--text-muted, #bbaec8);
+  color: var(--muted, #725f80);
 }
 
 .coach-tools-body {
@@ -139,7 +139,7 @@
 .coach-compare-selectors label {
   display: grid;
   gap: 7px;
-  color: var(--text-muted, #bbaec8);
+  color: var(--muted, #725f80);
   font-size: .78rem;
   font-weight: 800;
 }
@@ -152,13 +152,13 @@
   padding: 8px 11px;
   border: 1px solid color-mix(in srgb, var(--purple-primary) 28%, transparent);
   border-radius: 11px;
-  color: var(--text-main, #fff);
+  color: var(--text, #2a1638);
   background: var(--surface);
   font: inherit;
 }
 
 .coach-tools-form small {
-  color: var(--text-muted, #bbaec8);
+  color: var(--muted, #725f80);
   font-weight: 600;
 }
 
@@ -181,7 +181,7 @@
 .coach-compare-kpis small,
 .coach-trend-summary span {
   display: block;
-  color: var(--text-muted, #bbaec8);
+  color: var(--muted, #725f80);
 }
 
 .coach-compare-kpis strong {
@@ -209,7 +209,7 @@
 }
 
 .coach-compare-table .head {
-  color: var(--text-muted, #bbaec8);
+  color: var(--muted, #725f80);
   background: color-mix(in srgb, var(--purple-primary) 12%, var(--surface));
   font-size: .75rem;
   font-weight: 900;
@@ -248,7 +248,7 @@
 }
 
 .coach-tools-trend line {
-  stroke: color-mix(in srgb, var(--text-muted, #bbaec8) 35%, transparent);
+  stroke: color-mix(in srgb, var(--muted, #725f80) 35%, transparent);
   stroke-width: 1.5;
 }
 
@@ -268,13 +268,13 @@
 }
 
 .coach-tools-trend text {
-  fill: var(--text-muted, #bbaec8);
+  fill: var(--muted, #725f80);
   font-size: 13px;
   text-anchor: middle;
 }
 
 .coach-tools-trend text.value {
-  fill: var(--text-main, #fff);
+  fill: var(--text, #2a1638);
   font-weight: 900;
 }
 
