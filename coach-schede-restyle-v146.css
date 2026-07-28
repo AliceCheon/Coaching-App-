@@ -940,3 +940,47 @@ body.schede-hide-advanced .coach-editor-weekly .coach-inline-exercise td.col-cel
 @media (prefers-reduced-motion: reduce) {
   .coach-editor-weekly *, #coachModalPortalHost * { animation: none !important; transition: none !important; }
 }
+
+/* -----------------------------------------------------------
+   12. TEMA CHIARO — contrasto testo (v146.1 correttiva)
+   Mantiene palette e layout; sostituisce soltanto i toni troppo
+   chiari ereditati dal tema scuro.
+   ----------------------------------------------------------- */
+body[data-theme="light"] .coach-editor-weekly .coach-program-board-head > div:first-child span,
+body[data-theme="light"] .coach-editor-weekly .coach-day-title em,
+body[data-theme="light"] .coach-editor-weekly .coach-program-day-table thead th,
+body[data-theme="light"] .coach-editor-weekly .coach-inline-note,
+body[data-theme="light"] .coach-editor-weekly .coach-empty-inline,
+body[data-theme="light"] .coach-editor-weekly .coach-editor-save-state [data-coach-save-label] {
+  color: #654f62 !important;
+}
+
+body[data-theme="light"] .schede-v146-duration-pill {
+  color: #6c278f;
+  background: rgba(151, 52, 213, .12);
+  border-color: rgba(128, 39, 185, .26);
+}
+
+body[data-theme="light"] .schede-v146-day-footer button {
+  color: #8b246d;
+  background: rgba(225, 61, 151, .09);
+  border-color: rgba(194, 40, 126, .34);
+}
+
+body[data-theme="light"] .coach-editor-weekly .coach-week-tools > span {
+  color: #7b315f;
+}
+
+body[data-theme="light"] .coach-editor-weekly button:disabled {
+  color: #6f536a !important;
+  opacity: .72;
+  filter: none;
+}
+
+body[data-theme="light"] .coach-tools-trend text {
+  fill: #654f62 !important;
+}
+
+body[data-theme="light"] .coach-tools-trend text.value {
+  fill: #8b246d !important;
+}
