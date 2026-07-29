@@ -411,6 +411,69 @@ body.schede-hide-advanced .coach-editor-weekly .coach-inline-exercise td.col-cel
 .coach-editor-weekly col.col-notes    { width: auto !important; min-width: 130px !important; }
 .coach-editor-weekly col.col-actions  { width: 160px !important; }
 
+.coach-editor-weekly .coach-column-header > span {
+  vertical-align: middle;
+}
+.coach-editor-weekly .coach-column-header > button {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 18px;
+  margin-left: 2px;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 6px;
+  background: transparent !important;
+  color: color-mix(in srgb, var(--purple-primary) 74%, var(--text)) !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  line-height: 1;
+  cursor: pointer;
+}
+.coach-editor-weekly .coach-column-header > button:hover,
+.coach-editor-weekly .coach-column-header > button:focus-visible {
+  background: color-mix(in srgb, var(--pink-primary) 14%, transparent) !important;
+  color: var(--pink-primary) !important;
+  outline: none;
+}
+.coach-editor-weekly .coach-hide-col-type col.col-type,
+.coach-editor-weekly .coach-hide-col-sets col.col-sets,
+.coach-editor-weekly .coach-hide-col-reps col.col-reps,
+.coach-editor-weekly .coach-hide-col-rest col.col-rest,
+.coach-editor-weekly .coach-hide-col-load col.col-load,
+.coach-editor-weekly .coach-hide-col-rpe col.col-rpe,
+.coach-editor-weekly .coach-hide-col-rir col.col-rir,
+.coach-editor-weekly .coach-hide-col-som col.col-tut,
+.coach-editor-weekly .coach-hide-col-notes col.col-notes {
+  width: 25px !important;
+  min-width: 25px !important;
+}
+.coach-editor-weekly .coach-hide-col-type td[data-coach-col="type"],
+.coach-editor-weekly .coach-hide-col-sets td[data-coach-col="sets"],
+.coach-editor-weekly .coach-hide-col-reps td[data-coach-col="reps"],
+.coach-editor-weekly .coach-hide-col-rest td[data-coach-col="rest"],
+.coach-editor-weekly .coach-hide-col-load td[data-coach-col="load"],
+.coach-editor-weekly .coach-hide-col-rpe td[data-coach-col="rpe"],
+.coach-editor-weekly .coach-hide-col-rir td[data-coach-col="rir"],
+.coach-editor-weekly .coach-hide-col-som td[data-coach-col="som"],
+.coach-editor-weekly .coach-hide-col-notes td[data-coach-col="notes"] {
+  display: none !important;
+}
+.coach-editor-weekly .coach-hide-col-type th[data-coach-col="type"] > span,
+.coach-editor-weekly .coach-hide-col-sets th[data-coach-col="sets"] > span,
+.coach-editor-weekly .coach-hide-col-reps th[data-coach-col="reps"] > span,
+.coach-editor-weekly .coach-hide-col-rest th[data-coach-col="rest"] > span,
+.coach-editor-weekly .coach-hide-col-load th[data-coach-col="load"] > span,
+.coach-editor-weekly .coach-hide-col-rpe th[data-coach-col="rpe"] > span,
+.coach-editor-weekly .coach-hide-col-rir th[data-coach-col="rir"] > span,
+.coach-editor-weekly .coach-hide-col-som th[data-coach-col="som"] > span,
+.coach-editor-weekly .coach-hide-col-notes th[data-coach-col="notes"] > span {
+  display: none !important;
+}
+.coach-editor-weekly .coach-program-board[class*="coach-hide-col-"] th[data-coach-col] > button[aria-pressed="true"] {
+  margin: 0 auto;
+}
+
 /* Padding compatto — header font ridotto per risparmiare spazio verticale */
 .coach-editor-weekly .coach-program-day-table thead th {
   position: sticky;
@@ -993,6 +1056,9 @@ body.schede-hide-advanced .coach-editor-weekly .coach-inline-exercise td.col-cel
   color: var(--text);
   font-size: .88rem;
   line-height: 1.5;
+}
+.coach-inline-som em {
+  font-style: normal;
 }
 .coach-note-modal textarea:focus,
 #coachModalPortalHost textarea:focus {
