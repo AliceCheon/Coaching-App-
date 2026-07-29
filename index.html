@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="coach-tools-v1451.css?v=v1451-contrast">
   <link rel="stylesheet" href="unified-sidebar-v1452.css?v=v1461c10">
   <link rel="stylesheet" href="coach-schede-restyle-v146.css?v=v1461c10">
+  <link rel="stylesheet" href="workout-flow-v147.css?v=v1470">
   <script src="exercise-library-19.8.js?v=v1461"></script>
   <script src="master-exercise-library.js?v=v1461"></script>
   <script src="athlete-context.js?v=v1461"></script>
@@ -30,6 +31,7 @@
   <script src="app-config-v144.js?v=v1461"></script>
   <script src="coach-studio.js?v=v1461"></script>
   <script defer src="coach-schede-v146-enhance.js?v=v1461c10"></script>
+  <script defer src="workout-flow-v147.js?v=v1470"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -16139,7 +16141,7 @@
             maxKg: numericValues.length ? Math.max(...numericValues) : 0,
             value: numericValues.length ? `${setValues.filter(Boolean).join(" / ")} kg` : "",
             setValues,
-            completedSets: numericValues.map((kg, setIndex) => ({
+            completedSets: window.BarbellDivaWorkoutV147?.completedSetsFor(exercise, context) || numericValues.map((kg, setIndex) => ({
               kg,
               reps: numericParts(repTargetsFor(exercise)[setIndex] || exercise.reps)[0] ?? null,
               rir: numericParts(exercise.rir)[0] ?? null,
