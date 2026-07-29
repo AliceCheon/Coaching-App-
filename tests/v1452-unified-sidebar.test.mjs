@@ -19,7 +19,7 @@ check(!html.includes('<aside class="coach-video-sidebar"'), "seconda barra Coach
 check(!html.includes('data-bottom="coach"'), "vecchia voce Coach Studio ancora nella barra");
 check(html.includes('if(next==="program")') && html.includes("state.ui.mainNavCollapsed=true"), "auto-riduzione editor mancante");
 check(html.includes("openCoachRouteFromMainNav"), "navigazione Coach unificata non collegata");
-check(html.includes("unified-sidebar-v1452.css?v=v1461c9"), "stile barra unificata non caricato");
+check(html.includes("unified-sidebar-v1452.css?v=v1461c10"), "stile barra unificata non caricato");
 check(sw.includes('"./unified-sidebar-v1452.css"'), "stile barra unificata non precaricato");
 check(css.includes(".rail-coach-subnav") && css.includes("body.nav-collapsed .rail-coach-subnav"), "stati barra aperta/ridotta mancanti");
 check(!/coach-row-more[\s\S]{0,650}Sostituisci/.test(html), "Sostituisci è ancora nel menu Azioni");
