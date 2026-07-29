@@ -405,9 +405,9 @@ body.schede-hide-advanced .coach-editor-weekly .coach-inline-exercise td.col-cel
 .coach-editor-weekly col.col-reps     { width: 62px !important; }
 .coach-editor-weekly col.col-rest     { width: 56px !important; }
 .coach-editor-weekly col.col-load     { width: 82px !important; }
-.coach-editor-weekly col.col-rpe      { width: 42px !important; }
-.coach-editor-weekly col.col-rir      { width: 42px !important; }
-.coach-editor-weekly col.col-tut      { width: 62px !important; }
+.coach-editor-weekly col.col-rpe      { width: 56px !important; }
+.coach-editor-weekly col.col-rir      { width: 56px !important; }
+.coach-editor-weekly col.col-tut      { width: 76px !important; }
 .coach-editor-weekly col.col-notes    { width: auto !important; min-width: 130px !important; }
 .coach-editor-weekly col.col-actions  { width: 160px !important; }
 
@@ -445,8 +445,8 @@ body.schede-hide-advanced .coach-editor-weekly .coach-inline-exercise td.col-cel
 .coach-editor-weekly .coach-hide-col-rir col.col-rir,
 .coach-editor-weekly .coach-hide-col-som col.col-tut,
 .coach-editor-weekly .coach-hide-col-notes col.col-notes {
-  width: 25px !important;
-  min-width: 25px !important;
+  width: 14px !important;
+  min-width: 14px !important;
 }
 .coach-editor-weekly .coach-hide-col-type td[data-coach-col="type"],
 .coach-editor-weekly .coach-hide-col-sets td[data-coach-col="sets"],
@@ -461,10 +461,10 @@ body.schede-hide-advanced .coach-editor-weekly .coach-inline-exercise td.col-cel
      display:none spostava tutte le celle successive sotto l'intestazione
      sbagliata. Manteniamo quindi un piccolo binario vuoto per il comando
      "Mostra", nascondendo soltanto il contenuto. */
-  width: 25px !important;
-  min-width: 25px !important;
-  max-width: 25px !important;
-  padding: 0 2px !important;
+  width: 14px !important;
+  min-width: 14px !important;
+  max-width: 14px !important;
+  padding: 0 !important;
   overflow: hidden !important;
   color: transparent !important;
   font-size: 0 !important;
@@ -494,6 +494,9 @@ body.schede-hide-advanced .coach-editor-weekly .coach-inline-exercise td.col-cel
 }
 .coach-editor-weekly .coach-program-board[class*="coach-hide-col-"] th[data-coach-col] > button[aria-pressed="true"] {
   margin: 0 auto;
+  width: 12px;
+  height: 18px;
+  font-size: 11px !important;
 }
 
 /* Padding compatto — header font ridotto per risparmiare spazio verticale */
@@ -587,13 +590,13 @@ body.schede-hide-advanced .coach-editor-weekly .coach-inline-exercise td.col-cel
 /* Input molto compatti — numerici come mini box */
 .coach-editor-weekly .coach-inline-exercise input,
 .coach-editor-weekly .coach-inline-exercise select {
-  min-height: 26px !important;
-  padding: 3px 5px !important;
+  min-height: 30px !important;
+  padding: 4px 6px !important;
   border-radius: 6px !important;
   border: 1px solid color-mix(in srgb, var(--purple-primary) 20%, transparent) !important;
   background: color-mix(in srgb, var(--surface-raised) 60%, var(--surface)) !important;
   color: var(--text) !important;
-  font-size: 11px !important;
+  font-size: 12px !important;
   transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
   min-width: 0 !important;
   width: 100% !important;
