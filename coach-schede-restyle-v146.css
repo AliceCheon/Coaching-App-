@@ -457,7 +457,29 @@ body.schede-hide-advanced .coach-editor-weekly .coach-inline-exercise td.col-cel
 .coach-editor-weekly .coach-hide-col-rir td[data-coach-col="rir"],
 .coach-editor-weekly .coach-hide-col-som td[data-coach-col="som"],
 .coach-editor-weekly .coach-hide-col-notes td[data-coach-col="notes"] {
-  display: none !important;
+  /* La cella deve restare nella griglia della tabella. Rimuoverla con
+     display:none spostava tutte le celle successive sotto l'intestazione
+     sbagliata. Manteniamo quindi un piccolo binario vuoto per il comando
+     "Mostra", nascondendo soltanto il contenuto. */
+  width: 25px !important;
+  min-width: 25px !important;
+  max-width: 25px !important;
+  padding: 0 2px !important;
+  overflow: hidden !important;
+  color: transparent !important;
+  font-size: 0 !important;
+}
+.coach-editor-weekly .coach-hide-col-type td[data-coach-col="type"] > *,
+.coach-editor-weekly .coach-hide-col-sets td[data-coach-col="sets"] > *,
+.coach-editor-weekly .coach-hide-col-reps td[data-coach-col="reps"] > *,
+.coach-editor-weekly .coach-hide-col-rest td[data-coach-col="rest"] > *,
+.coach-editor-weekly .coach-hide-col-load td[data-coach-col="load"] > *,
+.coach-editor-weekly .coach-hide-col-rpe td[data-coach-col="rpe"] > *,
+.coach-editor-weekly .coach-hide-col-rir td[data-coach-col="rir"] > *,
+.coach-editor-weekly .coach-hide-col-som td[data-coach-col="som"] > *,
+.coach-editor-weekly .coach-hide-col-notes td[data-coach-col="notes"] > * {
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 .coach-editor-weekly .coach-hide-col-type th[data-coach-col="type"] > span,
 .coach-editor-weekly .coach-hide-col-sets th[data-coach-col="sets"] > span,

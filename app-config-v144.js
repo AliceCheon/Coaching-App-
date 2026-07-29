@@ -2,7 +2,7 @@
 (function (root) {
   root.BarbellDivaV144Config = Object.freeze({
     build: "v146.1",
-    cache: "atlas-app-v1461c8",
+    cache: "atlas-app-v1461c9",
     backupAutomaticLimit: 5,
     legacyModulesRemoved: ["nutrizione", "workout-pro"],
     firebase: Object.freeze({
