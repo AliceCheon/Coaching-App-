@@ -18,9 +18,8 @@
 
   // Applica il flag colonne avanzate al body dallo state persistito
   function applyAdvancedColsState() {
-    const hide = localStorage.getItem(LS_HIDE_ADVANCED) === "1";
-    document.body.classList.toggle("schede-hide-advanced", hide);
-    return hide;
+    document.body.classList.remove("schede-hide-advanced");
+    return false;
   }
   applyAdvancedColsState();
 
@@ -74,7 +73,7 @@
 
     // 1) Toggle "Colonne avanzate" nella toolbar settimana
     const weekTools = root.querySelector(".coach-week-tools > div");
-    if (weekTools && !weekTools.querySelector(".schede-v146-toggle")) {
+    if (false && weekTools && !weekTools.querySelector(".schede-v146-toggle")) {
       const label = document.createElement("label");
       label.className = "schede-v146-toggle";
       label.title = "Mostra/nascondi le colonne RPE, RIR, TUT";
@@ -97,7 +96,11 @@
       if (t === "carico") th.textContent = "Peso";
       if (t === "rpe") th.classList.add("col-header-rpe");
       if (t === "rir") th.classList.add("col-header-rir");
-      if (t === "tut") th.classList.add("col-header-tut");
+      if (t === "tut" || t === "som") {
+        th.classList.add("col-header-tut");
+        const label=th.querySelector("span");
+        if(label)label.textContent="SOM";else th.textContent="SOM";
+      }
     });
 
     // 3) Marca celle RPE/RIR/TUT nel corpo tramite data-label
@@ -107,7 +110,7 @@
         if (lbl === "carico") td.setAttribute("data-label", "Peso");
         if (lbl === "rpe") td.classList.add("col-cell-rpe");
         if (lbl === "rir") td.classList.add("col-cell-rir");
-        if (lbl === "tut") td.classList.add("col-cell-tut");
+        if (lbl === "tut" || lbl === "som") td.classList.add("col-cell-tut");
       });
 
       // 4) Note pill "has-note" se testo presente
