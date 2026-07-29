@@ -12,11 +12,11 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <!-- Preload critical font for faster text rendering -->
   <link rel="preload" href="atlas-nunito-sans.ttf" as="font" type="font/ttf" crossorigin="crossorigin" fetchpriority="high">
-  <link rel="stylesheet" href="coach-studio.css?v=v1461c5">
+  <link rel="stylesheet" href="coach-studio.css?v=v1461c7">
   <link rel="stylesheet" href="coach-program-editor-19.8.css?v=athlete-side-5">
   <link rel="stylesheet" href="coach-tools-v1451.css?v=v1451-contrast">
-  <link rel="stylesheet" href="unified-sidebar-v1452.css?v=v1461c5">
-  <link rel="stylesheet" href="coach-schede-restyle-v146.css?v=v1461c5">
+  <link rel="stylesheet" href="unified-sidebar-v1452.css?v=v1461c7">
+  <link rel="stylesheet" href="coach-schede-restyle-v146.css?v=v1461c7">
   <script src="exercise-library-19.8.js?v=v1461"></script>
   <script src="master-exercise-library.js?v=v1461"></script>
   <script src="athlete-context.js?v=v1461"></script>
@@ -29,7 +29,7 @@
   <script type="module" src="sync-reliability.js?v=v1461"></script>
   <script src="app-config-v144.js?v=v1461"></script>
   <script src="coach-studio.js?v=v1461"></script>
-  <script defer src="coach-schede-v146-enhance.js?v=v1461c5"></script>
+  <script defer src="coach-schede-v146-enhance.js?v=v1461c7"></script>
   <title>Barbell diva</title>
   <style>
     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
@@ -11417,6 +11417,30 @@
       mountCoachToolsModal(coachToolsModalShell(`Trend · ${displayExerciseName(exercise.name||"Esercizio")}`,"Andamento programmato del singolo esercizio.",body));
     }
 
+    function openCoachExerciseWeightHistoryModal(programId,sheetId,exerciseId) {
+      const program=programRepository.getProgramById(programId||coachProgramUi.programId);
+      const sheet=programRepository.getSheetById(program?.id,sheetId);
+      const exercise=programRepository.getExerciseById(program?.id,sheet?.id,exerciseId);
+      if(!program||!sheet||!exercise) return showToast("Esercizio non trovato.");
+      const history=exerciseHistory(exercise,50,sheet.code||"");
+      const numericLoads=history.flatMap((row)=>{
+        const values=Array.isArray(row.setValues)?row.setValues:[row.kg,row.load,row.value];
+        return values.flatMap((value)=>numericParts(value)).filter((value)=>Number.isFinite(value)&&value>0);
+      });
+      const bestLoad=numericLoads.length?Math.max(...numericLoads):0;
+      const last=history[0];
+      const rows=history.map((row)=>{
+        const sets=Number(row.sets)||row.setValues?.filter(Boolean)?.length||"—";
+        const reps=row.reps??row.repetitions??row.rep??"—";
+        const note=[row.userNote,row.notes,row.note].filter(Boolean).join(" · ");
+        return `<div class="coach-weight-history-row"><strong>${escapeHtml(row.date||row.dateInput||"Data non indicata")}</strong><span>${escapeHtml(row.sessionCode||sheet.code||"—")}</span><span>${escapeHtml(sets)}</span><span>${escapeHtml(reps)}</span><b>${escapeHtml(historyLoadLabel(row))}</b><small>${escapeHtml(note||"—")}</small></div>`;
+      }).join("");
+      const summary=`<div class="coach-trend-kpis"><article><span>Allenamenti registrati</span><strong>${history.length}</strong><small>rilevazioni</small></article><article><span>Miglior peso</span><strong>${bestLoad||"—"}</strong><small>${bestLoad?"kg":"nessun dato"}</small></article><article><span>Ultimo allenamento</span><strong>${escapeHtml(last?.date||last?.dateInput||"—")}</strong><small>${last?escapeHtml(historyLoadLabel(last)):"nessun dato"}</small></article></div>`;
+      const table=history.length?`<div class="coach-weight-history-table"><div class="coach-weight-history-head"><span>Data</span><span>Scheda</span><span>Serie</span><span>Rip.</span><span>Peso</span><span>Note</span></div>${rows}</div>`:"";
+      const empty=history.length?"":`<div class="coach-weight-history-empty"><strong>Nessuno storico disponibile</strong><p>Completa e salva un allenamento con questo esercizio: peso, ripetizioni e note compariranno qui.</p></div>`;
+      mountCoachToolsModal(coachToolsModalShell(`Storico pesi · ${displayExerciseName(exercise.name||"Esercizio")}`,"Dati realmente salvati nel Logbook, dal più recente al più vecchio.",`${summary}${table}${empty}`));
+    }
+
     function coachStudioReferenceHtml() {
       const studio=coachStudioState(); const programs=coachProgramsForUi(); let reference=programs.find((item)=>item.id===studio.referenceProgramId);
       if(!reference) reference=programs.find((item)=>item.id!==studio.programId)||programs[0]; if(reference) studio.referenceProgramId=reference.id;
@@ -11509,7 +11533,7 @@
       const weekCount=Math.max(1,Number(program.durationWeeks)||1);
       const selectedWeek=Math.max(1,Math.min(weekCount,Number(studio.programWeek)||1));
       studio.programWeek=selectedWeek;
-      return `<section class="coach-program-board"><div class="coach-program-assignment no-status"><label>Programma<select id="coachProgramSelect">${coachProgramsForUi().map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id===program.id?"selected":""}>${escapeHtml(item.name)}</option>`).join("")}</select></label><div><span>Durata</span><strong>${weekCount} settimane</strong></div><div><span>Editor</span><strong>rapido 19.8</strong></div></div><div class="coach-program-week-tabs">${Array.from({length:weekCount},(_,index)=>`<button class="${selectedWeek===index+1?"active":""}" data-program-week="${index+1}"><strong>Settimana ${index+1}</strong><span>${sheets.length} allenamenti</span></button>`).join("")}</div><div class="coach-program-board-head"><div><h2>Settimana ${selectedWeek}</h2><span>${sheets.length} ${sheets.length===1?"giorno":"giorni"} · modifica direttamente i campi</span></div><div class="coach-board-controls"><button class="ghost-button" data-days-expand-all>Apri tutte</button><button class="ghost-button" data-days-collapse-all>Chiudi tutte</button><button class="ghost-button" data-sheet-action="new">+ Aggiungi allenamento</button></div></div><div class="coach-program-days">${sheets.map((sheet,index)=>{const expanded=coachProgramUi.expandedSheetIds.has(sheet.id),summary=coachDaySummary(program,sheet,selectedWeek);return `<article class="coach-program-day ${expanded?"is-expanded":"is-collapsed"}" data-board-sheet="${escapeHtml(sheet.id)}"><header><button class="coach-day-toggle" type="button" data-day-toggle="${escapeHtml(sheet.id)}" aria-expanded="${expanded}" aria-controls="coach-day-${escapeHtml(sheet.id)}"><span class="coach-day-chevron" aria-hidden="true">⌄</span><span class="coach-day-title"><em>Giorno ${index+1}</em><strong>${escapeHtml(sheet.name||sheet.focus||`Scheda ${sheet.code}`)}</strong><small>${summary.exercises} esercizi · ${summary.totalSets} serie · circa ${summary.duration} min · ${escapeHtml(summary.focus)}</small></span></button><div class="quick-actions coach-day-actions"><button data-sheet-action="edit" data-sheet-id="${escapeHtml(sheet.id)}">✎ Nome e info</button><button data-sheet-action="duplicate" data-sheet-id="${escapeHtml(sheet.id)}">▣ Duplica</button><button data-sheet-action="left" data-sheet-id="${escapeHtml(sheet.id)}" title="Sposta prima">←</button><button data-sheet-action="right" data-sheet-id="${escapeHtml(sheet.id)}" title="Sposta dopo">→</button><button class="danger-button" data-sheet-action="delete" data-sheet-id="${escapeHtml(sheet.id)}">⌫</button><details class="coach-add-menu"><summary aria-label="Aggiungi elemento">+ Aggiungi</summary><div><button data-program-board-add-kind="exercise" data-sheet-id="${escapeHtml(sheet.id)}">Esercizio</button>${coachProgramUi.clipboardExercise?`<button data-inline-paste data-sheet-id="${escapeHtml(sheet.id)}">Incolla esercizio copiato</button>`:""}</div></details></div></header><div id="coach-day-${escapeHtml(sheet.id)}" class="coach-program-day-table" ${expanded?"":"hidden"} tabindex="0" aria-label="Tabella della giornata"><table><colgroup><col class="col-exercise"><col class="col-type"><col class="col-sets"><col class="col-reps"><col class="col-rest"><col class="col-load"><col class="col-rpe"><col class="col-rir"><col class="col-tut"><col class="col-notes"><col class="col-actions"></colgroup><thead><tr><th>Esercizio e muscoli</th><th>Tipo</th><th>Serie</th><th>Rip/tempo</th><th>Rec</th><th>Carico</th><th>RPE</th><th>RIR</th><th>TUT</th><th>Note</th><th>Azioni</th></tr></thead><tbody>${coachProgramExerciseRowsHtml(program,sheet,selectedWeek)||`<tr><td colspan="11" class="coach-empty-inline">Nessun esercizio. Usa “+ Aggiungi” per iniziare.</td></tr>`}</tbody></table></div></article>`}).join("")}</div>${coachProgramVolumeHtml(program,selectedWeek)}<aside class="program-board-bot">${coachMascotHtml()}<div><strong>Diva Bot è qui ✨</strong><span>Controllo la settimana ${selectedWeek}; i suoni restano spenti finché non li attivi.</span></div></aside></section>`;
+      return `<section class="coach-program-board" data-local-delegated="1"><div class="coach-program-assignment no-status"><label>Programma<select id="coachProgramSelect">${coachProgramsForUi().map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id===program.id?"selected":""}>${escapeHtml(item.name)}</option>`).join("")}</select></label><div><span>Durata</span><strong>${weekCount} settimane</strong></div><div><span>Editor</span><strong>rapido 19.8</strong></div></div><div class="coach-program-week-tabs">${Array.from({length:weekCount},(_,index)=>`<button class="${selectedWeek===index+1?"active":""}" data-program-week="${index+1}"><strong>Settimana ${index+1}</strong><span>${sheets.length} allenamenti</span></button>`).join("")}</div><div class="coach-program-board-head"><div><h2>Settimana ${selectedWeek}</h2><span>${sheets.length} ${sheets.length===1?"giorno":"giorni"} · modifica direttamente i campi</span></div><div class="coach-board-controls"><button class="ghost-button" data-days-expand-all>Apri tutte</button><button class="ghost-button" data-days-collapse-all>Chiudi tutte</button><button class="ghost-button" data-sheet-action="new">+ Aggiungi allenamento</button></div></div><div class="coach-program-days">${sheets.map((sheet,index)=>{const expanded=coachProgramUi.expandedSheetIds.has(sheet.id),summary=coachDaySummary(program,sheet,selectedWeek);return `<article class="coach-program-day ${expanded?"is-expanded":"is-collapsed"}" data-board-sheet="${escapeHtml(sheet.id)}"><header><button class="coach-day-toggle" type="button" data-day-toggle="${escapeHtml(sheet.id)}" aria-expanded="${expanded}" aria-controls="coach-day-${escapeHtml(sheet.id)}"><span class="coach-day-chevron" aria-hidden="true">⌄</span><span class="coach-day-title"><em>Giorno ${index+1}</em><strong>${escapeHtml(sheet.name||sheet.focus||`Scheda ${sheet.code}`)}</strong><small>${summary.exercises} esercizi · ${summary.totalSets} serie · circa ${summary.duration} min · ${escapeHtml(summary.focus)}</small></span></button><div class="quick-actions coach-day-actions"><button data-sheet-action="edit" data-sheet-id="${escapeHtml(sheet.id)}">✎ Nome e info</button><button data-sheet-action="duplicate" data-sheet-id="${escapeHtml(sheet.id)}" title="Duplica allenamento" aria-label="Duplica allenamento">${coachRowActionIcon("copy")}</button><button data-sheet-action="left" data-sheet-id="${escapeHtml(sheet.id)}" title="Sposta prima">←</button><button data-sheet-action="right" data-sheet-id="${escapeHtml(sheet.id)}" title="Sposta dopo">→</button><button class="danger-button" data-sheet-action="delete" data-sheet-id="${escapeHtml(sheet.id)}" title="Elimina allenamento" aria-label="Elimina allenamento">${coachRowActionIcon("delete")}</button><button type="button" class="coach-paste-button" data-inline-paste data-sheet-id="${escapeHtml(sheet.id)}" ${coachProgramUi.clipboardExercise?"":"hidden"} title="Incolla l’esercizio copiato">⧉ Incolla</button><details class="coach-add-menu"><summary aria-label="Aggiungi elemento">+ Aggiungi</summary><div><button data-program-board-add-kind="exercise" data-sheet-id="${escapeHtml(sheet.id)}">Esercizio</button></div></details></div></header><div id="coach-day-${escapeHtml(sheet.id)}" class="coach-program-day-table" ${expanded?"":"hidden"} tabindex="0" aria-label="Tabella della giornata"><table><colgroup><col class="col-exercise"><col class="col-type"><col class="col-sets"><col class="col-reps"><col class="col-rest"><col class="col-load"><col class="col-rpe"><col class="col-rir"><col class="col-tut"><col class="col-notes"><col class="col-actions"></colgroup><thead><tr><th>Esercizio e muscoli</th><th>Tipo</th><th>Serie</th><th>Rip/tempo</th><th>Rec</th><th>Carico</th><th>RPE</th><th>RIR</th><th>TUT</th><th>Note</th><th>Azioni</th></tr></thead><tbody>${coachProgramExerciseRowsHtml(program,sheet,selectedWeek)||`<tr><td colspan="11" class="coach-empty-inline">Nessun esercizio. Usa “+ Aggiungi” per iniziare.</td></tr>`}</tbody></table></div></article>`}).join("")}</div>${coachProgramVolumeHtml(program,selectedWeek)}<aside class="program-board-bot">${coachMascotHtml()}<div><strong>Diva Bot è qui ✨</strong><span>Controllo la settimana ${selectedWeek}; i suoni restano spenti finché non li attivi.</span></div></aside></section>`;
     }
 
     function coachStudioProgramEditorHtml() {
@@ -12191,10 +12215,84 @@
       return !!next;
     }
 
+    function syncCoachPasteButtonsLocal() {
+      const available=!!coachProgramUi.clipboardExercise;
+      document.querySelectorAll(".coach-paste-button[data-inline-paste]").forEach((button)=>{
+        button.hidden=!available;
+        button.disabled=!available;
+      });
+    }
+
+    function flashCoachFieldSaved(input) {
+      if(!input)return;
+      input.classList.remove("schede-just-saved");
+      void input.offsetWidth;
+      input.classList.add("schede-just-saved");
+      const cell=input.closest("td");
+      if(cell){
+        cell.classList.remove("schede-cell-saved");
+        void cell.offsetWidth;
+        cell.classList.add("schede-cell-saved");
+        setTimeout(()=>cell.classList.remove("schede-cell-saved"),900);
+      }
+      setTimeout(()=>input.classList.remove("schede-just-saved"),900);
+    }
+
     function bindCoachEditorDelegation() {
       const editor = document.querySelector(".coach-editor");
       if (!editor || editor.dataset.localDelegatedBound === "1") return;
       editor.dataset.localDelegatedBound = "1";
+      editor.querySelectorAll(".coach-program-board").forEach((board)=>board.dataset.localDelegated="1");
+      editor.addEventListener("focusin",(event)=>{
+        const input=event.target.closest("[data-inline-exercise-field]");
+        if(!input)return;
+        const key=[input.dataset.programId,input.dataset.sheetId,input.dataset.exerciseId,input.dataset.inlineExerciseField,input.dataset.weekNumber].join("|");
+        if(coachProgramUi.inlineHistoryFocusKey===key)return;
+        coachProgramUi.inlineHistoryFocusKey=key;
+        rememberExerciseState(input.dataset.programId,input.dataset.sheetId);
+      });
+      editor.addEventListener("focusout",(event)=>{
+        if(event.target.closest("[data-inline-exercise-field]")) coachProgramUi.inlineHistoryFocusKey="";
+      });
+      editor.addEventListener("keydown",(event)=>{
+        const undo=(event.ctrlKey||event.metaKey)&&!event.altKey&&String(event.key).toLowerCase()==="z";
+        const redo=undo&&event.shiftKey;
+        if(!undo)return;
+        const row=event.target.closest("[data-inline-row]");
+        if(!row)return;
+        event.preventDefault();
+        const ok=restoreExerciseHistoryFor(row.dataset.programId,row.dataset.sheetId,redo?"redo":"undo");
+        if(ok){renderCoachProgramBoardLocal();showToast(redo?"Modifica ripristinata.":"Ultima modifica annullata.");}
+        else showToast(redo?"Nessuna modifica da ripristinare.":"Nessuna modifica da annullare.");
+      });
+      editor.addEventListener("dragstart",(event)=>{
+        const row=event.target.closest('[data-inline-row][draggable="true"]');
+        if(!row)return;
+        coachProgramUi.draggedExerciseId=row.dataset.exerciseId;
+        row.classList.add("dragging");
+      });
+      editor.addEventListener("dragover",(event)=>{
+        if(event.target.closest('[data-inline-row][draggable="true"]'))event.preventDefault();
+      });
+      editor.addEventListener("drop",(event)=>{
+        const row=event.target.closest('[data-inline-row][draggable="true"]');
+        if(!row)return;
+        event.preventDefault();
+        const source=coachProgramUi.draggedExerciseId,target=row.dataset.exerciseId,sheetId=row.dataset.sheetId;
+        if(!source||source===target)return;
+        const ids=programRepository.getExercises(row.dataset.programId,sheetId).map((item)=>item.id);
+        const from=ids.indexOf(source),to=ids.indexOf(target);
+        if(from<0||to<0)return;
+        rememberExerciseState(row.dataset.programId,sheetId);
+        ids.splice(to,0,ids.splice(from,1)[0]);
+        programRepository.reorderExercises(row.dataset.programId,sheetId,ids,{immediate:true});
+        coachProgramUi.draggedExerciseId="";
+        renderCoachProgramBoardLocal();
+      });
+      editor.addEventListener("dragend",(event)=>{
+        event.target.closest('[data-inline-row][draggable="true"]')?.classList.remove("dragging");
+        coachProgramUi.draggedExerciseId="";
+      });
       editor.addEventListener("input", (event) => {
         const board = event.target.closest(".coach-program-board");
         if (board?.dataset.localDelegated !== "1") return;
@@ -12205,7 +12303,7 @@
         const board = event.target.closest(".coach-program-board");
         if (board?.dataset.localDelegated !== "1") return;
         const input = event.target.closest("[data-inline-exercise-field]");
-        if (input) return updateInlineExerciseField(input, true);
+        if (input) { const result=updateInlineExerciseField(input, true); if(result)flashCoachFieldSaved(input); return result; }
         const week = event.target.closest("[data-program-week]");
         if (week) return switchCoachProgramWeek(week.dataset.programWeek);
       });
@@ -12233,10 +12331,12 @@
         if (note) { selectCoachSheet(note.dataset.sheetId); return openCoachModalLocally("exercise-note", { sheetId:note.dataset.sheetId, exerciseId:note.dataset.inlineNoteOpen, weekNumber:Number(note.dataset.weekNumber)||1 }); }
         const replace = event.target.closest("[data-inline-replace]");
         if (replace) { selectCoachSheet(replace.dataset.sheetId); coachProgramUi.pendingAddKind="exercise"; return openCoachModalLocally("exercise-library", { sheetId:replace.dataset.sheetId, replaceExerciseId:replace.dataset.inlineReplace }); }
+        const history = event.target.closest("[data-schede-weight-history]");
+        if (history) return openCoachExerciseWeightHistoryModal(coachProgramUi.programId,history.dataset.sheetId,history.dataset.schedeWeightHistory);
         const copy = event.target.closest("[data-inline-copy]");
-        if (copy) { const exercise=programRepository.getExerciseById(coachProgramUi.programId,copy.dataset.sheetId,copy.dataset.inlineCopy); if(exercise){coachProgramUi.clipboardExercise=clone(exercise);showToast("Esercizio copiato: scegli la giornata e premi Incolla.");} return; }
+        if (copy) { const exercise=programRepository.getExerciseById(coachProgramUi.programId,copy.dataset.sheetId,copy.dataset.inlineCopy); if(exercise){coachProgramUi.clipboardExercise=clone(exercise);syncCoachPasteButtonsLocal();showToast("Esercizio copiato: ora trovi “Incolla” accanto a “+ Aggiungi”.");} return; }
         const paste = event.target.closest("[data-inline-paste]");
-        if (paste && coachProgramUi.clipboardExercise) { const source=coachProgramUi.clipboardExercise, now=new Date().toISOString(); const result=programRepository.createExercise(coachProgramUi.programId,paste.dataset.sheetId,{...clone(source),id:newEntityId("exercise"),name:`${source.name} copia`,createdAt:now,updatedAt:now,deletedAt:""},{immediate:true}); if(result.ok){showToast("Esercizio incollato.");renderCoachProgramBoardLocal();} return; }
+        if (paste && coachProgramUi.clipboardExercise) { const source=coachProgramUi.clipboardExercise, now=new Date().toISOString(); rememberExerciseState(coachProgramUi.programId,paste.dataset.sheetId); const result=programRepository.createExercise(coachProgramUi.programId,paste.dataset.sheetId,{...clone(source),id:newEntityId("exercise"),name:`${source.name} copia`,createdAt:now,updatedAt:now,deletedAt:""},{immediate:true}); if(result.ok){showToast("Esercizio incollato.");renderCoachProgramBoardLocal();} return; }
         const progression = event.target.closest("[data-progression-open]");
         if (progression) { selectCoachSheet(progression.dataset.sheetId || coachProgramUi.sheetId); return openCoachModalLocally("progression-editor", { programId:coachProgramUi.programId, sheetId:progression.dataset.sheetId, exerciseId:progression.dataset.progressionOpen, weekNumber:Number(progression.dataset.progressionWeekNumber)||0 }); }
         const actionButton = event.target.closest("[data-exercise-action]");
@@ -14729,7 +14829,10 @@
       }));
       document.querySelector("[data-studio-reference-program]")?.addEventListener("change",(event)=>{coachStudioState().referenceProgramId=event.target.value;renderCoachAfterFeedback("Aggiorno l’anteprima…");});
       document.querySelector("[data-studio-reference-week]")?.addEventListener("change",(event)=>{coachProgramUi.referenceWeek=Number(event.target.value)||1;renderCoachAfterFeedback("Aggiorno la settimana…");});
-      document.querySelectorAll("[data-program-week]").forEach((button)=>button.addEventListener("click",()=>switchCoachProgramWeek(button.dataset.programWeek)));
+      document.querySelectorAll("[data-program-week]").forEach((button)=>{
+        if(button.closest('.coach-program-board[data-local-delegated="1"]'))return;
+        button.addEventListener("click",()=>switchCoachProgramWeek(button.dataset.programWeek));
+      });
       const setDayExpanded=(card,expanded)=>{
         if(!card)return;
         const id=card.dataset.boardSheet, panel=card.querySelector(".coach-program-day-table"), toggle=card.querySelector("[data-day-toggle]");
@@ -14737,13 +14840,22 @@
         if(panel)panel.hidden=!expanded;if(toggle)toggle.setAttribute("aria-expanded",String(expanded));
         if(expanded)coachProgramUi.expandedSheetIds.add(id);else coachProgramUi.expandedSheetIds.delete(id);
       };
-      document.querySelectorAll("[data-day-toggle]").forEach((button)=>button.addEventListener("click",()=>{
+      document.querySelectorAll("[data-day-toggle]").forEach((button)=>{
+        if(button.closest('.coach-program-board[data-local-delegated="1"]'))return;
+        button.addEventListener("click",()=>{
         const card=button.closest("[data-board-sheet]");setDayExpanded(card,button.getAttribute("aria-expanded")!=="true");
-      }));
-      document.querySelector("[data-days-expand-all]")?.addEventListener("click",()=>document.querySelectorAll("[data-board-sheet]").forEach((card)=>setDayExpanded(card,true)));
-      document.querySelector("[data-days-collapse-all]")?.addEventListener("click",()=>document.querySelectorAll("[data-board-sheet]").forEach((card)=>setDayExpanded(card,false)));
-      document.querySelectorAll("[data-program-board-add-kind]").forEach((button)=>button.addEventListener("click",()=>{selectCoachSheet(button.dataset.sheetId);coachProgramUi.pendingAddKind=button.dataset.programBoardAddKind||"exercise";openCoachModalLocally("exercise-library",{sheetId:button.dataset.sheetId});}));
+        });
+      });
+      const expandDaysButton=document.querySelector("[data-days-expand-all]");
+      if(expandDaysButton&&!expandDaysButton.closest('.coach-program-board[data-local-delegated="1"]'))expandDaysButton.addEventListener("click",()=>document.querySelectorAll("[data-board-sheet]").forEach((card)=>setDayExpanded(card,true)));
+      const collapseDaysButton=document.querySelector("[data-days-collapse-all]");
+      if(collapseDaysButton&&!collapseDaysButton.closest('.coach-program-board[data-local-delegated="1"]'))collapseDaysButton.addEventListener("click",()=>document.querySelectorAll("[data-board-sheet]").forEach((card)=>setDayExpanded(card,false)));
+      document.querySelectorAll("[data-program-board-add-kind]").forEach((button)=>{
+        if(button.closest('.coach-program-board[data-local-delegated="1"]'))return;
+        button.addEventListener("click",()=>{selectCoachSheet(button.dataset.sheetId);coachProgramUi.pendingAddKind=button.dataset.programBoardAddKind||"exercise";openCoachModalLocally("exercise-library",{sheetId:button.dataset.sheetId});});
+      });
       document.querySelectorAll("[data-inline-exercise-field]").forEach((input)=>{
+        if(input.closest('.coach-program-board[data-local-delegated="1"]'))return;
         input.addEventListener("input",()=>updateInlineExerciseField(input,false));
         input.addEventListener("change",()=>updateInlineExerciseField(input,true));
       });
@@ -14753,25 +14865,44 @@
         const finish=()=>{const value=input.value.trim()||"Esercizio";if(label){label.textContent=value;label.title=value;label.hidden=false;}input.hidden=true;button.hidden=false;};
         input.addEventListener("change",finish,{once:true});input.addEventListener("blur",finish,{once:true});
       }));
-      document.querySelectorAll("[data-inline-note-open]").forEach((button)=>button.addEventListener("click",()=>{
+      document.querySelectorAll("[data-inline-note-open]").forEach((button)=>{
+        if(button.closest('.coach-program-board[data-local-delegated="1"]'))return;
+        button.addEventListener("click",()=>{
         selectCoachSheet(button.dataset.sheetId);openCoachModalLocally("exercise-note",{sheetId:button.dataset.sheetId,exerciseId:button.dataset.inlineNoteOpen,weekNumber:Number(button.dataset.weekNumber)||1});
-      }));
-      document.querySelectorAll("[data-set-group-quick]").forEach((button)=>button.addEventListener("click",()=>applyCoachSetGroupAction(button.dataset.sheetId,button.dataset.setGroupQuick,button.classList.contains("active")?"unlink":"superset")));
-      document.querySelectorAll("[data-set-group-action]").forEach((button)=>button.addEventListener("click",()=>applyCoachSetGroupAction(button.dataset.sheetId,button.dataset.exerciseId,button.dataset.setGroupAction)));
+        });
+      });
+      document.querySelectorAll("[data-set-group-quick]").forEach((button)=>{
+        if(button.closest('.coach-program-board[data-local-delegated="1"]'))return;
+        button.addEventListener("click",()=>applyCoachSetGroupAction(button.dataset.sheetId,button.dataset.setGroupQuick,button.classList.contains("active")?"unlink":"superset"));
+      });
+      document.querySelectorAll("[data-set-group-action]").forEach((button)=>{
+        if(button.closest('.coach-program-board[data-local-delegated="1"]'))return;
+        button.addEventListener("click",()=>applyCoachSetGroupAction(button.dataset.sheetId,button.dataset.exerciseId,button.dataset.setGroupAction));
+      });
       bindCoachTablePan();
-      document.querySelectorAll("[data-inline-copy]").forEach((button)=>button.addEventListener("click",()=>{
+      document.querySelectorAll("[data-inline-copy]").forEach((button)=>{
+        if(button.closest('.coach-program-board[data-local-delegated="1"]'))return;
+        button.addEventListener("click",()=>{
         const exercise=programRepository.getExerciseById(coachProgramUi.programId,button.dataset.sheetId,button.dataset.inlineCopy);
         if(exercise){coachProgramUi.clipboardExercise=clone(exercise);showToast("Esercizio copiato: scegli la giornata e premi Incolla.");render();}
-      }));
-      document.querySelectorAll("[data-inline-paste]").forEach((button)=>button.addEventListener("click",()=>{
+        });
+      });
+      document.querySelectorAll("[data-inline-paste]").forEach((button)=>{
+        if(button.closest('.coach-program-board[data-local-delegated="1"]'))return;
+        button.addEventListener("click",()=>{
         const source=coachProgramUi.clipboardExercise;if(!source)return;const now=new Date().toISOString();
         const result=programRepository.createExercise(coachProgramUi.programId,button.dataset.sheetId,{...clone(source),id:newEntityId("exercise"),name:`${source.name} copia`,createdAt:now,updatedAt:now,deletedAt:""},{immediate:true});
         if(result.ok){showToast("Esercizio incollato.");render();}
-      }));
-      document.querySelectorAll("[data-inline-replace]").forEach((button)=>button.addEventListener("click",()=>{
+        });
+      });
+      document.querySelectorAll("[data-inline-replace]").forEach((button)=>{
+        if(button.closest('.coach-program-board[data-local-delegated="1"]'))return;
+        button.addEventListener("click",()=>{
         selectCoachSheet(button.dataset.sheetId);coachProgramUi.pendingAddKind="exercise";openCoachModalLocally("exercise-library",{sheetId:button.dataset.sheetId,replaceExerciseId:button.dataset.inlineReplace});
-      }));
+        });
+      });
       document.querySelectorAll("[data-inline-row]").forEach((row)=>{
+        if(row.closest('.coach-program-board[data-local-delegated="1"]'))return;
         row.addEventListener("dragstart",()=>{coachProgramUi.draggedExerciseId=row.dataset.exerciseId;selectCoachSheet(row.dataset.sheetId);row.classList.add("dragging");});
         row.addEventListener("dragover",(event)=>event.preventDefault());
         row.addEventListener("drop",(event)=>{event.preventDefault();const source=coachProgramUi.draggedExerciseId,target=row.dataset.exerciseId,sheetId=row.dataset.sheetId;if(!source||source===target)return;selectCoachSheet(sheetId);const ids=programRepository.getExercises(coachProgramUi.programId,sheetId).map((item)=>item.id);const from=ids.indexOf(source),to=ids.indexOf(target);if(from<0||to<0)return;ids.splice(to,0,ids.splice(from,1)[0]);programRepository.reorderExercises(coachProgramUi.programId,sheetId,ids,{immediate:true});coachProgramUi.draggedExerciseId="";render();});
@@ -15273,7 +15404,9 @@
           render();
         });
       });
-      document.querySelectorAll("[data-exercise-action]").forEach((button) => button.addEventListener("click", () => {
+      document.querySelectorAll("[data-exercise-action]").forEach((button) => {
+        if(button.closest('.coach-program-board[data-local-delegated="1"]'))return;
+        button.addEventListener("click", () => {
         const action = button.dataset.exerciseAction;
         const id = button.dataset.exerciseId;
         if(button.dataset.sheetId) selectCoachSheet(button.dataset.sheetId);
@@ -15292,7 +15425,8 @@
         discardCoachDraft(program.id, sheet.id);
         if (!result?.ok) showToast("Operazione non completata.");
          renderCoachProgramBoardLocal();
-      }));
+        });
+      });
       document.querySelectorAll("[data-exercise-compare]").forEach((button) => button.addEventListener("click", () => {
         openCoachModal("biomechanics-compare", { exerciseIds:[button.dataset.exerciseCompare] });
         render();
@@ -15304,7 +15438,9 @@
         coachProgramUi.modalData.exerciseIds = ids;
         render();
       });
-      document.querySelectorAll("[data-progression-open]").forEach((button) => button.addEventListener("click", (event) => {
+      document.querySelectorAll("[data-progression-open]").forEach((button) => {
+        if(button.closest('.coach-program-board[data-local-delegated="1"]'))return;
+        button.addEventListener("click", (event) => {
         event.preventDefault();event.stopPropagation();
         const sheetId=button.dataset.sheetId||coachProgramUi.sheetId;
         if(sheetId) selectCoachSheet(sheetId);
@@ -15314,8 +15450,11 @@
           const target = document.querySelector(`[data-progression-week="${weekNumber - 1}"]`);
           target?.closest("tr")?.classList.add("coach-week-selected");
         }
-      }));
-      document.querySelectorAll("[data-progression-remove]").forEach((button) => button.addEventListener("click", (event) => {
+        });
+      });
+      document.querySelectorAll("[data-progression-remove]").forEach((button) => {
+        if(button.closest('.coach-program-board[data-local-delegated="1"]'))return;
+        button.addEventListener("click", (event) => {
         event.preventDefault(); event.stopPropagation();
         const sheetId=button.dataset.sheetId||coachProgramUi.sheetId, exerciseId=button.dataset.progressionRemove;
         const current=programRepository.getExerciseById(coachProgramUi.programId,sheetId,exerciseId);
@@ -15323,7 +15462,8 @@
         const cleared={...(current.progression||{}),templateId:"",rule:null,weeks:[],manualWeeks:[]};
         const result=programRepository.updateExercise(coachProgramUi.programId,sheetId,exerciseId,{progression:cleared},{immediate:true,forceLocked:true});
         if(result.ok){ showToast(`Progressione rimossa da ${current.name||"esercizio"}.`); render(); }
-      }));
+        });
+      });
       document.querySelector("[data-progression-template-new]")?.addEventListener("click",()=>openCoachModalLocally("progression-template-editor",{}));
       document.querySelectorAll("[data-progression-template-edit]").forEach((button)=>button.addEventListener("click",()=>openCoachModalLocally("progression-template-editor",{templateId:button.dataset.progressionTemplateEdit})));
       document.querySelectorAll("[data-progression-template-duplicate]").forEach((button)=>button.addEventListener("click",()=>{
@@ -16212,18 +16352,24 @@
       history.redo = [];
     }
 
-    function restoreExerciseHistory(direction) {
-      const { program, sheet } = ensureCoachProgramSelection();
-      if (!program || !sheet) return false;
-      const history = exerciseHistoryFor(program.id, sheet.id);
+    function restoreExerciseHistoryFor(programId, sheetId, direction) {
+      const sheet=programRepository.getSheetById(programId,sheetId);
+      if(!sheet)return false;
+      const history = exerciseHistoryFor(programId, sheetId);
       const source = direction === "undo" ? history.undo : history.redo;
       const target = direction === "undo" ? history.redo : history.undo;
       if (!source.length) return false;
       target.push(clone(sheet.exercises || []));
-      const result = programRepository.updateSheet(program.id, sheet.id, { exercises: source.pop() }, { immediate: true });
-      discardCoachDraft(program.id, sheet.id);
+      const result = programRepository.updateSheet(programId, sheetId, { exercises: source.pop() }, { immediate: true });
+      discardCoachDraft(programId, sheetId);
       coachProgramUi.selectedExercises.clear();
       return result.ok;
+    }
+
+    function restoreExerciseHistory(direction) {
+      const { program, sheet } = ensureCoachProgramSelection();
+      if (!program || !sheet) return false;
+      return restoreExerciseHistoryFor(program.id,sheet.id,direction);
     }
 
     function reorderOneExercise(exerciseId, delta) {
@@ -16471,6 +16617,7 @@
     }
 
     let coachMuscleAutofillTimer=null;
+    const coachMuscleResolutionCache=new Map();
     window.BarbellDivaV146Bridge={
       openSheetEdit(sheetId){
         if(!sheetId)return;
@@ -16485,6 +16632,9 @@
       },
       openExerciseTrend(programId,sheetId,exerciseId){
         openCoachExerciseTrendModal(programId,sheetId,exerciseId);
+      },
+      openExerciseHistory(programId,sheetId,exerciseId){
+        openCoachExerciseWeightHistoryModal(programId,sheetId,exerciseId);
       },
       closeModal(){
         closeCoachModal();
@@ -16537,6 +16687,9 @@
         if(!exercise)return null;
         const currentPrimary=String(exercise.muscle||exercise.som||"").trim();
         const currentSecondary=Array.isArray(exercise.metadata?.secondaryMuscles)?exercise.metadata.secondaryMuscles:[];
+        const fingerprint=[exercise.name,currentPrimary,currentSecondary.join("|")].join("::").toLowerCase();
+        const cached=coachMuscleResolutionCache.get(exerciseId);
+        if(cached?.fingerprint===fingerprint)return cached.value;
         const muscles=this.exerciseMuscles(exercise.name,currentPrimary,currentSecondary);
         const needsPrimary=!currentPrimary||normalizeExerciseName(currentPrimary)==="da definire";
         const resolvedSecondary=muscles.secondary;
@@ -16553,6 +16706,7 @@
             saveState({cloud:false});
           },450);
         }
+        coachMuscleResolutionCache.set(exerciseId,{fingerprint,value:muscles});
         return muscles;
       }
     };

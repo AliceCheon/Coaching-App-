@@ -45,6 +45,11 @@ check(enhancer.includes("ensureExerciseMuscles"), "autocompilazione muscoli non 
 check(html.includes("ensureExerciseMuscles(programId,sheetId,exerciseId)"), "bridge autocompilazione muscoli mancante");
 check(html.includes("technicalEvidenceProfile"), "fallback Coach AI per muscoli mancante");
 check(restyle.includes(".coach-inline-sub span::before"), "secondario sotto esercizio non visibile");
+check(html.includes("function openCoachExerciseWeightHistoryModal") && html.includes("Dati realmente salvati nel Logbook"), "Storico pesi apre ancora il Trend");
+check(html.includes("coach-paste-button") && html.includes("syncCoachPasteButtonsLocal"), "pulsante Incolla visibile mancante");
+check(html.includes("restoreExerciseHistoryFor") && html.includes('String(event.key).toLowerCase()==="z"'), "Ctrl+Z editor non collegato");
+check(html.includes('data-local-delegated="1"'), "delegazione locale iniziale mancante");
+check(enhancer.includes("isRelevantCoachNode") && !enhancer.includes("schedeHistoryBound"), "observer/listener editor non ottimizzati");
 
 check(html.includes("data-editor-nav-restore"), "pulsante ripristino barra mancante");
 check(sidebar.includes("body.coach-mode.coach-editor-nav-hidden .desktop-rail"), "barra non scompare nell'editor");
@@ -57,6 +62,6 @@ check(studio.includes("cursor:grab") && studio.includes(".global-diva-bot.is-dra
 console.log(JSON.stringify({
   ok: true,
   build: "v146.1",
-  checks: 25,
-  ux: "sidebar/actions/trend/muscles/diva"
+  checks: 30,
+  ux: "sidebar/actions/history/paste/undo/performance/trend/muscles/diva"
 }));

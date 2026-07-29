@@ -15,13 +15,13 @@ const workflow = read(".github/workflows/tests.yml");
 const check = (condition, message) => assert.ok(condition, message);
 
 check(config.includes('build: "v146.1"'), "build v146.1 mancante");
-check(config.includes('cache: "atlas-app-v1461c5"'), "cache contrasto v146.1 mancante");
-check(sw.includes('const CACHE_NAME = "atlas-app-v1461c5"'), "service worker contrasto non aggiornato");
+check(config.includes('cache: "atlas-app-v1461c7"'), "cache contrasto v146.1 mancante");
+check(sw.includes('const CACHE_NAME = "atlas-app-v1461c7"'), "service worker contrasto non aggiornato");
 check(sw.includes('"./coach-schede-restyle-v146.css"'), "CSS v146 non precaricato");
 check(sw.includes('"./coach-schede-v146-enhance.js"'), "JS v146 non precaricato");
-check(manifest.includes("index.html?v=v1461c5"), "manifest contrasto non aggiornato");
-check(html.includes("coach-schede-restyle-v146.css?v=v1461c5"), "CSS senza cache bust contrasto");
-check(html.includes("coach-schede-v146-enhance.js?v=v1461c5"), "JS senza cache bust v146.1");
+check(manifest.includes("index.html?v=v1461c7"), "manifest contrasto non aggiornato");
+check(html.includes("coach-schede-restyle-v146.css?v=v1461c7"), "CSS senza cache bust contrasto");
+check(html.includes("coach-schede-v146-enhance.js?v=v1461c7"), "JS senza cache bust v146.1");
 
 check(html.includes("window.BarbellDivaV146Bridge={"), "bridge correttivo mancante");
 check(html.includes('openCoachModalLocally("sheet-edit",{sheetId})'), "rinomina locale non collegata");
@@ -33,7 +33,8 @@ check(!/data-schede-add-circuit[\s\S]{0,1200}set-link-button/.test(enhancer), "C
 
 check(html.includes("function openCoachExerciseTrendModal"), "Trend esercizio mancante");
 check(html.includes("serie programmate per questo esercizio"), "Trend esercizio non specifico");
-check(enhancer.includes("bridge.openExerciseTrend("), "pulsante Trend non usa il dettaglio esercizio");
+check(html.includes("function openCoachExerciseWeightHistoryModal"), "Storico pesi reale mancante");
+check(html.includes("openExerciseHistory(programId,sheetId,exerciseId)"), "bridge Storico pesi mancante");
 check(html.includes("exerciseMedia(exerciseName)"), "risoluzione media esercizio mancante");
 check(enhancer.includes("BarbellDivaV146Bridge?.exerciseMedia"), "thumbnail non usa la libreria reale");
 
