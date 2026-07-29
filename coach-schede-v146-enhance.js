@@ -124,27 +124,7 @@
         detailsBtn.dataset.schedeV146Bound = "1";
       }
 
-      // 6) Storico pesi del singolo esercizio.
-      const historyBtn = tr.querySelector("[data-schede-weight-history]");
-      if (historyBtn && !historyBtn.dataset.schedeHistoryBound) {
-        historyBtn.dataset.schedeHistoryBound = "1";
-        historyBtn.addEventListener("click", (ev) => {
-          ev.stopPropagation();
-          const nm = tr.querySelector(".coach-exercise-name-text");
-          if (nm) window.__lastTrendExerciseName = nm.textContent.trim();
-          const bridge = window.BarbellDivaV146Bridge;
-          if (bridge?.openExerciseTrend) {
-            bridge.openExerciseTrend(
-              tr.dataset.programId,
-              tr.dataset.sheetId,
-              tr.dataset.exerciseId,
-            );
-            return;
-          }
-        });
-      }
-
-      // 6a) Muscoli dalla Libreria; se incompleti li completa Coach AI.
+      // 6) Muscoli dalla Libreria; se incompleti li completa Coach AI.
       const nameEl = tr.querySelector(".coach-exercise-name-text");
       const muscleRow = tr.querySelector(".coach-inline-sub");
       if (nameEl && muscleRow) {
@@ -174,32 +154,6 @@
         }
       }
 
-      // 6b) Save-check: flash verde sull'input dopo modifica (attesa 400ms)
-      tr.querySelectorAll("input, select").forEach((el) => {
-        if (el.dataset.schedeSaveBound) return;
-        el.dataset.schedeSaveBound = "1";
-        let t = null;
-        const fire = () => {
-          el.classList.remove("schede-just-saved");
-          // trigger reflow to restart animation
-          void el.offsetWidth;
-          el.classList.add("schede-just-saved");
-          const td = el.closest("td");
-          if (td) {
-            td.classList.remove("schede-cell-saved");
-            void td.offsetWidth;
-            td.classList.add("schede-cell-saved");
-            setTimeout(() => td.classList.remove("schede-cell-saved"), 1300);
-          }
-          setTimeout(() => el.classList.remove("schede-just-saved"), 1300);
-        };
-        const onChange = () => {
-          clearTimeout(t);
-          t = setTimeout(fire, 350);
-        };
-        el.addEventListener("change", onChange);
-        el.addEventListener("blur", onChange);
-      });
     });
 
     // 7) Header giorno: estraggo durata in pill + pencil accanto al nome
@@ -325,16 +279,18 @@
   }
 
   // Observer sul DOM per catturare re-render (editor o lista programmi)
+  const isRelevantCoachNode = (node) => {
+    if (!(node instanceof Element)) return false;
+    return node.matches(".coach-editor-weekly, .coach-program-board, .coach-program-row") ||
+      !!node.querySelector(".coach-editor-weekly, .coach-program-board, .coach-program-row");
+  };
+
   const observer = new MutationObserver((mutations) => {
-    for (const m of mutations) {
-      if (m.type === "childList" && (m.addedNodes.length || m.removedNodes.length)) {
-        if (
-          document.querySelector(".coach-editor-weekly") ||
-          document.querySelector(".coach-program-row")
-        ) {
-          scheduleEnhance();
-          return;
-        }
+    for (const mutation of mutations) {
+      if (mutation.type !== "childList") continue;
+      if ([...mutation.addedNodes, ...mutation.removedNodes].some(isRelevantCoachNode)) {
+        scheduleEnhance();
+        return;
       }
     }
   });

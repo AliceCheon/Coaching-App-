@@ -308,14 +308,29 @@ body.schede-hide-advanced .coach-editor-weekly .coach-inline-exercise td.col-cel
   border: 1px solid color-mix(in srgb, var(--purple-primary) 22%, transparent) !important;
   background: color-mix(in srgb, var(--surface-raised) 70%, transparent) !important;
   color: var(--text) !important;
-  font-size: 0 !important;                 /* nasconde il testo dopo l'emoji */
+  font-size: .72rem !important;
+  font-weight: 850 !important;
   display: grid !important;
   place-items: center;
   transition: all 140ms ease;
   overflow: hidden;
 }
-.coach-editor-weekly .coach-day-actions > button::first-letter {
-  font-size: .95rem !important;
+.coach-editor-weekly .coach-day-actions > button .coach-row-action-icon {
+  width: 16px;
+  height: 16px;
+}
+.coach-editor-weekly .coach-day-actions > .coach-paste-button {
+  width: auto !important;
+  min-width: 78px !important;
+  padding: 0 11px !important;
+  display: inline-flex !important;
+  gap: 6px;
+  color: #77235f !important;
+  border-color: rgba(202, 48, 139, .35) !important;
+  background: rgba(241, 91, 174, .11) !important;
+}
+.coach-editor-weekly .coach-day-actions > .coach-paste-button[hidden] {
+  display: none !important;
 }
 .coach-editor-weekly .coach-day-actions summary {
   min-width: 42px !important;
@@ -1073,6 +1088,21 @@ body[data-theme="light"] .coach-editor-weekly .coach-week-tools > span {
   color: #7b315f;
 }
 
+body[data-theme="light"] .coach-editor-weekly .coach-day-actions > button {
+  color: #4b244d !important;
+  background: #fff9fd !important;
+  border-color: rgba(114, 45, 120, .28) !important;
+}
+
+body[data-theme="light"] .coach-editor-weekly .coach-set-group-header strong,
+body[data-theme="light"] .coach-editor-weekly .coach-set-group-header em {
+  color: #712454 !important;
+}
+
+body[data-theme="light"] .coach-editor-weekly .coach-set-group-header em {
+  background: rgba(255, 255, 255, .62) !important;
+}
+
 body[data-theme="light"] .coach-editor-weekly button:disabled {
   color: #6f536a !important;
   opacity: .72;
@@ -1086,6 +1116,50 @@ body[data-theme="light"] .coach-tools-trend text {
 body[data-theme="light"] .coach-tools-trend text.value {
   fill: #8b246d !important;
 }
+
+.coach-weight-history-table {
+  margin-top: 16px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.coach-weight-history-head,
+.coach-weight-history-row {
+  display: grid;
+  grid-template-columns: minmax(110px,1fr) 80px 58px 58px minmax(90px,.8fr) minmax(150px,1.5fr);
+  gap: 10px;
+  align-items: center;
+  min-width: 680px;
+  padding: 10px 13px;
+}
+.coach-weight-history-head {
+  background: color-mix(in srgb,var(--purple-primary) 11%,var(--surface-raised));
+  color: var(--text-muted);
+  font-size: .67rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.coach-weight-history-row {
+  border-top: 1px solid var(--border);
+  color: var(--text);
+  font-size: .76rem;
+}
+.coach-weight-history-row b { color: var(--pink-primary); }
+.coach-weight-history-row small {
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.coach-weight-history-empty {
+  margin-top: 16px;
+  padding: 22px;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  text-align: center;
+  color: var(--text);
+}
+.coach-weight-history-empty p { color: var(--text-muted); }
 
 /* -----------------------------------------------------------
    13. v146.1 Coach UX - focus, azioni e Trend utile
