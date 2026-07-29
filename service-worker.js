@@ -1,70 +1,28 @@
-const CACHE_NAME = "atlas-app-v1461c5";
-const APP_SHELL = [
-  "./",
-  "./index.html",
-  "./manifest.webmanifest",
-  "./app-icon.png",
-  "./app-icon-192.png",
-  "./app-icon-512.png",
-  "./apple-touch-icon.png",
-  "./coach-mascot.svg",
-  "./atlas-nunito-sans.ttf",
-  "./coach-studio.css",
-  "./coach-program-editor-19.8.css",
-  "./coach-tools-v1451.css",
-  "./unified-sidebar-v1452.css",
-  "./coach-schede-restyle-v146.css",
-  "./exercise-library-19.8.js",
-  "./master-exercise-library.js",
-  "./athlete-context.js",
-  "./coach-ai-engine-2.js",
-  "./knowledge-graph.js",
-  "./decision-rules.js",
-  "./decision-engine.js",
-  "./coach-ai3-programming.js",
-  "./coach-studio.js",
-  "./sync-reliability.js",
-  "./programming-engine.js",
-  "./app-config-v144.js",
-  "./coach-schede-v146-enhance.js"
-];
+# Barbell Diva v145 — GitHub Safe
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      Promise.all(APP_SHELL.map((url) => cache.add(url).catch(() => null)))
-    )
-  );
-  self.skipWaiting();
-});
+Build derivata dalla v144 stabile e verificata prima della pubblicazione.
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
-    )
-  );
-  self.clients.claim();
-});
+## Cosa conserva
 
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  const isHtml = event.request.mode === "navigate" || event.request.destination === "document" || new URL(event.request.url).pathname.endsWith(".html");
-  if (isHtml) {
-    event.respondWith(
-      fetch(event.request, { cache: "no-store" }).then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        return response;
-      }).catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html")))
-    );
-    return;
-  }
-  event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-      return response;
-    }))
-  );
-});
+- menu Coach Studio essenziale;
+- Anteprima atleta laterale con chiusura locale veloce;
+- Statistiche in finestra grande con muscoli selezionabili;
+- una sola Diva Bot;
+- sincronizzazione affidabile Firebase già presente;
+- compatibilità con i dati e i backup della v144.
+
+## Cosa è stato escluso
+
+- auto-sync verso `/api/coach/state`, incompatibile con GitHub Pages;
+- sezioni laterali non richieste;
+- observer e animazioni globali che potevano rallentare l'editor;
+- cache di sviluppo e file temporanei.
+
+## Pubblicazione
+
+Caricare nella radice del repository il contenuto di questa cartella, mantenendo
+anche i file `.nojekyll` e `_config.yml`.
+
+La cartella `tests` include anche `v145-release-guard.test.mjs`, che impedisce
+di reintrodurre menu indesiderati, statistiche non interattive, chiusura lenta
+dell'Anteprima atleta o sincronizzazioni incompatibili con GitHub Pages.
