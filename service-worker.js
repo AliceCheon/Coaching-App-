@@ -14,6 +14,7 @@ const APP_SHELL = [
   "./coach-tools-v1451.css",
   "./unified-sidebar-v1452.css",
   "./coach-schede-restyle-v146.css",
+  "./workout-flow-v147.css",
   "./exercise-library-19.8.js",
   "./master-exercise-library.js",
   "./athlete-context.js",
@@ -26,7 +27,8 @@ const APP_SHELL = [
   "./sync-reliability.js",
   "./programming-engine.js",
   "./app-config-v144.js",
-  "./coach-schede-v146-enhance.js"
+  "./coach-schede-v146-enhance.js",
+  "./workout-flow-v147.js"
 ];
 
 self.addEventListener("install", (event) => {

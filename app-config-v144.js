@@ -1,4 +1,4 @@
-// Configurazione minima condivisa della build v146.1.
+// Configurazione minima condivisa della build v146.1 con Workout Flow v147.
 (function (root) {
   root.BarbellDivaV144Config = Object.freeze({
     build: "v146.1",
