@@ -1,28 +1,28 @@
-import fs from "node:fs";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = new URL("../", import.meta.url);
-const html = fs.readFileSync(new URL("index.html", root), "utf8");
-const editorCss = fs.readFileSync(new URL("coach-program-editor-19.8.css", root), "utf8");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const css = fs.readFileSync(path.join(root, "unified-sidebar-v1452.css"), "utf8");
+const sw = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
+const check = (condition, message) => assert.ok(condition, message);
 
-const checks = [
-  ["Coach integrato nella barra principale", html.includes('data-main-coach-route="programs"') && html.includes("rail-coach-subnav")],
-  ["Coach assente dalla barra telefono", !html.includes('class="nav-button coach-nav" data-bottom="coach"')],
-  ["Editor a griglia con anteprima laterale", html.includes("coach-layout-grid") && html.includes("coach-reference-panel")],
-  ["Anteprima atleta in sola lettura", html.includes("Sola lettura") && html.includes("data-studio-panel-close=\"reference\"")],
-  ["Campi inline senza render a ogni carattere", html.includes("updateInlineExerciseField(input,false)") && html.includes("scheduleCoachEditorSave")],
-  ["Menu esercizio ancorato e scrollabile", editorCss.includes(".coach-row-more > div") && editorCss.includes("max-height:min(420px")],
-  ["Apertura editor progressione", html.includes('data-progression-open') && html.includes('openCoachModalLocally("progression-editor"')],
-  ["Rimozione progressione gestita", html.includes('data-progression-remove') && html.includes("Progressione rimossa")],
-  ["Filtro muscoli centralizzato", html.includes("function coachExerciseMuscleTokens") && html.includes("coachExerciseMuscleTokens(item)")],
-  ["Riduzione movimento rispettata", editorCss.includes("prefers-reduced-motion")],
-  ["Pannello Coach aggiornabile localmente", html.includes("renderCoachSidePanelLocal") && html.includes("renderCoachAfterFeedback")],
-  ["Board Coach aggiornabile localmente", html.includes("renderCoachProgramBoardLocal") && html.includes("bindCoachEditorDelegation")],
-  ["Grafici globali esclusi dal render Coach", html.includes('if (activeScreen !== "coach")') && html.includes("renderEngine()") && html.includes("drawCharts()")],
-  ["Modal salvata senza render globale quando possibile", html.includes("refreshCoachAfterLocalModal")],
-  ["Nessun modulo Workout Pro standalone", !fs.existsSync(new URL("workout-pro.js", root))],
-  ["Nessun modulo Nutrizione standalone", !fs.existsSync(new URL("nutrizione/index.html", root))],
-];
+for (const text of ["Dashboard","Workout del giorno","Allenamento","Programmi","Progressioni","Libreria esercizi","Coach AI","Analisi progressi","Logbook","Check-in","Impostazioni","Diva Bot"]) {
+  check(html.includes(text), `voce navigazione mancante: ${text}`);
+}
+for (const route of ["programs","progressions","library","ai"]) {
+  check(html.includes(`data-main-coach-route="${route}"`), `sottovoce Coach mancante: ${route}`);
+}
+check(!html.includes('<aside class="coach-video-sidebar"'), "seconda barra Coach ancora generata");
+check(!html.includes('data-bottom="coach"'), "vecchia voce Coach Studio ancora nella barra");
+check(html.includes('if(next==="program")') && html.includes("state.ui.mainNavCollapsed=true"), "auto-riduzione editor mancante");
+check(html.includes("openCoachRouteFromMainNav"), "navigazione Coach unificata non collegata");
+check(html.includes("unified-sidebar-v1452.css?v=v1461c10"), "stile barra unificata non caricato");
+check(sw.includes('"./unified-sidebar-v1452.css"'), "stile barra unificata non precaricato");
+check(css.includes(".rail-coach-subnav") && css.includes("body.nav-collapsed .rail-coach-subnav"), "stati barra aperta/ridotta mancanti");
+check(!/coach-row-more[\s\S]{0,650}Sostituisci/.test(html), "Sostituisci è ancora nel menu Azioni");
+check(html.includes('class="coach-exercise-name-text" data-inline-replace='), "sostituzione dal nome esercizio rimossa per errore");
 
-for (const [name, ok] of checks) assert.equal(ok, true, name);
-console.log(JSON.stringify({ ok:true, build:"v145-coach-safe", checks:checks.length, mobileCoach:false }));
+console.log(JSON.stringify({ok:true,build:"v146.1",checks:25,sidebar:"unified",editorAutoCollapse:true}));

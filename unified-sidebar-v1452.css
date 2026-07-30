@@ -1,201 +1,31 @@
-/* v145.2 — una sola barra Barbell Diva per app e programmazione Coach. */
-@media (min-width: 981px) {
-  .desktop-rail {
-    position: relative;
-    overflow: visible;
-  }
+# Barbell Diva v147 - Workout Flow
 
-  .rail-collapse {
-    top: 14px !important;
-    right: -17px !important;
-    bottom: auto !important;
-    left: auto !important;
-    width: 36px !important;
-    height: 36px !important;
-    border: 2px solid rgba(255,255,255,.78) !important;
-    border-radius: 50% !important;
-    background: linear-gradient(135deg, var(--pink-primary), var(--purple-primary)) !important;
-    color: #fff !important;
-    font-size: 1.15rem !important;
-    line-height: 1 !important;
-    box-shadow: 0 8px 22px rgba(20,6,30,.38) !important;
-    z-index: 50;
-  }
+Questa cartella deriva dalla build stabile `146.1c10` e modifica solo la zona
+Workout del giorno.
 
-  body.nav-collapsed .rail-collapse {
-    top: 14px !important;
-    right: -17px !important;
-    left: auto !important;
-  }
+## Nuovo flusso
 
-  .coach-editor-nav-restore {
-    display: none;
-  }
+- schermata leggera di anteprima prima dell'avvio;
+- selezione automatica o manuale di fase, settimana e scheda;
+- workout attivo con un esercizio alla volta;
+- scaletta completa apribile e navigabile;
+- inserimento reale di kg, ripetizioni e RIR per ogni serie;
+- inserimento di RPE prima del RIR;
+- copia rapida di una serie nella successiva;
+- conferma che chiude la serie completata e passa alla seguente;
+- SOM e Nota Coach separati e sempre visibili;
+- storico dall'ultima seduta o dall'ultimo programma;
+- note personali consultabili e modificabili;
+- pausa e ripristino dopo ricarica o chiusura;
+- annullamento del workout senza salvataggio nel Logbook;
+- elenco iniziale espandibile con serie e ripetizioni visibili;
+- salvataggio finale tramite il Logbook sicuro già esistente;
+- nessuna immagine decorativa e nessun timer di recupero.
 
-  body.coach-mode.coach-editor-nav-hidden .desktop-rail {
-    display: none !important;
-  }
+## File aggiunti
 
-  body.coach-mode.coach-editor-nav-hidden .stage {
-    grid-template-columns: minmax(0, 1fr) !important;
-    padding-left: 14px !important;
-  }
+- `workout-flow-v147.js`
+- `workout-flow-v147.css`
+- `tests/v147-workout-flow.test.mjs`
 
-  body.coach-mode.coach-editor-nav-hidden .phone-shell {
-    grid-column: 1 !important;
-  }
-
-  body.coach-mode.coach-editor-nav-hidden .coach-editor-nav-restore {
-    position: fixed;
-    left: 9px;
-    top: 92px;
-    z-index: 10030;
-    display: grid;
-    place-items: center;
-    width: 38px;
-    height: 46px;
-    padding: 0;
-    border: 1px solid rgba(255,255,255,.72);
-    border-radius: 0 14px 14px 0;
-    background: linear-gradient(145deg, var(--pink-primary), var(--purple-primary));
-    color: #fff;
-    font-size: 1.4rem;
-    box-shadow: 0 10px 26px rgba(36,10,50,.28);
-  }
-
-  body.coach-mode.coach-editor-nav-hidden .coach-editor-nav-restore:hover {
-    transform: translateX(3px);
-    filter: brightness(1.08);
-  }
-
-  .desktop-rail {
-    background:
-      radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--pink-primary) 20%, transparent), transparent 27%),
-      linear-gradient(180deg, color-mix(in srgb, var(--purple-primary) 32%, #2b1740), #281637 58%, #351a47);
-    border-color: rgba(255, 255, 255, .15);
-  }
-
-  .rail-brand strong {
-    color: #fff8fd;
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 1.13rem;
-    font-weight: 700;
-    letter-spacing: -.025em;
-  }
-
-  .rail-brand span {
-    color: #e2ccec;
-  }
-
-  .rail-brand .rail-logo {
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 1rem;
-    box-shadow: 0 8px 22px rgba(255, 61, 145, .24);
-  }
-
-  .rail-navigation {
-    align-content: start;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,.24) transparent;
-  }
-
-  .rail-dot {
-    color: #eadbf1 !important;
-  }
-
-  .rail-dot:hover,
-  .rail-dot.active {
-    color: #fff !important;
-    background: linear-gradient(100deg, color-mix(in srgb, var(--pink-primary) 82%, #fff 18%), color-mix(in srgb, var(--purple-primary) 76%, #fff 24%)) !important;
-    border-color: rgba(255,255,255,.2) !important;
-  }
-
-  .rail-coach-group {
-    display: grid;
-    gap: 4px;
-  }
-
-  .rail-coach-toggle em {
-    margin-left: auto;
-    color: #f7dceb;
-    font-size: .72rem;
-    font-style: normal;
-  }
-
-  .rail-coach-subnav {
-    display: grid;
-    gap: 2px;
-    margin: 1px 5px 5px 21px;
-    padding: 2px 0 2px 16px;
-    border-left: 1px solid rgba(255,255,255,.22);
-  }
-
-  .rail-coach-subnav.is-collapsed {
-    display: none;
-  }
-
-  .rail-coach-subnav button {
-    min-height: 31px;
-    padding: 6px 9px;
-    border: 0;
-    border-radius: 9px;
-    color: #e8d8ef;
-    background: transparent;
-    font: inherit;
-    font-size: .72rem;
-    font-weight: 760;
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .rail-coach-subnav button:hover {
-    color: #fff;
-    background: rgba(255,255,255,.1);
-  }
-
-  .rail-coach-subnav button.active {
-    color: #32163d;
-    background: linear-gradient(90deg, #ffd4e8, #e7d5ff);
-    box-shadow: 0 7px 17px rgba(13,5,22,.18);
-    font-weight: 900;
-  }
-
-  body.nav-collapsed .rail-coach-subnav,
-  body.nav-collapsed .rail-coach-toggle em {
-    display: none !important;
-  }
-
-  .coach-studio-shell.unified-main-navigation {
-    display: block !important;
-    min-height: auto !important;
-  }
-
-  .coach-studio-shell.unified-main-navigation > .coach-studio-main {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .coach-video-sidebar {
-    display: none !important;
-  }
-
-  body.coach-mode .desktop-rail {
-    display: flex !important;
-  }
-
-  body.coach-mode .phone-shell {
-    grid-column: 2 !important;
-  }
-
-  body.coach-mode.nav-collapsed .phone-shell {
-    grid-column: 2 !important;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rail-dot,
-  .rail-coach-subnav button {
-    transition: none !important;
-  }
-}
+La Coach Zone e tutte le correzioni della 146.1c10 rimangono invariate.

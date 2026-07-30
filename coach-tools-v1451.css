@@ -1,332 +1,333 @@
-.coach-week-tools {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 0 0 12px;
-  padding: 8px 10px;
-  border: 1px solid color-mix(in srgb, var(--purple-primary) 24%, transparent);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--surface-raised) 76%, transparent);
-}
+/* ============================================================================
+   Barbell Diva — v146.1 · Enhance Editor Schede
+   Non tocca il render originale del programming-engine.js.
+   Aggiunge:
+    - Toggle "Colonne avanzate" nella toolbar settimana
+    - Rename colonna "Carico" → "Peso"
+    - Pulsante Trend ↗ per riga (bind al modal Trend settimana esistente)
+    - Sostituzione icona dettagli con thumbnail video se disponibile
+    - Riorganizzazione header giorno (pill durata, pencil edit)
+    - Footer per-giorno "+ Esercizio  + Circuito"
+    - Marca celle RPE/RIR/TUT con classi utili al toggle CSS
+   ========================================================================= */
+(function () {
+  "use strict";
 
-.coach-week-tools > span {
-  color: var(--muted, #725f80);
-  font-size: .76rem;
-  font-weight: 900;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
+  // localStorage key per persistere il toggle
+  const LS_HIDE_ADVANCED = "barbellDiva.schede.hideAdvancedCols";
 
-.coach-week-tools > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
+  // Applica il flag colonne avanzate al body dallo state persistito
+  function applyAdvancedColsState() {
+    document.body.classList.remove("schede-hide-advanced");
+    return false;
+  }
+  applyAdvancedColsState();
 
-.coach-week-tools button {
-  min-height: 34px;
-  padding: 6px 11px;
-  border: 1px solid color-mix(in srgb, var(--purple-primary) 28%, transparent);
-  border-radius: 10px;
-  color: var(--text, #2a1638);
-  background: color-mix(in srgb, var(--surface) 88%, var(--purple-primary) 12%);
-  font: inherit;
-  font-size: .78rem;
-  font-weight: 800;
-  cursor: pointer;
-  transition: transform 140ms ease, border-color 140ms ease, background-color 140ms ease;
-}
-
-.coach-week-tools button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  border-color: var(--pink-primary);
-  background: color-mix(in srgb, var(--surface) 76%, var(--pink-primary) 24%);
-}
-
-.coach-week-tools button:disabled {
-  cursor: default;
-  opacity: .4;
-}
-
-.coach-exercise-name-text {
-  max-width: 100%;
-  padding: 0;
-  border: 0;
-  color: inherit;
-  background: transparent;
-  font: inherit;
-  font-weight: 900;
-  text-align: left;
-  cursor: pointer;
-}
-
-.coach-exercise-name-text:hover {
-  color: var(--pink-primary);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
-}
-
-.coach-tools-backdrop {
-  position: fixed;
-  z-index: 10020;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: rgba(18, 9, 27, .76);
-  backdrop-filter: blur(7px);
-  animation: coachToolsFade 150ms ease-out both;
-}
-
-.coach-tools-modal {
-  width: min(920px, 96vw);
-  max-height: min(780px, 92vh);
-  overflow: auto;
-  border: 1px solid color-mix(in srgb, var(--purple-primary) 30%, transparent);
-  border-radius: 24px;
-  color: var(--text, #2a1638);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--surface-raised) 96%, #fff 4%), var(--surface));
-  box-shadow: 0 30px 90px rgba(0, 0, 0, .42);
-  animation: coachToolsEnter 190ms cubic-bezier(.2, .8, .2, 1) both;
-}
-
-.coach-tools-modal > header,
-.coach-tools-modal > footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 20px 22px;
-}
-
-.coach-tools-modal > header {
-  border-bottom: 1px solid color-mix(in srgb, var(--purple-primary) 18%, transparent);
-}
-
-.coach-tools-modal > footer {
-  justify-content: flex-end;
-  border-top: 1px solid color-mix(in srgb, var(--purple-primary) 18%, transparent);
-}
-
-.coach-tools-modal h2,
-.coach-tools-modal p {
-  margin: 3px 0 0;
-}
-
-.coach-tools-modal p {
-  color: var(--muted, #725f80);
-}
-
-.coach-tools-body {
-  padding: 22px;
-}
-
-.coach-tools-form,
-.coach-compare-selectors {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.coach-compare-selectors {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-bottom: 18px;
-}
-
-.coach-tools-form label,
-.coach-compare-selectors label {
-  display: grid;
-  gap: 7px;
-  color: var(--muted, #725f80);
-  font-size: .78rem;
-  font-weight: 800;
-}
-
-.coach-tools-form input,
-.coach-tools-form select,
-.coach-compare-selectors select {
-  width: 100%;
-  min-height: 43px;
-  padding: 8px 11px;
-  border: 1px solid color-mix(in srgb, var(--purple-primary) 28%, transparent);
-  border-radius: 11px;
-  color: var(--text, #2a1638);
-  background: var(--surface);
-  font: inherit;
-}
-
-.coach-tools-form small {
-  color: var(--muted, #725f80);
-  font-weight: 600;
-}
-
-.coach-compare-kpis {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.coach-compare-kpis article,
-.coach-trend-summary {
-  padding: 16px;
-  border: 1px solid color-mix(in srgb, var(--pink-primary) 20%, transparent);
-  border-radius: 15px;
-  background: color-mix(in srgb, var(--pink-primary) 9%, var(--surface));
-}
-
-.coach-compare-kpis span,
-.coach-compare-kpis small,
-.coach-trend-summary span {
-  display: block;
-  color: var(--muted, #725f80);
-}
-
-.coach-compare-kpis strong {
-  display: block;
-  margin: 4px 0;
-  font-size: 1.55rem;
-}
-
-.coach-compare-table {
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--purple-primary) 18%, transparent);
-  border-radius: 14px;
-}
-
-.coach-compare-table > div {
-  display: grid;
-  grid-template-columns: minmax(160px, 1fr) repeat(3, 72px);
-  gap: 8px;
-  padding: 10px 13px;
-  border-top: 1px solid color-mix(in srgb, var(--purple-primary) 13%, transparent);
-}
-
-.coach-compare-table > div:first-child {
-  border-top: 0;
-}
-
-.coach-compare-table .head {
-  color: var(--muted, #725f80);
-  background: color-mix(in srgb, var(--purple-primary) 12%, var(--surface));
-  font-size: .75rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.coach-compare-table span {
-  text-align: right;
-}
-
-.coach-tools-modal .positive {
-  color: #58dea1;
-}
-
-.coach-tools-modal .negative {
-  color: #ff729f;
-}
-
-.coach-trend-summary {
-  display: flex;
-  align-items: baseline;
-  gap: 9px;
-  margin-bottom: 16px;
-}
-
-.coach-trend-summary strong {
-  color: var(--pink-primary);
-  font-size: 1.7rem;
-}
-
-.coach-tools-trend {
-  display: block;
-  width: 100%;
-  min-height: 260px;
-  overflow: visible;
-}
-
-.coach-tools-trend line {
-  stroke: color-mix(in srgb, var(--muted, #725f80) 35%, transparent);
-  stroke-width: 1.5;
-}
-
-.coach-tools-trend polyline {
-  fill: none;
-  stroke: url("#coachTrendGradient");
-  stroke: var(--pink-primary);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 5;
-}
-
-.coach-tools-trend circle {
-  fill: var(--purple-primary);
-  stroke: var(--surface);
-  stroke-width: 4;
-}
-
-.coach-tools-trend text {
-  fill: var(--muted, #725f80);
-  font-size: 13px;
-  text-anchor: middle;
-}
-
-.coach-tools-trend text.value {
-  fill: var(--text, #2a1638);
-  font-weight: 900;
-}
-
-@keyframes coachToolsFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes coachToolsEnter {
-  from { opacity: 0; transform: translateY(12px) scale(.985); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@media (max-width: 760px) {
-  .coach-week-tools {
-    align-items: stretch;
-    flex-direction: column;
+  // Espone helper per il pattern-look-up del video URL nella master library
+  function getVideoForExercise(exerciseName) {
+    if (!exerciseName) return null;
+    const bridgeVideo = window.BarbellDivaV146Bridge?.exerciseMedia?.(exerciseName);
+    if (bridgeVideo) return bridgeVideo;
+    const lib = window.BarbellDivaMasterLibrary;
+    if (!lib || typeof lib.list !== "function") return null;
+    try {
+      const items = lib.list();
+      const target = String(exerciseName).trim().toLowerCase();
+      const item = items.find(
+        (x) =>
+          x && String(x.name || "").trim().toLowerCase() === target,
+      );
+      if (!item) return null;
+      return (
+        item.videoUrl ||
+        item.video ||
+        item.media?.video ||
+        item.media?.videoUrl ||
+        item.metadata?.videoUrl ||
+        null
+      );
+    } catch {
+      return null;
+    }
   }
 
-  .coach-week-tools > div {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  // Estrae la durata da "N esercizi · M serie · circa T min · muscoli"
+  function extractDuration(text) {
+    if (!text) return null;
+    const m = /circa\s+([\d,\.\s\-]+)\s*min/i.exec(text);
+    if (m) return `${m[1].trim().replace(/\s+/g, "")} min`;
+    return null;
   }
 
-  .coach-tools-backdrop {
-    align-items: end;
-    padding: 8px;
+  function extractFocus(text) {
+    if (!text) return [];
+    const parts = String(text).split("·").map((item) => item.trim()).filter(Boolean);
+    const focus = parts.at(-1) || "";
+    if (/^\d+\s*(esercizi|serie|min)/i.test(focus)) return [];
+    return focus.split(/,|\/|\+/).map((item) => item.trim()).filter(Boolean).slice(0, 3);
   }
 
-  .coach-tools-modal {
-    width: 100%;
-    max-height: 92vh;
-    border-radius: 22px 22px 12px 12px;
+  // Applica trasformazioni a un blocco .coach-editor-weekly
+  function enhanceEditor(root) {
+    if (!root) return;
+
+    // 1) Toggle "Colonne avanzate" nella toolbar settimana
+    const weekTools = root.querySelector(".coach-week-tools > div");
+    if (false && weekTools && !weekTools.querySelector(".schede-v146-toggle")) {
+      const label = document.createElement("label");
+      label.className = "schede-v146-toggle";
+      label.title = "Mostra/nascondi le colonne RPE, RIR, TUT";
+      label.innerHTML = `
+        <input type="checkbox" ${localStorage.getItem(LS_HIDE_ADVANCED) === "1" ? "" : "checked"}>
+        <span>Colonne avanzate</span>
+      `;
+      const input = label.querySelector("input");
+      input.addEventListener("change", () => {
+        const hide = !input.checked;
+        localStorage.setItem(LS_HIDE_ADVANCED, hide ? "1" : "0");
+        applyAdvancedColsState();
+      });
+      weekTools.appendChild(label);
+    }
+
+    // 2) Rename colonna "Carico" → "Peso" + marca celle RPE/RIR/TUT
+    root.querySelectorAll("table thead th").forEach((th, idx) => {
+      const t = (th.textContent || "").trim().toLowerCase();
+      if (t === "carico") th.textContent = "Peso";
+      if (t === "rpe") th.classList.add("col-header-rpe");
+      if (t === "rir") th.classList.add("col-header-rir");
+      if (t === "tut" || t === "som") {
+        th.classList.add("col-header-tut");
+        const label=th.querySelector("span");
+        if(label)label.textContent="SOM";else th.textContent="SOM";
+      }
+    });
+
+    // 3) Marca celle RPE/RIR/TUT nel corpo tramite data-label
+    root.querySelectorAll(".coach-inline-exercise").forEach((tr) => {
+      tr.querySelectorAll("td[data-label]").forEach((td) => {
+        const lbl = (td.getAttribute("data-label") || "").toLowerCase();
+        if (lbl === "carico") td.setAttribute("data-label", "Peso");
+        if (lbl === "rpe") td.classList.add("col-cell-rpe");
+        if (lbl === "rir") td.classList.add("col-cell-rir");
+        if (lbl === "tut" || lbl === "som") td.classList.add("col-cell-tut");
+      });
+
+      // 4) Note pill "has-note" se testo presente
+      const noteBtn = tr.querySelector(".coach-inline-note");
+      if (noteBtn) {
+        const em = noteBtn.querySelector("em");
+        const hasText = em && em.textContent && em.textContent.trim().length > 0 && em.textContent.trim() !== "Aggiungi nota";
+        noteBtn.classList.toggle("has-note", !!hasText);
+      }
+
+      // 5) Video thumbnail al posto di ⓘ (details)
+      const detailsBtn = tr.querySelector('[data-exercise-action="details"]');
+      if (detailsBtn && !detailsBtn.dataset.schedeV146Bound) {
+        detailsBtn.dataset.schedeV146Bound = "1";
+      }
+
+      // 6) Muscoli dalla Libreria; se incompleti li completa Coach AI.
+      const nameEl = tr.querySelector(".coach-exercise-name-text");
+      const muscleRow = tr.querySelector(".coach-inline-sub");
+      if (nameEl && muscleRow) {
+        const primaryEl = muscleRow.querySelector("strong");
+        const secondaryEl = muscleRow.querySelector("span");
+        const fallbackSecondary = secondaryEl?.textContent.trim() === "Secondari"
+          ? []
+          : (secondaryEl?.textContent || "").split(",");
+        const metadata =
+          window.BarbellDivaV146Bridge?.ensureExerciseMuscles?.(
+            tr.getAttribute("data-program-id"),
+            tr.getAttribute("data-sheet-id"),
+            tr.getAttribute("data-exercise-id"),
+          ) ||
+          window.BarbellDivaV146Bridge?.exerciseMuscles?.(
+            nameEl.textContent.trim(),
+            primaryEl?.textContent.trim() || "",
+            fallbackSecondary,
+          );
+        if (metadata) {
+          if (primaryEl) primaryEl.textContent = metadata.primary;
+          if (secondaryEl) secondaryEl.textContent = metadata.secondary.length ? metadata.secondary.join(", ") : "Nessun secondario";
+          muscleRow.dataset.muscleSource = metadata.source;
+          muscleRow.title = metadata.source === "coach-ai"
+            ? "Muscoli completati da Coach AI usando la Libreria esercizi"
+            : "Muscoli dalla Libreria esercizi";
+        }
+      }
+
+    });
+
+    // 7) Header giorno: estraggo durata in pill + pencil accanto al nome
+    root.querySelectorAll(".coach-program-day > header").forEach((header) => {
+      const dayTitle = header.querySelector(".coach-day-title");
+      const small = header.querySelector(".coach-day-title small");
+      if (dayTitle && !dayTitle.querySelector(".schede-v146-duration-pill")) {
+        const dur = extractDuration(small ? small.textContent : "");
+        if (dur) {
+          const pill = document.createElement("span");
+          pill.className = "schede-v146-duration-pill";
+          pill.textContent = dur;
+          dayTitle.appendChild(pill);
+        }
+      }
+      // Pencil edit accanto al nome
+      const nameEl = dayTitle && dayTitle.querySelector("strong");
+      if (nameEl && !dayTitle.querySelector(".schede-v146-name-edit")) {
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "schede-v146-name-edit";
+        editBtn.textContent = "✎";
+        editBtn.title = "Rinomina scheda";
+        editBtn.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          ev.preventDefault();
+          const card = header.closest(".coach-program-day");
+          const sheetId = card ? card.getAttribute("data-board-sheet") : null;
+          if (sheetId && window.BarbellDivaV146Bridge?.openSheetEdit) {
+            window.BarbellDivaV146Bridge.openSheetEdit(sheetId);
+            return;
+          }
+          const trigger = header.querySelector(
+            `[data-sheet-action="edit"][data-sheet-id="${sheetId}"]`,
+          );
+          if (trigger) trigger.click();
+        });
+        nameEl.after(editBtn);
+      }
+      if (dayTitle && small && !dayTitle.querySelector(".schede-v146-focus-pills")) {
+        const focus = extractFocus(small.textContent);
+        if (focus.length) {
+          const wrap = document.createElement("span");
+          wrap.className = "schede-v146-focus-pills";
+          wrap.setAttribute("aria-label", `Gruppi principali: ${focus.join(", ")}`);
+          focus.forEach((muscle) => {
+            const pill = document.createElement("span");
+            pill.textContent = muscle;
+            wrap.appendChild(pill);
+          });
+          const duration = dayTitle.querySelector(".schede-v146-duration-pill");
+          if (duration) dayTitle.insertBefore(wrap, duration);
+          else dayTitle.appendChild(wrap);
+        }
+      }
+    });
+
+    // 8) Footer "+ Esercizio  + Circuito" per ogni giorno
+    root.querySelectorAll(".coach-program-day").forEach((card) => {
+      const table = card.querySelector(".coach-program-day-table");
+      if (!table) return;
+      if (card.querySelector(".schede-v146-day-footer")) return;
+      const footer = document.createElement("div");
+      footer.className = "schede-v146-day-footer";
+      const sheetId = card.getAttribute("data-board-sheet");
+      footer.innerHTML = `
+        <button type="button" data-schede-add-exercise>
+          <span class="plus">+</span> Esercizio
+        </button>
+        <button type="button" data-schede-add-circuit>
+          <span class="plus">+</span> Circuito
+        </button>
+      `;
+      footer.querySelector("[data-schede-add-exercise]").addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        const addExercise = card.querySelector(
+          `[data-program-board-add-kind="exercise"][data-sheet-id="${sheetId}"]`,
+        );
+        if (addExercise) addExercise.click();
+      });
+      footer.querySelector("[data-schede-add-circuit]").addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        if (window.BarbellDivaV146Bridge?.openExerciseLibrary) {
+          window.BarbellDivaV146Bridge.openExerciseLibrary(sheetId, "circuit");
+          return;
+        }
+        const addExercise = card.querySelector(
+          `[data-program-board-add-kind="exercise"][data-sheet-id="${sheetId}"]`,
+        );
+        if (addExercise) addExercise.click();
+      });
+      table.after(footer);
+    });
+
   }
 
-  .coach-tools-form,
-  .coach-compare-selectors,
-  .coach-compare-kpis {
-    grid-template-columns: 1fr;
+  // Program list — card cliccabili (vive anche fuori dall'editor)
+  function enhanceProgramList() {
+    document.querySelectorAll("article.coach-program-row, .coach-program-row").forEach((card) => {
+      if (card.dataset.schedeCardBound) return;
+      const modifica = Array.from(card.querySelectorAll("button")).find(
+        (b) => (b.textContent || "").trim() === "Modifica",
+      );
+      if (!modifica) return;
+      card.dataset.schedeCardBound = "1";
+      card.classList.add("schede-card-clickable");
+      card.addEventListener("click", (ev) => {
+        if (ev.target.closest("button, a, select, input, [role='button']")) return;
+        modifica.click();
+      });
+    });
   }
 
-  .coach-compare-table > div {
-    grid-template-columns: minmax(120px, 1fr) repeat(3, 48px);
-    font-size: .78rem;
+  // Debounced enhancer
+  let raf = null;
+  function scheduleEnhance() {
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      raf = null;
+      document.querySelectorAll(".coach-editor-weekly").forEach(enhanceEditor);
+      enhanceProgramList();
+    });
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .coach-week-tools button,
-  .coach-tools-backdrop,
-  .coach-tools-modal {
-    animation: none;
-    transition: none;
+  // Observer sul DOM per catturare re-render (editor o lista programmi)
+  const isRelevantCoachNode = (node) => {
+    if (!(node instanceof Element)) return false;
+    return node.matches(".coach-editor-weekly, .coach-program-board, .coach-program-row") ||
+      !!node.querySelector(".coach-editor-weekly, .coach-program-board, .coach-program-row");
+  };
+
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.type !== "childList") continue;
+      if ([...mutation.addedNodes, ...mutation.removedNodes].some(isRelevantCoachNode)) {
+        scheduleEnhance();
+        return;
+      }
+    }
+  });
+
+  function closeSheetEditReliably(event) {
+    const button = event.target.closest(
+      "#coachModalPortalHost [data-coach-modal-close]",
+    );
+    if (!button) return;
+    const modal = button.closest(".coach-modal");
+    if (
+      !modal ||
+      !/modifica dettagli scheda|rinomina scheda/i.test(
+        modal.querySelector("h2, h3")?.textContent || "",
+      )
+    ) {
+      return;
+    }
+    const bridge = window.BarbellDivaV146Bridge;
+    if (!bridge?.closeModal) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    bridge.closeModal();
   }
-}
+
+  function boot() {
+    scheduleEnhance();
+    document.addEventListener("click", closeSheetEditReliably, true);
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();

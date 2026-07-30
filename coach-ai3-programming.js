@@ -1,69 +1,159 @@
-(function(root,factory){const api=factory();if(typeof module==="object"&&module.exports)module.exports=api;root.BarbellDivaCoachAI3=api;})(typeof globalThis!=="undefined"?globalThis:window,function(){
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  root.BarbellDivaAthleteContext = api;
+})(typeof globalThis !== "undefined" ? globalThis : window, function () {
   "use strict";
-  const VERSION="3.0.0",list=v=>Array.isArray(v)?v:[],clone=v=>v==null?v:JSON.parse(JSON.stringify(v));
-  const norm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[_-]+/g," ").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
-  function hash(value){let h=2166136261,t=JSON.stringify(value);for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619);}return(h>>>0).toString(36);}
-  function sheets(program={}){return list(program.sheets).filter(s=>!s.deletedAt).sort((a,b)=>Number(a.order||0)-Number(b.order||0));}
-  function exercises(program={}){return sheets(program).flatMap(sheet=>list(sheet.exercises).filter(e=>!e.deletedAt).sort((a,b)=>Number(a.order||0)-Number(b.order||0)).map(ex=>({...ex,sheetId:sheet.id,sheetName:sheet.name||sheet.code})));}
-  function sets(ex={}){return Math.max(0,Number(ex.prescription?.sets??ex.sets??0)||0);}
-  function restSeconds(ex={}){const rest=ex.prescription?.rest;return Math.max(0,Number(typeof rest==="object"?(rest.seconds??rest.minSeconds):rest)||90);}
-  function restValue(ex,seconds){const rest=ex.prescription?.rest;return typeof rest==="object"?{...rest,seconds}: {seconds};}
-  function review(input={}){
-    const result=input.decisionResult||{},m=result.metrics||{},decisions=list(result.decisions),items=[];
-    const add=(id,category,title,description,sourceDecision=null,data=[])=>items.push({id,title,category,description,priority:sourceDecision?.priority||"media",confidence:sourceDecision?.confidence||"media",severity:sourceDecision?.severity||"info",scope:sourceDecision?.scope||"coach-ai",exerciseId:sourceDecision?.exerciseId||"",identityKey:sourceDecision?.identityKey||"",variantRole:sourceDecision?.variantRole||"",dataUsed:data.length?data:list(sourceDecision?.dataUsed),rules:list(sourceDecision?.rulesApplied),decisionId:sourceDecision?.id||""});
-    decisions.filter(d=>["strategy","exercise-performance","progressions","deload","fatigue","limitations","equipment","redundancy","program-structure"].includes(d.category)).forEach(d=>add(`review-${d.id}`,d.category,d.title,d.rationale||d.description,d));
-    if(m.weeklySets>100)add("review-total-volume","volume","Volume settimanale elevato",`${m.weeklySets} serie complessive richiedono una verifica del recupero.`,null,[{label:"Serie settimanali",value:m.weeklySets,source:"calculated"}]);
-    if(m.orderIssues)add("review-order","ordine",`${m.orderIssues} posizioni migliorabili`,"Sono presenti multiarticolari dopo esercizi accessori nella stessa giornata.",null,[{label:"Posizioni",value:m.orderIssues,source:"calculated"}]);
-    if(list(m.duplicates).length)add("review-duplicates","ridondanza","Esercizi ripetuti da verificare",m.duplicates.map(x=>`${x.name} ×${x.count}`).join(", "),null,m.duplicates.map(x=>({label:x.name,value:x.count,source:"program"})));
-    if(m.averageRest!=null&&m.averageRest<60)add("review-rest","recupero","Recuperi medi molto brevi",`La media rilevata è ${m.averageRest} secondi.`,null,[{label:"Recupero medio",value:m.averageRest,source:"calculated"}]);
-    return{version:VERSION,programId:input.program?.id||"",programName:input.program?.name||"Programma",score:result.score?.score??null,items:[...new Map(items.map(x=>[x.id,x])).values()],summary:{weeklySets:m.weeklySets||0,exercises:m.exercises||0,orderIssues:m.orderIssues||0,duplicates:list(m.duplicates).length,progressionCoverage:m.progressionCoverage==null?null:Math.round(m.progressionCoverage*100),fatigue:result.deload?.decision||"non definita"}};
+
+  const SCHEMA_VERSION = 2;
+  const GOALS = ["ipertrofia", "forza massimale", "forza resistente", "ricomposizione", "dimagrimento", "mantenimento", "performance", "powerbuilding", "bodybuilding", "tecnica", "ritorno allo sport", "benessere", "preparazione gara", "personalizzato"];
+  const BLOCK_TYPES = ["adattamento anatomico", "accumulo", "volume", "ipertrofia", "intensificazione", "forza", "peaking", "tecnica", "specializzazione", "realizzazione", "deload", "taper", "mantenimento", "ricondizionamento", "personalizzato"];
+  const MUSCLES = ["pettorali", "dorsali", "spalle", "bicipiti", "tricipiti", "quadricipiti", "femorali", "glutei", "polpacci", "adduttori", "abduttori", "core"];
+  const PATTERNS = ["squat", "hinge", "spinta orizzontale", "tirata orizzontale", "spinta verticale", "tirata verticale", "flessione ginocchio", "estensione ginocchio", "carry", "core"];
+  const EQUIPMENT = ["bilanciere", "manubri", "cavi", "macchinari", "multipower", "rack", "panca", "elastici", "corpo libero", "kettlebell", "cardio"];
+  const NUTRITION_PHASES = ["bulk", "lean bulk", "mantenimento", "cut", "mini cut", "reverse diet", "ricomposizione", "peak week", "non definita"];
+  const PRIORITY_LEVELS = ["bassa", "media", "alta", "massima"];
+  const SEVERITY_LEVELS = ["lieve", "moderata", "alta", "limitante"];
+  const PAIN_STATUSES = ["attivo", "in miglioramento", "stabile", "risolto", "da valutare"];
+  const clone = (value) => JSON.parse(JSON.stringify(value));
+  const text = (value, fallback = "") => typeof value === "string" ? value.trim() : fallback;
+  const numberOrNull = (value) => Number.isFinite(Number(value)) && value !== "" && value != null ? Number(value) : null;
+  const list = (value) => Array.isArray(value) ? value.filter(Boolean) : [];
+  const id = (prefix) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  function normalizeMuscleName(value) {
+    const clean = text(value).toLowerCase();
+    if (["deltoide", "deltoidi", "spalla", "spalle"].includes(clean)) return "spalle";
+    return clean;
   }
-  function primaryMuscle(ex,masterById){const record=masterById.get(ex.masterExerciseId||ex.metadata?.masterExerciseId);return norm(list(record?.muscles).find(m=>m.role==="primary")?.name||record?.identity?.category||ex.muscle||ex.som);}
-  function alternativeRecords(ex,library={},context={}){
-    const records=list(library.records).filter(r=>r.status!=="archived"),byId=new Map(records.map(r=>[r.id,r])),current=byId.get(ex.masterExerciseId||ex.metadata?.masterExerciseId),available=new Set(list(context.athlete?.equipment?.items).map(norm)),limitations=[...list(context.athlete?.pains),...list(context.athlete?.motorLimitations)].filter(x=>x.status!=="risolto"),primary=norm(list(current?.muscles).find(m=>m.role==="primary")?.name||current?.identity?.category),pattern=norm(current?.patterns?.[0]?.name);
-    return records.filter(r=>r.id!==current?.id).map(r=>{const muscle=norm(list(r.muscles).find(m=>m.role==="primary")?.name||r.identity?.category),sameMuscle=muscle&&muscle===primary,samePattern=norm(r.patterns?.[0]?.name)===pattern,equipmentOk=!available.size||list(r.equipment?.required).every(e=>available.has(norm(e))),fatigueGain=Number(current?.fatigue?.systemic||0)-Number(r.fatigue?.systemic||0),stabilityGain=Number(r.biomechanics?.stability||0)-Number(current?.biomechanics?.stability||0),relation=list(current?.relations?.similar).includes(r.id)||list(current?.relations?.regressions).includes(r.id),score=(sameMuscle?6:0)+(samePattern?3:0)+(equipmentOk?3:-8)+(relation?4:0)+Math.max(-2,Math.min(2,fatigueGain))+Math.max(-2,Math.min(2,stabilityGain))-(limitations.length&&list(r.limitationTags).length?1:0);return{record:r,score,reasons:[sameMuscle?"stesso muscolo principale":"",samePattern?"pattern equivalente":"",equipmentOk?"attrezzatura compatibile":"",fatigueGain>0?"meno tassante":"",stabilityGain>0?"più stabile":""].filter(Boolean)};}).filter(x=>x.score>=7).sort((a,b)=>b.score-a.score||a.record.identity.name.localeCompare(b.record.identity.name)).slice(0,8);
+  function muscleList(value) {
+    return [...new Set(list(value).map((item) => normalizeMuscleName(typeof item === "string" ? item : item?.muscle || item?.name)).filter(Boolean))];
   }
-  function opUpdate(ex,changes){return{type:"update-exercise",sheetId:ex.sheetId,exerciseId:ex.id,changes};}
-  function strategyOption(id,label,description,pros,cons,operations){return{id,label,description,pros,cons,operations:list(operations)};}
-  function proposals(input={}){
-    const program=input.program||{},result=input.decisionResult||{},context=input.context||{},library=input.masterLibrary||{},all=exercises(program),masterById=new Map(list(library.records).map(r=>[r.id,r])),out=[];
-    const put=(issue,kind,target,options,dataUsed=[],rules=[])=>{if(!options.some(o=>o.operations.length))return;const id=`proposal-${hash({programId:program.id,issue:issue.id||issue.title,kind,target})}`;out.push({id,programId:program.id,kind,target,title:issue.title||"Proposta di revisione",reason:issue.rationale||issue.description||"",priority:issue.priority||"media",confidence:issue.confidence||"media",dataUsed:list(dataUsed).length?dataUsed:list(issue.dataUsed),rules:list(rules).length?rules:list(issue.rulesApplied),options});};
-    list(result.decisions).forEach(decision=>{
-      if(["exercise-performance","progressions"].includes(decision.category)){
-        const ex=all.find(x=>x.id===decision.exerciseId);if(!ex)return;const rest=restSeconds(ex),rir=ex.prescription?.rir||"1-2";
-        put(decision,"progression",ex.id,[
-          strategyOption("conservative","Conservativa","Mantiene carico e struttura, aumentando il margine di recupero.",["Basso rischio","Preserva la tecnica"],["Adattamento più lento"],[opUpdate(ex,{prescription:{...ex.prescription,rest:restValue(ex,rest+30),rir:"2-3"}})]),
-          strategyOption("balanced","Bilanciata","Rivede la progressione senza cambiare l'esercizio.",["Stimolo più leggibile","Mantiene specificità"],["Richiede monitoraggio"],[opUpdate(ex,{progression:{...(ex.progression||{}),templateId:"double-progression",rule:{kind:"double-progression",source:"coach-ai3"}},prescription:{...ex.prescription,rir:rir||"1-2"}})]),
-          strategyOption("aggressive","Aggressiva","Riduce una serie e imposta una progressione più netta.",["Taglia fatica rapidamente","Segnale chiaro"],["Volume inferiore"],[opUpdate(ex,{prescription:{...ex.prescription,sets:Math.max(1,sets(ex)-1),rir:"2-3"},progression:{...(ex.progression||{}),templateId:"double-progression",rule:{kind:"double-progression",source:"coach-ai3"}}})])
-        ],decision.dataUsed,decision.rulesApplied);
-      }
-      if(["deload","fatigue"].includes(decision.category)){
-        const target=all.slice().sort((a,b)=>sets(b)-sets(a))[0];if(!target)return;
-        put(decision,"fatigue",target.id,[
-          strategyOption("conservative","Conservativa","Aumenta il recupero dell'esercizio più voluminoso.",["Volume invariato","Intervento minimo"],["Fatica ridotta lentamente"],[opUpdate(target,{prescription:{...target.prescription,rest:restValue(target,restSeconds(target)+30)}})]),
-          strategyOption("balanced","Bilanciata","Riduce una serie nel punto a maggiore volume.",["Riduzione mirata","Priorità preservate"],["Stimolo leggermente minore"],[opUpdate(target,{prescription:{...target.prescription,sets:Math.max(1,sets(target)-1)}})]),
-          strategyOption("aggressive","Aggressiva","Riduce due serie e aumenta il RIR.",["Recupero più rapido","Fatica nettamente inferiore"],["Possibile perdita di stimolo"],[opUpdate(target,{prescription:{...target.prescription,sets:Math.max(1,sets(target)-2),rir:"3-4"}})])
-        ],decision.dataUsed,decision.rulesApplied);
-      }
-      if(decision.category==="strategy"){
-        const datum=list(decision.dataUsed).find(d=>norm(d.label).includes("priorita")),muscle=norm(datum?.value||decision.title.split(":")[0].replace(/priorità/i,"")),targets=all.filter(ex=>primaryMuscle(ex,masterById)===muscle),target=targets[0];if(!target)return;
-        put(decision,"priority-volume",target.id,[
-          strategyOption("conservative","Conservativa","Aggiunge una serie a un esercizio già presente.",["Nessun esercizio nuovo","Specificità invariata"],["Incremento piccolo"],[opUpdate(target,{prescription:{...target.prescription,sets:sets(target)+1}})]),
-          strategyOption("balanced","Bilanciata","Aggiunge una serie e più recupero.",["Più volume di qualità","Supporta la priorità"],["Seduta leggermente più lunga"],[opUpdate(target,{prescription:{...target.prescription,sets:sets(target)+1,rest:restValue(target,restSeconds(target)+15)}})]),
-          strategyOption("aggressive","Aggressiva","Aggiunge due serie con RIR prudente.",["Stimolo prioritario marcato"],["Fatica locale superiore"],[opUpdate(target,{prescription:{...target.prescription,sets:sets(target)+2,rir:"2-3"}})])
-        ],decision.dataUsed,decision.rulesApplied);
-      }
-      if(["limitations","equipment"].includes(decision.category)){
-        const ex=all.find(x=>x.id===decision.exerciseId)||all[0];if(!ex)return;const alternatives=alternativeRecords(ex,library,context);if(!alternatives.length)return;const choices=[alternatives[0],alternatives[Math.min(1,alternatives.length-1)],alternatives[Math.min(2,alternatives.length-1)]];
-        put(decision,"substitution",ex.id,choices.map((choice,index)=>strategyOption(["conservative","balanced","aggressive"][index],["Conservativa","Bilanciata","Aggressiva"][index],`Sostituisce con ${choice.record.identity.name}.`,choice.reasons.length?choice.reasons:["Alternativa Master Library"],index?["Richiede adattamento tecnico"]:["Verificare la tolleranza individuale"],[opUpdate(ex,{name:choice.record.identity.name,masterExerciseId:choice.record.id,metadata:{...(ex.metadata||{}),masterExerciseId:choice.record.id,technicalProfileId:choice.record.id}})])),decision.dataUsed,decision.rulesApplied);
-      }
-    });
-    if(result.metrics?.orderIssues){const sheet=sheets(program).find(s=>{let accessory=false;return list(s.exercises).some(ex=>{const r=masterById.get(ex.masterExerciseId),compound=r?.identity?.type==="compound";if(!compound)accessory=true;return compound&&accessory;});});if(sheet){const rows=list(sheet.exercises).filter(e=>!e.deletedAt).sort((a,b)=>Number(a.order)-Number(b.order)),compound=rows.find((ex,i)=>i>0&&masterById.get(ex.masterExerciseId)?.identity?.type==="compound"),first=rows[0];if(compound&&first)put({id:"order",title:"Ordine esercizi migliorabile",description:"Un multiarticolare compare dopo un accessorio.",priority:"media",confidence:"alta"},"reorder",compound.id,[strategyOption("conservative","Conservativa","Sposta il multiarticolare di una sola posizione.",["Modifica minima"],["Possibile effetto limitato"],[opUpdate(compound,{order:Math.max(0,Number(compound.order)-1)}),opUpdate(rows[Math.max(0,rows.indexOf(compound)-1)],{order:Number(compound.order)})]),strategyOption("balanced","Bilanciata","Porta il multiarticolare all'inizio.",["Più qualità tecnica","Meno pre-affaticamento"],["Cambia il ritmo della seduta"],[opUpdate(compound,{order:0}),opUpdate(first,{order:Number(compound.order)})]),strategyOption("aggressive","Aggressiva","Porta il multiarticolare all'inizio e aumenta il recupero.",["Massima priorità al gesto"],["Seduta più lunga"],[opUpdate(compound,{order:0,prescription:{...compound.prescription,rest:restValue(compound,restSeconds(compound)+30)}}),opUpdate(first,{order:Number(compound.order)})])]);}}
-    return out.slice(0,10);
+
+  function createDefaultAthlete(legacy = {}) {
+    const profile = legacy.profile || legacy || {};
+    return {
+      id: "athlete-alice",
+      general: {
+        name: text(profile.name, "Alice"), birthDate: "", age: null, sex: "", heightCm: null,
+        weightKg: numberOrNull(profile.weight), level: text(profile.level), trainingYears: null,
+        weeklySessions: null, sessionMinutes: null, coachNotes: ""
+      },
+      goals: { primary: "ipertrofia", secondary: [], notes: "", targetMetrics: [], targetDate: "" },
+      muscles: { priorities: [], deficits: [], strengths: [], maintain: [] },
+      pains: [], motorLimitations: [],
+      preferences: { favoriteExercises: [], dislikedExercises: [], excludedExercises: [], preferredEquipment: [], preferredDays: [], modality: "", sessionMinutes: null, notes: "" },
+      equipment: { preset: "palestra completa", items: [], custom: [] },
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+    };
   }
-  function applyPatch(program={},operations=[]){const before=clone(program),after=clone(program),find=(sheetId,exerciseId)=>list(after.sheets).find(s=>s.id===sheetId)?.exercises?.find(e=>e.id===exerciseId);list(operations).forEach(op=>{if(op.type!=="update-exercise")return;const ex=find(op.sheetId,op.exerciseId);if(!ex)throw new Error(`Esercizio ${op.exerciseId} non trovato`);Object.assign(ex,clone(op.changes));if(op.changes.prescription)ex.prescription={...(ex.prescription||{}),...clone(op.changes.prescription)};if(op.changes.progression)ex.progression={...(ex.progression||{}),...clone(op.changes.progression)};if(op.changes.metadata)ex.metadata={...(ex.metadata||{}),...clone(op.changes.metadata)};ex.updatedAt=new Date().toISOString();});return{before,after,beforeFingerprint:hash(before),afterFingerprint:hash(after)};}
-  function simulation(beforeResult={},afterResult={}){const before=beforeResult.metrics||{},after=afterResult.metrics||{},muscles=[...new Set([...Object.keys(before.directSets||{}),...Object.keys(after.directSets||{})])],muscleChanges=muscles.map(m=>({muscle:m,before:before.directSets?.[m]||0,after:after.directSets?.[m]||0})).filter(x=>x.before!==x.after);return{score:{before:beforeResult.score?.score??null,after:afterResult.score?.score??null},weeklySets:{before:before.weeklySets||0,after:after.weeklySets||0},frequency:{before:before.frequency||{},after:after.frequency||{}},fatigue:{before:beforeResult.deload?.decision||"non definita",after:afterResult.deload?.decision||"non definita"},muscles:muscleChanges};}
-  function build(input={}){const program=input.program||{},decisionResult=input.decisionResult||{};return{version:VERSION,programId:program.id,programFingerprint:hash(program),review:review({...input,program,decisionResult}),proposals:proposals({...input,program,decisionResult})};}
-  function record(history=[],entry={}){const next=list(history).map(clone),i=next.findIndex(x=>x.id===entry.id);const value={...clone(entry),updatedAt:new Date().toISOString()};if(i>=0)next[i]=value;else next.unshift(value);return next.slice(0,300);}
-  return{VERSION,hash,review,proposals,build,applyPatch,simulation,record,alternativeRecords};
+
+  function normalizeAthlete(input = {}, legacy = {}) {
+    const base = createDefaultAthlete(legacy);
+    const general = input.general || {};
+    const goals = input.goals || {};
+    const muscles = input.muscles || {};
+    return {
+      ...base, ...input, id: text(input.id, base.id),
+      general: { ...base.general, ...general, name: text(general.name, base.general.name), age: numberOrNull(general.age), heightCm: numberOrNull(general.heightCm), weightKg: numberOrNull(general.weightKg), trainingYears: numberOrNull(general.trainingYears), weeklySessions: numberOrNull(general.weeklySessions), sessionMinutes: numberOrNull(general.sessionMinutes) },
+      goals: { ...base.goals, ...goals, secondary: list(goals.secondary), targetMetrics: list(goals.targetMetrics) },
+      muscles: { ...base.muscles, ...muscles, priorities: list(muscles.priorities).map((item,index)=>typeof item === "string" ? { muscle:normalizeMuscleName(item), level:index===0?"alta":"media" } : { muscle:normalizeMuscleName(item.muscle || item.name), level:PRIORITY_LEVELS.includes(item.level) ? item.level : Number(item.priority)===1 ? "massima" : Number(item.priority)===2 ? "alta" : "media" }).filter((item,index,rows)=>item.muscle && rows.findIndex((other)=>other.muscle===item.muscle)===index), deficits: muscleList(muscles.deficits), strengths: muscleList(muscles.strengths), maintain: muscleList(muscles.maintain) },
+      pains: list(input.pains).map((item,index)=>typeof item === "string" ? { id:`pain-legacy-${index}`, area:item, side:"non indicato", intensity:null, status:"da valutare", onsetDate:"", aggravatingMovements:[], toleratedExercises:[], notes:"", legacy:true } : { id:item.id || `pain-${index}`, area:text(item.area), side:text(item.side,"non indicato"), intensity:numberOrNull(item.intensity ?? item.severity), status:PAIN_STATUSES.includes(item.status) ? item.status : "da valutare", onsetDate:text(item.onsetDate), aggravatingMovements:list(item.aggravatingMovements), toleratedExercises:list(item.toleratedExercises), notes:text(item.notes), type:text(item.type) }),
+      motorLimitations: list(input.motorLimitations).map((item,index)=>typeof item === "string" ? { id:`limit-legacy-${index}`, movement:item, severity:"moderata", status:"da valutare", description:"", affectedPatterns:[], notes:"", legacy:true } : { id:item.id || `limit-${index}`, movement:text(item.movement), severity:SEVERITY_LEVELS.includes(item.severity) ? item.severity : "moderata", status:PAIN_STATUSES.includes(item.status) ? item.status : "da valutare", description:text(item.description), affectedPatterns:list(item.affectedPatterns), notes:text(item.notes) }),
+      preferences: { ...base.preferences, ...(input.preferences || {}), favoriteExercises: list(input.preferences?.favoriteExercises), dislikedExercises: list(input.preferences?.dislikedExercises), excludedExercises: list(input.preferences?.excludedExercises), preferredEquipment: list(input.preferences?.preferredEquipment), preferredDays: list(input.preferences?.preferredDays) },
+      equipment: { ...base.equipment, ...(input.equipment || {}), items: list(input.equipment?.items), custom: list(input.equipment?.custom) }
+    };
+  }
+
+  function createDefaultStrategy(athleteId = "athlete-alice") {
+    return {
+      id: "strategy-default", athleteId, name: "Strategia attuale", blockType: "intensificazione", primaryGoal: "ipertrofia",
+      secondaryGoals: [], durationWeeks: 8, frequency: null, targetVolume: "moderato", targetFatigue: "moderata",
+      targetRpe: "7-9", targetRir: "1-3", failurePolicy: "selettivo", restPolicy: "adeguato al gesto",
+      density: "moderata", techniques: [], performanceMarkers: [], targetPatterns: [], targetMuscles: [], notes: "",
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+    };
+  }
+
+  function normalizeNutrition(input = {}) {
+    const phase = NUTRITION_PHASES.includes(input.phase) ? input.phase : "non definita";
+    return {
+      phase, source: input.source === "manual" ? "manual" : input.source === "nutrition" ? "nutrition" : "estimated",
+      confidence: input.confidence || "bassa", reason: text(input.reason), targetCalories: numberOrNull(input.targetCalories),
+      actualCalories: numberOrNull(input.actualCalories), maintenanceCalories: numberOrNull(input.maintenanceCalories),
+      balanceCalories: numberOrNull(input.balanceCalories), weightTrend: text(input.weightTrend), adherence: numberOrNull(input.adherence),
+      notes: text(input.notes), updatedAt: input.updatedAt || new Date().toISOString()
+    };
+  }
+
+  function normalizeStore(input = {}, legacy = {}) {
+    const raw = input && typeof input === "object" ? input : {};
+    const athletes = list(raw.athletes).length ? raw.athletes.map((item) => normalizeAthlete(item, legacy)) : [createDefaultAthlete(legacy)];
+    const activeAthleteId = athletes.some((item) => item.id === raw.activeAthleteId) ? raw.activeAthleteId : athletes[0].id;
+    const strategies = list(raw.strategies).length ? raw.strategies.map((item) => ({ ...createDefaultStrategy(item.athleteId || activeAthleteId), ...item, secondaryGoals: list(item.secondaryGoals), techniques: list(item.techniques), performanceMarkers: list(item.performanceMarkers), targetPatterns: list(item.targetPatterns), targetMuscles: muscleList(item.targetMuscles) })) : [createDefaultStrategy(activeAthleteId)];
+    const nutritionByAthlete = {};
+    Object.entries(raw.nutritionByAthlete || {}).forEach(([key, value]) => { nutritionByAthlete[key] = normalizeNutrition(value); });
+    if (!nutritionByAthlete[activeAthleteId]) nutritionByAthlete[activeAthleteId] = normalizeNutrition(estimateNutritionPhase(legacy.nutrition || {}));
+    return {
+      schemaVersion: SCHEMA_VERSION, activeAthleteId, athletes, strategies,
+      nutritionByAthlete, programLinks: { ...(raw.programLinks || {}) }, insightHistory: { ...(raw.insightHistory || {}) },
+      updatedAt: raw.updatedAt || new Date().toISOString()
+    };
+  }
+
+  function getAthlete(store, athleteId) { return store.athletes.find((item) => item.id === (athleteId || store.activeAthleteId)) || store.athletes[0]; }
+  function getStrategy(store, strategyId, athleteId) { return store.strategies.find((item) => item.id === strategyId) || store.strategies.find((item) => item.athleteId === (athleteId || store.activeAthleteId)) || null; }
+  function upsertAthlete(store, athlete) {
+    const next = normalizeStore(store); const normalized = normalizeAthlete(athlete); const index = next.athletes.findIndex((item) => item.id === normalized.id);
+    if (index >= 0) next.athletes[index] = normalized; else next.athletes.push(normalized); next.updatedAt = new Date().toISOString(); return next;
+  }
+  function upsertStrategy(store, strategy) {
+    const next = normalizeStore(store); const normalized = { ...createDefaultStrategy(strategy.athleteId || next.activeAthleteId), ...strategy, updatedAt: new Date().toISOString() }; const index = next.strategies.findIndex((item) => item.id === normalized.id);
+    if (index >= 0) next.strategies[index] = normalized; else next.strategies.push(normalized); next.updatedAt = normalized.updatedAt; return next;
+  }
+  function linkProgram(store, programId, link = {}) {
+    const next = normalizeStore(store); next.programLinks[programId] = { athleteId: link.athleteId || next.activeAthleteId, strategyId: link.strategyId || "", blockType: link.blockType || "personalizzato", nutritionalPhase: link.nutritionalPhase || "non definita", freeProgram: Boolean(link.freeProgram), linkedAt: new Date().toISOString() }; next.updatedAt = new Date().toISOString(); return next;
+  }
+
+  function estimateNutritionPhase(raw = {}) {
+    const target = numberOrNull(raw.kcal ?? raw.targetCalories ?? raw.targets?.calories);
+    const actual = numberOrNull(raw.actualCalories ?? raw.averageCalories ?? raw.dashboard?.averageCalories);
+    const maintenance = numberOrNull(raw.maintenanceCalories ?? raw.tdee ?? raw.dashboard?.tdee);
+    const balance = target != null && maintenance != null ? target - maintenance : null;
+    let phase = "non definita", confidence = "bassa", reason = "Dati calorici insufficienti: nessuna fase inventata.";
+    if (balance != null) {
+      if (balance > 300) phase = "bulk"; else if (balance > 100) phase = "lean bulk"; else if (balance < -500) phase = "mini cut"; else if (balance < -100) phase = "cut"; else phase = "mantenimento";
+      confidence = "media"; reason = `Stima basata sul target calorico rispetto al mantenimento (${Math.round(balance)} kcal).`;
+    }
+    return { phase, source: "estimated", confidence, reason, targetCalories: target, actualCalories: actual, maintenanceCalories: maintenance, balanceCalories: balance };
+  }
+
+  function syncNutrition(store, athleteId, raw = {}) {
+    const next = normalizeStore(store); const key = athleteId || next.activeAthleteId; const current = normalizeNutrition(next.nutritionByAthlete[key] || {}); const estimate = normalizeNutrition({ ...estimateNutritionPhase(raw), source: "nutrition", updatedAt: new Date().toISOString() });
+    next.nutritionByAthlete[key] = current.source === "manual" ? { ...estimate, ...current, source: "manual", reason: current.reason || "Fase impostata manualmente dal coach." } : estimate;
+    next.updatedAt = new Date().toISOString(); return next;
+  }
+
+  function missingFields(athlete = {}) {
+    const missing = [];
+    if (!athlete.general?.level) missing.push({ key: "level", label: "Livello atleta", where: "Profilo atleta › Dati generali", why: "Serve a calibrare complessità e progressione." });
+    if (!athlete.goals?.primary) missing.push({ key: "goal", label: "Obiettivo primario", where: "Profilo atleta › Obiettivi", why: "Dà una direzione alle scelte del programma." });
+    if (!athlete.equipment?.items?.length && athlete.equipment?.preset !== "palestra completa") missing.push({ key: "equipment", label: "Attrezzatura", where: "Profilo atleta › Attrezzatura", why: "Evita suggerimenti non eseguibili." });
+    if (!athlete.muscles?.priorities?.length) missing.push({ key: "priorities", label: "Priorità muscolari", where: "Profilo atleta › Priorità", why: "Consente di confrontare volume e frequenza con le priorità reali." });
+    return missing;
+  }
+
+  function selectors(storeInput, appState = {}, programId = "") {
+    const store = normalizeStore(storeInput, appState); const link = store.programLinks[programId] || {}; const athlete = getAthlete(store, link.athleteId); const strategy = getStrategy(store, link.strategyId, athlete.id); const nutrition = normalizeNutrition(store.nutritionByAthlete[athlete.id] || {});
+    return { schemaVersion: SCHEMA_VERSION, athlete: clone(athlete), strategy: strategy ? clone(strategy) : null, nutrition: clone(nutrition), programLink: clone(link), missing: missingFields(athlete), history: clone(store.insightHistory[athlete.id] || []) };
+  }
+
+  function validate(storeInput) {
+    const store = normalizeStore(storeInput); const errors = [];
+    if (!store.athletes.length) errors.push("Manca almeno un atleta.");
+    if (!store.athletes.some((item) => item.id === store.activeAthleteId)) errors.push("Atleta attivo non valido.");
+    Object.entries(store.programLinks).forEach(([programId, link]) => { if (!store.athletes.some((item) => item.id === link.athleteId)) errors.push(`Programma ${programId}: atleta non valido.`); });
+    return { ok: errors.length === 0, errors };
+  }
+
+  return { SCHEMA_VERSION, GOALS, BLOCK_TYPES, MUSCLES, PATTERNS, EQUIPMENT, NUTRITION_PHASES, PRIORITY_LEVELS, SEVERITY_LEVELS, PAIN_STATUSES, normalizeMuscleName, createDefaultAthlete, createDefaultStrategy, normalizeAthlete, normalizeStore, normalizeNutrition, getAthlete, getStrategy, upsertAthlete, upsertStrategy, linkProgram, estimateNutritionPhase, syncNutrition, missingFields, selectors, validate, id };
 });

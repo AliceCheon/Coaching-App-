@@ -1,12 +1,15 @@
-# Barbell Diva v146.1c10
+# Barbell Diva v146.1
 
-Rifinitura dell'editor Coach:
+Build correttiva della v146. Il restyling e tutte le funzioni già presenti sono
+rimasti invariati.
 
-- le colonne nascoste lasciano soltanto un indicatore compatto da 14 px;
-- RPE e RIR sono più larghi e leggibili;
-- SOM dispone di più spazio per l'anteprima;
-- i campi sono leggermente più alti e il testo passa da 11 px a 12 px;
-- layout e densità generale restano invariati;
-- cache PWA aggiornata a `atlas-app-v1461c10`.
+Correzioni incluse:
 
-Caricare su GitHub il contenuto della cartella, mantenendo `index.html` nella radice.
+- `+ Circuito` non modifica più esercizi esistenti mentre apre la Libreria;
+- il Trend della riga mostra il singolo esercizio;
+- le miniature vengono usate soltanto quando esiste un media reale;
+- il pennino della scheda apre una modale che può essere chiusa normalmente;
+- versione, manifest e cache PWA sono allineati a `v146.1`;
+- GitHub Actions esegue anche i test v145, v145.1, v145.2 e v146.1.
+
+La cartella è pronta per GitHub Pages grazie al file `.nojekyll`.

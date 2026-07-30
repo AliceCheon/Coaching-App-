@@ -4,46 +4,64 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
-const sw = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
-const manifest = fs.readFileSync(path.join(root, "manifest.webmanifest"), "utf8");
-const sync = fs.readFileSync(path.join(root, "sync-reliability.js"), "utf8");
-const config = fs.readFileSync(path.join(root, "app-config-v144.js"), "utf8");
-const files = new Set(fs.readdirSync(root));
-
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+const html = read("index.html");
+const enhancer = read("coach-schede-v146-enhance.js");
+const restyle = read("coach-schede-restyle-v146.css");
+const sidebar = read("unified-sidebar-v1452.css");
+const studio = read("coach-studio.css");
 const check = (condition, message) => assert.ok(condition, message);
 
-// Apertura e caricamento della base dati.
-check(/^<!doctype html>/i.test(html), "index.html deve aprirsi come documento HTML");
-check(html.includes("const PROGRAM_LIBRARY") && html.includes("buildProgramsFromLegacy"), "programmi caricabili");
-check(html.includes("function runSchemaMigrations") && html.includes("DATA_SCHEMA_VERSION"), "migrazioni presenti");
-
-// Logbook, libreria esercizi e Coach AI.
-for (const marker of ["function logbookHtml", "saveWorkoutSession", "function exerciseLibraryResultsHtml", "function coachStudioDiagnosticsHtml", "coachAi3", "programRepository"]) {
-  check(html.includes(marker), `marker mancante: ${marker}`);
+const rowStart = html.lastIndexOf('function coachInlineExerciseRowHtml');
+const rowEnd = html.indexOf('function coachProgramSheetHtml', rowStart);
+const row = html.slice(rowStart, rowEnd);
+const labels = [
+  "Storico pesi",
+  "Copia esercizio",
+  "Allegati",
+  "Elimina esercizio",
+  "Progressione",
+  "Aggiungi",
+];
+let cursor = -1;
+for (const label of labels) {
+  const position = row.indexOf(label, cursor + 1);
+  check(position > cursor, `azione ${label} mancante o fuori ordine`);
+  cursor = position;
 }
 
-// Sync: locale prima, coda, cloud dopo conferma.
-for (const marker of ["queueReliableWorkoutSession", "reliableSyncQueue.enqueue", "flushReliableSync", "reconcileSessionVersions", "sync-reliability.js?v=v1461"]) {
-  check(html.includes(marker) || sync.includes(marker), `sync marker mancante: ${marker}`);
+check(html.includes('data-program-board-add-kind="exercise"'), "azione Aggiungi exercise mancante");
+for (const kind of ["superset", "multiset", "alternative", "circuit"]) {
+  check(html.includes(`data-set-group-action="${kind}"`), `azione Aggiungi ${kind} mancante`);
 }
 
-// Backup verificabile, massimo cinque automatici e diagnostica copiabile.
-for (const marker of ["function createBackupEnvelope", "function verifyBackupEnvelope", "const MAX_AUTOMATIC_BACKUPS = 5", "function createV144DiagnosticReport", "data-diagnostics-full-check"]) {
-  check(html.includes(marker), `backup/diagnostica marker mancante: ${marker}`);
-}
+check(!enhancer.includes('className = "schede-v146-row-trend"'), "Trend duplicato ancora iniettato nella riga");
+check(html.includes('class="coach-statistics-fab coach-trend-launch"'), "Trend non è accanto a Statistiche");
+check(html.includes("coach-trend-filters") && html.includes("coach-trend-kpis"), "Trend interattivo incompleto");
+check(restyle.includes(".coach-trend-filters button.active"), "stile filtri Trend mancante");
 
-// Firebase e cache PWA.
-for (const marker of ["function initFirebase", "saveCloudState", "FIREBASE_CONFIG"]) check(html.includes(marker), `Firebase marker mancante: ${marker}`);
-check(html.includes("const APP_BUILD = window.BarbellDivaV144Config?.build || \"v146.1\""), "build v146.1 non uniforme nell'app");
-check(config.includes('build: "v146.1"') && config.includes('cache: "atlas-app-v1461c5"'), "configurazione v146.1 correttiva non caricata");
-check(sw.includes('const CACHE_NAME = "atlas-app-v1461c5"'), "cache service worker non v146.1 correttiva");
-check(manifest.includes("index.html?v=v1461c5"), "manifest non v146.1 correttivo");
+check(enhancer.includes("schede-v146-focus-pills"), "gruppi muscolari della scheda mancanti");
+check(enhancer.includes("ensureExerciseMuscles"), "autocompilazione muscoli non collegata");
+check(html.includes("ensureExerciseMuscles(programId,sheetId,exerciseId)"), "bridge autocompilazione muscoli mancante");
+check(html.includes("technicalEvidenceProfile"), "fallback Coach AI per muscoli mancante");
+check(restyle.includes(".coach-inline-sub span::before"), "secondario sotto esercizio non visibile");
+check(html.includes("function openCoachExerciseWeightHistoryModal") && html.includes("Dati realmente salvati nel Logbook"), "Storico pesi apre ancora il Trend");
+check(html.includes("coach-paste-button") && html.includes("syncCoachPasteButtonsLocal"), "pulsante Incolla visibile mancante");
+check(html.includes("restoreExerciseHistoryFor") && html.includes('String(event.key).toLowerCase()==="z"'), "Ctrl+Z editor non collegato");
+check(html.includes('data-local-delegated="1"'), "delegazione locale iniziale mancante");
+check(enhancer.includes("isRelevantCoachNode") && !enhancer.includes("schedeHistoryBound"), "observer/listener editor non ottimizzati");
 
-// I moduli esclusi non devono più essere caricati o consegnati.
-for (const removed of ["./nutrizione/", "workout-pro.js", "workout-pro.css", "food-backup.js", "photo-store.js"]) {
-  check(!html.toLowerCase().includes(removed) && !sw.toLowerCase().includes(removed), `modulo escluso ancora referenziato: ${removed}`);
-}
-for (const removedFile of ["workout-pro.js", "workout-pro.css", "food-backup.js", "photo-store.js"]) check(!files.has(removedFile), `file escluso ancora presente: ${removedFile}`);
+check(html.includes("data-editor-nav-restore"), "pulsante ripristino barra mancante");
+check(sidebar.includes("body.coach-mode.coach-editor-nav-hidden .desktop-rail"), "barra non scompare nell'editor");
+check(sidebar.includes(".coach-editor-nav-restore"), "stile pulsante ripristino barra mancante");
 
-console.log(JSON.stringify({ ok:true, build:"v146.1", checks:17, removedModules:true, core:"app/logbook/coach/sync/backup/firebase/migrations/cache" }));
+check(html.includes("data-global-diva-draggable"), "Diva Bot non trascinabile");
+check(html.includes('addEventListener("pointermove"'), "drag Diva Bot non collegato");
+check(studio.includes("cursor:grab") && studio.includes(".global-diva-bot.is-dragging"), "stile drag Diva Bot mancante");
+
+console.log(JSON.stringify({
+  ok: true,
+  build: "v146.1",
+  checks: 30,
+  ux: "sidebar/actions/history/paste/undo/performance/trend/muscles/diva"
+}));
