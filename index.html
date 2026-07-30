@@ -7958,7 +7958,7 @@
         program.sheets = sheets;
         program.updatedAt = updated.updatedAt;
         attachSheetCompatibility(updated, program);
-        state.meta = { ...(state.meta || {}), validationIssues: [] };
+        state.meta = { ...(state.meta || {}), validationIssues: [], programsUpdatedAt: updated.updatedAt };
         if (options.save !== false) saveState({ immediate: !!options.immediate, cloud: options.cloud !== false, touch: options.touch !== false });
         return repositoryResult(true, this.getSheetById(programId, sheetId, { includeDeleted: true }));
       },
@@ -9015,6 +9015,7 @@
         if (!lastCloudError?.startsWith("Schede sincronizzate")) lastCloudError = "";
         state.meta = { ...(state.meta || {}), programsUpdatedAt: programRevision, cloudProgramsUpdatedAt: programRevision, cloudProgramRevisions: revisions };
         state.profile.account.cloudStatus = "sync";
+        state.profile.account.syncReady = true;
         state.profile.account.lastCloudSyncAt = cloudUpdatedAt;
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
         setPremiumSaveStatus("synced", "Sincronizzato");
