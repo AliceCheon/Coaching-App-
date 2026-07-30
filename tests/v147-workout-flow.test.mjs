@@ -32,8 +32,36 @@ test("registra kg ripetizioni e RIR reali nel salvataggio", () => {
   assert.match(js, /completedSetsFor/);
   assert.match(js, /data-v147-set-field="kg"/);
   assert.match(js, /data-v147-set-field="reps"/);
+  assert.match(js, /data-v147-set-field="rpe"/);
   assert.match(js, /data-v147-set-field="rir"/);
   assert.match(html, /BarbellDivaWorkoutV147\?\.completedSetsFor/);
+});
+
+test("la conferma chiude davvero la serie e consente di riaprirla", () => {
+  assert.match(js, /v147-set-row-closed/);
+  assert.match(js, /Serie completata/);
+  assert.match(js, /data-v147-reopen-set/);
+  assert.match(js, /nextIncomplete/);
+});
+
+test("copia una serie completa nella successiva", () => {
+  assert.match(js, /function copySetToNext/);
+  assert.match(js, /data-v147-copy-set/);
+  assert.match(js, /\["kg", "reps", "rpe", "rir"\]/);
+});
+
+test("l'anteprima mostra serie e ripetizioni ed è espandibile", () => {
+  assert.match(js, /serie ·/);
+  assert.match(js, /rip/);
+  assert.match(js, /data-v147-preview-toggle/);
+  assert.match(js, /workoutPreviewExpanded/);
+});
+
+test("annulla workout elimina la bozza senza inviarla al Logbook", () => {
+  assert.match(js, /function cancelWorkout/);
+  assert.match(js, /data-v147-cancel/);
+  assert.match(js, /state\.training\.activeWorkout = null/);
+  assert.match(js, /Nessun dato è stato salvato nel Logbook/);
 });
 
 test("gli asset v147 sono inclusi nella cache PWA", () => {
@@ -44,5 +72,5 @@ test("gli asset v147 sono inclusi nella cache PWA", () => {
 test("il layout mobile conserva campi utilizzabili", () => {
   assert.match(css, /@media \(max-width: 620px\)/);
   assert.match(css, /min-height: 44px/);
-  assert.match(css, /grid-template-columns: 42px minmax\(58px/);
+  assert.match(css, /grid-template-columns: 42px minmax\(50px/);
 });

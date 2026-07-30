@@ -10,10 +10,15 @@ Workout del giorno.
 - workout attivo con un esercizio alla volta;
 - scaletta completa apribile e navigabile;
 - inserimento reale di kg, ripetizioni e RIR per ogni serie;
+- inserimento di RPE prima del RIR;
+- copia rapida di una serie nella successiva;
+- conferma che chiude la serie completata e passa alla seguente;
 - SOM e Nota Coach separati e sempre visibili;
 - storico dall'ultima seduta o dall'ultimo programma;
 - note personali consultabili e modificabili;
 - pausa e ripristino dopo ricarica o chiusura;
+- annullamento del workout senza salvataggio nel Logbook;
+- elenco iniziale espandibile con serie e ripetizioni visibili;
 - salvataggio finale tramite il Logbook sicuro già esistente;
 - nessuna immagine decorativa e nessun timer di recupero.
 
