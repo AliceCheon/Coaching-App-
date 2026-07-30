@@ -4,7 +4,7 @@
   if (window.__barbellDivaWorkoutV147Installed) return;
   window.__barbellDivaWorkoutV147Installed = true;
 
-  const VERSION = "147.0";
+  const VERSION = "147.1";
   const originalTrainingHtml = trainingHtml;
   const originalBindScreen = bindScreen;
   let localSaveTimer = 0;
@@ -49,6 +49,7 @@
     const current = active.logs[key] || {};
     current.kg = Array.from({ length: count }, (_, setIndex) => current.kg?.[setIndex] ?? loads[setIndex] ?? "");
     current.reps = Array.from({ length: count }, (_, setIndex) => current.reps?.[setIndex] ?? targets[setIndex] ?? "");
+    current.rpe = Array.from({ length: count }, (_, setIndex) => current.rpe?.[setIndex] ?? "");
     current.rir = Array.from({ length: count }, (_, setIndex) => current.rir?.[setIndex] ?? defaultRir(exercise, setIndex));
     active.logs[key] = current;
     return current;
@@ -135,6 +136,8 @@
     }
     const exercises = session.exercises || [];
     const muscles = uniqueMuscles(session);
+    const previewExpanded = state.training.workoutPreviewExpanded === true;
+    const visibleExercises = previewExpanded ? exercises : exercises.slice(0, 5);
     return `
       <div class="v147-workout v147-pre">
         <header class="v147-title">
@@ -159,10 +162,10 @@
             <div class="v147-muscle-chips">${muscles.map((muscle) => `<span>${escapeHtml(muscle)}</span>`).join("")}</div>
           </div>
           <div class="v147-exercise-preview">
-            ${exercises.slice(0, 5).map((exercise, index) => `
-              <div><b>${index + 1}</b><span>${escapeHtml(displayExerciseName(exercise.name))}</span><small>${escapeHtml(displayLabel(exercise.sets || "--"))} serie</small></div>
+            ${visibleExercises.map((exercise, index) => `
+              <div><b>${index + 1}</b><span>${escapeHtml(displayExerciseName(exercise.name))}</span><small>${escapeHtml(displayLabel(exercise.sets || "--"))} serie · ${escapeHtml(displayLabel(exercise.reps || "--"))} rip</small></div>
             `).join("")}
-            ${exercises.length > 5 ? `<p>+ ${exercises.length - 5} esercizi</p>` : ""}
+            ${exercises.length > 5 ? `<button type="button" class="v147-preview-toggle" data-v147-preview-toggle>${previewExpanded ? "Mostra meno" : `+ ${exercises.length - 5} esercizi`}</button>` : ""}
           </div>
           <div class="v147-preview-footer">
             <span>↺ Dati precedenti pronti · ultimo programma</span>
@@ -244,6 +247,7 @@
     const latestNotes = exerciseNotes(exercise, 2);
     const currentNote = draftNoteFor(context, exercise);
     const paused = active.status === "paused";
+    const nextSetNumber = Math.min(values.length, Number(active.currentSet || 0) + 1);
 
     return `
       <div class="v147-workout v147-active ${paused ? "is-paused" : ""}">
@@ -253,6 +257,7 @@
           <div class="v147-active-title"><span class="section-eyebrow">Workout in corso</span><strong>${escapeHtml(context.session.code)} · Settimana ${context.week}</strong></div>
           <div class="v147-head-actions">
             <button type="button" data-v147-pause>${paused ? "▶ Riprendi" : "Ⅱ Pausa"}</button>
+            <button type="button" class="cancel" data-v147-cancel>↶ Annulla workout</button>
             <button type="button" class="danger" data-v147-finish>■ Termina</button>
           </div>
         </header>
@@ -261,7 +266,7 @@
         <div class="v147-active-grid">
           <main class="v147-execution card">
             <div class="v147-exercise-head">
-              <div><span class="section-eyebrow">Esercizio ${snapshot.exerciseIndex + 1}</span><h2>${escapeHtml(displayExerciseName(exercise.name))}</h2></div>
+              <div><span class="section-eyebrow">Esercizio ${snapshot.exerciseIndex + 1}</span><h2>${escapeHtml(displayExerciseName(exercise.name))}</h2><div class="v147-prescription"><span>${setCountFor(exercise)} serie</span><span>${escapeHtml(displayLabel(exercise.reps || "--"))} ripetizioni</span></div></div>
               <div class="v147-muscle-chips"><span>${escapeHtml(primary)}</span>${secondary.length ? `<span class="secondary">Secondari: ${escapeHtml(secondary.join(", "))}</span>` : ""}</div>
             </div>
 
@@ -271,20 +276,35 @@
             </div>
 
             <div class="v147-set-table" role="table" aria-label="Serie dell'esercizio">
-              <div class="v147-set-header" role="row"><span>SERIE</span><span>KG</span><span>RIPETIZIONI</span><span>RIR</span><span>FATTA</span></div>
+              <div class="v147-set-header" role="row"><span>SERIE</span><span>KG</span><span>RIPETIZIONI</span><span>RPE</span><span>RIR</span><span>FATTA</span></div>
               ${values.map((value, setIndex) => {
                 const done = setIsDone(context, exercise, setIndex, value);
                 const selected = Number(active.currentSet || 0) === setIndex;
+                if (done) {
+                  const summary = [
+                    `${escapeHtml(log.kg[setIndex] || "—")} kg`,
+                    `${escapeHtml(log.reps[setIndex] || "—")} rip`,
+                    `RPE ${escapeHtml(log.rpe[setIndex] || "—")}`,
+                    `RIR ${escapeHtml(log.rir[setIndex] || "—")}`
+                  ].join(" · ");
+                  return `<div class="v147-set-row v147-set-row-closed is-done" role="row" data-v147-set-row="${setIndex}">
+                    <strong>${setIndex + 1}</strong>
+                    <div class="v147-closed-series"><span>✓ Serie completata</span><b>${summary}</b></div>
+                    ${setIndex < values.length - 1 ? `<button type="button" class="v147-copy-set" data-v147-copy-set="${setIndex}" title="Copia questa serie nella successiva" aria-label="Copia serie ${setIndex + 1} nella successiva">⧉</button>` : ""}
+                    <button type="button" class="v147-reopen-set" data-v147-reopen-set="${setIndex}">Modifica</button>
+                  </div>`;
+                }
                 return `<div class="v147-set-row ${done ? "is-done" : ""} ${selected ? "is-selected" : ""}" role="row" data-v147-set-row="${setIndex}">
-                  <strong>${setIndex + 1}</strong>
+                  <div class="v147-set-index"><strong>${setIndex + 1}</strong>${setIndex < values.length - 1 ? `<button type="button" class="v147-copy-set" data-v147-copy-set="${setIndex}" title="Copia questa serie nella successiva" aria-label="Copia serie ${setIndex + 1} nella successiva">⧉</button>` : ""}</div>
                   <input type="text" inputmode="decimal" value="${escapeHtml(log.kg[setIndex] ?? value)}" data-v147-set-field="kg" data-set-index="${setIndex}" aria-label="Kg serie ${setIndex + 1}">
                   <input type="text" inputmode="numeric" value="${escapeHtml(log.reps[setIndex])}" data-v147-set-field="reps" data-set-index="${setIndex}" aria-label="Ripetizioni serie ${setIndex + 1}">
+                  <input type="text" inputmode="decimal" value="${escapeHtml(log.rpe[setIndex])}" data-v147-set-field="rpe" data-set-index="${setIndex}" aria-label="RPE serie ${setIndex + 1}">
                   <input type="text" inputmode="decimal" value="${escapeHtml(log.rir[setIndex])}" data-v147-set-field="rir" data-set-index="${setIndex}" aria-label="RIR serie ${setIndex + 1}">
                   <button type="button" class="v147-set-check ${done ? "is-done" : ""}" data-v147-set-check="${setIndex}" aria-pressed="${done}">${done ? "✓" : ""}</button>
                 </div>`;
               }).join("")}
             </div>
-            <button type="button" class="v147-primary v147-confirm" data-v147-confirm-set>CONFERMA SERIE</button>
+            <button type="button" class="v147-primary v147-confirm" data-v147-confirm-set>CONFERMA SERIE ${nextSetNumber}</button>
           </main>
 
           <aside class="v147-side">
@@ -355,8 +375,8 @@
       const values = draftSetsFor(context, exercise);
       values[setIndex] = input.value;
       state.training.draft[draftKey(context, exercise)] = values;
-      if (!String(input.value || "").trim()) state.training.setDone[setDoneKey(context, exercise, setIndex)] = false;
     }
+    state.training.setDone[setDoneKey(context, exercise, setIndex)] = false;
     document.querySelectorAll("[data-v147-set-row]").forEach((row) => row.classList.toggle("is-selected", Number(row.dataset.v147SetRow) === setIndex));
     scheduleLocalSave();
   }
@@ -371,7 +391,10 @@
     const key = setDoneKey(context, exercise, setIndex);
     const done = forceDone == null ? !setIsDone(context, exercise, setIndex, values[setIndex]) : !!forceDone;
     state.training.setDone[key] = done;
-    active.currentSet = done ? Math.min(values.length - 1, setIndex + 1) : setIndex;
+    if (done) {
+      const nextIncomplete = values.findIndex((value, index) => index > setIndex && !setIsDone(context, exercise, index, value));
+      active.currentSet = nextIncomplete >= 0 ? nextIncomplete : Math.min(values.length - 1, setIndex + 1);
+    } else active.currentSet = setIndex;
     active.updatedAt = new Date().toISOString();
     scheduleLocalSave(true);
     renderTrainingOnly();
@@ -394,6 +417,46 @@
     }
   }
 
+  function copySetToNext(setIndex) {
+    const context = currentTrainingContext();
+    const active = activeSession(context);
+    if (!active) return;
+    const exerciseIndex = Math.max(0, Number(active.currentExercise) || 0);
+    const exercise = context.session.exercises[exerciseIndex];
+    const log = ensureExerciseLog(active, context, exercise, exerciseIndex);
+    const nextIndex = setIndex + 1;
+    if (nextIndex >= log.kg.length) return;
+    ["kg", "reps", "rpe", "rir"].forEach((field) => {
+      log[field][nextIndex] = log[field][setIndex] ?? "";
+    });
+    const values = draftSetsFor(context, exercise);
+    values[nextIndex] = log.kg[nextIndex];
+    state.training.draft[draftKey(context, exercise)] = values;
+    state.training.setDone[setDoneKey(context, exercise, nextIndex)] = false;
+    active.updatedAt = new Date().toISOString();
+    scheduleLocalSave(true);
+    renderTrainingOnly();
+    showToast(`Serie ${setIndex + 1} copiata nella serie ${nextIndex + 1}.`);
+  }
+
+  function cancelWorkout() {
+    const context = currentTrainingContext();
+    const active = activeSession(context);
+    if (!active) return;
+    if (!window.confirm("Annullare questo workout? I dati inseriti in questa sessione verranno eliminati e non finiranno nel Logbook.")) return;
+    (context.session.exercises || []).forEach((exercise) => {
+      delete state.training.draft[draftKey(context, exercise)];
+      delete state.training.noteDraft[draftNoteKey(context, exercise)];
+      Array.from({ length: setCountFor(exercise) }, (_, setIndex) => {
+        delete state.training.setDone[setDoneKey(context, exercise, setIndex)];
+      });
+    });
+    state.training.activeWorkout = null;
+    scheduleLocalSave(true);
+    renderTrainingOnly();
+    showToast("Workout annullato. Nessun dato è stato salvato nel Logbook.");
+  }
+
   function bindWorkout() {
     const root = document.querySelector(".v147-workout");
     const running = !!root?.classList.contains("v147-active");
@@ -402,6 +465,11 @@
     if (!root) return;
 
     root.querySelector("[data-v147-start]")?.addEventListener("click", startWorkout);
+    root.querySelector("[data-v147-preview-toggle]")?.addEventListener("click", () => {
+      state.training.workoutPreviewExpanded = state.training.workoutPreviewExpanded !== true;
+      scheduleLocalSave();
+      renderTrainingOnly();
+    });
     root.querySelectorAll("[data-v147-mode]").forEach((button) => button.addEventListener("click", () => {
       state.training.contextMode = button.dataset.v147Mode;
       state.training.sessionName = button.dataset.v147Mode === "manual" ? (state.training.manualSessionCode || "") : "auto";
@@ -438,6 +506,8 @@
       input.addEventListener("input", () => updateField(input));
     });
     root.querySelectorAll("[data-v147-set-check]").forEach((button) => button.addEventListener("click", () => toggleSet(Number(button.dataset.v147SetCheck))));
+    root.querySelectorAll("[data-v147-copy-set]").forEach((button) => button.addEventListener("click", () => copySetToNext(Number(button.dataset.v147CopySet))));
+    root.querySelectorAll("[data-v147-reopen-set]").forEach((button) => button.addEventListener("click", () => toggleSet(Number(button.dataset.v147ReopenSet), false)));
     root.querySelector("[data-v147-confirm-set]")?.addEventListener("click", () => {
       const active = activeSession();
       if (!active) return;
@@ -483,6 +553,7 @@
       renderTrainingOnly();
       showToast(active.status === "paused" ? "Workout in pausa e salvato." : "Workout ripreso.");
     });
+    root.querySelector("[data-v147-cancel]")?.addEventListener("click", cancelWorkout);
     root.querySelector("[data-v147-finish]")?.addEventListener("click", finishWorkout);
   }
 
@@ -497,8 +568,8 @@
       return log.kg.map((kg, setIndex) => ({
         kg: number(String(kg || "").replace(",", "."), null),
         reps: number(String(log.reps[setIndex] || "").replace(",", "."), null),
+        rpe: number(String(log.rpe[setIndex] || "").replace(",", "."), null),
         rir: number(String(log.rir[setIndex] || "").replace(",", "."), null),
-        rpe: null,
         completed: setIsDone(context, exercise, setIndex, kg)
       })).filter((set) => Number.isFinite(set.kg));
     }
