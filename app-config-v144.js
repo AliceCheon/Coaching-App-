@@ -1,51 +1,18 @@
-import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
-const html = read("index.html");
-const enhancer = read("coach-schede-v146-enhance.js");
-const restyle = read("coach-schede-restyle-v146.css");
-const config = read("app-config-v144.js");
-const manifest = read("manifest.webmanifest");
-const sw = read("service-worker.js");
-const workflow = read(".github/workflows/tests.yml");
-const check = (condition, message) => assert.ok(condition, message);
-
-check(config.includes('build: "v147.1-intensita-persistence"'), "build v147.1 mancante");
-check(config.includes('cache: "atlas-app-v1471-intensita-persistence-fix"'), "cache contrasto v147.1 mancante");
-check(sw.includes('const CACHE_NAME = "atlas-app-v1471-intensita-persistence-fix"'), "service worker contrasto non aggiornato");
-check(sw.includes('"./coach-schede-restyle-v146.css"'), "CSS v146 non precaricato");
-check(sw.includes('"./coach-schede-v146-enhance.js"'), "JS v146 non precaricato");
-check(manifest.includes("index.html?v=v1471"), "manifest contrasto non aggiornato");
-check(html.includes("coach-schede-restyle-v146.css?v=v1461c10"), "CSS senza cache bust contrasto");
-check(html.includes("coach-schede-v146-enhance.js?v=v1461c10"), "JS senza cache bust v146.1");
-
-check(html.includes("window.BarbellDivaV146Bridge={"), "bridge correttivo mancante");
-check(html.includes('openCoachModalLocally("sheet-edit",{sheetId})'), "rinomina locale non collegata");
-check(enhancer.includes("BarbellDivaV146Bridge?.openSheetEdit"), "pennino non usa la modale locale");
-check(enhancer.includes("closeSheetEditReliably") && html.includes("closeModal(){"), "chiusura rinomina affidabile mancante");
-check(enhancer.includes('openExerciseLibrary(sheetId, "circuit")'), "Circuito non apre la libreria in modo sicuro");
-check(!/data-schede-add-circuit[\s\S]{0,1200}setTimeout/.test(enhancer), "Circuito contiene ancora click ritardati");
-check(!/data-schede-add-circuit[\s\S]{0,1200}set-link-button/.test(enhancer), "Circuito modifica ancora i collegamenti esistenti");
-
-check(html.includes("function openCoachExerciseTrendModal"), "Trend esercizio mancante");
-check(html.includes("serie programmate per questo esercizio"), "Trend esercizio non specifico");
-check(html.includes("function openCoachExerciseWeightHistoryModal"), "Storico pesi reale mancante");
-check(html.includes("openExerciseHistory(programId,sheetId,exerciseId)"), "bridge Storico pesi mancante");
-check(html.includes("exerciseMedia(exerciseName)"), "risoluzione media esercizio mancante");
-check(enhancer.includes("BarbellDivaV146Bridge?.exerciseMedia"), "thumbnail non usa la libreria reale");
-
-check(workflow.includes("v1461-corrections.test.mjs"), "test v146.1 non eseguito da GitHub");
-check(restyle.includes('body[data-theme="light"] .schede-v146-duration-pill'), "contrasto durata tema chiaro mancante");
-check(restyle.includes('body[data-theme="light"] .schede-v146-day-footer button'), "contrasto pulsanti footer tema chiaro mancante");
-check(restyle.includes('body[data-theme="light"] .coach-editor-weekly button:disabled'), "contrasto controlli disabilitati tema chiaro mancante");
-
-console.log(JSON.stringify({
-  ok: true,
-  build: "v146.1",
-  checks: 24,
-  corrections: "circuit/trend/media/rename/cache/ci/light-contrast"
-}));
+// Configurazione minima condivisa della build v146.1 con Workout Flow v147.
+(function (root) {
+  root.BarbellDivaV144Config = Object.freeze({
+    build: "v147.1-intensita-persistence",
+    cache: "atlas-app-v1471-intensita-persistence-fix",
+    backupAutomaticLimit: 5,
+    legacyModulesRemoved: ["nutrizione", "workout-pro"],
+    firebase: Object.freeze({
+      apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
+      authDomain: "barbell-diva.firebaseapp.com",
+      projectId: "barbell-diva",
+      storageBucket: "barbell-diva.firebasestorage.app",
+      messagingSenderId: "411536425865",
+      appId: "1:411536425865:web:17bcd9f10b6ba1a9b49758",
+      measurementId: "G-FNKXLKQFT8"
+    })
+  });
+})(typeof window !== "undefined" ? window : globalThis);

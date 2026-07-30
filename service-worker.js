@@ -1,11 +1,72 @@
-# Barbell Diva v146.1c9
+const CACHE_NAME = "atlas-app-v1471-intensita-persistence-fix";
+const APP_SHELL = [
+  "./",
+  "./index.html",
+  "./manifest.webmanifest",
+  "./app-icon.png",
+  "./app-icon-192.png",
+  "./app-icon-512.png",
+  "./apple-touch-icon.png",
+  "./coach-mascot.svg",
+  "./atlas-nunito-sans.ttf",
+  "./coach-studio.css",
+  "./coach-program-editor-19.8.css",
+  "./coach-tools-v1451.css",
+  "./unified-sidebar-v1452.css",
+  "./coach-schede-restyle-v146.css",
+  "./workout-flow-v147.css",
+  "./exercise-library-19.8.js",
+  "./master-exercise-library.js",
+  "./athlete-context.js",
+  "./coach-ai-engine-2.js",
+  "./knowledge-graph.js",
+  "./decision-rules.js",
+  "./decision-engine.js",
+  "./coach-ai3-programming.js",
+  "./coach-studio.js",
+  "./sync-reliability.js",
+  "./programming-engine.js",
+  "./app-config-v144.js",
+  "./coach-schede-v146-enhance.js",
+  "./workout-flow-v147.js"
+];
 
-Correzione mirata dell'editor Coach:
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.all(APP_SHELL.map((url) => cache.add(url).catch(() => null)))
+    )
+  );
+  self.skipWaiting();
+});
 
-- nascondere Peso o un'altra colonna non sposta più i valori successivi;
-- ogni colonna nascosta conserva un binario stretto nella griglia;
-- il contenuto della colonna viene nascosto senza rimuovere la cella;
-- intestazioni, campi e azioni restano perfettamente allineati;
-- cache PWA aggiornata a `atlas-app-v1461c9`.
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
+    )
+  );
+  self.clients.claim();
+});
 
-Caricare su GitHub il contenuto della cartella, mantenendo `index.html` nella radice.
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+  const isHtml = event.request.mode === "navigate" || event.request.destination === "document" || new URL(event.request.url).pathname.endsWith(".html");
+  if (isHtml) {
+    event.respondWith(
+      fetch(event.request, { cache: "no-store" }).then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        return response;
+      }).catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html")))
+    );
+    return;
+  }
+  event.respondWith(
+    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
+      const copy = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+      return response;
+    }))
+  );
+});
