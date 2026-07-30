@@ -1,13 +1,28 @@
-# Barbell Diva v146.1c8
+# Barbell Diva v145 — GitHub Safe
 
-Build correttiva dedicata all'editor Coach.
+Build derivata dalla v144 stabile e verificata prima della pubblicazione.
 
-- La matita accanto al nome apre la scheda tecnica completa dell'esercizio.
-- Il salvataggio mostra una conferma e chiude la finestra di modifica.
-- Le colonne Tipo, Serie, Rip/tempo, Recupero, Peso, RPE, RIR, SOM e Note possono essere nascoste e ripristinate.
-- TUT è stato sostituito da SOM, modificabile in una finestra ampia.
-- Il SOM viene applicato allo stesso modo a tutte le settimane.
-- Nel Workout del giorno compaiono separatamente SOM e Note scheda.
-- Cache PWA aggiornata a `atlas-app-v1461c8`.
+## Cosa conserva
 
-Caricare su GitHub il contenuto della cartella, non la cartella contenitore.
+- menu Coach Studio essenziale;
+- Anteprima atleta laterale con chiusura locale veloce;
+- Statistiche in finestra grande con muscoli selezionabili;
+- una sola Diva Bot;
+- sincronizzazione affidabile Firebase già presente;
+- compatibilità con i dati e i backup della v144.
+
+## Cosa è stato escluso
+
+- auto-sync verso `/api/coach/state`, incompatibile con GitHub Pages;
+- sezioni laterali non richieste;
+- observer e animazioni globali che potevano rallentare l'editor;
+- cache di sviluppo e file temporanei.
+
+## Pubblicazione
+
+Caricare nella radice del repository il contenuto di questa cartella, mantenendo
+anche i file `.nojekyll` e `_config.yml`.
+
+La cartella `tests` include anche `v145-release-guard.test.mjs`, che impedisce
+di reintrodurre menu indesiderati, statistiche non interattive, chiusura lenta
+dell'Anteprima atleta o sincronizzazioni incompatibili con GitHub Pages.

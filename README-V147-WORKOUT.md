@@ -1,31 +1,13 @@
-# Barbell Diva v147 - Workout Flow
+# Barbell Diva v146.1c8
 
-Questa cartella deriva dalla build stabile `146.1c10` e modifica solo la zona
-Workout del giorno.
+Build correttiva dedicata all'editor Coach.
 
-## Nuovo flusso
+- La matita accanto al nome apre la scheda tecnica completa dell'esercizio.
+- Il salvataggio mostra una conferma e chiude la finestra di modifica.
+- Le colonne Tipo, Serie, Rip/tempo, Recupero, Peso, RPE, RIR, SOM e Note possono essere nascoste e ripristinate.
+- TUT è stato sostituito da SOM, modificabile in una finestra ampia.
+- Il SOM viene applicato allo stesso modo a tutte le settimane.
+- Nel Workout del giorno compaiono separatamente SOM e Note scheda.
+- Cache PWA aggiornata a `atlas-app-v1461c8`.
 
-- schermata leggera di anteprima prima dell'avvio;
-- selezione automatica o manuale di fase, settimana e scheda;
-- workout attivo con un esercizio alla volta;
-- scaletta completa apribile e navigabile;
-- inserimento reale di kg, ripetizioni e RIR per ogni serie;
-- inserimento di RPE prima del RIR;
-- copia rapida di una serie nella successiva;
-- conferma che chiude la serie completata e passa alla seguente;
-- SOM e Nota Coach separati e sempre visibili;
-- storico dall'ultima seduta o dall'ultimo programma;
-- note personali consultabili e modificabili;
-- pausa e ripristino dopo ricarica o chiusura;
-- annullamento del workout senza salvataggio nel Logbook;
-- elenco iniziale espandibile con serie e ripetizioni visibili;
-- salvataggio finale tramite il Logbook sicuro già esistente;
-- nessuna immagine decorativa e nessun timer di recupero.
-
-## File aggiunti
-
-- `workout-flow-v147.js`
-- `workout-flow-v147.css`
-- `tests/v147-workout-flow.test.mjs`
-
-La Coach Zone e tutte le correzioni della 146.1c10 rimangono invariate.
+Caricare su GitHub il contenuto della cartella, non la cartella contenitore.

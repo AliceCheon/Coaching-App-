@@ -1,40 +1,36 @@
-name: Tests
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+const html = read("index.html");
+const enhancer = read("coach-schede-v146-enhance.js");
+const css = read("coach-schede-restyle-v146.css");
+const check = (condition, message) => assert.ok(condition, message);
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-    
-    - name: Run v144 core tests
-      run: node tests/v144-core.test.mjs
+check(html.includes('data-exercise-name-edit data-sheet-id='), "matita esercizio senza riferimenti");
+check(html.includes('openCoachModalLocally("exercise-details"'), "matita non apre la scheda tecnica");
+check(html.includes("✓ Esercizio salvato. La scheda tecnica è stata chiusa."), "conferma salvataggio scheda tecnica mancante");
+check(html.includes("✓ Profilo tecnico salvato e finestra chiusa."), "profilo Libreria non si chiude dopo il salvataggio");
 
-    - name: Run Coach rebuild tests
-      run: node tests/coach-v144-rebuild.test.mjs
+check(html.includes("COACH_HIDEABLE_COLUMNS"), "configurazione colonne nascondibili mancante");
+check(html.includes("data-coach-column-toggle"), "frecce colonne mancanti");
+check(html.includes("toggleCoachProgramColumn"), "toggle colonne non collegato");
+check(css.includes(".coach-hide-col-type") && css.includes(".coach-hide-col-som"), "stili colonne nascoste incompleti");
+check(css.includes('td[data-coach-col="load"]'), "peso non nascondibile");
 
-    - name: Run v145 release guard
-      run: node tests/v145-release-guard.test.mjs
+check(html.includes('data-label="SOM"') && html.includes("data-inline-som-open"), "TUT non sostituito dal SOM espandibile");
+check(html.includes('type === "exercise-som"'), "modale SOM mancante");
+check(html.includes('inlineExercisePatch(exercise,"som"'), "salvataggio SOM globale mancante");
+check(html.includes("coachExerciseSom(exercise)"), "SOM settimana 1 non condiviso");
+check(html.includes("<strong>SOM</strong>") && html.includes("<strong>Note scheda</strong>"), "SOM e note non arrivano insieme nel workout");
+check(enhancer.includes('t === "tut" || t === "som"'), "compatibilità TUT/SOM non mantenuta");
 
-    - name: Run v145.1 Coach tools tests
-      run: node tests/v1451-coach-tools.test.mjs
-
-    - name: Run v145.2 unified sidebar tests
-      run: node tests/v1452-unified-sidebar.test.mjs
-
-    - name: Run v146.1 corrective tests
-      run: node tests/v1461-corrections.test.mjs
-
-    - name: Run v146.1 Coach UX tests
-      run: node tests/v1461-coach-ux.test.mjs
+console.log(JSON.stringify({
+  ok: true,
+  build: "v146.1c8",
+  checks: 15,
+  fixes: "exercise-editor/save-feedback/hide-columns/som/workout"
+}));

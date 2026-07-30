@@ -1,36 +1,34 @@
-exclude:
-  - CHANGELOG-COACH-REBUILD.md
-  - CHANGELOG-PHASE19.1.md
-  - CHANGELOG-PHASE19.2.md
-  - CHANGELOG-PHASE19.md
-  - CHANGELOG-PHASE20A.md
-  - CHANGELOG-V144.md
-  - COACH-VIDEO-MAP.md
-  - COACH-VIDEO-STRUCTURE-REPORT.md
-  - DATA_SCHEMA_V5.md
-  - DIFFERENCES-PHASE19.1.md
-  - FIREBASE-LOGIN.md
-  - FUNCTIONS-PHASE20A.md
-  - LIMITS-PHASE20A.md
-  - MIGRATIONS.md
-  - MODIFICHE-V144.md
-  - MODULARIZATION_PLAN.md
-  - PERFORMANCE-AUDIT-COACH-v144-PHASE1.md
-  - PHASE24-COACH-AI3-REPORT.md
-  - PROGRESSIONS-PHASE20A.md
-  - PULIZIA-CODEX-INVENTARIO.md
-  - README (1).md
-  - README-COACH-REBUILD.md
-  - README-PHASE19.1.md
-  - README-PHASE19.md
-  - README-PHASE20A.md
-  - README-V144.md
-  - README-versione-143.md
-  - README.md
-  - TEST-REPORT-COACH-REBUILD.md
-  - TEST-REPORT-PHASE19.1.md
-  - TEST-REPORT-PHASE19.2.md
-  - TEST-REPORT-PHASE19.md
-  - TEST-REPORT-PHASE20A.md
-  - TEST-REPORT-V144.md
-  - nutrizione/README.md
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const css = fs.readFileSync(path.join(root, "coach-tools-v1451.css"), "utf8");
+const sw = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
+const check = (condition, message) => assert.ok(condition, message);
+
+for (const marker of [
+  "coachProgramToolsToolbarHtml",
+  "openCoachWeekCopyModal",
+  "copyCoachProgramWeek",
+  "undoCoachProgramWeekCopy",
+  "openCoachWeekCompareModal",
+  "openCoachWeekTrendModal",
+  "data-coach-week-copy",
+  "data-coach-week-compare",
+  "data-coach-week-trend",
+  "weekCopyUndo"
+]) check(html.includes(marker), `strumento Coach mancante: ${marker}`);
+
+check(html.includes('class="coach-exercise-name-text" data-inline-replace='), "il nome esercizio non apre la sostituzione");
+check(html.includes("coach-tools-v1451.css?v=v1451-contrast"), "foglio stile strumenti non caricato");
+check(sw.includes('"./coach-tools-v1451.css"'), "foglio stile strumenti non precaricato");
+check(css.includes("@media (prefers-reduced-motion: reduce)"), "manca la riduzione animazioni");
+check(css.includes("color: var(--text, #2a1638)"), "contrasto testo strumenti non collegato al tema");
+check(css.includes("color: var(--muted, #725f80)"), "contrasto testo secondario non collegato al tema");
+check(!html.includes('class="athlete-context-strip program-context-summary"'), "riepilogo atleta superfluo ancora presente nell'editor");
+check(!html.includes("/api/coach/state"), "sync esterno incompatibile reintrodotto");
+
+console.log(JSON.stringify({ok:true,build:"v146.1",checks:18,features:"copy/undo/compare/trend/replace/contrast"}));

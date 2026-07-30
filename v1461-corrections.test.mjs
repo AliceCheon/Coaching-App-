@@ -1,34 +1,26 @@
-import assert from "node:assert/strict";
 import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
-const css = fs.readFileSync(path.join(root, "coach-tools-v1451.css"), "utf8");
-const sw = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
-const check = (condition, message) => assert.ok(condition, message);
+const css = fs.readFileSync("coach-schede-restyle-v146.css", "utf8");
+const html = fs.readFileSync("index.html", "utf8");
+const sw = fs.readFileSync("service-worker.js", "utf8");
 
-for (const marker of [
-  "coachProgramToolsToolbarHtml",
-  "openCoachWeekCopyModal",
-  "copyCoachProgramWeek",
-  "undoCoachProgramWeekCopy",
-  "openCoachWeekCompareModal",
-  "openCoachWeekTrendModal",
-  "data-coach-week-copy",
-  "data-coach-week-compare",
-  "data-coach-week-trend",
-  "weekCopyUndo"
-]) check(html.includes(marker), `strumento Coach mancante: ${marker}`);
+const checks = [
+  [css.includes('td[data-coach-col="load"]'), "selettore colonna Peso mancante"],
+  [css.includes("visibility: hidden !important"), "contenuto colonna nascosta ancora visibile"],
+  [css.includes("pointer-events: none !important"), "controlli della colonna nascosta ancora attivi"],
+  [css.includes("visibility: hidden !important"), "binario colonna nascosta non mantenuto"],
+  [!css.match(/td\[data-coach-col="load"\][\s\S]{0,500}display:\s*none\s*!important/), "la cella Peso viene ancora rimossa dalla griglia"],
+  [/coach-schede-restyle-v146\.css\?v=v1461c\d+/.test(html), "cache bust CSS correttivo mancante"],
+  [/const CACHE_NAME = "atlas-app-v14\d[\w.-]*"/.test(sw), "cache PWA correttiva mancante"]
+];
 
-check(html.includes('class="coach-exercise-name-text" data-inline-replace='), "il nome esercizio non apre la sostituzione");
-check(html.includes("coach-tools-v1451.css?v=v1451-contrast"), "foglio stile strumenti non caricato");
-check(sw.includes('"./coach-tools-v1451.css"'), "foglio stile strumenti non precaricato");
-check(css.includes("@media (prefers-reduced-motion: reduce)"), "manca la riduzione animazioni");
-check(css.includes("color: var(--text, #2a1638)"), "contrasto testo strumenti non collegato al tema");
-check(css.includes("color: var(--muted, #725f80)"), "contrasto testo secondario non collegato al tema");
-check(!html.includes('class="athlete-context-strip program-context-summary"'), "riepilogo atleta superfluo ancora presente nell'editor");
-check(!html.includes("/api/coach/state"), "sync esterno incompatibile reintrodotto");
+for (const [passed, message] of checks) {
+  if (!passed) throw new Error(message);
+}
 
-console.log(JSON.stringify({ok:true,build:"v146.1",checks:18,features:"copy/undo/compare/trend/replace/contrast"}));
+console.log(JSON.stringify({
+  ok: true,
+  build: "v146.1c9",
+  checks: checks.length,
+  fix: "hidden columns preserve table geometry"
+}));
