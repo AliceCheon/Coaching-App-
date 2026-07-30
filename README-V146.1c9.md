@@ -1,18 +1,11 @@
-# Barbell Diva v145.2 — navigazione unificata
+# Barbell Diva v146.1c9
 
-Build pronta per GitHub Pages.
+Correzione mirata dell'editor Coach:
 
-## Novità
+- nascondere Peso o un'altra colonna non sposta più i valori successivi;
+- ogni colonna nascosta conserva un binario stretto nella griglia;
+- il contenuto della colonna viene nascosto senza rimuovere la cella;
+- intestazioni, campi e azioni restano perfettamente allineati;
+- cache PWA aggiornata a `atlas-app-v1461c9`.
 
-- un'unica barra laterale Barbell Diva;
-- `Allenamento` della vecchia app rinominato `Workout del giorno`;
-- sezione `Allenamento` espandibile con Programmi, Progressioni, Libreria esercizi e Coach AI;
-- rimossa la seconda barra Coach Studio;
-- entrando nell'editor programma la barra si riduce automaticamente;
-- la freccia laterale riapre la barra senza ricaricare l'editor;
-- rimossa la voce `Sostituisci` dal menu Azioni;
-- la sostituzione resta disponibile cliccando direttamente sul nome dell'esercizio.
-
-La palette usa i rosa, viola e lavanda già presenti in Barbell Diva.
-
-Per controllare l'aggiornamento pubblicato aprire il sito con `?v=v1452`.
+Caricare su GitHub il contenuto della cartella, mantenendo `index.html` nella radice.
