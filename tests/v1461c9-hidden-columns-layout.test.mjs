@@ -11,7 +11,7 @@ const checks = [
   [css.includes("visibility: hidden !important"), "binario colonna nascosta non mantenuto"],
   [!css.match(/td\[data-coach-col="load"\][\s\S]{0,500}display:\s*none\s*!important/), "la cella Peso viene ancora rimossa dalla griglia"],
   [/coach-schede-restyle-v146\.css\?v=v1461c\d+/.test(html), "cache bust CSS correttivo mancante"],
-  [/const CACHE_NAME = "atlas-app-v14\d[\w.-]*"/.test(sw), "cache PWA correttiva mancante"]
+  [/const CACHE_NAME = "atlas-app-v1461c\d+"/.test(sw), "cache PWA correttiva mancante"]
 ];
 
 for (const [passed, message] of checks) {
