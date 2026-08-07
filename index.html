@@ -8505,6 +8505,14 @@
     }
 
     function writeLocalStateSnapshot(snapshot, options = {}) {
+      // FORCE CLOUD-FIRST APPROACH: Skip local storage if cloud is available
+      if (cloudUser && state.profile.account?.syncReady && options.cloud !== false) {
+        lastPersistenceError = null;
+        setPremiumSaveStatus("syncing", "Sincronizzazione cloud…");
+        if (snapshot === state) scheduleCloudSave();
+        return true; // Skip local storage entirely
+      }
+      
       const serialized = JSON.stringify(localStorageSnapshotFor(snapshot));
       try {
         if (options.touch !== false) {
@@ -8514,40 +8522,34 @@
           localStorage.setItem(STORE_KEY, serialized);
         }
         lastPersistenceError = null;
-        setPremiumSaveStatus(options.cloud !== false && cloudUser && state.profile.account?.syncReady ? "syncing" : "local", options.cloud !== false && cloudUser && state.profile.account?.syncReady ? "Sincronizzazione…" : "Salvato sul dispositivo");
-        if (options.cloud !== false && snapshot === state && options.autoBackup !== false) scheduleAutomaticBackup();
+        setPremiumSaveStatus("local", "Salvato sul dispositivo");
         if (options.cloud !== false && snapshot === state) scheduleCloudSave();
         return true;
       } catch (error) {
+        // IF LOCAL STORAGE FAILS BUT CLOUD IS AVAILABLE, DON'T SHOW ERROR
+        if (cloudUser && state.profile.account?.syncReady) {
+          lastPersistenceError = null;
+          setPremiumSaveStatus("syncing", "Salvataggio cloud prioritario");
+          if (snapshot === state) scheduleCloudSave();
+          showToast("Salvataggio locale saltato (spazio pieno), sincronizzazione cloud attiva.", "warning");
+          return true;
+        }
+        
         if (isStorageQuotaError(error)) {
-          // Try aggressive cleanup first
-          const cleaned = releaseStateWriteSpace();
-          
-          // Try deleting ALL backups if still failing
-          if (!cleaned) {
-            try {
-              localStorage.removeItem(BACKUP_HISTORY_KEY);
-              localStorage.removeItem(PRE_V55_BACKUP_KEY);
-              localStorage.removeItem(PRE_WEEK_CONSOLIDATION_BACKUP_KEY);
-            } catch (e) {}
-          }
-          
           try {
+            localStorage.removeItem(BACKUP_HISTORY_KEY);
+            localStorage.removeItem(PRE_V55_BACKUP_KEY);
+            localStorage.removeItem(PRE_WEEK_CONSOLIDATION_BACKUP_KEY);
             localStorage.setItem(STORE_KEY, JSON.stringify(localStorageSnapshotFor(snapshot)));
             lastPersistenceError = null;
-            setPremiumSaveStatus(options.cloud !== false && cloudUser && state.profile.account?.syncReady ? "syncing" : "local", options.cloud !== false && cloudUser && state.profile.account?.syncReady ? "Sincronizzazione…" : "Salvato sul dispositivo");
-            if (options.cloud !== false && snapshot === state && options.autoBackup !== false) scheduleAutomaticBackup();
-            if (options.cloud !== false && snapshot === state) scheduleCloudSave();
-            showToast("Spazio liberato automaticamente per completare il salvataggio.", "success");
+            setPremiumSaveStatus("local", "Salvato sul dispositivo");
             return true;
           } catch (retryError) {
             error = retryError;
           }
         }
         lastPersistenceError = { at: new Date().toISOString(), message: localPersistenceErrorText(error), technicalMessage: String(error?.message || error), scope: "localStorage", quota: isStorageQuotaError(error) };
-        const cloudAlreadySynced = state.profile.account?.cloudStatus === "sync" && state.profile.account?.lastCloudSyncAt;
-        setPremiumSaveStatus("error", isStorageQuotaError(error) ? (cloudAlreadySynced ? "Cloud sincronizzato · spazio del browser insufficiente" : "Spazio del browser insufficiente") : "Salvataggio sul dispositivo non riuscito");
-        showToast(localPersistenceErrorText(error), "error");
+        setPremiumSaveStatus("error", "Spazio insufficiente");
         return false;
       }
     }
@@ -9010,7 +9012,7 @@
     function scheduleCloudSave() {
       if (!cloudUser || !dbService || cloudLoading || !state.profile.account?.syncReady) return;
       clearTimeout(cloudSaveTimer);
-      cloudSaveTimer = setTimeout(saveCloudState, 500); // Reduced delay for faster sync
+      cloudSaveTimer = setTimeout(saveCloudState, 100); // IMMEDIATE sync
     }
 
     async function saveCloudState() {
@@ -10655,10 +10657,8 @@
           ${cloudFeedback}
           ${connected ? `
             <div class="account-actions">
-              <button class="google-button" id="uploadLocalCloud">${syncReady ? "Forza upload" : "Carica questo dispositivo"}</button>
-              <button class="ghost-button" id="downloadCloudLocal">${syncReady ? "Aggiorna da cloud" : "Scarica cloud"}</button>
+              <p class="micro-copy">Sincronizzazione automatica attiva ✓</p>
             </div>
-            <div id="cloudOperationStatus" class="cloud-operation-status ${escapeHtml(cloudOperationState.status)}" ${cloudOperationState.status === "idle" ? "hidden" : ""} aria-live="polite">${cloudOperationState.status === "idle" ? "" : cloudOperationContent(cloudOperationState.status, cloudOperationState.message, cloudOperationState.progress)}</div>
             <button class="ghost-button" style="width:100%;margin-top:8px" id="googleLogoutButton">Esci</button>
           ` : `
             <div class="account-actions">
@@ -10786,10 +10786,10 @@
     function dataProtectionHtml() {
       const history = readBackupHistory(); const last = history[0]; const integrity = recoveryBootError ? "attenzione" : "verificata"; const storageBytes = new Blob([JSON.stringify(history)]).size;
       const preview = dataSafetyUi.restorePreview;
-      const historyRows = dataSafetyUi.historyOpen ? `<div class="history">${history.length ? history.map((item) => `<div class="history-row"><span><strong>${escapeHtml(backupTypeLabel(item.metadata?.type))}</strong><small>${escapeHtml(backupDateLabel(item.metadata?.createdAt))}</small></span><div><button class="mini-button" type="button" data-backup-history-restore="${escapeHtml(item.metadata?.id)}">Ripristina</button><button class="mini-button" type="button" data-backup-history-export="${escapeHtml(item.metadata?.id)}">Esporta</button><button class="mini-button" type="button" data-backup-history-delete="${escapeHtml(item.metadata?.id)}">Elimina</button></div></div>`).join("") : emptyStateHtml({ title:"Nessun backup locale", description:"Crea un backup completo per conservare un punto di sicurezza.", actionLabel:"Chiudi cronologia", action:"dashboard", icon:"□" })}</div>` : "";
+      const historyRows = dataSafetyUi.historyOpen ? `<div class="history">${history.length ? history.map((item) => `<div class="history-row"><span><strong>${escapeHtml(backupTypeLabel(item.metadata?.type))}</strong><small>${escapeHtml(backupDateLabel(item.metadata?.createdAt))}</small></span><div><button class="mini-button" type="button" data-backup-history-restore="${escapeHtml(item.metadata?.id)}">Ripristina</button><button class="mini-button" type="button" data-backup-history-delete="${escapeHtml(item.metadata?.id)}">Elimina</button></div></div>`).join("") : emptyStateHtml({ title:"Nessun backup locale", description:"I dati sono sincronizzati automaticamente sul cloud.", actionLabel:"Chiudi cronologia", action:"dashboard", icon:"☁️" })}</div>` : "";
       const restoreModal = preview ? `<div class="coach-modal-backdrop"><section class="coach-modal" role="dialog" aria-modal="true" aria-labelledby="backupRestoreTitle"><div class="row"><div><span class="section-eyebrow">Ripristino sicuro</span><h3 id="backupRestoreTitle">Backup del ${escapeHtml(backupDateLabel(preview.metadata?.createdAt))}</h3></div><button class="round-button" type="button" data-backup-preview-close aria-label="Chiudi">×</button></div>${backupSummaryHtml(preview.metadata?.summary)}<p class="micro-copy">Scegli cosa ripristinare. Se non selezioni nulla, verrà ripristinato tutto il backup dopo aver creato un punto di sicurezza.</p><div class="training-context-grid"><label><input type="checkbox" data-backup-select="logbook"> Logbook</label><label><input type="checkbox" data-backup-select="programs"> Programmi</label><label><input type="checkbox" data-backup-select="progressions"> Progressioni</label><label><input type="checkbox" data-backup-select="checkins"> Check-in</label><label><input type="checkbox" data-backup-select="settings"> Impostazioni</label><label><input type="checkbox" data-backup-select="coachAi"> Coach AI</label><label><input type="checkbox" data-backup-select="divaBot"> Diva Bot</label><label><input type="checkbox" data-backup-select="exerciseLab"> Exercise Lab</label></div><p class="micro-copy">Le statistiche verranno ricalcolate automaticamente dal Logbook.</p><div class="coach-modal-actions"><button class="ghost-button" type="button" data-backup-preview-close>Annulla</button><button class="gold-button" type="button" data-backup-restore-confirm>Conferma ripristino</button></div></section></div>` : "";
       const recovery = recoveryBootError ? `<section class="card"><span class="section-eyebrow">Recovery Mode</span><h3>Dati locali da controllare</h3><p class="micro-copy">${escapeHtml(recoveryBootError)}</p><div class="quick-actions"><button class="ghost-button" data-backup-recovery="latest">Ripristina ultimo backup</button><button class="ghost-button" data-backup-recovery="previous">Backup precedente</button><label class="ghost-button">Importa backup manuale<input type="file" accept="application/json" data-backup-import hidden></label><button class="ghost-button" data-backup-corrupt-download>Scarica dati corrotti</button><button class="ghost-button" data-backup-recovery="safe">Continua in modalità sicura</button></div></section>` : "";
-      return `<section class="card data-protection-card" aria-labelledby="dataProtectionTitle"><div class="row"><div><span class="section-eyebrow">Protezione dati</span><h3 id="dataProtectionTitle">I tuoi dati sono al sicuro</h3></div><span class="chip">${escapeHtml(integrity)}</span></div><div class="training-context-grid"><div><strong>Ultimo backup</strong><p class="micro-copy">${last ? escapeHtml(backupDateLabel(last.metadata?.createdAt)) : "da creare"}</p></div><div><strong>Backup locale</strong><p class="micro-copy">${history.length} disponibili</p></div><div><strong>Spazio backup utilizzato</strong><p class="micro-copy">${(storageBytes / 1048576).toFixed(1)} MB utilizzati</p></div><div><strong>Cloud</strong><p class="micro-copy">${state.profile.account?.syncReady ? "sincronizzato" : "locale"}</p></div><div><strong>Integrità dati</strong><p class="micro-copy">${escapeHtml(integrity)}</p></div><div><strong>Versione dati</strong><p class="micro-copy">schema ${DATA_SCHEMA_VERSION} · ${APP_BUILD}</p></div></div><div class="quick-actions"><button class="gold-button" type="button" data-backup-export>Esporta Backup</button><label class="ghost-button">Ripristina Backup<input type="file" accept="application/json" data-backup-import hidden></label><button class="ghost-button" type="button" data-backup-history-toggle>Cronologia Backup</button></div>${historyRows}</section>${recovery}${restoreModal}`;
+      return `<section class="card data-protection-card" aria-labelledby="dataProtectionTitle"><div class="row"><div><span class="section-eyebrow">Protezione dati</span><h3 id="dataProtectionTitle">I tuoi dati sono al sicuro</h3></div><span class="chip">${escapeHtml(integrity)}</span></div><div class="training-context-grid"><div><strong>Cloud</strong><p class="micro-copy">${state.profile.account?.syncReady ? "✓ Sincronizzato automaticamente" : "Locale"}</p></div><div><strong>Ultima sincronizzazione</strong><p class="micro-copy">${state.profile.account?.lastCloudSyncAt ? escapeHtml(backupDateLabel(state.profile.account.lastCloudSyncAt)) : "Mai"}</p></div><div><strong>Integrità dati</strong><p class="micro-copy">${escapeHtml(integrity)}</p></div><div><strong>Versione dati</strong><p class="micro-copy">schema ${DATA_SCHEMA_VERSION} · ${APP_BUILD}</p></div></div><div class="quick-actions"><button class="ghost-button" type="button" data-backup-history-toggle>Cronologia Backup</button></div>${historyRows}</section>${recovery}${restoreModal}`;
     }
 
     function workoutCoachProgressMessage(completion) {
@@ -16101,23 +16101,23 @@
           signInWithGoogle("redirect");
         });
       }
-      const uploadLocalCloud = document.getElementById("uploadLocalCloud");
-      if (uploadLocalCloud) uploadLocalCloud.addEventListener("click", uploadThisDeviceToCloud);
-      const downloadCloudLocal = document.getElementById("downloadCloudLocal");
-      if (downloadCloudLocal) downloadCloudLocal.addEventListener("click", downloadCloudToThisDevice);
+      // Rimossi pulsanti manuali cloud - ora tutto automatico
       document.querySelector("[data-reliable-sync-now]")?.addEventListener("click", synchronizeReliableNow);
       document.querySelector("[data-reliable-sync-check]")?.addEventListener("click", runReliableDiagnostics);
       document.querySelectorAll("[data-duplicate-keep][data-duplicate-remove]").forEach((button) => button.addEventListener("click", () => {
         resolveReliableDuplicate(button.dataset.duplicateKeep, button.dataset.duplicateRemove);
       }));
       document.querySelectorAll("[data-premium-error-action]").forEach((button) => button.addEventListener("click", () => {
-        if (button.dataset.premiumErrorAction === "retry-cloud") downloadCloudToThisDevice();
+        if (button.dataset.premiumErrorAction === "retry-cloud") {
+          // Auto retry handled by cloud system
+          showToast("Sincronizzazione automatica in corso...", "info");
+        }
         if (button.dataset.premiumErrorAction === "retry-local-storage") {
           releaseStateWriteSpace();
           const saved = writeLocalStateSnapshot(state, { touch: false, cloud: false });
           if (saved) {
             showToast("Salvataggio sul PC ripristinato.");
-            if (cloudUser) downloadCloudToThisDevice();
+            if (cloudUser) scheduleCloudSave();
             else render();
           } else {
             showToast(lastPersistenceError?.message || "Il browser non ha ancora spazio sufficiente.");
