@@ -14,13 +14,9 @@ const sw = read("service-worker.js");
 const workflow = read(".github/workflows/tests.yml");
 const check = (condition, message) => assert.ok(condition, message);
 
-const buildMatch = config.match(/build:\s*"([^"]+)"/);
-const cacheMatch = config.match(/cache:\s*"([^"]+)"/);
-const currentBuild = buildMatch?.[1] || "";
-const currentCache = cacheMatch?.[1] || "";
-check(!!currentBuild, "build non leggibile in app-config-v144.js");
-check(!!currentCache, "cache non leggibile in app-config-v144.js");
-check(sw.includes(`const CACHE_NAME = "${currentCache}"`), "service worker non allineato alla cache corrente");
+check(config.includes('build: "v146.1"'), "build v146.1 mancante");
+check(config.includes('cache: "atlas-app-v1461c10"'), "cache contrasto v146.1 mancante");
+check(sw.includes('const CACHE_NAME = "atlas-app-v1461c10"'), "service worker contrasto non aggiornato");
 check(sw.includes('"./coach-schede-restyle-v146.css"'), "CSS v146 non precaricato");
 check(sw.includes('"./coach-schede-v146-enhance.js"'), "JS v146 non precaricato");
 check(manifest.includes("index.html?v=v1461c10"), "manifest contrasto non aggiornato");
@@ -49,7 +45,7 @@ check(restyle.includes('body[data-theme="light"] .coach-editor-weekly button:dis
 
 console.log(JSON.stringify({
   ok: true,
-  build: currentBuild,
+  build: "v146.1",
   checks: 24,
   corrections: "circuit/trend/media/rename/cache/ci/light-contrast"
 }));
