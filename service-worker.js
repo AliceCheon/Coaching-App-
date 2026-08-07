@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v1472-fast-boot";
+const CACHE_NAME = "atlas-app-v1473-workout-perf";
 const APP_SHELL = [
   "./",
   "./index.html",

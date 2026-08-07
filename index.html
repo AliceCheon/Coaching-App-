@@ -8838,15 +8838,14 @@
         saveState({ cloud: false });
         render();
         if (user && state.profile.account.syncReady) {
-          loadCloudState({ silent: true }).then((loaded) => {
-            saveState({ cloud: false });
-            render();
-            if (loaded) {
-              startCloudStateRealtime();
-              startReliableSessionsRealtime();
-              scheduleReliableSync(100);
-            }
-          });
+          // Avvio subito gli ascoltatori realtime e la coda delle sedute: non devono dipendere
+          // dal successo del primo download completo, altrimenti un solo timeout di rete
+          // (frequente su mobile, col documento di stato che può essere pesante) blocca tutta
+          // la sincronizzazione automatica finché non tocchi manualmente un pulsante.
+          startCloudStateRealtime();
+          startReliableSessionsRealtime();
+          scheduleReliableSync(100);
+          retryCloudBootLoad();
         } else {
           stopCloudStateRealtime();
           stopReliableSessionsRealtime();
@@ -8984,6 +8983,10 @@
       });
       const { programs: currentPrograms = [], ...stateWithoutPrograms } = state;
       const payload = clone(stateWithoutPrograms);
+      // Le sedute vivono già, in modo affidabile, nella sottoraccolta "sessions" (reliableSessionsCollection).
+      // Tenerle anche qui duplicava tutto lo storico allenamenti dentro al documento principale,
+      // facendolo crescere ad ogni allenamento e rallentando/facendo scadere il download su rete mobile.
+      if (payload.training) payload.training = { ...payload.training, sessions: [] };
       let rootStateSaved = false;
       try {
         const cloudUpdatedAt = new Date().toISOString();
@@ -9081,6 +9084,17 @@
         cloudLoading = false;
         stopPerceivedLoading("cloud");
       }
+    }
+
+    function retryCloudBootLoad(attempt = 0) {
+      loadCloudState({ silent: true }).then((loaded) => {
+        saveState({ cloud: false });
+        render();
+        if (!loaded && cloudUser && state.profile.account?.syncReady && attempt < 6) {
+          const delay = Math.min(30000, 2000 * Math.pow(2, attempt));
+          setTimeout(() => retryCloudBootLoad(attempt + 1), delay);
+        }
+      });
     }
 
     function refreshCloudIfSynced() {

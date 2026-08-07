@@ -581,5 +581,26 @@
     bindWorkout();
   };
 
+  // Durante un workout attivo (confermi/copi serie, cambi esercizio, pausa...) l'HTML
+  // mostrato è sempre activeWorkoutHtml(), che usa solo attributi data-v147-* già
+  // gestiti da bindWorkout(). Non serve rieseguire l'intero bindScreen() originale
+  // (~400 query DOM su tutte le altre schermate) ad ogni singolo tap: lo facciamo
+  // solo quando siamo nella schermata di preparazione (data/fase/settimana/scheda
+  // manuale), che invece si appoggia ai listener generici di bindScreen().
+  renderTrainingOnly = function () {
+    if (activeScreen !== "training") { render(); return; }
+    const screen = document.getElementById("screen");
+    screen.innerHTML = trainingHtml();
+    if (activeSession()) {
+      bindWorkout();
+    } else {
+      originalBindScreen();
+      bindWorkout();
+    }
+    bindModalController();
+    bindWorkoutMascot();
+  };
+  void originalRenderTrainingOnly;
+
   if (activeScreen === "training") renderTrainingOnly();
 })();
