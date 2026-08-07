@@ -6142,6 +6142,8 @@
     let localSaveTimer = null;
     let automaticBackupTimer = null;
     let dataSafetyRestoring = false;
+    let cloudRetryCount = 0;
+    const MAX_CLOUD_RETRIES = 3;
     const dataSafetyUi = { restorePreview:null, historyOpen:false, error:"" };
     const onboardingUi = { step:0, force:false };
     let pendingSaveOptions = null;
@@ -8863,6 +8865,7 @@
         authReady = true;
         markPremiumBootReady();
         cloudUser = user || null;
+        cloudRetryCount = 0; // Reset retry counter on auth change
         if (user) {
           localLoginBypass = false;
           localStorage.removeItem(`${STORE_KEY}.loginBypass`);
@@ -8967,8 +8970,8 @@
       if (code.includes("permission-denied")) return "Cloud non autorizzato: controlla le regole Firestore per il tuo account Google.";
       if (code.includes("unauthenticated")) return "Sessione Google scaduta: accedi di nuovo per sincronizzare.";
       if (code.includes("resource-exhausted")) return "Il backup cloud è troppo grande: esporta un backup e riprova.";
-      if (code.includes("unavailable") || code.includes("deadline") || String(error?.message || "").includes("timeout")) return `Cloud temporaneamente non raggiungibile durante ${action}. Riprova con una connessione stabile.`;
-      return `Cloud non disponibile durante ${action}${code ? ` (${code.replace("firestore/", "")})` : ""}.`;
+      if (code.includes("unavailable") || code.includes("deadline") || String(error?.message || "").includes("timeout")) return `Cloud non raggiungibile: verifica la connessione internet. I dati sono salvati localmente.`;
+      return `Cloud non disponibile durante ${action}${code ? ` (${code.replace("firestore/", "")})` : ""}. I dati sono salvati localmente.`;
     }
 
     function stopCloudStateRealtime() {
@@ -9011,8 +9014,16 @@
 
     function scheduleCloudSave() {
       if (!cloudUser || !dbService || cloudLoading || !state.profile.account?.syncReady) return;
+      if (state.profile.account?.syncPaused) {
+        console.log("Cloud sync paused by user or system");
+        return;
+      }
+      if (cloudRetryCount >= MAX_CLOUD_RETRIES) {
+        console.log("Cloud sync paused - max retries reached");
+        return;
+      }
       clearTimeout(cloudSaveTimer);
-      cloudSaveTimer = setTimeout(saveCloudState, 100); // IMMEDIATE sync
+      cloudSaveTimer = setTimeout(saveCloudState, 300); // Slightly delayed to prevent rapid-fire
     }
 
     async function saveCloudState() {
@@ -9070,6 +9081,8 @@
         state.profile.account.lastCloudSyncAt = cloudUpdatedAt;
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
         setPremiumSaveStatus("synced", "Sincronizzato");
+        cloudRetryCount = 0; // Reset retry counter on success
+        state.profile.account.syncPaused = false; // Reset pause flag on success
         return true;
       } catch (error) {
         if (!rootStateSaved) newlyMarkedSessions.forEach((session) => delete session.cloudSyncedAt);
@@ -9079,14 +9092,27 @@
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
         setPremiumSaveStatus(rootStateSaved ? "waiting" : "error", rootStateSaved ? "Cloud in attesa" : "Errore di salvataggio");
         
-        // Auto-retry for network errors
+        // Auto-retry for network errors WITH LIMIT - DISABLED FOR PC STABILITY
         if (String(error?.code || "").includes("unavailable") || String(error?.message || "").includes("network")) {
-          setTimeout(() => {
-            if (cloudUser && state.profile.account?.syncReady) {
-              console.log("Auto-retrying cloud sync after network error");
-              scheduleCloudSave();
+          cloudRetryCount++;
+          if (cloudRetryCount <= MAX_CLOUD_RETRIES) {
+            setTimeout(() => {
+              if (cloudUser && state.profile.account?.syncReady && navigator.onLine) {
+                console.log(`Auto-retry ${cloudRetryCount}/${MAX_CLOUD_RETRIES} after network error`);
+                scheduleCloudSave();
+              } else {
+                console.log("Skipping retry - offline or max retries reached");
+              }
+            }, 10000); // Longer delay for retry
+          } else {
+            console.log("Max cloud retries reached, stopping auto-retry");
+            cloudRetryCount = 0;
+            // Don't show toast on every error, just once
+            if (!state.profile.account?.syncPaused) {
+              state.profile.account.syncPaused = true;
+              showToast("Sincronizzazione cloud sospesa. I dati sono salvati localmente.", "info");
             }
-          }, 5000);
+          }
         }
         
         return rootStateSaved;
@@ -10657,7 +10683,8 @@
           ${cloudFeedback}
           ${connected ? `
             <div class="account-actions">
-              <p class="micro-copy">Sincronizzazione automatica attiva ✓</p>
+              <p class="micro-copy">${state.profile.account?.syncPaused ? "Sincronizzazione sospesa (cloud non raggiungibile)" : "Sincronizzazione automatica attiva ✓"}</p>
+              ${state.profile.account?.syncPaused ? `<button class="ghost-button" id="resumeCloudSync">Riprova sincronizzazione</button>` : ""}
             </div>
             <button class="ghost-button" style="width:100%;margin-top:8px" id="googleLogoutButton">Esci</button>
           ` : `
@@ -16102,6 +16129,14 @@
         });
       }
       // Rimossi pulsanti manuali cloud - ora tutto automatico
+      const resumeCloudSync = document.getElementById("resumeCloudSync");
+      if (resumeCloudSync) resumeCloudSync.addEventListener("click", () => {
+        state.profile.account.syncPaused = false;
+        cloudRetryCount = 0;
+        showToast("Sincronizzazione riattivata.");
+        scheduleCloudSave();
+        render();
+      });
       document.querySelector("[data-reliable-sync-now]")?.addEventListener("click", synchronizeReliableNow);
       document.querySelector("[data-reliable-sync-check]")?.addEventListener("click", runReliableDiagnostics);
       document.querySelectorAll("[data-duplicate-keep][data-duplicate-remove]").forEach((button) => button.addEventListener("click", () => {
