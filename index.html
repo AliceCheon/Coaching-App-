@@ -7187,13 +7187,27 @@
       const left = (older || []).map(normalizeProgramModel);
       const right = (newer || []).map(normalizeProgramModel);
       const programs = new Map(left.map((program) => [program.id, program]));
+      
       right.forEach((incoming) => {
         const current = programs.get(incoming.id);
         if (!current) return programs.set(incoming.id, incoming);
+        
+        // Special handling for user-modified programs to preserve customizations
+        const isSystemProgram = incoming.source === "imported" || incoming.source === "library";
+        const isUserModified = current.source === "custom" || current.source === "user";
+        
+        if (isUserModified && !isSystemProgram) {
+          // Preserve user customizations, but merge sheets if available
+          const sheets = mergeSheetCollections(current.sheets || [], incoming.sheets || [], incoming.id);
+          programs.set(incoming.id, normalizeProgramModel({ ...current, sheets }));
+          return;
+        }
+        
         const winner = newerEntity(current, incoming);
         const sheets = mergeSheetCollections(current.sheets || [], incoming.sheets || [], incoming.id);
         programs.set(incoming.id, normalizeProgramModel({ ...winner, sheets }));
       });
+      
       return Array.from(programs.values()).map(normalizeProgramModel);
     }
 
@@ -8505,13 +8519,26 @@
         if (options.cloud !== false && snapshot === state) scheduleCloudSave();
         return true;
       } catch (error) {
-        if (isStorageQuotaError(error) && releaseStateWriteSpace()) {
+        if (isStorageQuotaError(error)) {
+          // Try aggressive cleanup first
+          const cleaned = releaseStateWriteSpace();
+          
+          // Try deleting ALL backups if still failing
+          if (!cleaned) {
+            try {
+              localStorage.removeItem(BACKUP_HISTORY_KEY);
+              localStorage.removeItem(PRE_V55_BACKUP_KEY);
+              localStorage.removeItem(PRE_WEEK_CONSOLIDATION_BACKUP_KEY);
+            } catch (e) {}
+          }
+          
           try {
             localStorage.setItem(STORE_KEY, JSON.stringify(localStorageSnapshotFor(snapshot)));
             lastPersistenceError = null;
             setPremiumSaveStatus(options.cloud !== false && cloudUser && state.profile.account?.syncReady ? "syncing" : "local", options.cloud !== false && cloudUser && state.profile.account?.syncReady ? "Sincronizzazione…" : "Salvato sul dispositivo");
             if (options.cloud !== false && snapshot === state && options.autoBackup !== false) scheduleAutomaticBackup();
             if (options.cloud !== false && snapshot === state) scheduleCloudSave();
+            showToast("Spazio liberato automaticamente per completare il salvataggio.", "success");
             return true;
           } catch (retryError) {
             error = retryError;
@@ -8520,6 +8547,7 @@
         lastPersistenceError = { at: new Date().toISOString(), message: localPersistenceErrorText(error), technicalMessage: String(error?.message || error), scope: "localStorage", quota: isStorageQuotaError(error) };
         const cloudAlreadySynced = state.profile.account?.cloudStatus === "sync" && state.profile.account?.lastCloudSyncAt;
         setPremiumSaveStatus("error", isStorageQuotaError(error) ? (cloudAlreadySynced ? "Cloud sincronizzato · spazio del browser insufficiente" : "Spazio del browser insufficiente") : "Salvataggio sul dispositivo non riuscito");
+        showToast(localPersistenceErrorText(error), "error");
         return false;
       }
     }
@@ -8654,11 +8682,25 @@
     }
 
     function downloadBackupEnvelope(envelope, filename = "") {
-      const verified = verifyBackupEnvelope(envelope);
-      if (!verified.ok) { showToast(verified.error); return false; }
-      const blob = new Blob([JSON.stringify(envelope, null, 2)], { type:"application/json" });
-      const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = filename || `barbell-diva-backup-${String(envelope.metadata.createdAt || todayInput()).slice(0,10)}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-      return true;
+      try {
+        const verified = verifyBackupEnvelope(envelope);
+        if (!verified.ok) { showToast(verified.error, "error"); return false; }
+        const blob = new Blob([JSON.stringify(envelope, null, 2)], { type:"application/json" });
+        const link = document.createElement("a"); 
+        link.href = URL.createObjectURL(blob); 
+        link.download = filename || `barbell-diva-backup-${String(envelope.metadata.createdAt || todayInput()).slice(0,10)}.json`; 
+        link.click(); 
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        return true;
+      } catch (error) {
+        console.error("Download backup error:", error);
+        if (isStorageQuotaError(error)) {
+          showToast("Spazio insufficiente per il download. Libera memoria e riprova.", "error");
+        } else {
+          showToast(`Errore download: ${error?.message || error}`, "error");
+        }
+        return false;
+      }
     }
 
     async function downloadCompleteBackupEnvelope(envelope, filename = "") {
@@ -8968,7 +9010,7 @@
     function scheduleCloudSave() {
       if (!cloudUser || !dbService || cloudLoading || !state.profile.account?.syncReady) return;
       clearTimeout(cloudSaveTimer);
-      cloudSaveTimer = setTimeout(saveCloudState, 900);
+      cloudSaveTimer = setTimeout(saveCloudState, 500); // Reduced delay for faster sync
     }
 
     async function saveCloudState() {
@@ -9034,6 +9076,17 @@
         state.profile.account.cloudStatus = rootStateSaved ? "sync parziale" : "errore sync";
         writeLocalStateSnapshot(state, { touch: false, cloud: false });
         setPremiumSaveStatus(rootStateSaved ? "waiting" : "error", rootStateSaved ? "Cloud in attesa" : "Errore di salvataggio");
+        
+        // Auto-retry for network errors
+        if (String(error?.code || "").includes("unavailable") || String(error?.message || "").includes("network")) {
+          setTimeout(() => {
+            if (cloudUser && state.profile.account?.syncReady) {
+              console.log("Auto-retrying cloud sync after network error");
+              scheduleCloudSave();
+            }
+          }, 5000);
+        }
+        
         return rootStateSaved;
       } finally {
         stopPerceivedLoading("cloud");
@@ -17288,11 +17341,23 @@
     }
 
     async function exportBackup() {
-      const envelope = createBackupEnvelope("manual");
-      const stored = storeBackupEnvelope(envelope);
-      const downloaded = await downloadCompleteBackupEnvelope(envelope);
-      if (!downloaded) return;
-      showToast(stored.ok ? "Backup verificato esportato." : "Backup verificato scaricato; copia locale interna non creata per mancanza di spazio.");
+      try {
+        const envelope = createBackupEnvelope("manual");
+        const stored = storeBackupEnvelope(envelope);
+        const downloaded = await downloadCompleteBackupEnvelope(envelope);
+        if (!downloaded) {
+          showToast("Download del backup fallito. Controlla lo spazio e riprova.", "error");
+          return;
+        }
+        if (stored.ok) {
+          showToast("Backup completo esportato e verificato.");
+        } else {
+          showToast(stored.error || "Backup scaricato ma salvato locale fallito per mancanza di spazio.", "warning");
+        }
+      } catch (error) {
+        showToast(`Errore durante l'esportazione backup: ${error?.message || error}`, "error");
+        console.error("Export backup error:", error);
+      }
     }
 
     function toShortDateFromIso(value) {
