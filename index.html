@@ -8,7 +8,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.webmanifest?v=v1461">
-  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="icon" href="app-icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <!-- Preload critical font for faster text rendering -->
@@ -8838,14 +8837,15 @@
         saveState({ cloud: false });
         render();
         if (user && state.profile.account.syncReady) {
-          // Avvio subito gli ascoltatori realtime e la coda delle sedute: non devono dipendere
-          // dal successo del primo download completo, altrimenti un solo timeout di rete
-          // (frequente su mobile, col documento di stato che può essere pesante) blocca tutta
-          // la sincronizzazione automatica finché non tocchi manualmente un pulsante.
-          startCloudStateRealtime();
-          startReliableSessionsRealtime();
-          scheduleReliableSync(100);
-          retryCloudBootLoad();
+          loadCloudState({ silent: true }).then((loaded) => {
+            saveState({ cloud: false });
+            render();
+            if (loaded) {
+              startCloudStateRealtime();
+              startReliableSessionsRealtime();
+              scheduleReliableSync(100);
+            }
+          });
         } else {
           stopCloudStateRealtime();
           stopReliableSessionsRealtime();
@@ -8983,10 +8983,6 @@
       });
       const { programs: currentPrograms = [], ...stateWithoutPrograms } = state;
       const payload = clone(stateWithoutPrograms);
-      // Le sedute vivono già, in modo affidabile, nella sottoraccolta "sessions" (reliableSessionsCollection).
-      // Tenerle anche qui duplicava tutto lo storico allenamenti dentro al documento principale,
-      // facendolo crescere ad ogni allenamento e rallentando/facendo scadere il download su rete mobile.
-      if (payload.training) payload.training = { ...payload.training, sessions: [] };
       let rootStateSaved = false;
       try {
         const cloudUpdatedAt = new Date().toISOString();
@@ -9084,17 +9080,6 @@
         cloudLoading = false;
         stopPerceivedLoading("cloud");
       }
-    }
-
-    function retryCloudBootLoad(attempt = 0) {
-      loadCloudState({ silent: true }).then((loaded) => {
-        saveState({ cloud: false });
-        render();
-        if (!loaded && cloudUser && state.profile.account?.syncReady && attempt < 6) {
-          const delay = Math.min(30000, 2000 * Math.pow(2, attempt));
-          setTimeout(() => retryCloudBootLoad(attempt + 1), delay);
-        }
-      });
     }
 
     function refreshCloudIfSynced() {
@@ -17744,7 +17729,7 @@
     const premiumSplash = document.getElementById("premiumSplash");
     if (state.ui?.splashEnabled === false) premiumSplash?.classList.add("is-hidden");
     else {
-      premiumBootSafetyTimer = setTimeout(() => { premiumBootReady = true; finishPremiumBoot(); }, 400);
+      premiumBootSafetyTimer = setTimeout(() => { premiumBootReady = true; finishPremiumBoot(); }, 1800);
       requestAnimationFrame(() => { if (!firebaseBootStarted || authReady) markPremiumBootReady(); });
     }
   </script>
