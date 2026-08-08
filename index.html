@@ -8398,7 +8398,7 @@
       if (recovered > 0 || correctedWorkoutFDates > 0) {
         hydrateStateModel(state);
         state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
-        writeLocalStateSnapshot(state, { touch: false, cloud: false });
+        echoLocalStateQuietly();
         render();
         if (recovered > 0) showToast(`${recovered} allenamento${recovered === 1 ? "" : "i"} ripristinato dal registro di emergenza.`);
       }
@@ -8504,6 +8504,15 @@
         try { showToast(lastPersistenceError, "error"); } catch (error) {}
       });
       return { ...snapshot, nutrition: { ...snapshot.nutrition, dashboard: { ...snapshot.nutrition.dashboard, photos: store.redactPhotoList(photos) } } };
+    }
+
+    function echoLocalStateQuietly(options = {}) {
+      // Specchio locale "di cortesia", usato solo per ripartire più in fretta al prossimo
+      // avvio. Quando il cloud è attivo il cloud è l'unica fonte di verità: se questa copia
+      // fallisce (es. spazio del browser pieno) NON deve mai mostrare un errore all'utente,
+      // perché i dati sono comunque al sicuro sul cloud.
+      if (cloudUser && state.profile.account?.syncReady) return true;
+      return persistStateToLocalStorage(state, { touch: options.touch === true });
     }
 
     function persistStateToLocalStorage(snapshot, options = {}) {
@@ -8878,8 +8887,10 @@
           email: user.email || "",
           photo: user.photoURL || "",
           provider: "google",
-          cloudStatus: previousAccount.syncReady ? "sync" : "login",
-          syncReady: !!previousAccount.syncReady
+          // Con Google collegato, la sincronizzazione parte sempre da sola: non serve più
+          // nessun pulsante "carica/scarica cloud" per accendere il flag la prima volta.
+          cloudStatus: "sync",
+          syncReady: true
         } : {
           uid: "",
           name: "",
@@ -8891,7 +8902,7 @@
         };
         saveState({ cloud: false });
         render();
-        if (user && state.profile.account.syncReady) {
+        if (user) {
           loadCloudState({ silent: true }).then((loaded) => {
             saveState({ cloud: false });
             render();
@@ -9017,12 +9028,12 @@
         state.migrations.aliceWorkoutF16Jul2026Corrected = Number(state.migrations.aliceWorkoutF16Jul2026Corrected || 0) + realtimeFDateCorrections;
         state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
         lastCloudError = "";
-        writeLocalStateSnapshot(state, { touch: false, cloud: false });
+        echoLocalStateQuietly();
         render();
       }, (error) => {
         lastCloudError = cloudErrorText(error, "aggiornamento automatico");
         state.profile.account.cloudStatus = "errore cloud";
-        writeLocalStateSnapshot(state, { touch: false, cloud: false });
+        echoLocalStateQuietly();
       });
       return true;
     }
@@ -9070,7 +9081,7 @@
       // timeout su rete mobile. Le sedute vengono già sincronizzate una per una, in modo
       // leggero e affidabile, tramite queueReliableWorkoutSession/flushReliableSync.
       const sessionCount = (payload.training?.sessions || []).length;
-      if (payload.training) payload.training = { ...payload.training, sessions: [] };
+      if (payload.training) payload.training = { ...payload.training, sessions: [], exercises: [] }; // "exercises" è un indice ricalcolato in automatico da programmi+sedute, non serve spedirlo
       let rootStateSaved = false;
       try {
         const cloudUpdatedAt = new Date().toISOString();
@@ -9107,7 +9118,7 @@
         state.profile.account.cloudStatus = "sync";
         state.profile.account.syncReady = true;
         state.profile.account.lastCloudSyncAt = cloudUpdatedAt;
-        writeLocalStateSnapshot(state, { touch: false, cloud: false });
+        echoLocalStateQuietly();
         setPremiumSaveStatus("synced", "Sincronizzato");
         cloudRetryCount = 0; // Reset retry counter on success
         state.profile.account.syncPaused = false; // Reset pause flag on success
@@ -9117,7 +9128,7 @@
         lastCloudError = cloudErrorText(error, "caricamento");
         if (rootStateSaved) lastCloudError = "Allenamento e logbook sincronizzati; aggiornamento schede in attesa.";
         state.profile.account.cloudStatus = rootStateSaved ? "sync parziale" : "errore sync";
-        writeLocalStateSnapshot(state, { touch: false, cloud: false });
+        echoLocalStateQuietly();
         setPremiumSaveStatus(rootStateSaved ? "waiting" : "error", rootStateSaved ? "Cloud in attesa" : "Errore di salvataggio");
         
         // Auto-retry for network errors WITH LIMIT - DISABLED FOR PC STABILITY
@@ -9177,7 +9188,7 @@
           state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
           lastCloudSnapshotAt = String(snapshot.data()?.updatedAt || lastCloudSnapshotAt);
           lastCloudError = "";
-          const persisted = writeLocalStateSnapshot(state, { touch: false, cloud: false });
+          const persisted = echoLocalStateQuietly();
           if (!persisted) {
             state.profile.account.cloudStatus = "errore locale";
             if (!options.silent) showToast(lastPersistenceError?.message || "Dati cloud scaricati, ma il PC non riesce ancora a salvarli.");
@@ -9304,7 +9315,7 @@
           reliableSyncQueue.markSynced(operation.operationId); reliableSyncQueue.audit("confirmed-cloud",{entityId:payload.id,deviceId:payload.deviceId}); synced++;
         } catch(error) { reliableSyncQueue.markFailed(operation.operationId,cloudErrorText(error,"sincronizzazione seduta")); reliableSyncUi.lastError=cloudErrorText(error,"sincronizzazione seduta"); failed++; }
       }
-      reliableSyncQueue.removeSynced(); if(synced) { reliableSyncUi.lastSuccess=new Date().toISOString(); notifyDeviceSync("Allenamento sincronizzato ✅", "Salvato sul cloud, sarà visibile su tutti i tuoi dispositivi."); } refreshReliableSyncStatus(); writeLocalStateSnapshot(state,{touch:false,cloud:false});
+      reliableSyncQueue.removeSynced(); if(synced) { reliableSyncUi.lastSuccess=new Date().toISOString(); notifyDeviceSync("Allenamento sincronizzato ✅", "Salvato sul cloud, sarà visibile su tutti i tuoi dispositivi."); } refreshReliableSyncStatus(); echoLocalStateQuietly();
       if(failed) scheduleReliableSync(Math.min(30000,1500*Math.max(1,reliableSyncStats().failed)));
       if(!options.silent) showToast(conflicts?"C'è un conflitto da controllare.":failed?"Cloud in attesa: riproverò automaticamente.":"Sincronizzazione completata.",conflicts||failed?"warning":"success");
       return {ok:!failed&&!conflicts,synced,failed,conflicts};
@@ -9314,7 +9325,7 @@
     function startReliableSessionsRealtime(){
       if (cloudSessionsUnsubscribe) return true; // già attivo: non serve smontare e rimontare il listener ogni volta
       const collection=reliableSessionsCollection(); if(!collection||!state.profile.account?.syncReady)return false;
-      cloudSessionsUnsubscribe=collection.onSnapshot(snapshot=>{let changed=false;let fromOtherDevice=false;snapshot.docChanges().forEach(change=>{if(!["added","modified"].includes(change.type))return;const remote=change.doc.data()?.session||change.doc.data();if(remote?.deviceId===reliableDeviceId()&&(state.training.sessions||[]).some(item=>item.dataHash&&item.dataHash===remote.dataHash))return;if(remote?.deviceId&&remote.deviceId!==reliableDeviceId())fromOtherDevice=true;changed=mergeReliableRemoteSession(remote)||changed;reliableSyncQueue?.audit("received-remote",{entityId:remote?.id,deviceId:remote?.deviceId||""});});if(changed){reliableSyncUi.lastSuccess=new Date().toISOString();if(fromOtherDevice)notifyDeviceSync("Nuovo allenamento sincronizzato 📲","È arrivato un allenamento salvato su un altro dispositivo.");refreshReliableSyncStatus();writeLocalStateSnapshot(state,{touch:false,cloud:false});render();}},error=>{reliableSyncUi.status="error";reliableSyncUi.lastError=cloudErrorText(error,"aggiornamento sedute");}); return true;
+      cloudSessionsUnsubscribe=collection.onSnapshot(snapshot=>{let changed=false;let fromOtherDevice=false;snapshot.docChanges().forEach(change=>{if(!["added","modified"].includes(change.type))return;const remote=change.doc.data()?.session||change.doc.data();if(remote?.deviceId===reliableDeviceId()&&(state.training.sessions||[]).some(item=>item.dataHash&&item.dataHash===remote.dataHash))return;if(remote?.deviceId&&remote.deviceId!==reliableDeviceId())fromOtherDevice=true;changed=mergeReliableRemoteSession(remote)||changed;reliableSyncQueue?.audit("received-remote",{entityId:remote?.id,deviceId:remote?.deviceId||""});});if(changed){reliableSyncUi.lastSuccess=new Date().toISOString();if(fromOtherDevice)notifyDeviceSync("Nuovo allenamento sincronizzato 📲","È arrivato un allenamento salvato su un altro dispositivo.");refreshReliableSyncStatus();echoLocalStateQuietly();render();}},error=>{reliableSyncUi.status="error";reliableSyncUi.lastError=cloudErrorText(error,"aggiornamento sedute");}); return true;
     }
 
     function reliableDuplicateLabel(session = {}) {
@@ -9363,7 +9374,7 @@
         await removeWorkoutJournalRecords([removeId]);
         await deleteReliableCloudSessions([removeId]);
         state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions);
-        writeLocalStateSnapshot(state, { touch:true, cloud:false });
+        echoLocalStateQuietly({ touch: true });
         await saveCloudState();
         showToast(`Doppione rimosso. Ho conservato ${reliableDuplicateLabel((state.training.sessions || []).find((row) => String(row.id) === String(keepId)) || {})}.`, "success");
         await runReliableDiagnostics();
@@ -9400,7 +9411,7 @@
         const repairResult=missingInCloud.length ? await flushReliableSync({silent:true}) : {ok:true};
         await saveCloudState();
         state.training.exercises=buildExerciseIndex(allProgramSheets(),state.training.sessions);
-        writeLocalStateSnapshot(state,{touch:true,cloud:false});
+        echoLocalStateQuietly({ touch: true });
         const cleanedRemote=remote.filter(row=>!removedIds.includes(String(row.id)));
         const localIds=new Set(state.training.sessions.map(item=>String(item.id)));
         const remoteIds=new Set(cleanedRemote.map(item=>String(item.id)));
@@ -9482,7 +9493,7 @@
       const saved = await saveCloudState();
       if (!saved) {
         state.profile.account.syncReady = wasReady;
-        writeLocalStateSnapshot(state, { touch: false, cloud: false });
+        echoLocalStateQuietly();
         showToast(lastCloudError || "Caricamento cloud non riuscito.");
         setCloudOperation("error", lastCloudError || "Caricamento cloud non riuscito.", 0);
         render();
@@ -9491,7 +9502,7 @@
       startCloudStateRealtime();
       startReliableSessionsRealtime();
       scheduleReliableSync(100);
-      writeLocalStateSnapshot(state, { touch: false, cloud: false });
+      echoLocalStateQuietly();
       showToast("Questo dispositivo e stato caricato nel cloud.");
       setCloudOperation("success", `Sincronizzazione completata alle ${new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}.`, 100);
       render();
@@ -16215,7 +16226,7 @@
         }
         if (button.dataset.premiumErrorAction === "retry-local-storage") {
           releaseStateWriteSpace();
-          const saved = writeLocalStateSnapshot(state, { touch: false, cloud: false });
+          const saved = persistStateToLocalStorage(state, { touch: false }); // pulsante esplicito: qui vogliamo il vero test, non quello silenzioso
           if (saved) {
             showToast("Salvataggio locale ripristinato.");
             if (cloudUser) scheduleCloudSave();
@@ -17890,7 +17901,7 @@
       const elapsed = Date.now() - lastForegroundFullSyncAt;
       if (elapsed < FOREGROUND_FULL_SYNC_MIN_GAP_MS) return; // cambio scheda troppo ravvicinato: il listener in tempo reale copre già gli aggiornamenti
       lastForegroundFullSyncAt = Date.now();
-      loadCloudState({silent:true}).then(loaded=>{if(loaded){writeLocalStateSnapshot(state,{touch:false,cloud:false});render();}});
+      loadCloudState({silent:true}).then(loaded=>{if(loaded){echoLocalStateQuietly();render();}});
     }
     window.addEventListener("focus", reliableForegroundSync);
     window.addEventListener("online", reliableForegroundSync);
