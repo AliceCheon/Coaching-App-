@@ -8506,15 +8506,9 @@
       return { ...snapshot, nutrition: { ...snapshot.nutrition, dashboard: { ...snapshot.nutrition.dashboard, photos: store.redactPhotoList(photos) } } };
     }
 
-    function writeLocalStateSnapshot(snapshot, options = {}) {
-      // FORCE CLOUD-FIRST APPROACH: Skip local storage if cloud is available
-      if (cloudUser && state.profile.account?.syncReady && options.cloud !== false) {
-        lastPersistenceError = null;
-        setPremiumSaveStatus("syncing", "Sincronizzazione cloud…");
-        if (snapshot === state) scheduleCloudSave();
-        return true; // Skip local storage entirely
-      }
-      
+    function persistStateToLocalStorage(snapshot, options = {}) {
+      // Scrittura EFFETTIVA su localStorage. Usata come store primario solo quando il cloud
+      // non è attivo, e come paracadute silenzioso se il cloud fallisce ripetutamente.
       const serialized = JSON.stringify(localStorageSnapshotFor(snapshot));
       try {
         if (options.touch !== false) {
@@ -8524,19 +8518,8 @@
           localStorage.setItem(STORE_KEY, serialized);
         }
         lastPersistenceError = null;
-        setPremiumSaveStatus("local", "Salvato sul dispositivo");
-        if (options.cloud !== false && snapshot === state) scheduleCloudSave();
         return true;
       } catch (error) {
-        // IF LOCAL STORAGE FAILS BUT CLOUD IS AVAILABLE, DON'T SHOW ERROR
-        if (cloudUser && state.profile.account?.syncReady) {
-          lastPersistenceError = null;
-          setPremiumSaveStatus("syncing", "Salvataggio cloud prioritario");
-          if (snapshot === state) scheduleCloudSave();
-          showToast("Salvataggio locale saltato (spazio pieno), sincronizzazione cloud attiva.", "warning");
-          return true;
-        }
-        
         if (isStorageQuotaError(error)) {
           try {
             localStorage.removeItem(BACKUP_HISTORY_KEY);
@@ -8544,16 +8527,34 @@
             localStorage.removeItem(PRE_WEEK_CONSOLIDATION_BACKUP_KEY);
             localStorage.setItem(STORE_KEY, JSON.stringify(localStorageSnapshotFor(snapshot)));
             lastPersistenceError = null;
-            setPremiumSaveStatus("local", "Salvato sul dispositivo");
             return true;
-          } catch (retryError) {
-            error = retryError;
-          }
+          } catch (retryError) { error = retryError; }
         }
         lastPersistenceError = { at: new Date().toISOString(), message: localPersistenceErrorText(error), technicalMessage: String(error?.message || error), scope: "localStorage", quota: isStorageQuotaError(error) };
-        setPremiumSaveStatus("error", "Spazio insufficiente");
         return false;
       }
+    }
+
+    function writeLocalStateSnapshot(snapshot, options = {}) {
+      // Cloud-only per scelta: quando sei loggata e il cloud è pronto, il dispositivo NON scrive
+      // più su localStorage ad ogni salvataggio (niente più "spazio browser pieno"). Il cloud
+      // resta l'unica fonte di verità; il salvataggio locale scatta solo come paracadute
+      // automatico e silenzioso se il cloud fallisce davvero (vedi saveCloudState).
+      const cloudActive = cloudUser && state.profile.account?.syncReady && options.cloud !== false;
+      if (cloudActive) {
+        lastPersistenceError = null;
+        setPremiumSaveStatus("syncing", "Sincronizzazione cloud…");
+        if (snapshot === state) scheduleCloudSave();
+        return true;
+      }
+      const saved = persistStateToLocalStorage(snapshot, options);
+      if (saved) {
+        setPremiumSaveStatus("local", "Salvato sul dispositivo");
+        if (options.cloud !== false && snapshot === state) scheduleCloudSave();
+      } else {
+        setPremiumSaveStatus("error", "Spazio insufficiente");
+      }
+      return saved;
     }
 
     function flushStateSave() {
@@ -9012,6 +9013,9 @@
       return true;
     }
 
+    let lastCloudSaveAttemptAt = 0;
+    const MIN_CLOUD_SAVE_GAP_MS = 4000; // non scrivere su Firestore più di una volta ogni 4s
+
     function scheduleCloudSave() {
       if (!cloudUser || !dbService || cloudLoading || !state.profile.account?.syncReady) return;
       if (state.profile.account?.syncPaused) {
@@ -9023,7 +9027,9 @@
         return;
       }
       clearTimeout(cloudSaveTimer);
-      cloudSaveTimer = setTimeout(saveCloudState, 300); // Slightly delayed to prevent rapid-fire
+      const elapsed = Date.now() - lastCloudSaveAttemptAt;
+      const delay = Math.max(300, MIN_CLOUD_SAVE_GAP_MS - elapsed); // rispetta sempre il gap minimo tra due scritture cloud
+      cloudSaveTimer = setTimeout(() => { lastCloudSaveAttemptAt = Date.now(); saveCloudState(); }, delay);
     }
 
     async function saveCloudState() {
@@ -9184,6 +9190,27 @@
       return value;
     }
 
+    // --- Notifiche di sincronizzazione tra dispositivi -----------------------------------
+    // Nota onesta: funziona quando l'app è aperta (anche in background come PWA installata),
+    // NON quando il browser/l'app è completamente chiuso. Per una vera push "app chiusa"
+    // servirebbe Firebase Cloud Messaging + una Cloud Function sul progetto Firebase (piano
+    // a pagamento), cosa che va configurata lato Firebase Console e non dentro questo file.
+    function requestSyncNotificationPermission() {
+      if (!("Notification" in window)) return;
+      if (Notification.permission === "default") Notification.requestPermission().catch(() => {});
+    }
+
+    async function notifyDeviceSync(title, body) {
+      if (!("Notification" in window) || Notification.permission !== "granted") return;
+      try {
+        if ("serviceWorker" in navigator) {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) { registration.showNotification(title, { body, icon: "./app-icon-512.png", tag: "barbell-diva-sync" }); return; }
+        }
+        new Notification(title, { body, icon: "./app-icon-512.png" });
+      } catch (error) { /* le notifiche non devono mai bloccare il salvataggio */ }
+    }
+
     function initReliableSync() {
       if (reliableSyncQueue || !window.BarbellDivaSyncEngine?.createPersistentSyncQueue) return reliableSyncQueue;
       reliableSyncQueue = window.BarbellDivaSyncEngine.createPersistentSyncQueue({ storage:localStorage, key:`${STORE_KEY}.sync-queue.v1`, auditKey:`${STORE_KEY}.sync-audit.v1` });
@@ -9250,7 +9277,7 @@
           reliableSyncQueue.markSynced(operation.operationId); reliableSyncQueue.audit("confirmed-cloud",{entityId:payload.id,deviceId:payload.deviceId}); synced++;
         } catch(error) { reliableSyncQueue.markFailed(operation.operationId,cloudErrorText(error,"sincronizzazione seduta")); reliableSyncUi.lastError=cloudErrorText(error,"sincronizzazione seduta"); failed++; }
       }
-      reliableSyncQueue.removeSynced(); if(synced) reliableSyncUi.lastSuccess=new Date().toISOString(); refreshReliableSyncStatus(); writeLocalStateSnapshot(state,{touch:false,cloud:false});
+      reliableSyncQueue.removeSynced(); if(synced) { reliableSyncUi.lastSuccess=new Date().toISOString(); notifyDeviceSync("Allenamento sincronizzato ✅", "Salvato sul cloud, sarà visibile su tutti i tuoi dispositivi."); } refreshReliableSyncStatus(); writeLocalStateSnapshot(state,{touch:false,cloud:false});
       if(failed) scheduleReliableSync(Math.min(30000,1500*Math.max(1,reliableSyncStats().failed)));
       if(!options.silent) showToast(conflicts?"C'è un conflitto da controllare.":failed?"Cloud in attesa: riproverò automaticamente.":"Sincronizzazione completata.",conflicts||failed?"warning":"success");
       return {ok:!failed&&!conflicts,synced,failed,conflicts};
@@ -9259,7 +9286,7 @@
     function stopReliableSessionsRealtime(){ if(typeof cloudSessionsUnsubscribe === "function") cloudSessionsUnsubscribe(); cloudSessionsUnsubscribe=null; }
     function startReliableSessionsRealtime(){
       stopReliableSessionsRealtime(); const collection=reliableSessionsCollection(); if(!collection||!state.profile.account?.syncReady)return false;
-      cloudSessionsUnsubscribe=collection.onSnapshot(snapshot=>{let changed=false;snapshot.docChanges().forEach(change=>{if(!["added","modified"].includes(change.type))return;const remote=change.doc.data()?.session||change.doc.data();if(remote?.deviceId===reliableDeviceId()&&(state.training.sessions||[]).some(item=>item.dataHash&&item.dataHash===remote.dataHash))return;changed=mergeReliableRemoteSession(remote)||changed;reliableSyncQueue?.audit("received-remote",{entityId:remote?.id,deviceId:remote?.deviceId||""});});if(changed){reliableSyncUi.lastSuccess=new Date().toISOString();refreshReliableSyncStatus();writeLocalStateSnapshot(state,{touch:false,cloud:false});render();}},error=>{reliableSyncUi.status="error";reliableSyncUi.lastError=cloudErrorText(error,"aggiornamento sedute");}); return true;
+      cloudSessionsUnsubscribe=collection.onSnapshot(snapshot=>{let changed=false;let fromOtherDevice=false;snapshot.docChanges().forEach(change=>{if(!["added","modified"].includes(change.type))return;const remote=change.doc.data()?.session||change.doc.data();if(remote?.deviceId===reliableDeviceId()&&(state.training.sessions||[]).some(item=>item.dataHash&&item.dataHash===remote.dataHash))return;if(remote?.deviceId&&remote.deviceId!==reliableDeviceId())fromOtherDevice=true;changed=mergeReliableRemoteSession(remote)||changed;reliableSyncQueue?.audit("received-remote",{entityId:remote?.id,deviceId:remote?.deviceId||""});});if(changed){reliableSyncUi.lastSuccess=new Date().toISOString();if(fromOtherDevice)notifyDeviceSync("Nuovo allenamento sincronizzato 📲","È arrivato un allenamento salvato su un altro dispositivo.");refreshReliableSyncStatus();writeLocalStateSnapshot(state,{touch:false,cloud:false});render();}},error=>{reliableSyncUi.status="error";reliableSyncUi.lastError=cloudErrorText(error,"aggiornamento sedute");}); return true;
     }
 
     function reliableDuplicateLabel(session = {}) {
@@ -10685,6 +10712,8 @@
             <div class="account-actions">
               <p class="micro-copy">${state.profile.account?.syncPaused ? "Sincronizzazione sospesa (cloud non raggiungibile)" : "Sincronizzazione automatica attiva ✓"}</p>
               ${state.profile.account?.syncPaused ? `<button class="ghost-button" id="resumeCloudSync">Riprova sincronizzazione</button>` : ""}
+              ${("Notification" in window) && Notification.permission !== "granted" ? `<button class="ghost-button" id="enableSyncNotifications">${Notification.permission === "denied" ? "Notifiche bloccate dal browser" : "Attiva notifiche di sincronizzazione"}</button>` : ""}
+              ${("Notification" in window) && Notification.permission === "granted" ? `<p class="micro-copy">🔔 Notifiche di sincronizzazione attive</p>` : ""}
             </div>
             <button class="ghost-button" style="width:100%;margin-top:8px" id="googleLogoutButton">Esci</button>
           ` : `
@@ -16119,12 +16148,14 @@
       const googleLoginButton = document.getElementById("googleLoginButton");
       if (googleLoginButton) {
         googleLoginButton.addEventListener("click", () => {
+          requestSyncNotificationPermission();
           signInWithGoogle(googleLoginButton.dataset.loginMode || "popup");
         });
       }
       const googleRedirectButton = document.getElementById("googleRedirectButton");
       if (googleRedirectButton) {
         googleRedirectButton.addEventListener("click", () => {
+          requestSyncNotificationPermission();
           signInWithGoogle("redirect");
         });
       }
@@ -16136,6 +16167,11 @@
         showToast("Sincronizzazione riattivata.");
         scheduleCloudSave();
         render();
+      });
+      const enableSyncNotifications = document.getElementById("enableSyncNotifications");
+      if (enableSyncNotifications) enableSyncNotifications.addEventListener("click", () => {
+        requestSyncNotificationPermission();
+        setTimeout(render, 400); // il browser risponde in modo asincrono al prompt
       });
       document.querySelector("[data-reliable-sync-now]")?.addEventListener("click", synchronizeReliableNow);
       document.querySelector("[data-reliable-sync-check]")?.addEventListener("click", runReliableDiagnostics);
@@ -16398,7 +16434,7 @@
     function startRestTimer(seconds) {
       clearInterval(timerHandle);
       state.training.timerRemaining = Number(seconds) || 0;
-      saveState();
+      saveState({ cloud: false });
       renderTimerDisplay();
       timerHandle = setInterval(() => {
         state.training.timerRemaining = Math.max(0, (state.training.timerRemaining || 0) - 1);
@@ -16406,8 +16442,10 @@
         if (state.training.timerRemaining <= 0) {
           clearInterval(timerHandle);
           showToast("Recupero finito.");
+          saveState(); // countdown finito: qui va bene sincronizzare anche col cloud
+        } else {
+          saveState({ cloud: false }); // ogni secondo salviamo solo in locale, niente spam verso il cloud
         }
-        saveState();
       }, 1000);
     }
 
