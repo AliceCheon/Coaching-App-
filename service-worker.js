@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v1474-sync-repair";
+const CACHE_NAME = "atlas-app-v1475-editor-save-notes";
 const APP_SHELL = [
   "./",
   "./index.html",
