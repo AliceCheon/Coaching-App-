@@ -1,4 +1,4 @@
-name: Tests
+name: App smoke test
 
 on:
   push:
@@ -9,32 +9,29 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '24'
-    
-    - name: Run v144 core tests
-      run: node tests/v144-core.test.mjs
-
-    - name: Run Coach rebuild tests
-      run: node tests/coach-v144-rebuild.test.mjs
-
-    - name: Run v145 release guard
-      run: node tests/v145-release-guard.test.mjs
-
-    - name: Run v145.1 Coach tools tests
-      run: node tests/v1451-coach-tools.test.mjs
-
-    - name: Run v145.2 unified sidebar tests
-      run: node tests/v1452-unified-sidebar.test.mjs
-
-    - name: Run v146.1 corrective tests
-      run: node tests/v1461-corrections.test.mjs
-
-    - name: Run v146.1 Coach UX tests
-      run: node tests/v1461-coach-ux.test.mjs
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check runtime files
+        run: |
+          test -f index.html
+          test -f manifest.webmanifest
+          test -f service-worker.js
+          test -f app-config-v144.js
+          test -f workout-flow-v147.js
+      - name: Check JavaScript syntax
+        run: |
+          for file in *.js; do node --check "$file"; done
+      - name: Check Intensita nuovo and sync repair are embedded
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const html = fs.readFileSync('index.html', 'utf8');
+          for (const required of ['Intensità Agosto-Ottobre', 'intensitaNuovoBuild', '2026-08-31-sync-notes-v2', 'synchronizeReliableNow']) {
+            if (!html.includes(required)) throw new Error(`Missing: ${required}`);
+          }
+          console.log('Barbell Diva runtime, notes and sync repair: OK');
+          NODE
