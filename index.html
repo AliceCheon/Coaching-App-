@@ -8127,7 +8127,7 @@
       }
     };
 
-    const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v7-cloud-repair";
+    const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
 
     function loadState() {
       let saved = "";
@@ -8880,7 +8880,11 @@
     }
 
     function repairIntensitaNotesFromLibrary(targetState = state) {
-      const target = (targetState.programs || []).find((program) => program.phase === "Intensità Agosto-Ottobre");
+      const target = (targetState.programs || []).find((program) => {
+        const label = String(program.phase || program.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        return label.includes("intensita") && (label.includes("agosto") || label.includes("ottobre"))
+          || (program.sheets || []).some((sheet) => String(sheet.code || "").startsWith("IAO-"));
+      });
       if (!target) return 0;
       const seeded = buildProgramsFromLegacy(PROGRAM_LIBRARY, []).map(consolidateLegacyWeeklyProgram)
         .find((program) => program.phase === "Intensità Agosto-Ottobre");
@@ -11465,7 +11469,7 @@
         sets:week.sets??base.sets??"", reps:formatReps(week.reps||base.reps)||"", restSeconds:week.restSeconds??week.rest?.seconds??base.rest?.seconds??"",
         loadValue:week.prescribedLoad?.value??base.prescribedLoad?.value??"", loadUnit:week.prescribedLoad?.unit||base.prescribedLoad?.unit||"kg",
         rpe:week.rpe?.label||base.rpe?.label||"", rir:week.rir?.label||base.rir?.label||"", som, tempo:som,
-        note:week.notes??exercise?.note??"", source:week.source||"base"
+        note:String(week.notes || week.note || exercise?.note || [exercise?.metadata?.excelNote1, exercise?.metadata?.excelNote2].filter(Boolean).join(" ") || "").trim(), source:week.source||"base"
       };
     }
 

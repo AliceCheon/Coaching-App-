@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v1476-cloud-notes-repair";
+const CACHE_NAME = "atlas-app-v1477-note-display-fix";
 const APP_SHELL = [
   "./",
   "./index.html",
