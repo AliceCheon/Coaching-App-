@@ -8127,7 +8127,7 @@
       }
     };
 
-    const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v6-d";
+    const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v7-cloud-repair";
 
     function loadState() {
       let saved = "";
@@ -8879,6 +8879,45 @@
       return merged;
     }
 
+    function repairIntensitaNotesFromLibrary(targetState = state) {
+      const target = (targetState.programs || []).find((program) => program.phase === "Intensità Agosto-Ottobre");
+      if (!target) return 0;
+      const seeded = buildProgramsFromLegacy(PROGRAM_LIBRARY, []).map(consolidateLegacyWeeklyProgram)
+        .find((program) => program.phase === "Intensità Agosto-Ottobre");
+      if (!seeded) return 0;
+      const stamp = new Date().toISOString();
+      let repaired = 0;
+      (target.sheets || []).forEach((sheet) => {
+        const sourceSheet = (seeded.sheets || []).find((item) => item.code === sheet.code || (item.letter === sheet.letter && Number(item.week) === Number(sheet.week)));
+        if (!sourceSheet) return;
+        (sheet.exercises || []).forEach((exercise) => {
+          const sourceExercise = (sourceSheet.exercises || []).find((item) => item.id === exercise.id)
+            || (sourceSheet.exercises || []).find((item) => normalizeExerciseName(item.name) === normalizeExerciseName(exercise.name));
+          if (!sourceExercise) return;
+          let changed = false;
+          if (!String(exercise.note || "").trim() && String(sourceExercise.note || "").trim()) {
+            exercise.note = sourceExercise.note;
+            changed = true;
+          }
+          const sourceWeeks = sourceExercise.progression?.weeks || [];
+          const weeks = exercise.progression?.weeks || (exercise.progression = { weeks: [] }).weeks;
+          sourceWeeks.forEach((sourceWeek, index) => {
+            const week = weeks[index] || (weeks[index] = parseWeekPrescription({}, index + 1, exercise.prescription || {}));
+            const sourceNote = String(sourceWeek.notes ?? sourceWeek.note ?? "").trim();
+            if (!String(week.notes || "").trim() && sourceNote) { week.notes = sourceNote; changed = true; }
+            if (!String(week.note || "").trim() && sourceNote) { week.note = sourceNote; changed = true; }
+          });
+          if (changed) { exercise.updatedAt = stamp; repaired += 1; }
+        });
+        if (sheet.exercises.some((exercise) => exercise.updatedAt === stamp)) sheet.updatedAt = stamp;
+      });
+      if (repaired) {
+        target.updatedAt = stamp;
+        targetState.meta = { ...(targetState.meta || {}), intensitaNotesRepairBuild: INTENSITA_NUOVO_BUILD, programsUpdatedAt: stamp, cloudProgramsUpdatedAt: "" };
+      }
+      return repaired;
+    }
+
     function firebaseConfigured() {
       return !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.authDomain && FIREBASE_CONFIG.projectId && FIREBASE_CONFIG.appId);
     }
@@ -9060,12 +9099,14 @@
           return;
         }
         state = mergeCloudAndLocalState(state, remoteState);
+        const cloudNotesRepaired = repairIntensitaNotesFromLibrary(state);
         recoverWorkoutJournal(state);
         const realtimeFDateCorrections = correctAliceWorkoutF16Jul2026(state);
         state.migrations.aliceWorkoutF16Jul2026Corrected = Number(state.migrations.aliceWorkoutF16Jul2026Corrected || 0) + realtimeFDateCorrections;
         state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
         lastCloudError = "";
         echoLocalStateQuietly();
+        if (cloudNotesRepaired) scheduleCloudSave();
         render();
       }, (error) => {
         lastCloudError = cloudErrorText(error, "aggiornamento automatico");
@@ -9219,6 +9260,7 @@
             remoteState.training.sessions = remoteSessions;
           }
           state = mergeCloudAndLocalState(state, remoteState);
+          const cloudNotesRepaired = repairIntensitaNotesFromLibrary(state);
           recoverWorkoutJournal(state);
           const cloudFDateCorrections = correctAliceWorkoutF16Jul2026(state);
           state.migrations.aliceWorkoutF16Jul2026Corrected = Number(state.migrations.aliceWorkoutF16Jul2026Corrected || 0) + cloudFDateCorrections;
@@ -9231,6 +9273,7 @@
             if (!options.silent) showToast(lastPersistenceError?.message || "Dati cloud scaricati, ma il PC non riesce ancora a salvarli.");
             return false;
           }
+          if (cloudNotesRepaired) await saveCloudState();
           if (!options.silent) showToast("Dati cloud caricati.");
         } else {
           state.profile.account.cloudStatus = "sync";
@@ -17998,4 +18041,3 @@
   </script>
 </body>
 </html>
-
