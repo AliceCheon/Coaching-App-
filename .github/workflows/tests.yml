@@ -30,7 +30,7 @@ jobs:
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           const html = fs.readFileSync('index.html', 'utf8');
-          for (const required of ['Intensità Agosto-Ottobre', 'intensitaNuovoBuild', '2026-08-31-sync-notes-v6-d', 'synchronizeReliableNow', 'programModelCache.clear', 'Programma salvato e sincronizzato']) {
+          for (const required of ['Intensità Agosto-Ottobre', 'intensitaNuovoBuild', '2026-08-31-sync-notes-v7-cloud-repair', 'synchronizeReliableNow', 'programModelCache.clear', 'Programma salvato e sincronizzato']) {
             if (!html.includes(required)) throw new Error(`Missing: ${required}`);
           }
           console.log('Barbell Diva runtime, notes and sync repair: OK');
