@@ -7853,7 +7853,10 @@
       return { ok, value, errors, warnings };
     }
 
-    const programModelCache = new WeakMap();
+    // L'editor invalida esplicitamente la cache dopo ogni modifica. Una
+    // WeakMap non espone .clear(), quindi il primo aggiornamento faceva
+    // fallire l'handler e rendeva inutilizzabili tutti i controlli dell'editor.
+    const programModelCache = new Map();
 
     function normalizeAndValidateProgramCached(program, index) {
       const cached = programModelCache.get(program);
