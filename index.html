@@ -16039,9 +16039,22 @@
         });
       }
       document.querySelectorAll("[data-program-action]").forEach((button) => {
-        button.addEventListener("click", () => {
-          handleProgramAction(button.dataset.programAction);
-          render();
+        button.addEventListener("click", async () => {
+          const action = button.dataset.programAction;
+          try {
+            await handleProgramAction(action);
+          } catch (error) {
+            console.error("Program action error:", error);
+            if (action === "save") {
+              updateCoachSaveIndicator("saved");
+              showToast("Modifiche salvate sul dispositivo; sincronizzazione cloud in attesa.", "warning");
+            } else {
+              showToast("Operazione non completata. Riprova.", "error");
+            }
+          }
+          // Il salvataggio aggiorna già indicatore e toast al termine; gli
+          // altri comandi devono invece ridisegnare l'editor.
+          if (action !== "save") render();
         });
       });
       document.querySelectorAll("[data-select-sheet]").forEach((button) => {
@@ -17095,7 +17108,15 @@
       if (action === "save") {
         const committed = commitActiveCoachDraft({immediate:true,quiet:true});
         saveState({immediate:true});
-        const cloudSaved = cloudUser && state.profile.account?.syncReady ? await saveCloudState() : true;
+        let cloudSaved = true;
+        if (cloudUser && state.profile.account?.syncReady) {
+          try {
+            cloudSaved = await saveCloudState();
+          } catch (error) {
+            reliableSyncUi.lastError = String(error?.message || "Sincronizzazione rimandata");
+            cloudSaved = false;
+          }
+        }
         const ok = committed && cloudSaved;
         updateCoachSaveIndicator(ok ? "saved" : "error");
         playDivaBotSound("soft");
