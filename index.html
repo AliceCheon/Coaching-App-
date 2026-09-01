@@ -8590,6 +8590,13 @@
       if (cloudActive) {
         lastPersistenceError = null;
         setPremiumSaveStatus("syncing", "Sincronizzazione cloud…");
+        // Rete di sicurezza: il salvataggio cloud è volutamente raggruppato/ritardato
+        // (vedi scheduleCloudSave) e può non fare in tempo a completare se l'app viene
+        // chiusa subito dopo una modifica, oppure può fallire in silenzio (rete, regole
+        // Firestore, quota). Senza una copia locale aggiornata, in quel caso la modifica
+        // andrebbe persa sia sul dispositivo sia sul cloud. Questa scrittura è silenziosa:
+        // eventuali errori locali non vengono mostrati, il cloud resta il tentativo primario.
+        persistStateToLocalStorage(snapshot, options);
         if (snapshot === state) scheduleCloudSave();
         return true;
       }
@@ -9168,12 +9175,14 @@
       const sessionCount = (payload.training?.sessions || []).length;
       if (payload.training) payload.training = { ...payload.training, sessions: [], exercises: [] }; // "exercises" è un indice ricalcolato in automatico da programmi+sedute, non serve spedirlo
       let rootStateSaved = false;
+      let programsSaved = false;
+      let changedPrograms = [];
       try {
         const cloudUpdatedAt = new Date().toISOString();
         const programRevision = programsRevision();
         const revisions = programRevisionMap(currentPrograms);
         const cloudRevisions = state.meta?.cloudProgramRevisions || {};
-        const changedPrograms = currentPrograms.filter((program) => String(cloudRevisions[program.id] || "") !== String(revisions[program.id] || ""));
+        changedPrograms = currentPrograms.filter((program) => String(cloudRevisions[program.id] || "") !== String(revisions[program.id] || ""));
         lastCloudWriteAt = cloudUpdatedAt;
         payload.profile.account.cloudStatus = "sync";
         payload.profile.account.syncReady = true;
@@ -9197,6 +9206,7 @@
             state: { meta: { ...(payload.meta || {}), programsUpdatedAt: programRevision, cloudProgramsUpdatedAt: programRevision, cloudProgramRevisions: revisions } }
           }, { merge: true }), 15000);
         }
+        programsSaved = true;
         lastCloudSnapshotAt = cloudUpdatedAt;
         if (!lastCloudError?.startsWith("Schede sincronizzate")) lastCloudError = "";
         state.meta = { ...(state.meta || {}), programsUpdatedAt: programRevision, cloudProgramsUpdatedAt: programRevision, cloudProgramRevisions: revisions };
@@ -9239,7 +9249,11 @@
           }
         }
         
-        return rootStateSaved;
+        // Se c'erano schede/programmi da sincronizzare e la loro scrittura è quella
+        // fallita (mentre lo stato radice era già stato salvato), non va restituito
+        // "true": altrimenti l'editor mostrerebbe "salvato e sincronizzato" anche se le
+        // modifiche alla scheda non sono davvero arrivate sul cloud.
+        return rootStateSaved && (!changedPrograms.length || programsSaved);
       } finally {
         stopPerceivedLoading("cloud");
       }
