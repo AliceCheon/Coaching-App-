@@ -8583,11 +8583,12 @@
 
     function writeLocalStateSnapshot(snapshot, options = {}) {
       // Cloud-only per scelta: quando sei loggata e il cloud è pronto, il dispositivo NON scrive
-      // più su localStorage ad ogni salvataggio (niente più "spazio browser pieno"). Il cloud
-      // resta l'unica fonte di verità; il salvataggio locale scatta solo come paracadute
-      // automatico e silenzioso se il cloud fallisce davvero (vedi saveCloudState).
+      // I salvataggi espliciti dell'utente devono lasciare subito una copia
+      // locale verificabile. Il cloud resta la sincronizzazione successiva:
+      // se una richiesta cloud fallisce, la modifica non può sparire.
       const cloudActive = cloudUser && state.profile.account?.syncReady && options.cloud !== false;
-      if (cloudActive) {
+      const explicitLocalSave = options.immediate === true;
+      if (cloudActive && !explicitLocalSave) {
         lastPersistenceError = null;
         setPremiumSaveStatus("syncing", "Sincronizzazione cloud…");
         if (snapshot === state) scheduleCloudSave();
