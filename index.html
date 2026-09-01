@@ -8299,22 +8299,67 @@
     function deduplicateWorkoutSessions(rows = []) {
       const sessions = [];
       const duplicates = [];
+      const consumed = new Set();
+      const bucketById = new Map();
+      const bucketByFingerprint = new Map();
       (Array.isArray(rows) ? rows : []).filter(Boolean).filter((row) => !row.deletedAt).forEach((candidate) => {
-        const index = sessions.findIndex((existing) => workoutSessionsAreDuplicate(existing, candidate));
-        if (index < 0) {
-          sessions.push(candidate);
-          return;
+        const idKey = String(candidate.id || candidate.workoutProSessionId || '');
+        if (idKey) {
+          const bucket = bucketById.get(idKey) || [];
+          bucket.push(candidate);
+          bucketById.set(idKey, bucket);
         }
-        const previous = sessions[index];
-        const merged = mergeWorkoutDuplicateRecords(previous, candidate);
-        const removed = String(merged.id) === String(previous.id) ? candidate : previous;
-        sessions[index] = merged;
-        duplicates.push({ kept:merged, removed });
+        const fpKey = workoutSessionContentFingerprint(candidate);
+        const fpBucket = bucketByFingerprint.get(fpKey) || [];
+        fpBucket.push(candidate);
+        bucketByFingerprint.set(fpKey, fpBucket);
+      });
+      bucketById.forEach((bucket) => {
+        bucket.forEach((candidate, position) => {
+          if (position === 0) {
+            sessions.push(candidate);
+            consumed.add(candidate);
+            return;
+          }
+          const index = sessions.findIndex((existing) => String(existing.id) === String(candidate.id) || (existing.workoutProSessionId && existing.workoutProSessionId === candidate.workoutProSessionId));
+          if (index < 0) {
+            sessions.push(candidate);
+            consumed.add(candidate);
+            return;
+          }
+          const previous = sessions[index];
+          const merged = mergeWorkoutDuplicateRecords(previous, candidate);
+          const removed = String(merged.id) === String(previous.id) ? candidate : previous;
+          sessions[index] = merged;
+          consumed.add(candidate);
+          duplicates.push({ kept:merged, removed });
+        });
+      });
+      bucketByFingerprint.forEach((bucket) => {
+        bucket.forEach((candidate, position) => {
+          if (consumed.has(candidate)) return;
+          if (position === 0) {
+            sessions.push(candidate);
+            consumed.add(candidate);
+            return;
+          }
+          const index = sessions.findIndex((existing) => workoutSessionsAreDuplicate(existing, candidate));
+          if (index < 0) {
+            sessions.push(candidate);
+            consumed.add(candidate);
+            return;
+          }
+          const previous = sessions[index];
+          const merged = mergeWorkoutDuplicateRecords(previous, candidate);
+          const removed = String(merged.id) === String(previous.id) ? candidate : previous;
+          sessions[index] = merged;
+          consumed.add(candidate);
+          duplicates.push({ kept:merged, removed });
+        });
       });
       sessions.sort((a, b) => String(a.dateInput || a.date || "").localeCompare(String(b.dateInput || b.date || "")) || workoutSessionRecordedAt(a) - workoutSessionRecordedAt(b));
       return { sessions, duplicates };
     }
-
     function visibleWorkoutSessions(targetState = state) {
       return deduplicateWorkoutSessions(targetState.training?.sessions || []).sessions;
     }
