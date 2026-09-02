@@ -12011,7 +12011,7 @@
         <div class="athlete-savebar"><span data-strategy-save-status>Strategia pronta per il salvataggio.</span><button class="gold-button" data-strategy-save>Salva strategia</button></div></section>`;
     }
 
-    let coachAi2Cache={fingerprint:"",result:null};
+    let coachAi2Cache={fingerprint:"",program:null,context:null,result:null};
     function coachAiAvailablePrograms(){return (state.programs||[]).filter((program)=>program&&!program.deletedAt);}
     function coachAiSelectedProgramId(preferred=""){
       const programs=coachAiAvailablePrograms();if(!programs.length)return "";
@@ -12038,7 +12038,39 @@
       result.decisions=(result.decisions||[]).filter(item=>item.scope!=="diagnostics"&&!hidden.has(item.id)&&!hidden.has(item.sourceInsightId));
       return result;
     }
+    function coachAi2KnowledgeFingerprint(programId=""){
+      const requestedId=coachAiSelectedProgramId(programId);
+      if(!requestedId)return "";
+      const program=programRepository.getProgramById(requestedId);
+      const history=state.training.sessions||[];
+      const prefs=state.coachAi3?.ignorePreferences||{};
+      const athlete=activeAthleteIntelligence(requestedId)||{};
+      const sessionKey=(session)=>{
+        const lifts=(session.exercises||[]).map((x)=>{
+          return x.name+":"+(x.kg||x.maxKg||x.value||"");
+        });
+        return session.id+"|"+session.date+"|"+lifts.join(", ");
+      };
+      let hash=2166136261;
+      const feed=(value)=>{
+        const t=String(value??"");
+        for(let i=0;i<t.length;i++){
+          hash^=t.charCodeAt(i);
+          hash=Math.imul(hash,16777619);
+        }
+      };
+      feed(program?.name||"");
+      feed(history.length);
+      history.slice(-80).forEach((session)=>feed(sessionKey(session)));
+      feed(JSON.stringify(prefs));
+      feed(JSON.stringify(athlete.strategy||athlete.goals||athlete.muscles||{}));
+      feed(Number(coachProgramUi.ai2Window)||5);
+      return (hash>>>0).toString(36);
+    }
     function coachAi2Analysis(programId="") {
+      if(coachAi2Cache.result && coachAi2Cache.fingerprint===coachAi2KnowledgeFingerprint(programId)) return coachAi2Cache;
+
+
       const runtime=initializeKnowledgeDecisionRuntime();
       if(!runtime) throw new Error("Decision Engine Fase 23 non disponibile.");
       const requestedId=coachAiSelectedProgramId(programId);
@@ -12048,7 +12080,7 @@
       const history=Object.values(state.athleteIntelligence?.insightHistory||{}).flat();
       const result=coachAiApplyIgnorePreferences(runtime.evaluate({state,programId:decisionContext.program.id,athleteApi:window.BarbellDivaAthleteContext,masterApi:window.BarbellDivaMasterLibrary,history,config:{performanceWindow:Number(coachProgramUi.ai2Window)||5}}));
       state.knowledgeEngine={...(state.knowledgeEngine||{}),version:runtime.VERSION,lastSnapshotHash:result.knowledgeFingerprint,cacheMeta:runtime.getStats(),eventLog:runtime.getEvents().slice(-200),updatedAt:new Date().toISOString()};
-      coachAi2Cache={fingerprint:result.knowledgeFingerprint,result};
+      coachAi2Cache={fingerprint:result.knowledgeFingerprint,program:decisionContext.program,context:decisionContext.context,result};
       return {program:decisionContext.program,context:decisionContext.context,result};
     }
 
