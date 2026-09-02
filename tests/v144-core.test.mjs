@@ -36,9 +36,9 @@ for (const marker of ["function createBackupEnvelope", "function verifyBackupEnv
 // Firebase e cache PWA.
 for (const marker of ["function initFirebase", "saveCloudState", "FIREBASE_CONFIG"]) check(html.includes(marker), `Firebase marker mancante: ${marker}`);
 check(html.includes("const APP_BUILD = window.BarbellDivaV144Config?.build || \"v146.1\""), "build v146.1 non uniforme nell'app");
-check(config.includes('build: "v147.8-editor-cache-fix"') && config.includes('cache: "atlas-app-v1478-editor-cache-fix"'), "configurazione v147.1 non caricata correttamente");
-check(sw.includes('const CACHE_NAME = "atlas-app-v1478-editor-cache-fix"'), "cache service worker non allineata alla build v147.1");
-check(manifest.includes("index.html?v=v1478"), "manifest non allineato alla build v147.8");
+check(config.includes('build: "v147.9-boot-tdz-fix"') && config.includes('cache: "atlas-app-v1479-boot-tdz-fix"'), "configurazione v147.1 non caricata correttamente");
+check(sw.includes('const CACHE_NAME = "atlas-app-v1479-boot-tdz-fix"'), "cache service worker non allineata alla build v147.1");
+check(manifest.includes("index.html?v=v1479"), "manifest non allineato alla build v147.9");
 
 // I moduli esclusi non devono più essere caricati o consegnati.
 for (const removed of ["./nutrizione/", "workout-pro.js", "workout-pro.css", "food-backup.js", "photo-store.js"]) {
