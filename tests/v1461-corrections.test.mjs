@@ -14,12 +14,12 @@ const sw = read("service-worker.js");
 const workflow = read(".github/workflows/tests.yml");
 const check = (condition, message) => assert.ok(condition, message);
 
-check(config.includes('build: "v147.10-storage-fix"'), "build v147.1 mancante");
-check(config.includes('cache: "atlas-app-v14710-storage-fix"'), "cache contrasto v147.1 mancante");
-check(sw.includes('const CACHE_NAME = "atlas-app-v14710-storage-fix"'), "service worker contrasto non aggiornato");
+check(config.includes('build: "v147.11-sync-local-decoupled"'), "build v147.1 mancante");
+check(config.includes('cache: "atlas-app-v14711-sync-local-decoupled"'), "cache contrasto v147.1 mancante");
+check(sw.includes('const CACHE_NAME = "atlas-app-v14711-sync-local-decoupled"'), "service worker contrasto non aggiornato");
 check(sw.includes('"./coach-schede-restyle-v146.css"'), "CSS v146 non precaricato");
 check(sw.includes('"./coach-schede-v146-enhance.js"'), "JS v146 non precaricato");
-check(manifest.includes("index.html?v=v14710"), "manifest contrasto non aggiornato");
+check(manifest.includes("index.html?v=v14711"), "manifest contrasto non aggiornato");
 check(html.includes("coach-schede-restyle-v146.css?v=v1461c10"), "CSS senza cache bust contrasto");
 check(html.includes("coach-schede-v146-enhance.js?v=v1461c10"), "JS senza cache bust v146.1");
 
