@@ -25,6 +25,10 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           for file in *.js; do node --check "$file"; done
+      - name: Run test suite
+        run: |
+          node tests/v1461-corrections.test.mjs
+          for file in tests/*.mjs; do node "$file"; done
       - name: Check Intensita nuovo and sync repair are embedded
         run: |
           node --input-type=module <<'NODE'
