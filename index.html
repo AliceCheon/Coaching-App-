@@ -8576,17 +8576,37 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       return "Il browser non riesce a salvare i dati su questo dispositivo. I dati cloud non sono stati cancellati: controlla che il sito possa usare la memoria locale e riprova.";
     }
 
+    function redactPhotoListFallback(photos) {
+      if (!Array.isArray(photos)) return photos;
+      const heavy = new Set(["data", "dataUrl", "dataURL", "base64", "src", "url", "blob", "imageData", "bytes", "content", "dataUri"]);
+      return photos.map((photo) => {
+        if (!photo || typeof photo !== "object") return photo;
+        const slim = {};
+        for (const key of Object.keys(photo)) {
+          if (!heavy.has(key) && !/(data|dataUrl|dataURL|base64|blob|imageData|bytes|content)/i.test(key)) slim[key] = photo[key];
+        }
+        if (!Object.keys(slim).length) return { id: photo.id, name: photo.name };
+        return slim;
+      });
+    }
     function localStorageSnapshotFor(snapshot) {
       const photos = snapshot?.nutrition?.dashboard?.photos;
       const store = window.BarbellDivaPhotoStore;
-      if (!store || !store.needsRedaction(photos)) return snapshot;
-      const expected = photos.filter((photo) => store.hasImageData(photo)).length;
-      store.putPhotos(photos).then((saved) => {
-        if (saved >= expected) return;
-        lastPersistenceError = "Le foto non sono state archiviate tutte nella memoria dedicata. L'app continua a conservarle in questa sessione: esporta un backup prima di chiuderla e riprova.";
-        try { showToast(lastPersistenceError, "error"); } catch (error) {}
-      });
-      return { ...snapshot, nutrition: { ...snapshot.nutrition, dashboard: { ...snapshot.nutrition.dashboard, photos: store.redactPhotoList(photos) } } };
+
+
+      if (!Array.isArray(photos) || !photos.length) return snapshot;
+      const redacted = store && typeof store.needsRedaction === "function" && store.needsRedaction(photos)
+        ? store.redactPhotoList(photos)
+        : redactPhotoListFallback(photos);
+      if (store && typeof store.putPhotos === "function") {
+        const expected = photos.filter((photo) => store.hasImageData ? store.hasImageData(photo) : true).length;
+        store.putPhotos(photos).then((saved) => {
+          if (saved >= expected) return;
+          lastPersistenceError = "Le foto non sono state archiviate tutte nella memoria dedicata. L'app continua a conservarle in questa sessione: esporta un backup prima di chiuderla e riprova.";
+          try { showToast(lastPersistenceError, "error"); } catch (error) {}
+        });
+      }
+      return { ...snapshot, nutrition: { ...snapshot.nutrition, dashboard: { ...snapshot.nutrition.dashboard, photos: redacted } } };
     }
 
     function echoLocalStateQuietly(options = {}) {
@@ -8744,10 +8764,15 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
 
     function redactedEnvelopeForStorage(envelope) {
       const store = window.BarbellDivaPhotoStore;
+
+
       const photos = envelope?.payload?.nutrition?.dashboard?.photos;
-      if (!store || !store.needsRedaction(photos)) return envelope;
-      store.putPhotos(photos);
-      const payload = { ...envelope.payload, nutrition: { ...envelope.payload.nutrition, dashboard: { ...envelope.payload.nutrition.dashboard, photos: store.redactPhotoList(photos) } } };
+      if (!Array.isArray(photos) || !photos.length) return envelope;
+      const redacted = store && typeof store.needsRedaction === "function" && store.needsRedaction(photos)
+        ? store.redactPhotoList(photos)
+        : redactPhotoListFallback(photos);
+      if (store && typeof store.putPhotos === "function") store.putPhotos(photos);
+      const payload = { ...envelope.payload, nutrition: { ...envelope.payload.nutrition, dashboard: { ...envelope.payload.nutrition.dashboard, photos: redacted } } };
       const metadata = { ...envelope.metadata };
       const checksum = backupChecksum({ metadata: { ...metadata, checksum: undefined }, payload });
       return { ...envelope, metadata: { ...metadata, checksum }, payload };
@@ -11046,7 +11071,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       const historyRows = dataSafetyUi.historyOpen ? `<div class="history">${history.length ? history.map((item) => `<div class="history-row"><span><strong>${escapeHtml(backupTypeLabel(item.metadata?.type))}</strong><small>${escapeHtml(backupDateLabel(item.metadata?.createdAt))}</small></span><div><button class="mini-button" type="button" data-backup-history-restore="${escapeHtml(item.metadata?.id)}">Ripristina</button><button class="mini-button" type="button" data-backup-history-delete="${escapeHtml(item.metadata?.id)}">Elimina</button></div></div>`).join("") : emptyStateHtml({ title:"Nessun backup locale", description:"I dati sono sincronizzati automaticamente sul cloud.", actionLabel:"Chiudi cronologia", action:"dashboard", icon:"☁️" })}</div>` : "";
       const restoreModal = preview ? `<div class="coach-modal-backdrop"><section class="coach-modal" role="dialog" aria-modal="true" aria-labelledby="backupRestoreTitle"><div class="row"><div><span class="section-eyebrow">Ripristino sicuro</span><h3 id="backupRestoreTitle">Backup del ${escapeHtml(backupDateLabel(preview.metadata?.createdAt))}</h3></div><button class="round-button" type="button" data-backup-preview-close aria-label="Chiudi">×</button></div>${backupSummaryHtml(preview.metadata?.summary)}<p class="micro-copy">Scegli cosa ripristinare. Se non selezioni nulla, verrà ripristinato tutto il backup dopo aver creato un punto di sicurezza.</p><div class="training-context-grid"><label><input type="checkbox" data-backup-select="logbook"> Logbook</label><label><input type="checkbox" data-backup-select="programs"> Programmi</label><label><input type="checkbox" data-backup-select="progressions"> Progressioni</label><label><input type="checkbox" data-backup-select="checkins"> Check-in</label><label><input type="checkbox" data-backup-select="settings"> Impostazioni</label><label><input type="checkbox" data-backup-select="coachAi"> Coach AI</label><label><input type="checkbox" data-backup-select="divaBot"> Diva Bot</label><label><input type="checkbox" data-backup-select="exerciseLab"> Exercise Lab</label></div><p class="micro-copy">Le statistiche verranno ricalcolate automaticamente dal Logbook.</p><div class="coach-modal-actions"><button class="ghost-button" type="button" data-backup-preview-close>Annulla</button><button class="gold-button" type="button" data-backup-restore-confirm>Conferma ripristino</button></div></section></div>` : "";
       const recovery = recoveryBootError ? `<section class="card"><span class="section-eyebrow">Recovery Mode</span><h3>Dati locali da controllare</h3><p class="micro-copy">${escapeHtml(recoveryBootError)}</p><div class="quick-actions"><button class="ghost-button" data-backup-recovery="latest">Ripristina ultimo backup</button><button class="ghost-button" data-backup-recovery="previous">Backup precedente</button><label class="ghost-button">Importa backup manuale<input type="file" accept="application/json" data-backup-import hidden></label><button class="ghost-button" data-backup-corrupt-download>Scarica dati corrotti</button><button class="ghost-button" data-backup-recovery="safe">Continua in modalità sicura</button></div></section>` : "";
-      return `<section class="card data-protection-card" aria-labelledby="dataProtectionTitle"><div class="row"><div><span class="section-eyebrow">Protezione dati</span><h3 id="dataProtectionTitle">I tuoi dati sono al sicuro</h3></div><span class="chip">${escapeHtml(integrity)}</span></div><div class="training-context-grid"><div><strong>Cloud</strong><p class="micro-copy">${state.profile.account?.syncReady ? "✓ Sincronizzato automaticamente" : "Locale"}</p></div><div><strong>Ultima sincronizzazione</strong><p class="micro-copy">${state.profile.account?.lastCloudSyncAt ? escapeHtml(backupDateLabel(state.profile.account.lastCloudSyncAt)) : "Mai"}</p></div><div><strong>Integrità dati</strong><p class="micro-copy">${escapeHtml(integrity)}</p></div><div><strong>Versione dati</strong><p class="micro-copy">schema ${DATA_SCHEMA_VERSION} · ${APP_BUILD}</p></div></div><div class="quick-actions"><button class="ghost-button" type="button" data-backup-history-toggle>Cronologia Backup</button></div>${historyRows}</section>${recovery}${restoreModal}`;
+      return `<section class="card data-protection-card" aria-labelledby="dataProtectionTitle"><div class="row"><div><span class="section-eyebrow">Protezione dati</span><h3 id="dataProtectionTitle">I tuoi dati sono al sicuro</h3></div><span class="chip">${escapeHtml(integrity)}</span></div><div class="training-context-grid"><div><strong>Cloud</strong><p class="micro-copy">${state.profile.account?.syncReady ? "✓ Sincronizzato automaticamente" : "Locale"}</p></div><div><strong>Ultima sincronizzazione</strong><p class="micro-copy">${state.profile.account?.lastCloudSyncAt ? escapeHtml(backupDateLabel(state.profile.account.lastCloudSyncAt)) : "Mai"}</p></div><div><strong>Integrità dati</strong><p class="micro-copy">${escapeHtml(integrity)}</p></div><div><strong>Versione dati</strong><p class="micro-copy">schema ${DATA_SCHEMA_VERSION} · ${APP_BUILD}</p></div></div><div class="quick-actions"><button class="ghost-button" type="button" data-backup-export-now>Esporta backup</button><button class="ghost-button" type="button" data-backup-history-toggle>Cronologia Backup</button></div>${historyRows}</section>${recovery}${restoreModal}`;
     }
 
     function workoutCoachProgressMessage(completion) {
@@ -15414,6 +15439,10 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         showToast(saved.ok ? "Backup completo esportato e verificato." : "Backup scaricato e verificato; lo spazio locale non consente di conservarne una seconda copia nell'app.");
       });
       document.querySelector("[data-backup-history-toggle]")?.addEventListener("click", () => { dataSafetyUi.historyOpen = !dataSafetyUi.historyOpen; render(); });
+      document.querySelector("[data-backup-export-now]")?.addEventListener("click", () => {
+        const envelope = createBackupEnvelope("manual", state);
+        if (downloadBackupEnvelope(envelope)) showToast("Backup con foto esportato.", "success");
+      });
       document.querySelectorAll("[data-backup-import]").forEach((input) => input.addEventListener("change", async () => {
         const file = input.files?.[0]; if (!file) return;
         try {
