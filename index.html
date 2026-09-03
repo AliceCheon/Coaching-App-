@@ -9031,6 +9031,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       if (!window.firebase.apps.length) window.firebase.initializeApp(FIREBASE_CONFIG);
       authService = window.firebase.auth();
       dbService = window.firebase.firestore ? window.firebase.firestore() : null;
+      window.firebase.firestore().settings({ experimentalForceLongPolling: true });
       authService.setPersistence(window.firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
       authService.getRedirectResult().catch(() => {
         showToast("Login Google non completato. Controlla domini autorizzati.");
