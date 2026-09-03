@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v14717-timeouts";
+const CACHE_NAME = "atlas-app-v14718-photofix";
 const APP_SHELL = [
   "./",
   "./index.html",

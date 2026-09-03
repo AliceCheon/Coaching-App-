@@ -8578,7 +8578,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
 
     function redactPhotoListFallback(photos) {
       if (!Array.isArray(photos)) return photos;
-      const heavy = new Set(["data", "dataUrl", "dataURL", "base64", "src", "url", "blob", "imageData", "bytes", "content", "dataUri"]);
+      const heavy = new Set(["data", "dataUrl", "dataURL", "base64", "src", "url", "blob", "imageData", "bytes", "content", "dataUri", "front", "back", "side", "left", "right", "photo", "image", "img", "photoUrl", "imageUrl"]);
       return photos.map((photo) => {
         if (!photo || typeof photo !== "object") return photo;
         const slim = {};
@@ -9285,6 +9285,10 @@ function sanitizeForFirestore(value) {
       // singolo salvataggio (anche solo cambiare una preferenza) fino a farlo scadere per
       // timeout su rete mobile. Le sedute vengono già sincronizzate una per una, in modo
       // leggero e affidabile, tramite queueReliableWorkoutSession/flushReliableSync.
+      const cloudPhotos = payload.nutrition?.dashboard?.photos;
+      if (Array.isArray(cloudPhotos) && cloudPhotos.length) {
+        payload.nutrition = { ...payload.nutrition, dashboard: { ...payload.nutrition.dashboard, photos: redactPhotoListFallback(cloudPhotos) } };
+      }
       const sessionCount = (payload.training?.sessions || []).length;
       if (payload.training) payload.training = { ...payload.training, sessions: [], exercises: [] }; // "exercises" è un indice ricalcolato in automatico da programmi+sedute, non serve spedirlo
       let rootStateSaved = false;
