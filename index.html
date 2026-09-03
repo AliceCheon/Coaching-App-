@@ -9067,7 +9067,30 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         saveState({ cloud: false });
         render();
         if (user) {
-          loadCloudState({ silent: true }).then(async (loaded) => {
+          // Reset esplicito della coda locale: le operazioni rimaste "syncing"
+          // da un flush interrotto (es. chiusura della pagina a metà) restavano
+          // appese e bloccavano la sync in "Cloud in attesa". Le riportiamo a
+          // "failed" così il prossimo flushReliableSync le riprende.
+
+
+
+          try {
+            initReliableSync();
+            const resetOps = (reliableSyncQueue?.list?.() || []);
+            for (const operation of resetOps) {
+              if (operation.status === "syncing") {
+                reliableSyncQueue.markFailed(operation.operationId, "reset da login: riprova");
+              }
+            }
+          } catch (e) { /* la coda è solo un acceleratore: se il reset fallisce, la sync riparte comunque */ }
+          // Caricamento cloud immediato e visibile, forzato a ogni login(anche se un
+          // primo tentativo silenzioso era fallito prima che la sessione fosse pronta).
+
+
+
+
+
+          loadCloudState({ silent: false }).then(async (loaded) => {
             saveState({ cloud: false });
             render();
           if (loaded) {
