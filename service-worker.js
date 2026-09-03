@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v14713-sanitize-firestore";
+const CACHE_NAME = "atlas-app-v14714-syntax-fix";
 const APP_SHELL = [
   "./",
   "./index.html",
