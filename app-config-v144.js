@@ -1,8 +1,8 @@
 // Configurazione minima condivisa della build v146.1 con Workout Flow v147.
 (function (root) {
   root.BarbellDivaV144Config = Object.freeze({
-    build: "v147.16-longpoll",
-    cache: "atlas-app-v14716-longpoll",
+    build: "v147.17-timeouts",
+    cache: "atlas-app-v14717-timeouts",
     backupAutomaticLimit: 5,
     legacyModulesRemoved: ["nutrizione", "workout-pro"],
     firebase: Object.freeze({
