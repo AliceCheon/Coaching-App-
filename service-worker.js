@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v14718-photofix";
+const CACHE_NAME = "atlas-app-v14719-cleanup";
 const APP_SHELL = [
   "./",
   "./index.html",
