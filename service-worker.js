@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v14711-sync-local-decoupled";
+const CACHE_NAME = "atlas-app-v14712-auto-sync-heartbeat";
 const APP_SHELL = [
   "./",
   "./index.html",
