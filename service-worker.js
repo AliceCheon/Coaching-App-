@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v14715-sync-unlock";
+const CACHE_NAME = "atlas-app-v14716-longpoll";
 const APP_SHELL = [
   "./",
   "./index.html",
