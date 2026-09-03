@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Barbell Diva: ogni utente autenticato può leggere e scrivere
+    // SOLO il proprio documento e le proprie sottocollection.
+    // Nessun accesso anonimo o pubblicoa dati altrui.
+
+    match /barbellDivaAccounts/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      match /sessions/{sessionId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      match /nutritionPhotos/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+  }
+}
