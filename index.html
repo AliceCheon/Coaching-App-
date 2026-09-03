@@ -8183,6 +8183,14 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         const postJournalFDateCorrections = correctAliceWorkoutF16Jul2026(loaded);
         loaded.migrations.aliceWorkoutF16Jul2026Corrected = Number(loaded.migrations.aliceWorkoutF16Jul2026Corrected || 0) + postJournalFDateCorrections;
         repairSequentialWorkoutWeeks(loaded);
+        if (!loaded.meta?.cleanupV14719) {
+          const cleanPhotos = redactPhotoListFallback(loaded.nutrition?.dashboard?.photos);
+          if (loaded.nutrition) loaded.nutrition = { ...loaded.nutrition, dashboard: { ...(loaded.nutrition.dashboard || {}), photos: cleanPhotos } };
+          const historyCleanup = readBackupHistory().map((item) => redactedEnvelopeForStorage(item)).filter(Boolean);
+          if (historyCleanup.length) writeBackupHistory(historyCleanup);
+          loaded.meta = { ...(loaded.meta || {}), cleanupV14719: true };
+        }
+        // clean one-shot v147.19: rimuove le foto residue e alleggerisce la cronologia backup
         // Audit reale anche per backup già marcati v4: il flag non garantisce
         // che la progressione sia stata materialmente importata.
         const repaired = repairImportedProgressions({ state: loaded });
