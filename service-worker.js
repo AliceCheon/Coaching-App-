@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v14712-auto-sync-heartbeat";
+const CACHE_NAME = "atlas-app-v14713-sanitize-firestore";
 const APP_SHELL = [
   "./",
   "./index.html",

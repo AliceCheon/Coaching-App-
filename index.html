@@ -9118,13 +9118,25 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       return Object.fromEntries((programs || []).map((program) => [String(program.id), String(program.updatedAt || state.meta?.programsUpdatedAt || "")]));
     }
 
+function sanitizeForFirestore(value) {
+  if (value ==null) return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (Array.isArray(value)) return value.map(sanitizeForFirestore);
+  if (typeof value === "object") {
+    const out = {};
+    for (const key of Object.keys(value)) out[key] = sanitizeForFirestore(value[key];
+    return out;
+  }
+  return value;
+}
+
     async function saveCloudPrograms(programs = [], updatedAt = new Date().toISOString()) {
       const collection = cloudProgramsCollection();
       if (!collection) throw new Error("cloud programs unavailable");
       await Promise.all((programs || []).map((program) => collection.doc(cloudProgramDocumentId(program.id)).set({
         programId: program.id,
         updatedAt,
-        program: clone(program)
+        program: sanitizeForFirestore(clone(program))
       })));
       return true;
     }
@@ -9273,7 +9285,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
           programsUpdatedAt: state.meta?.cloudProgramsUpdatedAt || "",
           sessionStorage: "subcollection-v1",
           sessionCount,
-          state: payload
+          state: sanitizeForFirestore(payload)
         }, { merge: true }), 15000);
         rootStateSaved = true;
         if (changedPrograms.length) await withTimeout(saveCloudPrograms(clone(changedPrograms), cloudUpdatedAt), 30000);
@@ -9491,7 +9503,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
             if (result.status === "merged" && Number(remote.revision||0)>Number(operation.payload.revision||0)) { mergeReliableRemoteSession(remote); reliableSyncQueue.markSynced(operation.operationId); synced++; continue; }
           }
           const payload={ ...operation.payload, userId:cloudUser.uid, syncStatus:"synced", cloudSyncedAt:new Date().toISOString() };
-          await withTimeout(ref.set({ session:payload, entityId:payload.id, userId:cloudUser.uid, revision:payload.revision, dataHash:payload.dataHash, deviceId:payload.deviceId, updatedAt:payload.updatedAt, serverUpdatedAt:window.firebase.firestore.FieldValue.serverTimestamp() },{ merge:true }),15000);
+          await withTimeout(ref.set({ session:sanitizeForFirestore(payload), entityId:sanitizeForFirestore(payload.id, userId:cloudUser.uid, revision:payload.revision, dataHash:payload.dataHash, deviceId:payload.deviceId, updatedAt:payload.updatedAt, serverUpdatedAt:window.firebase.firestore.FieldValue.serverTimestamp() },{ merge:true }),15000);
           const local=(state.training.sessions||[]).find(item=>String(item.id)===String(payload.id)); if(local) Object.assign(local,{ syncStatus:"synced",cloudSyncedAt:payload.cloudSyncedAt,dataHash:payload.dataHash,deviceId:payload.deviceId,revision:payload.revision });
           reliableSyncQueue.markSynced(operation.operationId); reliableSyncQueue.audit("confirmed-cloud",{entityId:payload.id,deviceId:payload.deviceId}); synced++;
         } catch(error) { reliableSyncQueue.markFailed(operation.operationId,cloudErrorText(error,"sincronizzazione seduta")); reliableSyncUi.lastError=cloudErrorText(error,"sincronizzazione seduta"); failed++; }
