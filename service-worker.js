@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v14714-syntax-fix";
+const CACHE_NAME = "atlas-app-v14715-sync-unlock";
 const APP_SHELL = [
   "./",
   "./index.html",
