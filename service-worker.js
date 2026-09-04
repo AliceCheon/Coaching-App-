@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v14719-cleanup";
+const CACHE_NAME = "atlas-app-v14720-errlog";
 const APP_SHELL = [
   "./",
   "./index.html",
