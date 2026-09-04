@@ -9211,6 +9211,47 @@ function sanitizeForFirestore(value) {
       return `Cloud non disponibile durante ${action}${code ? ` (${code.replace("firestore/", "")})` : ""}. I dati sono salvati localmente.`;
     }
 
+    const CLOUD_ERROR_LOG_KEY = `${STORE_KEY}.cloud-error-log.v1`;
+    const CLOUD_ERROR_LOG_MAX = 20;
+
+    function readCloudErrorLog() {
+      try {
+        const raw = localStorage.getItem(CLOUD_ERROR_LOG_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed.filter((row) => row && typeof row === "object") : [];
+      } catch (error) { return []; }
+    }
+
+    function writeCloudErrorLog(rows) {
+      try { localStorage.setItem(CLOUD_ERROR_LOG_KEY, JSON.stringify(rows.slice(-CLOUD_ERROR_LOG_MAX))); }
+      catch (error) { /* il log non deve mai bloccare la sync */ }
+    }
+
+    function recordCloudError(error, action) {
+      try {
+        const code = String(error?.code || "");
+        const message = String(error?.message || error || "");
+        const normalized = String(code || message).toLowerCase();
+        if (normalized.includes("unavailable") || normalized.includes("network") || normalized.includes("timeout") || normalized.includes("deadline")) return;
+        const rows = readCloudErrorLog();
+        const now = new Date().toISOString();
+        const last = rows[rows.length - 1];
+        if (last && now - Date.parse(last.ts || "" ) < 30000 && last.code === code && last.message === message) return;
+        rows.push({
+          ts: now, code, message: message.slice(0, 1000), tech: "",
+          action: action || "", build: APP_BUILD, ua: (navigator.userAgent || "" ).slice(0, 120), count: 1
+        });
+        writeCloudErrorLog(rows);
+      } catch (error) { /* mai propagare */ }
+    }
+
+    function cloudErrorLogSummary() {
+      const rows = readCloudErrorLog();
+      const last = rows[rows.length - 1];
+      if (!last) return "";
+      return `${escapeHtml(last.code || "errore sconosciuto")} - ${escapeHtml(last.message || "" ).slice(0, 140)}`;
+    }
+
     function stopCloudStateRealtime() {
       if (typeof cloudStateUnsubscribe === "function") cloudStateUnsubscribe();
       cloudStateUnsubscribe = null;
@@ -9350,6 +9391,7 @@ function sanitizeForFirestore(value) {
         state.profile.account.cloudStatus = rootStateSaved ? "sync parziale" : "errore sync";
         echoLocalStateQuietly();
         setPremiumSaveStatus(rootStateSaved ? "waiting" : "error", rootStateSaved ? "Cloud in attesa" : "Errore di salvataggio");
+        recordCloudError(error, "salvataggio doc radice");
         
         // Auto-retry for network errors WITH LIMIT - DISABLED FOR PC STABILITY
         if (String(error?.code || "").includes("unavailable") || String(error?.message || "").includes("network") || String(error?.message || "").includes("timeout") || String(error?.code || "").includes("deadline")) {
@@ -10958,6 +11000,19 @@ function sanitizeForFirestore(value) {
       return `<section class="card reliable-sync-card"><div class="row"><div><span class="section-eyebrow">PC + telefono</span><h3>Sincronizzazione sedute</h3></div><span class="chip">${escapeHtml(labels[status]||status)}</span></div><div class="training-context-grid"><div><strong>Ultimo successo</strong><p class="micro-copy">${reliableSyncUi.lastSuccess?escapeHtml(backupDateLabel(reliableSyncUi.lastSuccess)):"non ancora confermato"}</p></div><div><strong>In coda</strong><p class="micro-copy">${Number(stats.pending||0)+Number(stats.syncing||0)+Number(stats.failed||0)}</p></div><div><strong>Questo dispositivo</strong><p class="micro-copy">${escapeHtml(reliableDeviceId())}</p></div><div><strong>Ultimo dispositivo remoto</strong><p class="micro-copy">${escapeHtml(reliableSyncUi.remoteDevice||"nessuno")}</p></div></div>${reliableSyncUi.lastError?`<p class="sync-error">${escapeHtml(reliableSyncUi.lastError)}</p>`:""}<div class="quick-actions"><button class="gold-button" data-reliable-sync-now>Sincronizza ora</button><button class="ghost-button" data-reliable-sync-check ${reliableSyncUi.loading||reliableSyncUi.resolving?"disabled":""}>${reliableSyncUi.loading?"Controllo in corso…":"Controlla e risolvi sedute"}</button></div>${diag?`<div class="training-context-grid"><div><strong>${diag.onlyLocal}</strong><p class="micro-copy">solo su questo dispositivo</p></div><div><strong>${diag.onlyCloud}</strong><p class="micro-copy">solo nel cloud</p></div><div><strong>${diag.possibleDuplicates}</strong><p class="micro-copy">confronti che richiedono la tua scelta</p></div></div>${diag.cleanedDuplicates?`<p class="sync-success">${diag.cleanedDuplicates} doppion${diag.cleanedDuplicates===1?"e identico rimosso":"i identici rimossi"} automaticamente da dispositivo e cloud.</p>`:""}${candidates?`<div class="duplicate-resolution-list"><h4>Sedute simili da confrontare</h4>${candidates}</div>`:""}${!diag.possibleDuplicates&&!diag.onlyLocal&&!diag.onlyCloud?'<p class="sync-success">Controllo completato: PC, telefono e Logbook sono allineati.</p>':""}`:""}<details><summary>Registro tecnico</summary><div class="history">${(reliableSyncQueue?.auditLog?.()||[]).slice(-6).reverse().map(row=>`<div class="history-row"><span><strong>${escapeHtml(row.event)}</strong><small>${escapeHtml(backupDateLabel(row.at))}</small></span><small>${escapeHtml(row.entityId||"")}</small></div>`).join("")||'<p class="micro-copy">Nessuna operazione registrata.</p>'}</div></details></section>`;
     }
 
+    function cloudErrorLogCardHtml() {
+      const rows = readCloudErrorLog();
+      const last = rows[rows.length - 1];
+      if (!last) return "";
+      const when = backupDateLabel(last.ts);
+      const payload = {
+        ts: last.ts, code: last.code || "", message: last.message || "", action: last.action || "",
+        build: last.build || "", ua: last.ua || "",
+      };
+      const dump = JSON.stringify(payload);
+      return `<section class="card"><div class="row"><div><span class="section-eyebrow">Registro errori cloud</span><h3>${escapeHtml(last.code || "errore sconosciuto")}</h3></div><span class="chip">${escapeHtml(when)}</span></div><p class="micro-copy">${escapeHtml(last.message || "")}</p><p class="micro-copy">${escapeHtml(last.action || "")} - ${escapeHtml(last.build || "")}</p><div class="quick-actions"><button class="ghost-button" type="button" data-cloud-log-copy data-cloud-log-dump="${escapeHtml(dump)}">Copia dettagli errore</button></div></section>`;
+    }
+
     function settingsHtml() {
       return `<div class="phase11-dashboard settings-screen"><section class="phase11-hero card"><div><span class="section-eyebrow">Tutto in un posto</span><h2>Impostazioni</h2><p>Preferenze dell'app, Diva Bot, protezione dati e sincronizzazione.</p></div><span class="chip">${APP_BUILD}</span></section>${divaBotSettingsHtml()}${experienceSettingsHtml()}${reliableSyncPanelHtml()}${dataProtectionHtml()}${accountCardHtml()}</div>`;
     }
@@ -12046,7 +12101,7 @@ function sanitizeForFirestore(value) {
 
     function coachStudioDiagnosticsHtml() {
       const metrics=window.BarbellDivaCoachStudio.programMetrics(state.programs),history=readBackupHistory(),records=state.masterExerciseLibrary?.records||[],incomplete=records.filter(record=>!record.patterns?.length||!record.equipment?.required?.length||!record.identity?.type||!record.muscles?.some(muscle=>muscle.role==="secondary")||record.biomechanics?.stability==null||record.fatigue?.systemic==null);
-      return `<section class="coach-studio-page">${coachStudioPageHead("Controllo tecnico","Diagnostica","Stato locale, cloud, cache, integrità e manutenzione dei dati tecnici.")}<div class="coach-diagnostic-grid"><div class="coach-diagnostic-item"><strong>${APP_BUILD}</strong><span>Build applicazione</span></div><div class="coach-diagnostic-item"><strong>Schema ${DATA_SCHEMA_VERSION}</strong><span>Versione dati</span></div><div class="coach-diagnostic-item"><strong>${navigator.onLine?"Online":"Offline"}</strong><span>Rete dispositivo</span></div><div class="coach-diagnostic-item"><strong>${state.profile.account?.syncReady?"Cloud pronto":"Solo locale"}</strong><span>Sincronizzazione</span></div><div class="coach-diagnostic-item"><strong>${metrics.programs}/${metrics.sheets}/${metrics.exercises}</strong><span>Programmi / schede / esercizi</span></div><div class="coach-diagnostic-item"><strong>${history.length}</strong><span>Backup locali</span></div></div><article class="coach-studio-card"><span class="section-eyebrow">Manutenzione Master Exercise Library</span><h3>${incomplete.length} esercizi con dati tecnici da completare</h3><p>Questa attività generale resta in Diagnostica. Diva Coach AI la mostrerà soltanto quando un dato mancante blocca l’analisi di uno specifico esercizio.</p><button class="ghost-button" data-coach-studio-route="library">Apri Libreria esercizi</button></article>${reliableSyncPanelHtml()}${dataProtectionHtml()}</section>`;
+      return `<section class="coach-studio-page">${coachStudioPageHead("Controllo tecnico","Diagnostica","Stato locale, cloud, cache, integrità e manutenzione dei dati tecnici.")}<div class="coach-diagnostic-grid"><div class="coach-diagnostic-item"><strong>${APP_BUILD}</strong><span>Build applicazione</span></div><div class="coach-diagnostic-item"><strong>Schema ${DATA_SCHEMA_VERSION}</strong><span>Versione dati</span></div><div class="coach-diagnostic-item"><strong>${navigator.onLine?"Online":"Offline"}</strong><span>Rete dispositivo</span></div><div class="coach-diagnostic-item"><strong>${state.profile.account?.syncReady?"Cloud pronto":"Solo locale"}</strong><span>Sincronizzazione</span></div><div class="coach-diagnostic-item"><strong>${metrics.programs}/${metrics.sheets}/${metrics.exercises}</strong><span>Programmi / schede / esercizi</span></div><div class="coach-diagnostic-item"><strong>${history.length}</strong><span>Backup locali</span></div></div><article class="coach-studio-card"><span class="section-eyebrow">Manutenzione Master Exercise Library</span><h3>${incomplete.length} esercizi con dati tecnici da completare</h3><p>Questa attività generale resta in Diagnostica. Diva Coach AI la mostrerà soltanto quando un dato mancante blocca l’analisi di uno specifico esercizio.</p><button class="ghost-button" data-coach-studio-route="library">Apri Libreria esercizi</button></article>${reliableSyncPanelHtml()}${cloudErrorLogCardHtml()}${dataProtectionHtml()}</section>`;
     }
 
     function coachStudioSettingsHtml() {
@@ -16529,6 +16584,11 @@ function sanitizeForFirestore(value) {
         setTimeout(render, 400); // il browser risponde in modo asincrono al prompt
       });
       document.querySelector("[data-reliable-sync-now]")?.addEventListener("click", synchronizeReliableNow);
+      document.querySelector("[data-cloud-log-copy]")?.addEventListener("click", (ev) => {
+        const btn = ev.currentTarget;
+        const dump = btn?.getAttribute("data-cloud-log-dump") || "";
+        if (dump && navigator.clipboard?.writeText) navigator.clipboard.writeText(dump).then(() => showToast("Dettagli errore copiati: incollali nella chat."));
+      });
       document.querySelector("[data-reliable-sync-check]")?.addEventListener("click", runReliableDiagnostics);
       document.querySelectorAll("[data-duplicate-keep][data-duplicate-remove]").forEach((button) => button.addEventListener("click", () => {
         resolveReliableDuplicate(button.dataset.duplicateKeep, button.dataset.duplicateRemove);
