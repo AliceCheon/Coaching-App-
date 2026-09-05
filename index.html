@@ -9460,6 +9460,13 @@ function sanitizeForFirestore(value) {
           state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
           lastCloudSnapshotAt = String(snapshot.data()?.updatedAt || lastCloudSnapshotAt);
           lastCloudError = "";
+          // Paracadute locale: dopo un merge cloud riuscito salviamo subito una
+          // copia silenziosa dello stato unito (sedute incluse, così anche se al
+          // prossimo avvio il cloud non viene ricaricato (rete, auth, Firestore),
+          // il Logbook non resta fermo a una data vecchia sul dispositivo.
+
+
+
           const persisted = echoLocalStateQuietly();
           if (!persisted) {
             state.profile.account.cloudStatus = "sync";
@@ -9739,6 +9746,10 @@ function sanitizeForFirestore(value) {
           scheduleCloudSave();
         } else if (!st?.lastCloudSyncAt || st?.cloudStatus === "errore cloud" || st?.cloudStatus?.startsWith("errore")) {
           scheduleCloudSave();
+          // Riprova ANCHE il download: se il primo caricamento cloud al boot
+          // era fallito (rete, auth, Firestore), il solo re-upload non basta
+          // a far arrivare sul PC le sedute salvate dal telefono.
+          loadCloudState({ silent: true }).then((loaded) => { if (loaded) render(); });
         }
       }
     }, 45000);
