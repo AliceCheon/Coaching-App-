@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v14720-errlog";
+const CACHE_NAME = "atlas-app-v14721-sync-boot-persist";
 const APP_SHELL = [
   "./",
   "./index.html",
