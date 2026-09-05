@@ -16611,16 +16611,23 @@ function sanitizeForFirestore(value) {
         }
         if (button.dataset.premiumErrorAction === "retry-local-storage") {
           releaseStateWriteSpace();
-          const saved = persistStateToLocalStorage(state, { touch: false }); // pulsante esplicito: qui vogliamo il vero test, non quello silenzioso
-          if (saved) {
+          const saved = persistStateToLocalStorage(state, { touch: false }); 
+          
+          // FORZATURA CLOUD: Anche se il salvataggio sul browser fallisce o dà errori di spazio,
+          // se l'utente è connesso con Google avviamo comunque il salvataggio su internet!
+          if (cloudUser) {
+            console.log("Forzatura salvataggio Cloud in corso...");
+            scheduleCloudSave();
+            showToast("Sincronizzazione Cloud avviata!");
+          } else if (saved) {
             showToast("Salvataggio locale ripristinato.");
-            if (cloudUser) scheduleCloudSave();
-            else render();
+            render();
           } else {
-            showToast(lastPersistenceError?.message || "Il browser non ha ancora spazio sufficiente.");
+            showToast(lastPersistenceError?.message || "Il browser è pieno, ma puoi salvare online accedendo a Google.");
             render();
           }
         }
+
         if (button.dataset.premiumErrorAction === "dashboard") setScreen("dashboard");
       }));
       const googleLogoutButton = document.getElementById("googleLogoutButton");
