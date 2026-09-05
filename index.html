@@ -12746,6 +12746,24 @@ function sanitizeForFirestore(value) {
       }, Math.max(120, Number(delay) || 700));
     }
 
+    function flushCoachEditorSave() {
+      // Le modifiche fatte digitando dentro la tabella dei programmi (serie, ripetizioni,
+      // recupero, note, nome esercizio, ecc.) NON passano dal salvataggio normale: restano
+      // in sospeso su un timer separato (coachProgramUi.inlineSaveTimer/inlineSaveIdleHandle)
+      // per non salvare a ogni singolo tasto premuto. Se l'app viene chiusa o messa in
+      // background prima che quel timer scada, la modifica non veniva mai scritta né in
+      // locale né sul cloud: era la causa delle modifiche "sparite" alla riapertura.
+      // Questa funzione forza subito quel salvataggio quando l'app sta per chiudersi/uscire.
+      const hadPendingInlineSave = !!(coachProgramUi.inlineSaveTimer || coachProgramUi.inlineSaveIdleHandle);
+      if (!hadPendingInlineSave) return;
+      clearTimeout(coachProgramUi.inlineSaveTimer);
+      coachProgramUi.inlineSaveTimer = null;
+      if (coachProgramUi.inlineSaveIdleHandle && typeof cancelIdleCallback === "function") cancelIdleCallback(coachProgramUi.inlineSaveIdleHandle);
+      coachProgramUi.inlineSaveIdleHandle = null;
+      saveState({ immediate:true });
+      updateCoachSaveIndicator("saved");
+    }
+
     function scheduleCoachAi2ContextRefresh(programId,delay=850){
       if(!coachStudioState().aiOpen)return;clearTimeout(coachProgramUi.ai2RefreshTimer);coachProgramUi.ai2RefreshTimer=setTimeout(()=>{if(!coachStudioState().aiOpen)return;coachAi2Cache={fingerprint:"",result:null};const host=document.querySelector(".coach-editor-side");if(host){host.innerHTML=coachAi2PageHtml(true);bindAthleteIntelligenceUi();}},Math.max(250,Number(delay)||850));
     }
@@ -18304,13 +18322,14 @@ function sanitizeForFirestore(value) {
         clearTimeout(coachMascotController.blinkResetTimer);
         document.querySelectorAll(".diva-bot-eyes.is-blinking").forEach((eye) => eye.classList.remove("is-blinking"));
         if (localSaveTimer) flushStateSave();
+        flushCoachEditorSave();
         return;
       }
       scheduleCoachMascotBlink();
       reliableForegroundSync();
       scheduleChartRedraw();
     });
-    window.addEventListener("pagehide", () => { if (localSaveTimer) flushStateSave(); }, { passive:true });
+    window.addEventListener("pagehide", () => { if (localSaveTimer) flushStateSave(); flushCoachEditorSave(); }, { passive:true });
     initializeDataSafety();
     recoverDurableWorkoutJournal();
     applyCoachStudioDeepLink();
