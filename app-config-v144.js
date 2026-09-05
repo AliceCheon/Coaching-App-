@@ -1,18 +1,38 @@
-// Configurazione minima condivisa della build v146.1 con Workout Flow v147.
-(function (root) {
-  root.BarbellDivaV144Config = Object.freeze({
-    build: "v147.20-errlog",
-    cache: "atlas-app-v14720-errlog",
-    backupAutomaticLimit: 5,
-    legacyModulesRemoved: ["nutrizione", "workout-pro"],
-    firebase: Object.freeze({
-      apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
-      authDomain: "barbell-diva.firebaseapp.com",
-      projectId: "barbell-diva",
-      storageBucket: "barbell-diva.firebasestorage.app",
-      messagingSenderId: "411536425865",
-      appId: "1:411536425865:web:17bcd9f10b6ba1a9b49758",
-      measurementId: "G-FNKXLKQFT8"
-    })
+// Configurazione Firebase integrata per Barbell Diva
+import { initializeApp } from "https://gstatic.com";
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut } from "https://gstatic.com";
+import { getFirestore } from "https://gstatic.com";
+
+// NOTA: Assicurati che l'oggetto firebaseConfig contenga le TUE chiavi personali corrette se Codex/Claude le avevano messe qui.
+// Se sotto vedi variabili vuote, mantieni quelle che avevi prima per le chiavi apiKey, authDomain ecc.
+const firebaseConfig = {
+  apiKey: window.FIREBASE_API_KEY || "", 
+  authDomain: window.FIREBASE_AUTH_DOMAIN || "",
+  projectId: window.FIREBASE_PROJECT_ID || "",
+  storageBucket: window.FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: window.FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: window.FIREBASE_APP_ID || ""
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+
+// Funzione di Login sicura via Redirect (evita i blocchi del browser)
+export function eseguiLoginGoogle() {
+  signInWithRedirect(auth, googleProvider).catch((error) => {
+    console.error("Errore durante il redirect di login:", error);
   });
-})(typeof window !== "undefined" ? window : globalThis);
+}
+
+// Controlla se l'utente ha appena completato il login dopo il redirect
+export function controllaRitornoLogin() {
+  return getRedirectResult(auth);
+}
+
+export function eseguiLogout() {
+  return signOut(auth);
+}
+
+export { auth, db };
