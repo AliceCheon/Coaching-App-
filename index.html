@@ -9763,17 +9763,10 @@ function sanitizeForFirestore(value) {
       provider.setCustomParameters({ prompt: "select_account" });
       try {
         if (mode === "redirect") {
-          await authService.signInWithRedirect(provider);
-          return;
-        }
-        await authService.signInWithPopup(provider);
+                await authService.signInWithRedirect(provider);
       } catch (error) {
         const code = String(error?.code || "");
-        if (code.includes("popup") || code.includes("unauthorized-domain") || code.includes("operation-not-supported")) {
-          showToast("Popup non riuscito. Prova accesso alternativo.");
-        } else {
-          showToast(`Accesso Google non completato: ${code || "errore"}.`);
-        }
+        showToast(`Errore durante l'accesso Google: ${code || "errore"}.`);
       }
     }
 
