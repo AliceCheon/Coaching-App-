@@ -9763,10 +9763,17 @@ function sanitizeForFirestore(value) {
       provider.setCustomParameters({ prompt: "select_account" });
       try {
         if (mode === "redirect") {
-                await authService.signInWithRedirect(provider);
+          await authService.signInWithRedirect(provider);
+          return;
+        }
+        await authService.signInWithPopup(provider);
       } catch (error) {
         const code = String(error?.code || "");
-        showToast(`Errore durante l'accesso Google: ${code || "errore"}.`);
+        if (code.includes("popup") || code.includes("unauthorized-domain") || code.includes("operation-not-supported")) {
+          showToast("Popup non riuscito. Prova accesso alternativo.");
+        } else {
+          showToast(`Accesso Google non completato: ${code || "errore"}.`);
+        }
       }
     }
 
@@ -12737,24 +12744,6 @@ function sanitizeForFirestore(value) {
         if (typeof requestIdleCallback === "function") coachProgramUi.inlineSaveIdleHandle = requestIdleCallback(commit, { timeout:1200 });
         else setTimeout(commit, 0);
       }, Math.max(120, Number(delay) || 700));
-    }
-
-    function flushCoachEditorSave() {
-      // Le modifiche fatte digitando dentro la tabella dei programmi (serie, ripetizioni,
-      // recupero, note, nome esercizio, ecc.) NON passano dal salvataggio normale: restano
-      // in sospeso su un timer separato (coachProgramUi.inlineSaveTimer/inlineSaveIdleHandle)
-      // per non salvare a ogni singolo tasto premuto. Se l'app viene chiusa o messa in
-      // background prima che quel timer scada, la modifica non veniva mai scritta né in
-      // locale né sul cloud: era la causa delle modifiche "sparite" alla riapertura.
-      // Questa funzione forza subito quel salvataggio quando l'app sta per chiudersi/uscire.
-      const hadPendingInlineSave = !!(coachProgramUi.inlineSaveTimer || coachProgramUi.inlineSaveIdleHandle);
-      if (!hadPendingInlineSave) return;
-      clearTimeout(coachProgramUi.inlineSaveTimer);
-      coachProgramUi.inlineSaveTimer = null;
-      if (coachProgramUi.inlineSaveIdleHandle && typeof cancelIdleCallback === "function") cancelIdleCallback(coachProgramUi.inlineSaveIdleHandle);
-      coachProgramUi.inlineSaveIdleHandle = null;
-      saveState({ immediate:true });
-      updateCoachSaveIndicator("saved");
     }
 
     function scheduleCoachAi2ContextRefresh(programId,delay=850){
@@ -16611,23 +16600,16 @@ function sanitizeForFirestore(value) {
         }
         if (button.dataset.premiumErrorAction === "retry-local-storage") {
           releaseStateWriteSpace();
-          const saved = persistStateToLocalStorage(state, { touch: false }); 
-          
-          // FORZATURA CLOUD: Anche se il salvataggio sul browser fallisce o dà errori di spazio,
-          // se l'utente è connesso con Google avviamo comunque il salvataggio su internet!
-          if (cloudUser) {
-            console.log("Forzatura salvataggio Cloud in corso...");
-            scheduleCloudSave();
-            showToast("Sincronizzazione Cloud avviata!");
-          } else if (saved) {
+          const saved = persistStateToLocalStorage(state, { touch: false }); // pulsante esplicito: qui vogliamo il vero test, non quello silenzioso
+          if (saved) {
             showToast("Salvataggio locale ripristinato.");
-            render();
+            if (cloudUser) scheduleCloudSave();
+            else render();
           } else {
-            showToast(lastPersistenceError?.message || "Il browser è pieno, ma puoi salvare online accedendo a Google.");
+            showToast(lastPersistenceError?.message || "Il browser non ha ancora spazio sufficiente.");
             render();
           }
         }
-
         if (button.dataset.premiumErrorAction === "dashboard") setScreen("dashboard");
       }));
       const googleLogoutButton = document.getElementById("googleLogoutButton");
@@ -18322,14 +18304,13 @@ function sanitizeForFirestore(value) {
         clearTimeout(coachMascotController.blinkResetTimer);
         document.querySelectorAll(".diva-bot-eyes.is-blinking").forEach((eye) => eye.classList.remove("is-blinking"));
         if (localSaveTimer) flushStateSave();
-        flushCoachEditorSave();
         return;
       }
       scheduleCoachMascotBlink();
       reliableForegroundSync();
       scheduleChartRedraw();
     });
-    window.addEventListener("pagehide", () => { if (localSaveTimer) flushStateSave(); flushCoachEditorSave(); }, { passive:true });
+    window.addEventListener("pagehide", () => { if (localSaveTimer) flushStateSave(); }, { passive:true });
     initializeDataSafety();
     recoverDurableWorkoutJournal();
     applyCoachStudioDeepLink();
