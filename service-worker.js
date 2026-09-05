@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlas-app-v14721-sync-boot-persist";
+const CACHE_NAME = "atlas-app-v14722-sync-pwa-forced";
 const APP_SHELL = [
   "./",
   "./index.html",
