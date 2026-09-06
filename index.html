@@ -9199,25 +9199,38 @@ function sanitizeForFirestore(value) {
             updatedAt,
             programMeta: sanitizeForFirestore(programMeta)
           });
-          // 2) Un documento per ciascuna scheda: tiene ogni scrittura ben sotto
-          // il limite di 1 MiB di Firestore anche per i programmi più corposi
-          // (vedi nota sopra cloudProgramMetaDocumentId).
-          await Promise.all(sheets.map((sheet) => collection.doc(cloudProgramSheetDocumentId(program.id, sheet.id)).set({
-            programId: program.id,
-            sheetId: sheet.id,
-            updatedAt,
-            sheet: sanitizeForFirestore(sheet)
-          })));
+        } catch (error) {
+          failures.push({ programId: program.id, sheetId: "", error });
+          return;
+        }
+        // 2) Un documento per ciascuna scheda: tiene ogni scrittura ben sotto
+        // il limite di 1 MiB di Firestore anche per i programmi più corposi
+        // (vedi nota sopra cloudProgramMetaDocumentId). Ogni scheda ha il suo
+        // try/catch separato così, se una fallisce, sappiamo ESATTAMENTE
+        // quale (invece di sapere solo il programma).
+        await Promise.all(sheets.map(async (sheet) => {
+          try {
+            await collection.doc(cloudProgramSheetDocumentId(program.id, sheet.id)).set({
+              programId: program.id,
+              sheetId: sheet.id,
+              updatedAt,
+              sheet: sanitizeForFirestore(sheet)
+            });
+          } catch (error) {
+            failures.push({ programId: program.id, sheetId: sheet.id, error });
+          }
+        }));
+        if (!failures.some((f) => f.programId === program.id)) {
           // Ripulisce l'eventuale vecchio documento monolitico v1 dello stesso
           // programma, così non resta in giro una copia obsoleta che confonde
           // le letture successive.
           await collection.doc(cloudProgramDocumentId(program.id)).delete().catch(() => {});
-        } catch (error) {
-          failures.push({ programId: program.id, error });
         }
       }));
       if (failures.length) {
-        const err = new Error(`cloud programs save failed for: ${failures.map((f) => f.programId).join(", ")}`);
+        const first = failures[0];
+        const detail = `${first.programId}${first.sheetId ? ` / scheda ${first.sheetId}` : ""}: ${first.error?.message || first.error}`;
+        const err = new Error(`cloud programs save failed (${failures.length}) — ${detail}`);
         err.code = failures[0]?.error?.code || "";
         err.cause = failures;
         throw err;
