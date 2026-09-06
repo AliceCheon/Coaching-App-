@@ -9456,15 +9456,17 @@ function sanitizeForFirestore(value) {
         setPremiumSaveStatus("synced", "Sincronizzato");
         cloudRetryCount = 0; // Reset retry counter on success
         state.profile.account.syncPaused = false; // Reset pause flag on success
+        if (activeScreen === "settings") render(); // altrimenti il testo di stato in Impostazioni resta congelato al render precedente
         return true;
       } catch (error) {
         if (!rootStateSaved) newlyMarkedSessions.forEach((session) => delete session.cloudSyncedAt);
         lastCloudError = cloudErrorText(error, "caricamento");
-        if (rootStateSaved) lastCloudError = "Allenamento e logbook sincronizzati; aggiornamento schede in attesa.";
+        if (rootStateSaved && changedPrograms.length) lastCloudError = `Allenamento e logbook sincronizzati; schede in attesa — ${lastCloudError}`;
         state.profile.account.cloudStatus = rootStateSaved ? "sync parziale" : "errore sync";
         echoLocalStateQuietly();
         setPremiumSaveStatus(rootStateSaved ? "waiting" : "error", rootStateSaved ? "Cloud in attesa" : "Errore di salvataggio");
         recordCloudError(error, "salvataggio doc radice");
+        if (activeScreen === "settings") render(); // altrimenti il testo di stato in Impostazioni resta congelato al render precedente
         
         // Auto-retry for network errors WITH LIMIT - DISABLED FOR PC STABILITY
         if (String(error?.code || "").includes("unavailable") || String(error?.message || "").includes("network") || String(error?.message || "").includes("timeout") || String(error?.code || "").includes("deadline")) {
