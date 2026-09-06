@@ -9136,6 +9136,30 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       return `program-v1-${encodeURIComponent(String(programId || "program")).replaceAll(".", "%2E")}`;
     }
 
+    // --- Salvataggio cloud programmi in formato v2 (per-scheda) ---------------
+    // BUG STORICO: fino alla v1, ogni programma veniva scritto come UN SOLO
+    // documento Firestore contenente tutte le sue schede/esercizi/settimane.
+    // Programmi corposi (es. "Intensità Agosto-Ottobre", ~30 schede con
+    // progressione settimanale per ogni esercizio) superano facilmente il
+    // limite di 1 MiB per documento imposto da Firestore. Quando questo
+    // succede la scrittura fallisce (errore non di rete, quindi MAI
+    // ritentata automaticamente), ma la modifica resta comunque visibile
+    // nella copia locale del dispositivo: l'utente vede "salvato", ma quel
+    // programma non arriva mai davvero al cloud. Al primo merge successivo
+    // con una copia cloud non aggiornata, la modifica sparisce.
+    // Soluzione: un documento piccolo per i metadati del programma + un
+    // documento per ciascuna scheda, così ogni scrittura resta ben sotto il
+    // limite anche per i programmi più corposi.
+    function cloudProgramMetaDocumentId(programId) {
+      return `program-v2-meta-${encodeURIComponent(String(programId || "program")).replaceAll(".", "%2E")}`;
+    }
+
+    function cloudProgramSheetDocumentId(programId, sheetId) {
+      const pid = encodeURIComponent(String(programId || "program")).replaceAll(".", "%2E");
+      const sid = encodeURIComponent(String(sheetId || "sheet")).replaceAll(".", "%2E");
+      return `program-v2-sheet-${pid}__${sid}`;
+    }
+
     function programsRevision() {
       const explicit = String(state.meta?.programsUpdatedAt || "");
       if (explicit) return explicit;
@@ -9165,11 +9189,39 @@ function sanitizeForFirestore(value) {
     async function saveCloudPrograms(programs = [], updatedAt = new Date().toISOString()) {
       const collection = cloudProgramsCollection();
       if (!collection) throw new Error("cloud programs unavailable");
-      await Promise.all((programs || []).map((program) => collection.doc(cloudProgramDocumentId(program.id)).set({
-        programId: program.id,
-        updatedAt,
-        program: sanitizeForFirestore(clone(program))
-      })));
+      const failures = [];
+      await Promise.all((programs || []).map(async (program) => {
+        const { sheets = [], ...programMeta } = clone(program);
+        try {
+          // 1) Documento leggero con solo i metadati del programma (senza schede).
+          await collection.doc(cloudProgramMetaDocumentId(program.id)).set({
+            programId: program.id,
+            updatedAt,
+            programMeta: sanitizeForFirestore(programMeta)
+          });
+          // 2) Un documento per ciascuna scheda: tiene ogni scrittura ben sotto
+          // il limite di 1 MiB di Firestore anche per i programmi più corposi
+          // (vedi nota sopra cloudProgramMetaDocumentId).
+          await Promise.all(sheets.map((sheet) => collection.doc(cloudProgramSheetDocumentId(program.id, sheet.id)).set({
+            programId: program.id,
+            sheetId: sheet.id,
+            updatedAt,
+            sheet: sanitizeForFirestore(sheet)
+          })));
+          // Ripulisce l'eventuale vecchio documento monolitico v1 dello stesso
+          // programma, così non resta in giro una copia obsoleta che confonde
+          // le letture successive.
+          await collection.doc(cloudProgramDocumentId(program.id)).delete().catch(() => {});
+        } catch (error) {
+          failures.push({ programId: program.id, error });
+        }
+      }));
+      if (failures.length) {
+        const err = new Error(`cloud programs save failed for: ${failures.map((f) => f.programId).join(", ")}`);
+        err.code = failures[0]?.error?.code || "";
+        err.cause = failures;
+        throw err;
+      }
       return true;
     }
 
@@ -9188,15 +9240,35 @@ function sanitizeForFirestore(value) {
     }
 
     async function loadCloudPrograms(rootData = {}) {
-      if (rootData.programStorage !== "subcollection-v1") return clone(rootData.state?.programs || []);
+      if (rootData.programStorage !== "subcollection-v1" && rootData.programStorage !== "subcollection-v2") return clone(rootData.state?.programs || []);
       const collection = cloudProgramsCollection();
       if (!collection) throw new Error("cloud programs unavailable");
       const snapshot = await withTimeout(collection.get(), 40000);
       const allowed = new Set((rootData.programIds || []).map(String));
-      const programs = [];
+      const legacyProgramsById = new Map(); // formato v1: documento unico per programma
+      const metaById = new Map(); // formato v2: documento leggero coi soli metadati
+      const sheetsByProgramId = new Map(); // formato v2: un documento per scheda
       snapshot.forEach((item) => {
         const value = item.data?.() || {};
-        if (value.program && (!allowed.size || allowed.has(String(value.programId || value.program.id)))) programs.push(value.program);
+        const programId = String(value.programId || value.program?.id || value.programMeta?.id || "");
+        if (allowed.size && programId && !allowed.has(programId)) return;
+        if (value.program) { legacyProgramsById.set(programId || String(value.program.id), value.program); return; }
+        if (value.programMeta) { metaById.set(programId, value.programMeta); return; }
+        if (value.sheet) {
+          if (!sheetsByProgramId.has(programId)) sheetsByProgramId.set(programId, []);
+          sheetsByProgramId.get(programId).push(value.sheet);
+        }
+      });
+      const programs = [];
+      const seen = new Set();
+      metaById.forEach((programMeta, programId) => {
+        const sheets = (sheetsByProgramId.get(programId) || []).slice().sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+        programs.push({ ...programMeta, sheets });
+        seen.add(programId);
+      });
+      legacyProgramsById.forEach((program, programId) => {
+        if (seen.has(programId)) return; // il programma è già stato migrato al formato v2
+        programs.push(program);
       });
       if (Number(rootData.programCount || 0) > 0 && !programs.length) throw new Error("cloud programs missing");
       return programs;
@@ -9207,6 +9279,7 @@ function sanitizeForFirestore(value) {
       if (code.includes("permission-denied")) return "Cloud non autorizzato: controlla le regole Firestore per il tuo account Google.";
       if (code.includes("unauthenticated")) return "Sessione Google scaduta: accedi di nuovo per sincronizzare.";
       if (code.includes("resource-exhausted")) return "Il backup cloud è troppo grande: esporta un backup e riprova.";
+      if (code.includes("invalid-argument") && /size|byte|large/i.test(String(error?.message || ""))) return "Una scheda è troppo grande per essere salvata sul cloud così com'è: contattami per sistemarla, nel frattempo resta salvata solo su questo dispositivo.";
       if (code.includes("unavailable") || code.includes("deadline") || String(error?.message || "").includes("timeout")) return `Cloud non raggiungibile: verifica la connessione internet. I dati sono salvati localmente.`;
       return `Cloud non disponibile durante ${action}${code ? ` (${code.replace("firestore/", "")})` : ""}. I dati sono salvati localmente.`;
     }
@@ -9356,7 +9429,7 @@ function sanitizeForFirestore(value) {
         await withTimeout(doc.set({
           updatedAt: cloudUpdatedAt,
           app: APP_NAME,
-          programStorage: "subcollection-v1",
+          programStorage: "subcollection-v2",
           programCount: currentPrograms.length,
           programIds: currentPrograms.map((program) => program.id),
           programsUpdatedAt: state.meta?.cloudProgramsUpdatedAt || "",
