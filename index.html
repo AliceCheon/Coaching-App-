@@ -9281,7 +9281,7 @@ function sanitizeForFirestore(value) {
       if (code.includes("resource-exhausted")) return "Il backup cloud è troppo grande: esporta un backup e riprova.";
       if (code.includes("invalid-argument") && /size|byte|large/i.test(String(error?.message || ""))) return "Una scheda è troppo grande per essere salvata sul cloud così com'è: contattami per sistemarla, nel frattempo resta salvata solo su questo dispositivo.";
       if (code.includes("unavailable") || code.includes("deadline") || String(error?.message || "").includes("timeout")) return `Cloud non raggiungibile: verifica la connessione internet. I dati sono salvati localmente.`;
-      return `Cloud non disponibile durante ${action}${code ? ` (${code.replace("firestore/", "")})` : ""}. I dati sono salvati localmente.`;
+      return `Cloud non disponibile durante ${action}${code ? ` (${code.replace("firestore/", "")})` : ""}. I dati sono salvati localmente. Dettaglio: ${String(error?.message || "n/d").slice(0, 220)}`;
     }
 
     const CLOUD_ERROR_LOG_KEY = `${STORE_KEY}.cloud-error-log.v1`;
