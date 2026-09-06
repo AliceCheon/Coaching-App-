@@ -9026,7 +9026,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       if (!window.firebase) return "Firebase non caricato: serve connessione internet.";
       if (!cloudUser) return "Dati salvati su questo dispositivo. Accedi per prepararli al cloud.";
       if (state.profile.account?.cloudStatus === "errore locale" && lastPersistenceError) return "Cloud raggiunto, ma il salvataggio locale su questo dispositivo non è riuscito.";
-      if (state.profile.account?.cloudStatus?.startsWith("errore") && lastCloudError) return lastCloudError;
+      if (state.profile.account?.cloudStatus !== "sync" && lastCloudError) return lastCloudError;
       return state.profile.account?.cloudStatus === "sync"
         ? state.profile.account?.lastCloudSyncAt
           ? `Sincronizzazione completata alle ${new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit" }).format(new Date(state.profile.account.lastCloudSyncAt))}.`
