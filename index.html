@@ -9226,7 +9226,7 @@ function sanitizeForFirestore(value) {
         await Promise.all(sheets.map(async (sheet) => {
           const sanitizedSheet = sanitizeForFirestore(sheet);
           const { exercises = [], ...sheetShell } = sanitizedSheet;
-          const fullSize = Buffer.byteLength ? Buffer.byteLength(JSON.stringify(sanitizedSheet)) : JSON.stringify(sanitizedSheet).length;
+          const fullSize = new TextEncoder().encode(JSON.stringify(sanitizedSheet)).length;
           const oversized = fullSize > CLOUD_SHEET_SIZE_LIMIT;
           try {
             await collection.doc(cloudProgramSheetDocumentId(program.id, sheet.id)).set(oversized ? {
