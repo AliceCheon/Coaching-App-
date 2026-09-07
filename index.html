@@ -17342,6 +17342,7 @@ function sanitizeForFirestore(value) {
         host.replaceChildren();
         return;
       }
+      if (host.childElementCount > 0 && host.querySelector(".coach-modal")) return;
       coachModalRenderingPortal = true;
       const html = coachUiModalHtml();
       coachModalRenderingPortal = false;
@@ -17472,8 +17473,8 @@ function sanitizeForFirestore(value) {
         const info=event.target.closest("[data-lab-open]");if(info)openCoachModalLocally("technical-profile",{exerciseId:info.dataset.labOpen});
       });
     }
-
-    function openCoachModalLocally(type,data={}) {
+      function openCoachModalLocally(type,data={}) {
+      if (coachProgramUi.modal === type && document.getElementById("coachModalPortalHost")?.childElementCount > 0) return;
       openCoachModal(type,data);renderCoachModalPortal();bindLocallyRenderedCoachModal();bindModalController();
     }
 
