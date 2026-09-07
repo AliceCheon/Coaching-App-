@@ -1,0 +1,17 @@
+# File temporanei di sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# File di backup e temporanei
+*.tmp
+*.bak
+*.swp
+*.patch
+*.zip
+* (1).*
+*(8).*
+
+# Log
+*.log
+.cache/
