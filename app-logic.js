@@ -13700,4 +13700,3 @@ function sanitizeForFirestore(value) {
       premiumBootSafetyTimer = setTimeout(() => { premiumBootReady = true; finishPremiumBoot(); }, 1800);
       requestAnimationFrame(() => { if (!firebaseBootStarted || authReady) markPremiumBootReady(); });
     }
-  </script>
