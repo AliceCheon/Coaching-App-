@@ -5,27 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
   <title>Barbell Diva</title>
   
-  <!-- CSS ORIGINALI (I tuoi file già esistenti) -->
+  <link rel="preload" href="atlas-nunito-sans.ttf" as="font" type="font/ttf" crossorigin="crossorigin">
+  
+  <!-- I TUOI CSS ORIGINALI -->
   <link rel="stylesheet" href="coach-studio.css">
   <link rel="stylesheet" href="coach-program-editor-19.8.css">
-  <link rel="stylesheet" href="workout-flow-v147.css">
   <link rel="stylesheet" href="coach-tools-v1451.css">
   <link rel="stylesheet" href="unified-sidebar-v1452.css">
   <link rel="stylesheet" href="coach-schede-restyle-v146.css">
+  <link rel="stylesheet" href="workout-flow-v147.css">
+  
+  <!-- IL NUOVO CSS PER IL TELEFONO -->
+  <link rel="stylesheet" href="style-palestra.css">
 
   <style>
-    /* STILE VELOCE PER IL TELEFONO (Punto 4) */
-    :root { --pink: #FF4FA3; --purple: #A855F7; }
-    input, select, textarea { font-size: 16px !important; } /* Blocca lo zoom fastidioso */
-    .gold-button, #saveWorkout, .v147-primary { 
-      height: 60px !important; 
-      font-weight: 900 !important; 
-      background: linear-gradient(135deg, var(--pink), var(--purple)) !important;
-      border-radius: 15px !important;
-    }
+    @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
   </style>
 </head>
 <body data-theme="dark">
+  <!-- SPLASH SCREEN -->
   <div id="premiumSplash" class="premium-splash">
     <div class="premium-splash-card">
       <div class="premium-monogram">BD</div>
@@ -36,34 +34,64 @@
   </div>
 
   <div class="stage">
-    <!-- Qui il sistema caricherà tutto dinamicamente -->
+    <!-- BARRA LATERALE DESKTOP -->
+    <aside class="desktop-rail">
+      <div class="rail-brand"><div class="rail-logo">BD</div><div><strong>Barbell Diva</strong><span>Alice workspace</span></div></div>
+      <nav class="rail-navigation">
+        <button class="rail-dot active" data-jump="dashboard">🏠<span>Dashboard</span></button>
+        <button class="rail-dot" data-jump="training">💪<span>Workout</span></button>
+        <button class="rail-dot" data-jump="logbook">📖<span>Logbook</span></button>
+      </nav>
+    </aside>
+
+    <!-- UI DEL TELEFONO -->
+    <section class="phone-shell">
+      <div class="phone">
+        <header class="app-header">
+          <div><h1 id="appTitle">Barbell Diva</h1><p id="appSubtitle">Lift. Slay. Repeat.</p></div>
+          <div class="round-actions">
+            <button class="round-button" id="themeButton">🌓</button>
+            <button class="round-button" id="settingsButton">⚙</button>
+          </div>
+        </header>
+
+        <div class="top-tabs">
+          <button class="top-tab active" data-screen="dashboard">Dashboard</button>
+          <button class="top-tab" data-screen="training">Workout</button>
+          <button class="top-tab" data-screen="logbook">Logbook</button>
+        </div>
+
+        <main class="screen" id="screen"></main>
+
+        <nav class="bottom-nav">
+          <button class="nav-button active" data-bottom="home">Home</button>
+          <button class="nav-button" data-bottom="workout">Workout</button>
+          <button class="nav-button" data-bottom="logbook">Logbook</button>
+          <button class="nav-button" data-bottom="quiz">Check-in</button>
+        </nav>
+      </div>
+    </section>
   </div>
 
   <div id="globalDivaBotHost"></div>
   <div id="coachModalPortalHost"></div>
   <div class="toast" id="toast"></div>
 
-  <!-- FIREBASE & CORE -->
+  <!-- SCRIPTS FIREBASE -->
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   
-  <script src="exercise-library-19.8.js"></script>
-  <script src="master-exercise-library.js"></script>
-  <script src="athlete-context.js"></script>
-  <script src="coach-ai-engine-2.js"></script>
-  <script src="knowledge-graph.js"></script>
-  <script src="decision-rules.js"></script>
-  <script src="decision-engine.js"></script>
-  <script src="coach-ai3-programming.js"></script>
-  <script type="module" src="programming-engine.js"></script>
-  <script type="module" src="sync-reliability.js"></script>
+  <!-- I TUOI SCRIPT LOGICI (Devono essere presenti nella cartella) -->
   <script src="app-config-v144.js"></script>
+  <script src="athlete-context.js"></script>
+  <script src="master-exercise-library.js"></script>
+  <script src="programming-engine.js"></script>
+  <script src="coach-ai-engine-2.js"></script>
+  <script src="decision-engine.js"></script>
   <script src="coach-studio.js"></script>
-  <script defer src="coach-schede-v146-enhance.js"></script>
-  <script defer src="workout-flow-v147.js"></script>
-
-  <!-- IL TUO NUOVO FILE LOGICA -->
+  
+  <!-- IL NUOVO FILE LOGICA CHE HAI CREATO -->
   <script src="app-logic.js"></script>
 </body>
 </html>
