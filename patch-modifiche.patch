@@ -1,0 +1,241 @@
+diff --git a/atlas-coach-app(8).html b/backup/atlas-coach-app(8).html
+similarity index 100%
+rename from atlas-coach-app(8).html
+rename to backup/atlas-coach-app(8).html
+diff --git a/atlas-coach-app-v97-pre-phase14-final.html b/backup/atlas-coach-app-v97-pre-phase14-final.html
+similarity index 100%
+rename from atlas-coach-app-v97-pre-phase14-final.html
+rename to backup/atlas-coach-app-v97-pre-phase14-final.html
+diff --git a/atlas-coach-app-v98-pre-performance.html b/backup/atlas-coach-app-v98-pre-performance.html
+similarity index 100%
+rename from atlas-coach-app-v98-pre-performance.html
+rename to backup/atlas-coach-app-v98-pre-performance.html
+diff --git a/atlas-coach-app.html b/backup/atlas-coach-app.html
+similarity index 100%
+rename from atlas-coach-app.html
+rename to backup/atlas-coach-app.html
+diff --git a/atlas-coach-app.pre-phase12-backup.html b/backup/atlas-coach-app.pre-phase12-backup.html
+similarity index 100%
+rename from atlas-coach-app.pre-phase12-backup.html
+rename to backup/atlas-coach-app.pre-phase12-backup.html
+diff --git a/dashboard-alimentazione-backup-2026-07-15.json b/backup/dashboard-alimentazione-backup-2026-07-15.json
+similarity index 100%
+rename from dashboard-alimentazione-backup-2026-07-15.json
+rename to backup/dashboard-alimentazione-backup-2026-07-15.json
+diff --git a/index.html b/index.html
+index c734f2c..211c78a 100644
+--- a/index.html
++++ b/index.html
+@@ -3,35 +3,35 @@
+ <head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+-  <meta name="theme-color" content="#c9a7ef">
++  <meta name="theme-color" content="#090918">
+   <meta name="mobile-web-app-capable" content="yes">
+   <meta name="apple-mobile-web-app-capable" content="yes">
+   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+-  <link rel="manifest" href="manifest.webmanifest?v=v1461">
++  <link rel="manifest" href="manifest.webmanifest?v=v14723">
+   <link rel="icon" href="app-icon-192.png" type="image/png">
+     <link rel="apple-touch-icon" href="apple-touch-icon.png">
+   <!-- Preload critical font for faster text rendering -->
+   <link rel="preload" href="atlas-nunito-sans.ttf" as="font" type="font/ttf" crossorigin="crossorigin" fetchpriority="high">
+-  <link rel="stylesheet" href="coach-studio.css?v=v1461c10">
+-  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=athlete-side-5">
+-  <link rel="stylesheet" href="coach-tools-v1451.css?v=v1451-contrast">
+-  <link rel="stylesheet" href="unified-sidebar-v1452.css?v=v1461c10">
+-  <link rel="stylesheet" href="coach-schede-restyle-v146.css?v=v1461c10">
+-  <link rel="stylesheet" href="workout-flow-v147.css?v=v1471">
+-  <script src="exercise-library-19.8.js?v=v1461"></script>
+-  <script src="master-exercise-library.js?v=v1461"></script>
+-  <script src="athlete-context.js?v=v1461"></script>
+-  <script src="coach-ai-engine-2.js?v=v1461"></script>
+-  <script src="knowledge-graph.js?v=v1461"></script>
+-  <script src="decision-rules.js?v=v1461"></script>
+-  <script src="decision-engine.js?v=v1461"></script>
+-  <script src="coach-ai3-programming.js?v=v1461"></script>
+-  <script type="module" src="programming-engine.js?v=v1461"></script>
+-  <script type="module" src="sync-reliability.js?v=v1461"></script>
+-  <script src="app-config-v144.js?v=v1461"></script>
+-  <script src="coach-studio.js?v=v1461"></script>
+-  <script defer src="coach-schede-v146-enhance.js?v=v1461c10"></script>
+-  <script defer src="workout-flow-v147.js?v=v1471"></script>
++  <link rel="stylesheet" href="coach-studio.css?v=v14723">
++  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v14723">
++  <link rel="stylesheet" href="coach-tools-v1451.css?v=v14723">
++  <link rel="stylesheet" href="unified-sidebar-v1452.css?v=v14723">
++  <link rel="stylesheet" href="coach-schede-restyle-v146.css?v=v14723">
++  <link rel="stylesheet" href="workout-flow-v147.css?v=v14723">
++  <script src="exercise-library-19.8.js?v=v14723"></script>
++  <script src="master-exercise-library.js?v=v14723"></script>
++  <script src="athlete-context.js?v=v14723"></script>
++  <script src="coach-ai-engine-2.js?v=v14723"></script>
++  <script src="knowledge-graph.js?v=v14723"></script>
++  <script src="decision-rules.js?v=v14723"></script>
++  <script src="decision-engine.js?v=v14723"></script>
++  <script src="coach-ai3-programming.js?v=v14723"></script>
++  <script type="module" src="programming-engine.js?v=v14723"></script>
++  <script type="module" src="sync-reliability.js?v=v14723"></script>
++  <script src="app-config-v144.js?v=v14723"></script>
++  <script src="coach-studio.js?v=v14723"></script>
++  <script defer src="coach-schede-v146-enhance.js?v=v14723"></script>
++  <script defer src="workout-flow-v147.js?v=v14723"></script>
+   <title>Barbell diva</title>
+   <style>
+     @font-face { font-family:"Atlas Nunito"; src:url("./atlas-nunito-sans.ttf") format("truetype"); font-style:normal; font-weight:200 1000; font-display:swap; }
+diff --git a/manifest.webmanifest b/manifest.webmanifest
+index 77732bb..2db7e1b 100644
+--- a/manifest.webmanifest
++++ b/manifest.webmanifest
+@@ -2,7 +2,7 @@
+   "name": "Barbell diva",
+   "short_name": "Diva",
+   "description": "Allenamento, logbook, progressioni e coaching di Alice.",
+-  "start_url": "./index.html?v=v14722",
++  "start_url": "./index.html?v=v14723",
+   "id": "./index.html",
+   "scope": "./",
+   "display": "standalone",
+@@ -31,7 +31,7 @@
+       "name": "Workout",
+       "short_name": "Workout",
+       "description": "Apri subito il logbook allenamento.",
+-      "url": "./index.html?v=v14722#training",
++      "url": "./index.html?v=v14723#training",
+       "icons": [
+         {
+           "src": "./app-icon-192.png",
+@@ -44,7 +44,7 @@
+       "name": "Coach",
+       "short_name": "Coach",
+       "description": "Apri la zona coach.",
+-      "url": "./index.html?v=v14722#coach/programs",
++      "url": "./index.html?v=v14723#coach/programs",
+       "icons": [
+         {
+           "src": "./app-icon-192.png",
+diff --git a/service-worker.js b/service-worker.js
+index 42060b8..45af76c 100644
+--- a/service-worker.js
++++ b/service-worker.js
+@@ -1,4 +1,11 @@
+-const CACHE_NAME = "atlas-app-v14723-programs-per-sheet-fix";
++/* Barbell Diva - Service Worker
++   v14724-manutenzione
++   - HTML: network-first con timeout (3s) + fallback cache → app shell
++   - Asset statici: cache-first con refresh in background (stale-while-revalidate)
++   - Match con ignoreSearch: resiste ai bump di versione (?v=...) e ai doppioni in cache
++   - Cache key normalizzate per pathname (niente duplicati per ogni ?v=)
++*/
++const CACHE_NAME = "atlas-app-v14724-manutenzione";
+ const APP_SHELL = [
+   "./",
+   "./index.html",
+@@ -42,31 +49,90 @@ self.addEventListener("install", (event) => {
+ 
+ self.addEventListener("activate", (event) => {
+   event.waitUntil(
+-    caches.keys().then((keys) =>
+-      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
+-    )
++    caches
++      .keys()
++      .then((keys) =>
++        Promise.all(
++          keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
++        )
++      )
++      .then(() => self.clients.claim())
+   );
+-  self.clients.claim();
+ });
+ 
++function withTimeout(promise, ms) {
++  return new Promise((resolve, reject) => {
++    const timer = setTimeout(() => reject(new Error("network timeout")), ms);
++    promise.then(
++      (value) => {
++        clearTimeout(timer);
++        resolve(value);
++      },
++      (error) => {
++        clearTimeout(timer);
++        reject(error);
++      }
++    );
++  });
++}
++
+ self.addEventListener("fetch", (event) => {
+-  if (event.request.method !== "GET") return;
+-  const isHtml = event.request.mode === "navigate" || event.request.destination === "document" || new URL(event.request.url).pathname.endsWith(".html");
++  const request = event.request;
++  if (request.method !== "GET") return;
++
++  const url = new URL(request.url);
++  const isHtml =
++    request.mode === "navigate" ||
++    request.destination === "document" ||
++    url.pathname.endsWith(".html");
++
+   if (isHtml) {
++    // Network-first con timeout: se la rete risponde entro 3 secondi aggiorna la
++    // cache e serve la pagina; altrimenti ripiega sulla copia cacheata (o sull'app shell).
+     event.respondWith(
+-      fetch(event.request, { cache: "no-store" }).then((response) => {
+-        const copy = response.clone();
+-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+-        return response;
+-      }).catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html")))
++      withTimeout(fetch(request, { cache: "no-store" }), 3000)
++        .then((response) => {
++          const copy = response.clone();
++          caches
++            .open(CACHE_NAME)
++            .then((cache) => cache.put(new Request(url.pathname), copy));
++          return response;
++        })
++        .catch(() =>
++          caches.match(request, { ignoreSearch: true }).then(
++            (cached) => cached || caches.match("./index.html")
++          )
++        )
+     );
+     return;
+   }
++
++  // Asset statici: cache-first con refresh in background (stale-while-revalidate).
+   event.respondWith(
+-    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
+-      const copy = response.clone();
+-      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+-      return response;
+-    }))
++    caches.match(request, { ignoreSearch: true }).then((cached) => {
++      const networkFetch = fetch(request)
++        .then((response) => {
++          if (response && response.ok) {
++            const copy = response.clone();
++            caches
++              .open(CACHE_NAME)
++              .then((cache) => cache.put(new Request(url.pathname), copy));
++          }
++          return response;
++        })
++        .catch(() => null);
++
++      if (cached) {
++        // aggiorna la copia in cache senza bloccare la risposta all'utente
++        networkFetch.catch(() => {});
++        return cached;
++      }
++
++      return networkFetch.then((fresh) => {
++        if (fresh) return fresh;
++        // ultima spiaggia: risposta offline di cortesia
++        return new Response("", { status: 503, statusText: "Offline" });
++      });
++    })
+   );
+ });

@@ -1,4 +1,11 @@
-const CACHE_NAME = "atlas-app-v14723-programs-per-sheet-fix";
+/* Barbell Diva - Service Worker
+   v14724-manutenzione
+   - HTML: network-first con timeout (3s) + fallback cache → app shell
+   - Asset statici: cache-first con refresh in background (stale-while-revalidate)
+   - Match con ignoreSearch: resiste ai bump di versione (?v=...) e ai doppioni in cache
+   - Cache key normalizzate per pathname (niente duplicati per ogni ?v=)
+*/
+const CACHE_NAME = "atlas-app-v14724-manutenzione";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -42,31 +49,90 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
-    )
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        )
+      )
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("network timeout")), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
+
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  const isHtml = event.request.mode === "navigate" || event.request.destination === "document" || new URL(event.request.url).pathname.endsWith(".html");
+  const request = event.request;
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+  const isHtml =
+    request.mode === "navigate" ||
+    request.destination === "document" ||
+    url.pathname.endsWith(".html");
+
   if (isHtml) {
+    // Network-first con timeout: se la rete risponde entro 3 secondi aggiorna la
+    // cache e serve la pagina; altrimenti ripiega sulla copia cacheata (o sull'app shell).
     event.respondWith(
-      fetch(event.request, { cache: "no-store" }).then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        return response;
-      }).catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html")))
+      withTimeout(fetch(request, { cache: "no-store" }), 3000)
+        .then((response) => {
+          const copy = response.clone();
+          caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.put(new Request(url.pathname), copy));
+          return response;
+        })
+        .catch(() =>
+          caches.match(request, { ignoreSearch: true }).then(
+            (cached) => cached || caches.match("./index.html")
+          )
+        )
     );
     return;
   }
+
+  // Asset statici: cache-first con refresh in background (stale-while-revalidate).
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-      return response;
-    }))
+    caches.match(request, { ignoreSearch: true }).then((cached) => {
+      const networkFetch = fetch(request)
+        .then((response) => {
+          if (response && response.ok) {
+            const copy = response.clone();
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(new Request(url.pathname), copy));
+          }
+          return response;
+        })
+        .catch(() => null);
+
+      if (cached) {
+        // aggiorna la copia in cache senza bloccare la risposta all'utente
+        networkFetch.catch(() => {});
+        return cached;
+      }
+
+      return networkFetch.then((fresh) => {
+        if (fresh) return fresh;
+        // ultima spiaggia: risposta offline di cortesia
+        return new Response("", { status: 503, statusText: "Offline" });
+      });
+    })
   );
 });
