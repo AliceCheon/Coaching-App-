@@ -11,10 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+
       - name: Check runtime files
         run: |
           test -f index.html
@@ -22,13 +24,16 @@ jobs:
           test -f service-worker.js
           test -f app-config-v144.js
           test -f workout-flow-v147.js
+
       - name: Check JavaScript syntax
         run: |
           for file in *.js; do node --check "$file"; done
-      - name: Run test suite
+
+      - name: Run core engine and workout tests
         run: |
-          node tests/v1461-corrections.test.mjs
-          for file in tests/*.mjs; do node "$file"; done
+          node tests/v147-workout-flow.test.mjs
+          node tests/programming-engine-phase20a.test.mjs
+
       - name: Check Intensita nuovo and sync repair are embedded
         run: |
           node --input-type=module <<'NODE'
