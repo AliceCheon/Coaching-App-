@@ -9167,6 +9167,12 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       return `program-v2-exercise-${pid}__${sid}__${eid}`;
     }
 
+    function cloudProgramArchivedSheetDocumentId(programId, sheetId) {
+      const pid = encodeURIComponent(String(programId || "program")).replaceAll(".", "%2E");
+      const sid = encodeURIComponent(String(sheetId || "sheet")).replaceAll(".", "%2E");
+      return `program-v2-archived-${pid}__${sid}`;
+    }
+
     // Margine di sicurezza sotto il limite reale di 1 MiB per documento di
     // Firestore: alcune schede (di solito quelle usate da più tempo, con
     // molte settimane di progressione accumulate) restano troppo grandi
@@ -9201,12 +9207,54 @@ function sanitizeForFirestore(value) {
   return value;
 }
 
+    async function writeCloudSheetLikeDocument(collection, { programId, sheet, updatedAt, docId, exerciseDocId, failures, failureTag, kind }) {
+      const sanitizedSheet = sanitizeForFirestore(sheet);
+      const { exercises = [], ...sheetShell } = sanitizedSheet;
+      const fullSize = new TextEncoder().encode(JSON.stringify(sanitizedSheet)).length;
+      const oversized = fullSize > CLOUD_SHEET_SIZE_LIMIT;
+      try {
+        await collection.doc(docId).set(oversized ? {
+          programId, sheetId: sheet.id, updatedAt, kind,
+          sheet: { ...sheetShell, exercises: [] },
+          exercisesSplit: true,
+          exerciseIds: exercises.map((exercise) => exercise.id)
+        } : {
+          programId, sheetId: sheet.id, updatedAt, kind,
+          sheet: sanitizedSheet,
+          exercisesSplit: false
+        });
+      } catch (error) {
+        failures.push({ programId, sheetId: sheet.id, error, tag: failureTag });
+        return;
+      }
+      if (!oversized) return;
+      // La scheda intera è troppo grande: ogni esercizio finisce nel suo
+      // documento (invece della scheda che li contiene tutti insieme),
+      // così anche una singola scheda con moltissime settimane di
+      // progressione accumulate resta ben sotto il limite.
+      await Promise.all(exercises.map(async (exercise) => {
+        try {
+          await collection.doc(exerciseDocId(programId, sheet.id, exercise.id)).set({
+            programId, sheetId: sheet.id, exerciseId: exercise.id, updatedAt, exercise, kind
+          });
+        } catch (error) {
+          failures.push({ programId, sheetId: sheet.id, exerciseId: exercise.id, error, tag: failureTag });
+        }
+      }));
+    }
+
     async function saveCloudPrograms(programs = [], updatedAt = new Date().toISOString()) {
       const collection = cloudProgramsCollection();
       if (!collection) throw new Error("cloud programs unavailable");
       const failures = [];
       await Promise.all((programs || []).map(async (program) => {
-        const { sheets = [], ...programMeta } = clone(program);
+        // NOTA IMPORTANTE: "archivedSheets" (le schede settimanali originali
+        // pre-consolidamento, vedi consolidateLegacyWeeklyProgram) vive a
+        // livello di PROGRAMMA, non dentro "sheets". Va tolto qui insieme a
+        // "sheets", altrimenti resta agganciato a programMeta e può renderlo
+        // enorme anche quando le schede attive sono già state separate
+        // (è esattamente quello che succedeva con "Intensità Agosto-Ottobre").
+        const { sheets = [], archivedSheets = [], ...programMeta } = clone(program);
         try {
           // 1) Documento leggero con solo i metadati del programma (senza schede).
           await collection.doc(cloudProgramMetaDocumentId(program.id)).set({
@@ -9218,54 +9266,23 @@ function sanitizeForFirestore(value) {
           failures.push({ programId: program.id, sheetId: "", error });
           return;
         }
-        // 2) Un documento per ciascuna scheda: tiene ogni scrittura ben sotto
-        // il limite di 1 MiB di Firestore anche per i programmi più corposi
-        // (vedi nota sopra cloudProgramMetaDocumentId). Ogni scheda ha il suo
-        // try/catch separato così, se una fallisce, sappiamo ESATTAMENTE
-        // quale (invece di sapere solo il programma).
-        await Promise.all(sheets.map(async (sheet) => {
-          const sanitizedSheet = sanitizeForFirestore(sheet);
-          const { exercises = [], ...sheetShell } = sanitizedSheet;
-          const fullSize = new TextEncoder().encode(JSON.stringify(sanitizedSheet)).length;
-          const oversized = fullSize > CLOUD_SHEET_SIZE_LIMIT;
-          try {
-            await collection.doc(cloudProgramSheetDocumentId(program.id, sheet.id)).set(oversized ? {
-              programId: program.id,
-              sheetId: sheet.id,
-              updatedAt,
-              sheet: { ...sheetShell, exercises: [] },
-              exercisesSplit: true,
-              exerciseIds: exercises.map((exercise) => exercise.id)
-            } : {
-              programId: program.id,
-              sheetId: sheet.id,
-              updatedAt,
-              sheet: sanitizedSheet,
-              exercisesSplit: false
-            });
-          } catch (error) {
-            failures.push({ programId: program.id, sheetId: sheet.id, error });
-            return;
-          }
-          if (!oversized) return;
-          // La scheda intera è troppo grande: ogni esercizio finisce nel suo
-          // documento (invece della scheda che li contiene tutti insieme),
-          // così anche una singola scheda con moltissime settimane di
-          // progressione accumulate resta ben sotto il limite.
-          await Promise.all(exercises.map(async (exercise) => {
-            try {
-              await collection.doc(cloudProgramExerciseDocumentId(program.id, sheet.id, exercise.id)).set({
-                programId: program.id,
-                sheetId: sheet.id,
-                exerciseId: exercise.id,
-                updatedAt,
-                exercise
-              });
-            } catch (error) {
-              failures.push({ programId: program.id, sheetId: sheet.id, exerciseId: exercise.id, error });
-            }
-          }));
-        }));
+        // 2) Un documento per ciascuna scheda attiva e per ciascuna scheda
+        // archiviata: tiene ogni scrittura ben sotto il limite di 1 MiB di
+        // Firestore anche per i programmi più corposi (vedi nota sopra
+        // cloudProgramMetaDocumentId). Ognuna ha il suo try/catch separato
+        // così, se una fallisce, sappiamo ESATTAMENTE quale.
+        await Promise.all([
+          ...sheets.map((sheet) => writeCloudSheetLikeDocument(collection, {
+            programId: program.id, sheet, updatedAt, failures, failureTag: "sheet", kind: "sheet",
+            docId: cloudProgramSheetDocumentId(program.id, sheet.id),
+            exerciseDocId: cloudProgramExerciseDocumentId
+          })),
+          ...archivedSheets.map((sheet) => writeCloudSheetLikeDocument(collection, {
+            programId: program.id, sheet, updatedAt, failures, failureTag: "archived", kind: "archived",
+            docId: cloudProgramArchivedSheetDocumentId(program.id, sheet.id),
+            exerciseDocId: (pid, sid, eid) => `${cloudProgramArchivedSheetDocumentId(pid, sid)}__ex-${encodeURIComponent(String(eid || "exercise")).replaceAll(".", "%2E")}`
+          }))
+        ]);
         if (!failures.some((f) => f.programId === program.id)) {
           // Ripulisce l'eventuale vecchio documento monolitico v1 dello stesso
           // programma, così non resta in giro una copia obsoleta che confonde
@@ -9306,41 +9323,46 @@ function sanitizeForFirestore(value) {
       const allowed = new Set((rootData.programIds || []).map(String));
       const legacyProgramsById = new Map(); // formato v1: documento unico per programma
       const metaById = new Map(); // formato v2: documento leggero coi soli metadati
-      const sheetsByProgramId = new Map(); // formato v2: un documento per scheda
-      const exercisesBySheetKey = new Map(); // formato v2: schede troppo grandi, un documento per esercizio
+      const sheetsByProgramId = new Map(); // formato v2: un documento per scheda attiva
+      const archivedByProgramId = new Map(); // formato v2: un documento per scheda archiviata (pre-consolidamento)
+      const exercisesByKey = new Map(); // formato v2: schede troppo grandi, un documento per esercizio (chiave: programId::sheetId::kind)
       snapshot.forEach((item) => {
         const value = item.data?.() || {};
         const programId = String(value.programId || value.program?.id || value.programMeta?.id || "");
         if (allowed.size && programId && !allowed.has(programId)) return;
         if (value.program) { legacyProgramsById.set(programId || String(value.program.id), value.program); return; }
         if (value.programMeta) { metaById.set(programId, value.programMeta); return; }
+        const kind = value.kind === "archived" ? "archived" : "sheet";
         if (value.exercise) {
-          const key = `${programId}::${value.sheetId}`;
-          if (!exercisesBySheetKey.has(key)) exercisesBySheetKey.set(key, []);
-          exercisesBySheetKey.get(key).push(value.exercise);
+          const key = `${programId}::${value.sheetId}::${kind}`;
+          if (!exercisesByKey.has(key)) exercisesByKey.set(key, []);
+          exercisesByKey.get(key).push(value.exercise);
           return;
         }
         if (value.sheet) {
-          if (!sheetsByProgramId.has(programId)) sheetsByProgramId.set(programId, []);
-          sheetsByProgramId.get(programId).push(value.sheet);
+          const target = kind === "archived" ? archivedByProgramId : sheetsByProgramId;
+          if (!target.has(programId)) target.set(programId, []);
+          target.get(programId).push({ ...value.sheet, __kind: kind });
         }
       });
       // Le schede salvate "vuote" (exercisesSplit) vanno riempite con gli
       // esercizi arrivati nei documenti separati, prima di assemblare i
       // programmi qui sotto.
-      sheetsByProgramId.forEach((sheets, programId) => {
-        sheets.forEach((sheet) => {
-          if (!sheet.exercisesSplit) return;
-          const key = `${programId}::${sheet.id}`;
-          sheet.exercises = (exercisesBySheetKey.get(key) || []).slice().sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
-          delete sheet.exercisesSplit;
-        });
+      const fillSplitExercises = (sheets, programId) => sheets.forEach((sheet) => {
+        if (!sheet.exercisesSplit) return;
+        const key = `${programId}::${sheet.id}::${sheet.__kind}`;
+        sheet.exercises = (exercisesByKey.get(key) || []).slice().sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+        delete sheet.exercisesSplit;
       });
+      sheetsByProgramId.forEach((sheets, programId) => fillSplitExercises(sheets, programId));
+      archivedByProgramId.forEach((sheets, programId) => fillSplitExercises(sheets, programId));
+      const stripKind = (sheet) => { const { __kind, ...rest } = sheet; return rest; };
       const programs = [];
       const seen = new Set();
       metaById.forEach((programMeta, programId) => {
-        const sheets = (sheetsByProgramId.get(programId) || []).slice().sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
-        programs.push({ ...programMeta, sheets });
+        const sheets = (sheetsByProgramId.get(programId) || []).slice().sort((a, b) => Number(a.order || 0) - Number(b.order || 0)).map(stripKind);
+        const archivedSheets = (archivedByProgramId.get(programId) || []).slice().sort((a, b) => Number(a.order || 0) - Number(b.order || 0)).map(stripKind);
+        programs.push({ ...programMeta, sheets, ...(archivedSheets.length ? { archivedSheets } : {}) });
         seen.add(programId);
       });
       legacyProgramsById.forEach((program, programId) => {
