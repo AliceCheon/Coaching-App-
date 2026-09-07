@@ -9212,6 +9212,18 @@ function sanitizeForFirestore(value) {
       const { exercises = [], ...sheetShell } = sanitizedSheet;
       const fullSize = new TextEncoder().encode(JSON.stringify(sanitizedSheet)).length;
       const oversized = fullSize > CLOUD_SHEET_SIZE_LIMIT;
+      // Leggo il documento scheda precedente PRIMA di sovrascriverlo, per sapere
+      // quali documenti-esercizio esistevano già (se la scheda era già divisa
+      // per esercizio in precedenza) e poterli ripulire se un esercizio è stato
+      // rimosso o se la scheda non è più troppo grande — altrimenti i
+      // documenti-esercizio orfani restano su Firestore e "resuscitano" come
+      // esercizi fantasma al prossimo caricamento.
+      let previousExerciseIds = [];
+      try {
+        const previousSnap = await collection.doc(docId).get();
+        const previousData = previousSnap?.data?.() || null;
+        if (previousData?.exercisesSplit) previousExerciseIds = previousData.exerciseIds || [];
+      } catch (error) { /* nessun documento precedente, o lettura non riuscita: niente da ripulire */ }
       try {
         await collection.doc(docId).set(oversized ? {
           programId, sheetId: sheet.id, updatedAt, kind,
@@ -9227,6 +9239,9 @@ function sanitizeForFirestore(value) {
         failures.push({ programId, sheetId: sheet.id, error, tag: failureTag });
         return;
       }
+      const currentExerciseIds = new Set(exercises.map((exercise) => String(exercise.id)));
+      const staleExerciseIds = previousExerciseIds.filter((id) => !currentExerciseIds.has(String(id)));
+      await Promise.all(staleExerciseIds.map((id) => collection.doc(exerciseDocId(programId, sheet.id, id)).delete().catch(() => {})));
       if (!oversized) return;
       // La scheda intera è troppo grande: ogni esercizio finisce nel suo
       // documento (invece della scheda che li contiene tutti insieme),
@@ -9483,7 +9498,28 @@ function sanitizeForFirestore(value) {
       cloudSaveTimer = setTimeout(() => { lastCloudSaveAttemptAt = Date.now(); saveCloudState(); }, delay);
     }
 
+    let cloudSaveInFlight = false;
+    let cloudSaveQueued = false;
     async function saveCloudState() {
+      // BUG STORICO: due modifiche ravvicinate (es. togliere due esercizi di
+      // fila) potevano avviare due saveCloudStateInner() in parallelo, che si
+      // pestavano i piedi a vicenda sulle stesse informazioni di versione
+      // (state.meta.cloudProgramRevisions) — risultato: una delle due
+      // modifiche risultava "sincronizzata" senza esserlo davvero, o la
+      // sincronizzazione sembrava riuscire e poi fallire in modo incoerente.
+      // Ora una seconda chiamata mentre la prima è ancora in corso viene
+      // accodata e rieseguita subito dopo, invece di partire in parallelo.
+      if (cloudSaveInFlight) { cloudSaveQueued = true; return false; }
+      cloudSaveInFlight = true;
+      try {
+        return await saveCloudStateInner();
+      } finally {
+        cloudSaveInFlight = false;
+        if (cloudSaveQueued) { cloudSaveQueued = false; scheduleCloudSave(); }
+      }
+    }
+
+    async function saveCloudStateInner() {
       const doc = cloudDocument();
       if (!doc) {
         lastCloudError = cloudUser ? "Firestore non disponibile: ricarica la pagina e riprova." : "Accedi con Google prima di sincronizzare.";
