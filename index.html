@@ -18482,12 +18482,9 @@ function sanitizeForFirestore(value) {
     });
 
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-      navigator.serviceWorker.addEventListener("controllerchange", () => {
-        const reloadKey = `atlas-${APP_BUILD}-reload`;
-        if (sessionStorage.getItem(reloadKey)) return;
-        sessionStorage.setItem(reloadKey, "1");
-        location.reload();
-      });
+          navigator.serviceWorker.addEventListener("controllerchange", () => {
+      console.log("Barbell Diva: service worker aggiornato in background.");
+    });
       navigator.serviceWorker.register(`./service-worker.js?v=${APP_BUILD}`, { updateViaCache: "none" })
         .then((registration) => registration.update())
         .catch(() => {});
