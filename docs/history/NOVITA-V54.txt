@@ -1,0 +1,6 @@
+ATLAS V54 - SINCRONIZZAZIONE FOTO
+
+- Le foto nuove vengono aggiunte al cloud senza cancellare quelle presenti sugli altri dispositivi.
+- Telefono e PC ascoltano gli aggiornamenti delle foto in tempo reale.
+- Dopo il caricamento compare una conferma distinta tra salvataggio locale e sincronizzazione cloud completata.
+- Cache aggiornata alla v54 per forzare il caricamento della correzione su telefono e PC.
