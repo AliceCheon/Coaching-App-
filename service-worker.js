@@ -1,11 +1,11 @@
 /* Barbell Diva - Service Worker
-   v14724-manutenzione
+   v14725-modularizzazione
    - HTML: network-first con timeout (3s) + fallback cache → app shell
    - Asset statici: cache-first con refresh in background (stale-while-revalidate)
    - Match con ignoreSearch: resiste ai bump di versione (?v=...) e ai doppioni in cache
    - Cache key normalizzate per pathname (niente duplicati per ogni ?v=)
 */
-const CACHE_NAME = "atlas-app-v14724-manutenzione";
+const CACHE_NAME = "atlas-app-v14725-modularizzazione";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -21,6 +21,11 @@ const APP_SHELL = [
   "./unified-sidebar-v1452.css",
   "./coach-schede-restyle-v146.css",
   "./workout-flow-v147.css",
+  "./coach-studio-inline.css",
+  "./src/utils-global.js",
+  "./src/utils.js",
+  "./src/firebase-app-check.js",
+  "./src/app-main.js",
   "./exercise-library-19.8.js",
   "./master-exercise-library.js",
   "./athlete-context.js",
