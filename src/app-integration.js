@@ -1,15 +1,13 @@
 /**
  * App Integration Module - Barbell Diva
- * Robottina animata con espressioni e suoni
+ * Robottina animata con espressioni e suoni - UNICA mascotte
  */
 (function (root) {
   "use strict";
 
   // ==========================================
-  // DIVA ROBOT - Mascotte animata
+  // EXPRESSIONS - 7 stati d'animo
   // ==========================================
-
-  // Robot expressions
   const EXPRESSIONS = {
     happy: { eyes: "◕", mouth: "‿", color: "#ff6fcb" },
     excited: { eyes: "★", mouth: "D", color: "#ff9b49" },
@@ -20,7 +18,9 @@
     motivated: { eyes: "◕", mouth: "▽", color: "#ff6fcb" }
   };
 
-  // Sound effects (using Web Audio API)
+  // ==========================================
+  // SOUND EFFETTI
+  // ==========================================
   const sounds = {
     pop: () => playTone(800, 0.1, "sine"),
     success: () => playTone(523, 0.1, "sine", 0.2),
@@ -48,15 +48,21 @@
 
       oscillator.start(audioContext.currentTime + delay);
       oscillator.stop(audioContext.currentTime + delay + duration);
-    } catch {
+    } catch (e) {
       // Audio not supported
     }
   }
 
-  // Create animated Diva Robot
-  function createDivaRobot() {
+  // ==========================================
+  // ROBOTTINA - Mascotte principale
+  // ==========================================
+  function createRobottina() {
+    // Rimuovi eventuali altre mascotte
+    const existingBot = document.getElementById("divaBot");
+    if (existingBot) existingBot.remove();
+
     const robot = document.createElement("div");
-    robot.id = "divaRobot";
+    robot.id = "robottina";
     robot.style.cssText = `
       position: fixed;
       bottom: 20px;
@@ -69,9 +75,9 @@
       user-select: none;
     `;
 
-    // Robot face container
+    // Faccia della robottina
     const face = document.createElement("div");
-    face.id = "divaRobotFace";
+    face.id = "robottinaFace";
     face.style.cssText = `
       width: 100%;
       height: 100%;
@@ -82,13 +88,12 @@
       align-items: center;
       justify-content: center;
       box-shadow: 0 4px 15px rgba(255, 111, 203, 0.4);
-      animation: robotBounce 2s ease-in-out infinite;
-      position: relative;
+      animation: robottinaBounce 2s ease-in-out infinite, robottinaPulse 3s ease-in-out infinite;
     `;
 
-    // Eyes
+    // Occhi
     const eyes = document.createElement("div");
-    eyes.id = "divaRobotEyes";
+    eyes.id = "robottinaEyes";
     eyes.style.cssText = `
       font-size: 18px;
       color: #fff;
@@ -97,9 +102,9 @@
     `;
     eyes.textContent = "◕ ◕";
 
-    // Mouth
+    // Bocca
     const mouth = document.createElement("div");
-    mouth.id = "divaRobotMouth";
+    mouth.id = "robottinaMouth";
     mouth.style.cssText = `
       font-size: 14px;
       color: #fff;
@@ -125,35 +130,31 @@
 
     // Click handler
     robot.addEventListener("click", () => {
-      showDivaPopup();
+      showMessage();
       sounds.pop();
     });
 
     document.body.appendChild(robot);
-
-    // Add robot styles
-    addRobotStyles();
-
+    addRobottinaStyles();
     return robot;
   }
 
-  // Set robot expression
+  // Cambia espressione
   function setExpression(expression) {
-    const face = document.getElementById("divaRobotFace");
-    const eyes = document.getElementById("divaRobotEyes");
-    const mouth = document.getElementById("divaRobotMouth");
+    const face = document.getElementById("robottinaFace");
+    const eyes = document.getElementById("robottinaEyes");
+    const mouth = document.getElementById("robottinaMouth");
 
     if (!face || !eyes || !mouth) return;
 
     const expr = EXPRESSIONS[expression] || EXPRESSIONS.happy;
-
     eyes.textContent = `${expr.eyes} ${expr.eyes}`;
     mouth.textContent = expr.mouth;
     face.style.background = `linear-gradient(135deg, ${expr.color} 0%, #a990ff 100%)`;
   }
 
-  // Show Diva popup message
-  function showDivaPopup() {
+  // Mostra messaggio popup
+  function showMessage() {
     const messages = [
       { text: "Ce la stai facendo benissimo! 💪", expr: "motivated" },
       { text: "Diva è orgogliosa di te! 💅", expr: "happy" },
@@ -168,16 +169,14 @@
     ];
 
     const msg = messages[Math.floor(Math.random() * messages.length)];
-
-    // Set robot expression
     setExpression(msg.expr);
 
-    // Remove existing popup
-    const existing = document.querySelector(".diva-popup");
+    // Rimuovi popup esistente
+    const existing = document.querySelector(".robottina-popup");
     if (existing) existing.remove();
 
     const popup = document.createElement("div");
-    popup.className = "diva-popup";
+    popup.className = "robottina-popup";
     popup.style.cssText = `
       position: fixed;
       bottom: 100px;
@@ -191,7 +190,7 @@
       font-size: 13px;
       z-index: 9999;
       box-shadow: 0 10px 30px rgba(255, 111, 203, 0.3);
-      animation: divaSlideUp 0.3s ease-out;
+      animation: robottinaSlideUp 0.3s ease-out;
     `;
 
     popup.innerHTML = `
@@ -204,10 +203,9 @@
 
     document.body.appendChild(popup);
 
-    // Auto remove after 4 seconds
     setTimeout(() => {
       if (popup.parentNode) {
-        popup.style.animation = "divaSlideUp 0.3s ease-out reverse";
+        popup.style.animation = "robottinaSlideUp 0.3s ease-out reverse";
         setTimeout(() => {
           popup.remove();
           setExpression("happy");
@@ -217,162 +215,41 @@
   }
 
   // ==========================================
-  // QUICK LOG BUTTON
+  // STILE CSS
   // ==========================================
+  function addRobottinaStyles() {
+    if (document.getElementById("robottina-styles")) return;
 
-  function addQuickLogButton() {
-    const workoutScreen = document.getElementById("screen");
-    if (!workoutScreen) return;
-
-    if (document.getElementById("quickLogBtn")) return;
-
-    const btn = document.createElement("button");
-    btn.id = "quickLogBtn";
-    btn.style.cssText = `
-      position: fixed;
-      bottom: 100px;
-      left: 20px;
-      padding: 12px 20px;
-      background: linear-gradient(135deg, #ff6fcb 0%, #a990ff 100%);
-      border: none;
-      border-radius: 25px;
-      color: #fff;
-      font-size: 14px;
-      font-weight: bold;
-      cursor: pointer;
-      z-index: 9998;
-      box-shadow: 0 4px 15px rgba(255, 111, 203, 0.4);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: transform 0.2s;
+    const styles = document.createElement("style");
+    styles.id = "robottina-styles";
+    styles.textContent = `
+      @keyframes robottinaBounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+      }
+      @keyframes robottinaSlideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes robottinaPulse {
+        0%, 100% { box-shadow: 0 4px 15px rgba(255, 111, 203, 0.4); }
+        50% { box-shadow: 0 4px 25px rgba(255, 111, 203, 0.7); }
+      }
+      #robottina:hover {
+        animation: none !important;
+      }
     `;
-    btn.innerHTML = `<span style="font-size: 20px;">⚡</span> Quick Log`;
-
-    btn.addEventListener("mouseenter", () => {
-      btn.style.transform = "scale(1.05)";
-      sounds.click();
-    });
-
-    btn.addEventListener("mouseleave", () => {
-      btn.style.transform = "scale(1)";
-    });
-
-    btn.addEventListener("click", () => {
-      if (root.BarbellDivaQuickLog) {
-        root.BarbellDivaQuickLog.showQuickLogModal((setData) => {
-          onSetRecorded(setData);
-        });
-      }
-      sounds.pop();
-    });
-
-    document.body.appendChild(btn);
-    return btn;
+    document.head.appendChild(styles);
   }
 
   // ==========================================
-  // SET COMPLETION - PR Check
+  // INIZIALIZZAZIONE
   // ==========================================
-
-  function onSetRecorded(setData) {
-    // Check for PR
-    if (root.BarbellDivaPRCelebrations) {
-      const isPR = root.BarbellDivaPRCelebrations.checkAndCelebratePR(
-        setData.exerciseName,
-        setData.weight,
-        setData.reps
-      );
-
-      if (isPR) {
-        setExpression("celebrating");
-        sounds.celebration();
-        if (root.BarbellDivaNotifications) {
-          root.BarbellDivaNotifications.showPRNotification(
-            setData.exerciseName,
-            setData.weight,
-            setData.reps
-          );
-        }
-        setTimeout(() => setExpression("happy"), 3000);
-      } else {
-        setExpression("excited");
-        sounds.success();
-        setTimeout(() => setExpression("happy"), 2000);
-      }
-    }
-
-    // Record in progress charts
-    if (root.BarbellDivaProgressCharts) {
-      root.BarbellDivaProgressCharts.recordSet(
-        setData.exerciseName,
-        setData.weight,
-        setData.reps,
-        setData.rir
-      );
-    }
-
-    // Record workout day
-    if (root.BarbellDivaConsistencyHeatmap) {
-      root.BarbellDivaConsistencyHeatmap.recordWorkoutDay(new Date());
-    }
-
-    // Show success toast
-    if (root.BarbellDivaUI) {
-      root.BarbellDivaUI.showToast("✓ Serie salvata!", "success");
-    }
-
-    // Update goals
-    if (root.BarbellDivaGoalsStats) {
-      const current = root.BarbellDivaGoalsStats.calculateCurrentStreak();
-      root.BarbellDivaGoalsStats.updateGoalProgress("streakTarget", current);
-    }
-  }
-
-  // ==========================================
-  // WORKOUT START
-  // ==========================================
-
-  function onWorkoutStart() {
-    setTimeout(() => {
-      setExpression("motivated");
-      if (root.BarbellDivaPersonality) {
-        root.BarbellDivaPersonality.showDivaMessage({
-          type: "sessionStart",
-          mood: "energetic"
-        });
-      }
-      setTimeout(() => setExpression("happy"), 3000);
-    }, 1000);
-  }
-
-  // ==========================================
-  // INITIALIZATION
-  // ==========================================
-
   function init() {
-    addRobotStyles();
+    // Crea la robottina (unica mascotte)
+    setTimeout(createRobottina, 500);
 
-    // Create Diva Robot
-    setTimeout(createDivaRobot, 500);
-
-    // Add Quick Log button
-    const observer = new MutationObserver(() => {
-      const screen = document.getElementById("screen");
-      if (screen && screen.children.length > 0) {
-        addQuickLogButton();
-      }
-    });
-
-    const screen = document.getElementById("screen");
-    if (screen) {
-      observer.observe(screen, { childList: true });
-    }
-
-    // Listen for workout start
-    document.addEventListener("workoutStarted", onWorkoutStart);
-
-    // Set periodic expression changes
+    // Cambia espressione periodicamente
     setInterval(() => {
       const expressions = ["happy", "thinking", "motivated"];
       const randomExpr = expressions[Math.floor(Math.random() * expressions.length)];
@@ -380,50 +257,18 @@
     }, 10000);
   }
 
-  // Add CSS styles
-  function addRobotStyles() {
-    if (document.getElementById("robot-styles")) return;
-
-    const styles = document.createElement("style");
-    styles.id = "robot-styles";
-    styles.textContent = `
-      @keyframes robotBounce {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-5px); }
-      }
-      @keyframes divaSlideUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      @keyframes robotPulse {
-        0%, 100% { box-shadow: 0 4px 15px rgba(255, 111, 203, 0.4); }
-        50% { box-shadow: 0 4px 25px rgba(255, 111, 203, 0.7); }
-      }
-      #divaRobot:hover {
-        animation: none !important;
-      }
-      #divaRobotFace {
-        animation: robotBounce 2s ease-in-out infinite, robotPulse 3s ease-in-out infinite;
-      }
-    `;
-    document.head.appendChild(styles);
-  }
-
-  // Run on DOM ready
+  // Avvia quando il DOM è pronto
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
     init();
   }
 
-  // Expose API
-  root.BarbellDivaIntegration = Object.freeze({
-    createDivaRobot,
-    addQuickLogButton,
-    onSetRecorded,
-    onWorkoutStart,
+  // Esponi API
+  root.BarbellDivaRobottina = Object.freeze({
+    createRobottina,
     setExpression,
-    showDivaPopup,
+    showMessage,
     init
   });
 })(typeof window !== "undefined" ? window : globalThis);
