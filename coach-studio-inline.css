@@ -4707,3 +4707,61 @@
     .missing-field-guide em { padding:3px 7px; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-size:.7rem; font-style:normal; }
     @media (max-width:700px) { .exercise-detail-status,.progression-confirm-compare { grid-template-columns:1fr; } }
   
+    /* === Diva Bot bianca (ripristino v14725) === */
+    .coach-avatar { --bot-shell:#f8f4ff; --bot-shell-shadow:#b9a8cd; --bot-accent:var(--pink-hot); --bot-secondary:var(--purple-primary); --bot-screen:#160f1d; --bot-heart:#ff5eb1; position:relative; width:42px; height:42px; padding:0; display:grid; place-items:center; background:transparent; box-shadow:none; flex:none; isolation:isolate; }
+    .diva-bot { width:100%; height:100%; overflow:visible; transform-origin:50% 72%; animation:divaBotFloat 4.4s ease-in-out infinite; }
+    .diva-bot-shell { fill:var(--bot-shell); stroke:var(--bot-shell-shadow); stroke-width:3; }
+    .diva-bot-joint { fill:#5a486d; stroke:#cbbddd; stroke-width:2; }
+    .diva-bot-screen { fill:var(--bot-screen); stroke:var(--bot-secondary); stroke-width:4; }
+    .diva-bot-screen-glint { fill:rgba(255,255,255,.14); }
+    .diva-bot-face-stroke { fill:none; stroke:#ff72c2; stroke-width:8; stroke-linecap:round; stroke-linejoin:round; }
+    .diva-bot-face-fill { fill:#ff72c2; }
+    .diva-bot-body { transform-origin:120px 176px; animation:divaBotBreathe 3.8s ease-in-out infinite; }
+    .diva-bot-antenna { transform-origin:120px 48px; animation:divaBotAntenna 4.8s ease-in-out infinite; }
+    .diva-bot-heart-shape { fill:var(--bot-heart); filter:none; transform-origin:center; animation:divaBotHeart 2.7s ease-in-out infinite; }
+    .diva-bot-arm { transform-box:fill-box; transform-origin:center top; transition:transform .28s ease; }
+    .diva-bot-face > g { display:none; }
+    .coach-avatar[data-coach-state="idle"] .diva-bot-face-idle,
+    .coach-avatar[data-coach-state="encouraging"] .diva-bot-face-encouraging { display:block; }
+    .coach-avatar[data-coach-state="happy"] .diva-bot-face-happy,
+    .coach-avatar[data-coach-state="celebrate"] .diva-bot-face-happy { display:block; }
+    .coach-avatar[data-coach-state="thinking"] .diva-bot-face-thinking { display:block; }
+    .coach-avatar[data-coach-state="warning"] .diva-bot-face-warning { display:block; }
+    .coach-avatar[data-coach-state="rest"] .diva-bot-face-rest { display:block; }
+    .coach-avatar[data-coach-state="celebrate"] .diva-bot { animation:divaBotCelebrate .72s ease-in-out 2; }
+    .coach-avatar[data-coach-state="celebrate"] .diva-bot-arm-left { transform:rotate(145deg) translate(2px,-4px); }
+    .coach-avatar[data-coach-state="celebrate"] .diva-bot-arm-right { transform:rotate(-145deg) translate(-2px,-4px); }
+    .coach-avatar[data-coach-state="happy"] .diva-bot-arm-left { animation:divaBotWave .65s ease-in-out 2; }
+    .coach-avatar[data-coach-state="thinking"] .diva-bot-arm-right { transform:rotate(-70deg) translate(-3px,-2px); }
+    .coach-avatar[data-coach-state="encouraging"] .diva-bot-arm-right { transform:rotate(-96deg) translate(-3px,-4px); }
+    .coach-avatar[data-coach-state="warning"] { --bot-heart:#ffad55; }
+    .coach-avatar[data-coach-state="warning"] .diva-bot { animation-duration:5.2s; }
+    .coach-avatar[data-coach-state="rest"] .diva-bot { animation-duration:6.4s; }
+    .coach-avatar[data-coach-state="rest"] .diva-bot-heart-shape { opacity:.62; animation-duration:4.5s; }
+    .diva-bot-barbell { opacity:0; transform-box:fill-box; transform-origin:center; pointer-events:none; }
+    .coach-avatar[data-coach-state="lifting"] .diva-bot-face-encouraging { display:block; }
+    .coach-avatar[data-coach-state="lifting"] .diva-bot { animation:divaBotLiftStance .82s ease-in-out 2; }
+    .coach-avatar[data-coach-state="lifting"] .diva-bot-barbell { opacity:1; animation:divaBotBarbellLift .82s ease-in-out 2; }
+    .coach-avatar[data-coach-state="lifting"] .diva-bot-arm-left { transform:rotate(58deg) translate(5px,-11px); }
+    .coach-avatar[data-coach-state="lifting"] .diva-bot-arm-right { transform:rotate(-58deg) translate(-5px,-11px); }
+    .coach-avatar.compact[data-coach-state="lifting"] .diva-bot { width:100%; height:100%; transform:none; }
+    .coach-avatar.compact[data-coach-state="lifting"] .diva-bot-body,
+    .coach-avatar.compact[data-coach-state="lifting"] .diva-bot-arm { opacity:1; }
+    .coach-avatar .diva-bot-eyes.is-blinking { transform-box:fill-box; transform-origin:center; transform:scaleY(.08); }
+    .coach-avatar.compact { overflow:hidden; }
+    .coach-avatar.compact .diva-bot { width:128%; height:128%; transform:translateY(13%); animation-name:divaBotCompactFloat; }
+    .coach-avatar.compact .diva-bot-body,
+    .coach-avatar.compact .diva-bot-arm { opacity:0; }
+    @keyframes divaBotFloat { 0%,100%{transform:translateY(1px) rotate(-.7deg)} 50%{transform:translateY(-3px) rotate(.7deg)} }
+    @keyframes divaBotCompactFloat { 0%,100%{transform:translateY(13%) rotate(-.5deg)} 50%{transform:translateY(9%) rotate(.5deg)} }
+    @keyframes divaBotBreathe { 0%,100%{transform:scale(1)} 50%{transform:scale(1.018,.985)} }
+    @keyframes divaBotAntenna { 0%,100%{transform:rotate(-2deg)} 50%{transform:rotate(3deg)} }
+    @keyframes divaBotHeart { 0%,100%{transform:scale(.94);opacity:.76} 48%{transform:scale(1.12);opacity:1} }
+    @keyframes divaBotWave { 0%,100%{transform:rotate(0)} 50%{transform:rotate(22deg)} }
+    @keyframes divaBotCelebrate { 0%,100%{transform:translateY(0) scale(1)} 45%{transform:translateY(-10px) scale(1.03)} }
+    @keyframes divaBotLiftStance { 0%,100%{transform:translateY(1px) scale(1)} 45%{transform:translateY(-4px) scale(1.025)} }
+    @keyframes divaBotBarbellLift { 0%,100%{transform:translateY(0)} 45%{transform:translateY(-42px)} }
+    /* === Sentinel: nasconde artefatti di diva-personality.js (sfera viola, popup) === */
+    #globalDivaBotHost > div:not(.coach-avatar):not([data-diva-bot]),
+    .diva-message-popup, .diva-palla, .diva-ball, .diva-orb, .floating-emoji { display:none !important; }
+    @media(prefers-reduced-motion:reduce){ .diva-bot,.diva-bot-body,.diva-bot-antenna,.diva-bot-heart-shape,.diva-bot-barbell{animation:none !important;} .diva-bot-heart-shape{opacity:1;transform:none;} }
