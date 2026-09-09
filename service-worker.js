@@ -1,11 +1,11 @@
 /* Barbell Diva - Service Worker
-   v14725-modularizzazione
+   v14726-diva-bot-fix
    - HTML: network-first con timeout (3s) + fallback cache → app shell
    - Asset statici: cache-first con refresh in background (stale-while-revalidate)
    - Match con ignoreSearch: resiste ai bump di versione (?v=...) e ai doppioni in cache
    - Cache key normalizzate per pathname (niente duplicati per ogni ?v=)
 */
-const CACHE_NAME = "atlas-app-v14725-modularizzazione";
+const CACHE_NAME = "atlas-app-v14726-diva-bot-fix";
 const APP_SHELL = [
   "./",
   "./index.html",
