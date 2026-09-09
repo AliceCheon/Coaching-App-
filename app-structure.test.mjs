@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = path.join(__dirname, '..');
+const rootDir = __dirname;
 
 test('index.html exists and has correct structure', async () => {
   const html = await fs.readFile(path.join(rootDir, 'index.html'), 'utf8');
