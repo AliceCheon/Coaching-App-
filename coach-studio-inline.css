@@ -4761,7 +4761,7 @@
     @keyframes divaBotCelebrate { 0%,100%{transform:translateY(0) scale(1)} 45%{transform:translateY(-10px) scale(1.03)} }
     @keyframes divaBotLiftStance { 0%,100%{transform:translateY(1px) scale(1)} 45%{transform:translateY(-4px) scale(1.025)} }
     @keyframes divaBotBarbellLift { 0%,100%{transform:translateY(0)} 45%{transform:translateY(-42px)} }
-    /* === Sentinel: nasconde artefatti di diva-personality.js (sfera viola, popup) === */
-    #globalDivaBotHost > div:not(.coach-avatar):not([data-diva-bot]),
-    .diva-message-popup, .diva-palla, .diva-ball, .diva-orb, .floating-emoji { display:none !important; }
+    /* === Sentinel: nasconde la vecchia "pallina" (#divaRobot) se resta in cache === */
+    #divaRobot, .diva-popup, #diva-robot-styles,
+    #globalDivaBotHost > div:not(.coach-avatar):not([data-diva-bot]) { display:none !important; }
     @media(prefers-reduced-motion:reduce){ .diva-bot,.diva-bot-body,.diva-bot-antenna,.diva-bot-heart-shape,.diva-bot-barbell{animation:none !important;} .diva-bot-heart-shape{opacity:1;transform:none;} }
