@@ -1,11 +1,11 @@
 /* Barbell Diva - Service Worker
-   v14726-diva-bot-fix
+   v14727-appshell-fix
    - HTML: network-first con timeout (3s) + fallback cache → app shell
    - Asset statici: cache-first con refresh in background (stale-while-revalidate)
    - Match con ignoreSearch: resiste ai bump di versione (?v=...) e ai doppioni in cache
    - Cache key normalizzate per pathname (niente duplicati per ogni ?v=)
 */
-const CACHE_NAME = "atlas-app-v14726-diva-bot-fix";
+const CACHE_NAME = "atlas-app-v14727-appshell-fix";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -26,6 +26,16 @@ const APP_SHELL = [
   "./src/utils.js",
   "./src/firebase-app-check.js",
   "./src/app-main.js",
+  "./src/app-integration.js",
+  "./src/pr-celebrations.js",
+  "./src/consistency-heatmap.js",
+  "./src/progress-charts.js",
+  "./src/quick-log.js",
+  "./src/ui-enhancements.js",
+  "./src/diva-personality.js",
+  "./src/diva-bot-sounds.js",
+  "./src/goals-stats.js",
+  "./src/notifications.js",
   "./exercise-library-19.8.js",
   "./master-exercise-library.js",
   "./athlete-context.js",

@@ -10558,16 +10558,6 @@ function sanitizeForFirestore(value) {
 
     // === Integrazione Diva Bot: suoni, espressioni e messaggi sulla robottina ===
     function bindDivaBotIntegration() {
-      // Ascolta i messaggi dispatchati da app-integration.js (showMessage)
-      window.addEventListener("divaBotShowMessage", (event) => {
-        const detail = event.detail || {};
-        const text = detail.text || "Ecco un messaggio!";
-        if (activeScreen === "training" && workoutMascotVisible()) {
-          showWorkoutMascotBubble(text);
-        } else {
-          showToast(text);
-        }
-      });
       // Ascolta i messaggi dispatchati da diva-personality.js (analyzeAndReact / showDivaMessage)
       window.addEventListener("divaBotPersonalitieshowDivaMessage", (event) => {
         const detail = event.detail || {};
@@ -10605,11 +10595,7 @@ function sanitizeForFirestore(value) {
       setInterval(() => {
         const expressionMap = ["happy", "thinking", "encouraging", "happy", "thinking"];
         const random = expressionMap[Math.floor(Math.random() * expressionMap.length)];
-        if (typeof window.BarbellDivaRobot !== "undefined" && window.BarbellDivaRobot.setExpression) {
-          window.BarbellDivaRobot.setExpression(random);
-        } else {
-          setCoachMascotState(random, { duration: 3000, returnState: "idle" });
-        }
+        setCoachMascotState(random, { duration: 3000, returnState: "idle" });
       }, 25000);
     }
 

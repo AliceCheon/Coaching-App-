@@ -27,7 +27,7 @@ jobs:
 
       - name: Check JavaScript syntax
         run: |
-          for file in *.js; do node --check "$file"; done
+          for file in *.js src/*.js; do node --check "$file"; done
 
       - name: Run core engine and workout tests
         run: |
@@ -38,7 +38,9 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
-          const html = fs.readFileSync('index.html', 'utf8');
+          // Dopo la modularizzazione le stringhe di runtime vivono in src/app-main.js:
+          // si verifica il contenuto combinato di index.html e del modulo principale.
+          const html = fs.readFileSync('index.html', 'utf8') + '\n' + fs.readFileSync('src/app-main.js', 'utf8');
           for (const required of ['Intensità Agosto-Ottobre', 'intensitaNuovoBuild', '2026-08-31-sync-notes-v8-note-fallback', 'synchronizeReliableNow', 'programModelCache.clear', 'Programma salvato e sincronizzato']) {
             if (!html.includes(required)) throw new Error(`Missing: ${required}`);
           }
