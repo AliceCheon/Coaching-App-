@@ -6,6 +6,7 @@ import path from "node:path";
 const root = path.resolve(import.meta.dirname, "..");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const js = fs.readFileSync(path.join(root, "workout-flow-v147.js"), "utf8");
+const app = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "workout-flow-v147.css"), "utf8");
 const sw = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
 
@@ -34,7 +35,7 @@ test("registra kg ripetizioni e RIR reali nel salvataggio", () => {
   assert.match(js, /data-v147-set-field="reps"/);
   assert.match(js, /data-v147-set-field="rpe"/);
   assert.match(js, /data-v147-set-field="rir"/);
-  assert.match(html, /BarbellDivaWorkoutV147\?\.completedSetsFor/);
+  assert.match(app, /BarbellDivaWorkoutV147\?\.completedSetsFor/);
 });
 
 test("la conferma chiude davvero la serie e consente di riaprirla", () => {
