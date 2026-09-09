@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test tests/app-structure.test.mjs",
+    "test": "node --test app-structure.test.mjs",
     "test:all": "node --test \"tests/*.test.mjs\"",
     "lint": "eslint ."
   },
