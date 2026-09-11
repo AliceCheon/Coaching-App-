@@ -513,7 +513,24 @@
     root.querySelector("[data-v147-confirm-set]")?.addEventListener("click", () => {
       const active = activeSession();
       if (!active) return;
+      const context = currentTrainingContext();
+      const exerciseIndex = Number(active.currentExercise) || 0;
+      const exercise = context.session.exercises[exerciseIndex];
+      const values = draftSetsFor(context, exercise);
+      // Conferma la serie corrente
       toggleSet(Number(active.currentSet) || 0, true);
+      // Se tutte le serie sono completate → prossimo esercizio (o termina)
+      const allDone = values.every((value, idx) => setIsDone(context, exercise, idx, value));
+      if (allDone) {
+        if (exerciseIndex >= context.session.exercises.length - 1) {
+          finishWorkout();
+        } else {
+          active.currentExercise = exerciseIndex + 1;
+          active.currentSet = 0;
+          scheduleLocalSave(true);
+          renderTrainingOnly();
+        }
+      }
     });
     root.querySelector("[data-v147-note]")?.addEventListener("input", (event) => {
       const context = currentTrainingContext();

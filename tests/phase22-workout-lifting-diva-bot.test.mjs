@@ -16,8 +16,9 @@ assert.match(html, /triggerDivaBotReaction\("load_increased", \{ exercise \}\)/)
 assert.match(html, /load_increased:\{ priority:"low", cooldown:30000, state:"lifting", duration:1750 \}/);
 assert.match(html, /Più peso\? Finalmente parliamo la stessa lingua\./);
 assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14729-clean-header"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14730-smart-confirm"/);
 
 console.log(JSON.stringify({ ok:true, workoutReaction:true, barbellLift:true, build:"v106" }));
+
 
 

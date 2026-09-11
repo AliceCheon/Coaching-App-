@@ -15,7 +15,8 @@ check(html.includes("redactPhotoListFallback(loaded.nutrition?.dashboard?.photos
 check(html.includes("writeBackupHistory(historyCleanup)"), "cronologia backup non riscritta senza foto");
 check(html.includes('"front", "back", "side"'), "chiavi foto front/back mancanti dall'elenco heavy");
 check(config.includes('build: "v147.23-programs-per-sheet-fix"'), "build non aggiornata alla v147.22-sync-pwa-forced");
-check(sw.includes("atlas-app-v14729-clean-header"), "cache PWA non allineata alla v147.22-sync-pwa-forced");
+check(sw.includes("atlas-app-v14730-smart-confirm"), "cache PWA non allineata alla v147.22-sync-pwa-forced");
 
 console.log(JSON.stringify({ ok:true, build:"v147.22-sync-pwa-forced", checks:6, fix:"photo cleanup one-shot front/back/side + history + cloud" }));
+
 

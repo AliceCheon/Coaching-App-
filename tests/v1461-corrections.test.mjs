@@ -16,7 +16,7 @@ const check = (condition, message) => assert.ok(condition, message);
 
 check(config.includes('build: "v147.23-programs-per-sheet-fix"'), "build v147.1 mancante");
 check(config.includes('cache: "atlas-app-v14723-programs-per-sheet-fix"'), "cache contrasto v147.1 mancante");
-check(sw.includes('const CACHE_NAME = "atlas-app-v14729-clean-header"'), "service worker contrasto non aggiornato");
+check(sw.includes('const CACHE_NAME = "atlas-app-v14730-smart-confirm"'), "service worker contrasto non aggiornato");
 check(sw.includes('"./coach-schede-restyle-v146.css"'), "CSS v146 non precaricato");
 check(sw.includes('"./coach-schede-v146-enhance.js"'), "JS v146 non precaricato");
 check(manifest.includes("index.html?v=v14723"), "manifest contrasto non aggiornato");
@@ -49,5 +49,6 @@ console.log(JSON.stringify({
   checks: 24,
   corrections: "circuit/trend/media/rename/cache/ci/light-contrast"
 }));
+
 
 

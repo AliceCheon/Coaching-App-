@@ -74,6 +74,13 @@ test("il flusso v147 mantiene la Diva Bot dentro il workout attivo", () => {
   assert.match(app, /id="workoutMascotLayer" class="workout-mascot-layer"/);
 });
 
+test("CONFERMA SERIE avanza al prossimo esercizio quando tutte le serie sono completate", () => {
+  assert.match(js, /data-v147-confirm-set/);
+  assert.match(js, /allDone/);
+  assert.match(js, /currentExercise\s*=\s*exerciseIndex\s*\+\s*1/);
+  assert.match(js, /finishWorkout\(\)/);
+});
+
 test("gli asset v147 sono inclusi nella cache PWA", () => {
   assert.match(sw, /workout-flow-v147\.css/);
   assert.match(sw, /workout-flow-v147\.js/);
