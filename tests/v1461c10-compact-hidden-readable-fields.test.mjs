@@ -13,7 +13,7 @@ const checks = [
   [css.includes("min-height: 30px !important"), "campi ancora troppo bassi"],
   [css.includes("font-size: 12px !important"), "testo dei campi ancora troppo piccolo"],
   [html.includes("coach-schede-restyle-v146.css?v=v1461c10"), "cache bust CSS c10 mancante"],
-  [sw.includes('const CACHE_NAME = "atlas-app-v14728-workout-mascot"'), "cache PWA c10 mancante"]
+  [sw.includes('const CACHE_NAME = "atlas-app-v14729-clean-header"'), "cache PWA c10 mancante"]
 ];
 
 for (const [passed, message] of checks) {
@@ -26,4 +26,5 @@ console.log(JSON.stringify({
   checks: checks.length,
   fix: "compact hidden rails and readable RPE RIR SOM fields"
 }));
+
 

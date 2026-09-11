@@ -252,11 +252,7 @@
     .phone-shell {
       width: 100%;
       min-width: 0;
-      border-radius: 24px;
       padding: 0;
-      background: rgba(8, 5, 13, .78);
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(255,255,255,.08);
     }
 
     .desktop-only {
@@ -266,11 +262,7 @@
     .phone {
       height: calc(100dvh - 44px);
       min-height: 680px;
-      border-radius: 24px;
-      background:
-        radial-gradient(circle at 52% 0%, rgba(255,111,203,.18), transparent 28%),
-        var(--phone);
-      border: 1px solid rgba(255,255,255,.08);
+      background: var(--phone);
       overflow: hidden;
       position: relative;
       isolation: isolate;
@@ -4770,6 +4762,8 @@
     #globalDivaBotHost > div:not(.coach-avatar):not([data-diva-bot]) { display:none !important; }
     @media(prefers-reduced-motion:reduce){ .diva-bot,.diva-bot-body,.diva-bot-antenna,.diva-bot-heart-shape,.diva-bot-barbell{animation:none !important;} .diva-bot-heart-shape{opacity:1;transform:none;} }
 
-
-
+    /* === Parte alta pulita: nessun frame smartphone finto, sfondo normale === */
+    .phone-shell, .phone { border-radius:0 !important; border:0 !important; box-shadow:none !important; }
+    .phone-shell { background:transparent !important; }
+    .phone { background:transparent !important; }
 

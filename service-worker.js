@@ -1,11 +1,11 @@
 /* Barbell Diva - Service Worker
-   v14728-workout-mascot
+   v14729-clean-header
    - HTML: network-first con timeout (3s) + fallback cache → app shell
    - Asset statici: cache-first con refresh in background (stale-while-revalidate)
    - Match con ignoreSearch: resiste ai bump di versione (?v=...) e ai doppioni in cache
    - Cache key normalizzate per pathname (niente duplicati per ogni ?v=)
 */
-const CACHE_NAME = "atlas-app-v14728-workout-mascot";
+const CACHE_NAME = "atlas-app-v14729-clean-header";
 const APP_SHELL = [
   "./",
   "./index.html",
