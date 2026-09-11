@@ -3641,6 +3641,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       indexedRows.forEach((row) => persistWorkoutJournalSession(row));
       const recovered = recoverWorkoutJournal(state);
       const correctedWorkoutFDates = correctAliceWorkoutF16Jul2026(state);
+      state.migrations = state.migrations || {};
       state.migrations.aliceWorkoutF16Jul2026Corrected = Number(state.migrations.aliceWorkoutF16Jul2026Corrected || 0) + correctedWorkoutFDates;
       repairSequentialWorkoutWeeks(state);
       if (recovered > 0 || correctedWorkoutFDates > 0) {
@@ -4344,12 +4345,22 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       const entityRevision = (state.programs || []).flatMap((program) => [program.updatedAt, ...(program.sheets || []).map((sheet) => sheet.updatedAt)])
         .filter(Boolean).sort().at(-1);
       const revision = String(entityRevision || state.meta?.updatedAt || "1970-01-01T00:00:00.000Z");
-      state.meta = { ...(state.meta || {}), programsUpdatedAt: revision };
+      if (!explicit) {
+        // programsUpdatedAt è anche un marcatore di bootstrap: non va
+        // ricalcolato dalla data più recente, altrimenti il primo
+        // saveCloudState dopo il caricamento spaccia per "nuovi" tutti i
+        // programmi ancora senza updatedAt e li riscrive tutti sul cloud.
+        state.meta = { ...(state.meta || {}), programsUpdatedAt: revision };
+      }
       return revision;
     }
 
     function programRevisionMap(programs = state.programs || []) {
-      return Object.fromEntries((programs || []).map((program) => [String(program.id), String(program.updatedAt || state.meta?.programsUpdatedAt || "")]));
+      // programsUpdatedAt è un marcatore di bootstrap condiviso: non può
+      // essere il fallback per i singoli programmi, altrimenti tutti i
+      // programmi con updatedAt vuoto risultano "modificati" insieme al
+      // primo che viene toccato davvero e vengono risalvati in blocco.
+      return Object.fromEntries((programs || []).map((program) => [String(program.id), String(program.updatedAt || "")]));
     }
 
 function sanitizeForFirestore(value) {
@@ -6195,7 +6206,7 @@ function sanitizeForFirestore(value) {
       if(unifiedArrow) unifiedArrow.textContent=menuOpen?"⌃":"⌄";
     }
 
-    function dashboardWorkoutStats() {
+    function dashboardWorkoutVolume() {
       const now = new Date();
       const weekStart = new Date(now); weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7)); weekStart.setHours(0, 0, 0, 0);
       const sessions = state.training.sessions.filter((session) => sessionTimestamp(session) >= weekStart.getTime());
@@ -6204,6 +6215,10 @@ function sanitizeForFirestore(value) {
       const volume = volumeValues.reduce((sum, value) => sum + value, 0);
       const weeklyAdherence = clamp(Math.round((sessions.length / 4) * 100), 0, 100);
       return { sessions, volume, volumeAvailable: volumeValues.length > 0, volumeEstimated: volumeInfo.some((item) => item.estimated), adherence: sessions.length ? weeklyAdherence : adherenceScore(), frequency: new Set(sessions.map((session) => session.sessionCode || session.sessionName)).size };
+    }
+
+    function dashboardWorkoutStats() {
+      return dashboardWorkoutVolume();
     }
 
     function skeletonHtml(kind = "card") {
@@ -6486,10 +6501,6 @@ function sanitizeForFirestore(value) {
     }
 
     function globalDivaBotHtml() {
-      // In Allenamento vive già la Diva dedicata al workout, collegata a serie,
-      // recuperi e incoraggiamenti. La Diva globale (compreso il tasto restore)
-      // non deve essere montata qui, altrimenti le due interfacce si sovrappongono.
-      if (activeScreen === "training") return "";
       const visible = state.ui?.globalDivaVisible !== false;
       if (!visible) return `<button type="button" class="global-diva-restore" data-global-diva-toggle aria-label="Mostra Diva Bot">🤖 <span>Mostra Diva</span></button>`;
       const preferences = divaBotPreferences();
@@ -6508,7 +6519,6 @@ function sanitizeForFirestore(value) {
       const visible = state.ui?.globalDivaVisible !== false;
       const railToggle = document.querySelector(".diva-rail-toggle");
       if (railToggle) {
-        railToggle.hidden = activeScreen === "training";
         railToggle.classList.toggle("is-hidden", !visible);
         railToggle.setAttribute("aria-pressed", String(visible));
         railToggle.setAttribute("aria-label", visible ? "Nascondi Diva Bot" : "Mostra Diva Bot");
@@ -13729,8 +13739,83 @@ function sanitizeForFirestore(value) {
     initializeDataSafety();
     recoverDurableWorkoutJournal();
     applyCoachStudioDeepLink();
+    function mergeNutritionDashboard(current = {}, incoming = {}) {
+      const merged = { ...(current || {}), ...(incoming || {}) };
+      merged.log = mergeRowsByKey(current.log, incoming.log, (row) => row.date || JSON.stringify(row));
+      const measures = new Map();
+      [...(Array.isArray(current.measures) ? current.measures : []), ...(Array.isArray(incoming.measures) ? incoming.measures : [])]
+        .filter(Boolean)
+        .forEach((row) => {
+          const key = row.date || JSON.stringify(row);
+          measures.set(key, { ...(measures.get(key) || {}), ...row });
+        });
+      merged.measures = Array.from(measures.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+      const photoRows = new Map();
+      [...(Array.isArray(current.photos) ? current.photos : []), ...(Array.isArray(incoming.photos) ? incoming.photos : [])]
+        .filter((photo) => photo && (photo.front || photo.side || photo.back))
+        .forEach((photo) => {
+          const key = photo.id || `${photo.date || ""}|${photo.notes || ""}`;
+          photoRows.set(key, { ...(photoRows.get(key) || {}), ...photo });
+        });
+      merged.photos = Array.from(photoRows.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+      return merged;
+    }
+
+    function nutritionPayloadHasUserData(payload = {}) {
+      return !!(
+        (Array.isArray(payload.photos) && payload.photos.length) ||
+        (Array.isArray(payload.log) && payload.log.length) ||
+        (Array.isArray(payload.measures) && payload.measures.some((row) => String(row.source || "").toLowerCase() === "app"))
+      );
+    }
+
+    function pushNutritionDashboardToFrame() {
+      const frame = document.querySelector(".nutrition-frame");
+      if (!frame?.contentWindow) return;
+      frame.contentWindow.postMessage({
+        type: "barbell-diva:nutrition-load",
+        state: state.nutrition?.dashboard || {}
+      }, window.location.origin);
+    }
+
+    const BUNDLED_NUTRITION_BACKUP = "./dashboard-alimentazione-backup-2026-07-15.json";
+
+    async function importBundledNutritionBackup() {
+      state.migrations = state.migrations || {};
+      if (Number(state.migrations.nutritionBackup15Jul2026 || 0) >= 1) return false;
+      try {
+        let parsed = window.BARBELL_DIVA_FOOD_BACKUP || null;
+        if (!parsed) {
+          if (typeof fetch !== "function") throw new Error("Caricamento backup Food non disponibile");
+          const response = await fetch(BUNDLED_NUTRITION_BACKUP, { cache: "no-store" });
+          if (!response.ok) throw new Error(`Backup Food non disponibile (${response.status})`);
+          parsed = await response.json();
+        }
+        const payload = parsed?.state || parsed;
+        if (!nutritionPayloadHasUserData(payload)) throw new Error("Backup Food privo di dati utente");
+        if (!state.nutrition) state.nutrition = {};
+        const local = state.nutrition.dashboard || {};
+        // Il backup costituisce la base; i dati già presenti nell'app restano prioritari.
+        state.nutrition.dashboard = mergeNutritionDashboard(payload, local);
+        state.migrations.nutritionBackup15Jul2026 = 1;
+        state.migrations.nutritionBackup15Jul2026ImportedAt = new Date().toISOString();
+        state.migrations.nutritionBackup15Jul2026Summary = {
+          log: (payload.log || []).length,
+          measures: (payload.measures || []).length,
+          photos: (payload.photos || []).length
+        };
+        saveState({ immediate: true });
+        pushNutritionDashboardToFrame();
+        if (activeScreen === "nutrition" || activeScreen === "dashboard") render();
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
     const firebaseBootStarted = initFirebase();
     render();
+    importBundledNutritionBackup();
     const premiumSplash = document.getElementById("premiumSplash");
     if (state.ui?.splashEnabled === false) premiumSplash?.classList.add("is-hidden");
     else {
