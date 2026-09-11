@@ -37,7 +37,7 @@ for (const marker of ["function createBackupEnvelope", "function verifyBackupEnv
 for (const marker of ["function initFirebase", "saveCloudState", "FIREBASE_CONFIG"]) check(html.includes(marker), `Firebase marker mancante: ${marker}`);
 check(html.includes("const APP_BUILD = window.BarbellDivaV144Config?.build || \"v146.1\""), "build v146.1 non uniforme nell'app");
 check(config.includes('build: "v147.23-programs-per-sheet-fix"') && config.includes('cache: "atlas-app-v14723-programs-per-sheet-fix"'), "configurazione v147.1 non caricata correttamente");
-check(sw.includes('const CACHE_NAME = "atlas-app-v14728-workout-mascot"'), "cache service worker non allineata alla build v147.1");
+check(sw.includes('const CACHE_NAME = "atlas-app-v14729-clean-header"'), "cache service worker non allineata alla build v147.1");
 check(manifest.includes("index.html?v=v14723"), "manifest non allineato alla build v147.22-sync-pwa-forced");
 
 // I moduli esclusi non devono più essere caricati o consegnati.
@@ -47,4 +47,5 @@ for (const removed of ["./nutrizione/", "workout-pro.js", "workout-pro.css", "fo
 for (const removedFile of ["workout-pro.js", "workout-pro.css", "food-backup.js", "photo-store.js"]) check(!files.has(removedFile), `file escluso ancora presente: ${removedFile}`);
 
 console.log(JSON.stringify({ ok:true, build:"v146.1", checks:17, removedModules:true, core:"app/logbook/coach/sync/backup/firebase/migrations/cache" }));
+
 
