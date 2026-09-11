@@ -1268,7 +1268,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
     initializeKnowledgeDecisionRuntime();
     state.ui = state.ui || {};
     state.ui.workoutMascotVisible = state.ui.workoutMascotVisible !== false;
-    if (!["top-right", "middle-right", "bottom-right", "bottom-left"].includes(state.ui.workoutMascotPosition)) state.ui.workoutMascotPosition = "bottom-right";
+    if (!["top-right", "middle-right", "bottom-right", "bottom-left"].includes(state.ui.workoutMascotPosition)) state.ui.workoutMascotPosition = "top-right";
     if (!["silent", "balanced", "diva"].includes(state.ui.divaBotPersonality)) state.ui.divaBotPersonality = "balanced";
     state.ui.divaBotBubbles = state.ui.divaBotBubbles !== false;
     state.ui.divaBotCelebrations = state.ui.divaBotCelebrations !== false;
@@ -6607,7 +6607,7 @@ function sanitizeForFirestore(value) {
       const completedExercises = (session.exercises || []).filter((item) => draftSetsFor(context, item).some((value) => String(value || "").trim())).length;
       const completion = session.exercises?.length ? Math.round(completedExercises / session.exercises.length * 100) : 0;
       const workoutMascotVisible = state.ui?.workoutMascotVisible !== false;
-      const workoutMascotPosition = WORKOUT_MASCOT_POSITIONS.has(state.ui?.workoutMascotPosition) ? state.ui.workoutMascotPosition : "bottom-right";
+      const workoutMascotPosition = WORKOUT_MASCOT_POSITIONS.has(state.ui?.workoutMascotPosition) ? state.ui.workoutMascotPosition : "top-right";
       const divaBotPersonality = divaBotPreferences().personality;
       const divaBotBubbles = divaBotPreferences().bubbles;
       const divaBotCelebrations = divaBotPreferences().celebrations;
