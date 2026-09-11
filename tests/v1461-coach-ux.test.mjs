@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
-const html = read("index.html");
+const html = read("index.html") + read("src/app-main.js");
 const enhancer = read("coach-schede-v146-enhance.js");
 const restyle = read("coach-schede-restyle-v146.css");
 const sidebar = read("unified-sidebar-v1452.css");

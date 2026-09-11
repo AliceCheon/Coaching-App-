@@ -6599,6 +6599,16 @@ function sanitizeForFirestore(value) {
       return "Pronta a spaccare questa scheda? 💪";
     }
 
+    function workoutMascotLayerHtml() {
+      const workoutMascotVisible = state.ui?.workoutMascotVisible !== false;
+      const workoutMascotPosition = WORKOUT_MASCOT_POSITIONS.has(state.ui?.workoutMascotPosition) ? state.ui.workoutMascotPosition : "top-right";
+      const divaBotPersonality = divaBotPreferences().personality;
+      const divaBotBubbles = divaBotPreferences().bubbles;
+      const divaBotCelebrations = divaBotPreferences().celebrations;
+      const divaBotSounds = divaBotPreferences().sounds;
+      return workoutMascotVisible ? `<div id="workoutMascotLayer" class="workout-mascot-layer" role="group" aria-label="Diva Bot durante l'allenamento"><div class="workout-mascot-anchor" data-position="${workoutMascotPosition}"><button type="button" id="workoutMascotButton" class="workout-mascot-button" aria-label="Sposta Diva Bot" aria-haspopup="menu">${coachMascotHtml("workout-floating")}</button><div id="workoutMascotBubble" class="workout-mascot-bubble" role="status" aria-live="polite" hidden></div><div id="workoutMascotMenu" class="workout-mascot-menu" role="menu" hidden><strong>Diva Bot</strong><label><input type="checkbox" data-workout-mascot-visible checked> Mostra Diva Bot durante l'allenamento</label><label>Personalità<select data-diva-bot-personality><option value="silent" ${divaBotPersonality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${divaBotPersonality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${divaBotPersonality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-bubbles ${divaBotBubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-celebrations ${divaBotCelebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-sounds ${divaBotSounds ? "checked" : ""}> Suoni Diva Bot</label><button type="button" data-workout-mascot-hide>Nascondi Diva Bot</button></div></div></div>` : `<button type="button" class="workout-mascot-restore" data-workout-mascot-show>Mostra Diva Bot durante l'allenamento</button>`;
+    }
+
     function trainingHtml() {
       const context = currentTrainingContext();
       const session = context.session;

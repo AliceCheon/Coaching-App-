@@ -5,11 +5,11 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
-const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8") + "\n" + fs.readFileSync(path.join(root, "coach-studio-inline.css"), "utf8") + "\n" + fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 const serviceWorker = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
 
 assert.match(html, /const BACKUP_SCHEMA_VERSION = 1/);
-assert.match(html, /const MAX_AUTOMATIC_BACKUPS = 20/);
+assert.match(html, /const MAX_AUTOMATIC_BACKUPS = 5/);
 assert.match(html, /function createBackupEnvelope/);
 assert.match(html, /format:"barbell-diva-backup"/);
 assert.match(html, /function backupChecksum/);
@@ -29,7 +29,8 @@ assert.match(html, /Ripristina ultimo backup/);
 assert.match(html, /Scarica dati corrotti/);
 assert.match(html, /initializeDataSafety\(\)/);
 assert.match(html, /type === "automatic"/);
-assert.match(html, /const APP_BUILD = "v106"/);
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v106"/);
+assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14728-workout-mascot"/);
 
 console.log(JSON.stringify({ ok:true, export:true, import:true, checksum:true, history:20, selectiveRestore:true, recovery:true }));
+

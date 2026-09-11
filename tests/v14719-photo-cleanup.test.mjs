@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8") + "\n" + fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 const config = fs.readFileSync(path.join(root, "app-config-v144.js"), "utf8");
 const sw = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
 
@@ -14,7 +14,7 @@ check(html.includes("cleanupV14719"), "flag cleanup una tantum mancante");
 check(html.includes("redactPhotoListFallback(loaded.nutrition?.dashboard?.photos)"), "foto di stato non redatte al bootstrap");
 check(html.includes("writeBackupHistory(historyCleanup)"), "cronologia backup non riscritta senza foto");
 check(html.includes('"front", "back", "side"'), "chiavi foto front/back mancanti dall'elenco heavy");
-check(config.includes('build: "v147.22-sync-pwa-forced"'), "build non aggiornata alla v147.22-sync-pwa-forced");
-check(sw.includes("atlas-app-v14722-sync-pwa-forced"), "cache PWA non allineata alla v147.22-sync-pwa-forced");
+check(config.includes('build: "v147.23-programs-per-sheet-fix"'), "build non aggiornata alla v147.22-sync-pwa-forced");
+check(sw.includes("atlas-app-v14728-workout-mascot"), "cache PWA non allineata alla v147.22-sync-pwa-forced");
 
 console.log(JSON.stringify({ ok:true, build:"v147.22-sync-pwa-forced", checks:6, fix:"photo cleanup one-shot front/back/side + history + cloud" }));

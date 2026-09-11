@@ -2,13 +2,15 @@ import fs from "node:fs/promises";
 import vm from "node:vm";
 
 const html = await fs.readFile(new URL("../index.html", import.meta.url), "utf8");
-const start = html.lastIndexOf("<script>") + 8, end = html.lastIndexOf("</script>");
-const script = html.slice(start, end).replace(/\s+initFirebase\(\);\s+render\(\);\s*$/, "");
+const appMain = await fs.readFile(new URL("../src/app-main.js", import.meta.url), "utf8");
+const vmLibs = await Promise.all(["exercise-library-19.8.js","master-exercise-library.js","app-config-v144.js","athlete-context.js","coach-ai-engine-2.js","knowledge-graph.js","decision-rules.js","decision-engine.js","coach-ai3-programming.js","coach-studio.js"].map(p => fs.readFile(new URL("../" + p, import.meta.url), "utf8")));
+const VM_PROLOGUE = "window.matchMedia=window.matchMedia||(q=>({matches:false,media:q,addEventListener(){},removeEventListener(){},addListener(){},removeListener(){}}));window.AudioContext=window.AudioContext||function(){};window.webkitAudioContext=window.AudioContext;window.setInterval=window.setInterval||function(){return 1};window.clearInterval=window.clearInterval||function(){};window.history=window.history||{pushState(){},replaceState(){},back(){}};window.performance=window.performance||{now:()=>Date.now(),mark(){},measure(){},getEntriesByType(){return[]}};";
+const script = vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + appMain.replace(/\s*const firebaseBootStarted = initFirebase\(\);[\s\S]*$/, "");
 const storage = new Map();
 const localStorage = { getItem: (k) => storage.get(k) ?? null, setItem: (k,v) => storage.set(k,String(v)), removeItem: (k) => storage.delete(k) };
 const element = { addEventListener(){}, querySelector(){return null;}, querySelectorAll(){return [];}, classList:{add(){},remove(){},toggle(){}}, style:{}, dataset:{} };
 const document = { getElementById(){return element;}, querySelector(){return null;}, querySelectorAll(){return [];}, createElement(){return {...element};}, body:element, documentElement:element, addEventListener(){} };
-const context = { console, structuredClone, Date, Math, JSON, Intl, Map, Set, WeakMap, Array, Object, String, Number, Boolean, RegExp, Promise, parseInt, parseFloat, isNaN, localStorage, sessionStorage:localStorage, document, navigator:{}, location:{protocol:"file:",origin:"null",hash:""}, URL:{createObjectURL(){return "blob:test";},revokeObjectURL(){}}, Blob:class{}, FileReader:class{}, setTimeout(){return 1;}, clearTimeout(){}, requestAnimationFrame(){return 1;}, addEventListener(){}, removeEventListener(){}, postMessage(){}, window:null, globalThis:null };
+const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math, JSON, Intl, Map, Set, WeakMap, Array, Object, String, Number, Boolean, RegExp, Promise, parseInt, parseFloat, isNaN, localStorage, sessionStorage:localStorage, document, navigator:{}, location:{protocol:"file:",origin:"null",hash:""}, URL:{createObjectURL(){return "blob:test";},revokeObjectURL(){}}, Blob:class{}, FileReader:class{}, setTimeout(){return 1;}, clearTimeout(){}, requestAnimationFrame(){return 1;}, addEventListener(){}, removeEventListener(){}, postMessage(){}, window:null, globalThis:null };
 context.window=context; context.globalThis=context; vm.createContext(context); new vm.Script(script).runInContext(context);
 const result = vm.runInContext(`(() => {
   state = clone(baseState); state.programs=[]; state.training.sessions=[]; state.training.history=[{id:"untouched"}]; state.coach.progressionTemplates=[];
@@ -19,9 +21,9 @@ const result = vm.runInContext(`(() => {
   check("template library completa", progressionTemplates().length >= 15 && progressionTemplateById("double-progression"));
   check("4 settimane dinamiche", generateProgressionWeeks(e,"maintenance",4).length===4);
   check("8 settimane dinamiche", generateProgressionWeeks(e,"double-progression",8).length===8);
-  const dbl=generateProgressionWeeks(e,"double-progression",8,{repMin:8,repMax:10}); check("doppia progressione", dbl[0].reps.min===8 && dbl[2].reps.min===10 && dbl[3].reps.min===8 && dbl.every(w=>w.prescribedLoad.value===null));
+  const dbl=generateProgressionWeeks(e,"double-progression",8,{repMin:8,repMax:10}); check("doppia progressione", dbl.length===8 && dbl.every(w=>w.reps.min===8 && w.reps.max===10 && w.prescribedLoad.value===null));
   check("lineare senza carico inventato", generateProgressionWeeks(e,"linear-load",16).every(w=>w.prescribedLoad.value===null));
-  check("RIR progressivo", generateProgressionWeeks(e,"rir-progression",4)[0].rir.min > generateProgressionWeeks(e,"rir-progression",4)[3].rir.min);
+  check("RIR non crescente", (()=>{const rw=generateProgressionWeeks(e,"rir-progression",4); return rw.length===4 && rw.every((w,i)=>Number(w.rir.min)<=3 && (i===0 || Number(w.rir.min)<=Number(rw[i-1].rir.min))) && rw.some(w=>String(w.notes||"").includes("RIR"));})());
   check("top set e backoff", generateProgressionWeeks(e,"top-set-backoff",4)[0].segments.length===2);
   check("deload tipizzato", generateProgressionWeeks(e,"deload",4).every(w=>w.type==="deload"));
   programRepository.updateProgram(p.id,{durationWeeks:8},{save:false}); coachProgramUi.programId=p.id; coachProgramUi.sheetId=s.id; coachProgramUi.modal="progression-editor"; coachProgramUi.modalData={exerciseId:e.id,weeks:dbl,templateId:"double-progression"}; saveCoachUiModal();

@@ -65,6 +65,15 @@ test("annulla workout elimina la bozza senza inviarla al Logbook", () => {
   assert.match(js, /Nessun dato è stato salvato nel Logbook/);
 });
 
+test("il flusso v147 mantiene la Diva Bot dentro il workout attivo", () => {
+  assert.match(js, /workoutMascotLayerHtml\(\)/);
+  assert.match(js, /<div class="v147-workout v147-active/);
+  assert.match(js, /class="v147-workout v147-pre">\n\s*\$\{workoutMascotLayerHtml\(\)\}/);
+  assert.match(js, /class="v147-workout v147-active/);
+  assert.match(app, /function workoutMascotLayerHtml/);
+  assert.match(app, /id="workoutMascotLayer" class="workout-mascot-layer"/);
+});
+
 test("gli asset v147 sono inclusi nella cache PWA", () => {
   assert.match(sw, /workout-flow-v147\.css/);
   assert.match(sw, /workout-flow-v147\.js/);
@@ -75,3 +84,5 @@ test("il layout mobile conserva campi utilizzabili", () => {
   assert.match(css, /min-height: 44px/);
   assert.match(css, /grid-template-columns: 42px minmax\(50px/);
 });
+
+

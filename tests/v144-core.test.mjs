@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8") + "\n" + fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 const sw = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
 const manifest = fs.readFileSync(path.join(root, "manifest.webmanifest"), "utf8");
 const sync = fs.readFileSync(path.join(root, "sync-reliability.js"), "utf8");
@@ -24,7 +24,7 @@ for (const marker of ["function logbookHtml", "saveWorkoutSession", "function ex
 }
 
 // Sync: locale prima, coda, cloud dopo conferma.
-for (const marker of ["queueReliableWorkoutSession", "reliableSyncQueue.enqueue", "flushReliableSync", "reconcileSessionVersions", "sync-reliability.js?v=v1461"]) {
+for (const marker of ["queueReliableWorkoutSession", "reliableSyncQueue.enqueue", "flushReliableSync", "reconcileSessionVersions", "sync-reliability.js?v=v14723"]) {
   check(html.includes(marker) || sync.includes(marker), `sync marker mancante: ${marker}`);
 }
 
@@ -36,9 +36,9 @@ for (const marker of ["function createBackupEnvelope", "function verifyBackupEnv
 // Firebase e cache PWA.
 for (const marker of ["function initFirebase", "saveCloudState", "FIREBASE_CONFIG"]) check(html.includes(marker), `Firebase marker mancante: ${marker}`);
 check(html.includes("const APP_BUILD = window.BarbellDivaV144Config?.build || \"v146.1\""), "build v146.1 non uniforme nell'app");
-check(config.includes('build: "v147.22-sync-pwa-forced"') && config.includes('cache: "atlas-app-v14722-sync-pwa-forced"'), "configurazione v147.1 non caricata correttamente");
-check(sw.includes('const CACHE_NAME = "atlas-app-v14722-sync-pwa-forced"'), "cache service worker non allineata alla build v147.1");
-check(manifest.includes("index.html?v=v14722"), "manifest non allineato alla build v147.22-sync-pwa-forced");
+check(config.includes('build: "v147.23-programs-per-sheet-fix"') && config.includes('cache: "atlas-app-v14723-programs-per-sheet-fix"'), "configurazione v147.1 non caricata correttamente");
+check(sw.includes('const CACHE_NAME = "atlas-app-v14728-workout-mascot"'), "cache service worker non allineata alla build v147.1");
+check(manifest.includes("index.html?v=v14723"), "manifest non allineato alla build v147.22-sync-pwa-forced");
 
 // I moduli esclusi non devono più essere caricati o consegnati.
 for (const removed of ["./nutrizione/", "workout-pro.js", "workout-pro.css", "food-backup.js", "photo-store.js"]) {
@@ -47,3 +47,4 @@ for (const removed of ["./nutrizione/", "workout-pro.js", "workout-pro.css", "fo
 for (const removedFile of ["workout-pro.js", "workout-pro.css", "food-backup.js", "photo-store.js"]) check(!files.has(removedFile), `file escluso ancora presente: ${removedFile}`);
 
 console.log(JSON.stringify({ ok:true, build:"v146.1", checks:17, removedModules:true, core:"app/logbook/coach/sync/backup/firebase/migrations/cache" }));
+

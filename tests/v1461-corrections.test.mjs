@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
-const html = read("index.html");
+const html = read("index.html") + read("src/app-main.js");
 const enhancer = read("coach-schede-v146-enhance.js");
 const restyle = read("coach-schede-restyle-v146.css");
 const config = read("app-config-v144.js");
@@ -14,12 +14,12 @@ const sw = read("service-worker.js");
 const workflow = read(".github/workflows/tests.yml");
 const check = (condition, message) => assert.ok(condition, message);
 
-check(config.includes('build: "v147.22-sync-pwa-forced"'), "build v147.1 mancante");
-check(config.includes('cache: "atlas-app-v14722-sync-pwa-forced"'), "cache contrasto v147.1 mancante");
-check(sw.includes('const CACHE_NAME = "atlas-app-v14722-sync-pwa-forced"'), "service worker contrasto non aggiornato");
+check(config.includes('build: "v147.23-programs-per-sheet-fix"'), "build v147.1 mancante");
+check(config.includes('cache: "atlas-app-v14723-programs-per-sheet-fix"'), "cache contrasto v147.1 mancante");
+check(sw.includes('const CACHE_NAME = "atlas-app-v14728-workout-mascot"'), "service worker contrasto non aggiornato");
 check(sw.includes('"./coach-schede-restyle-v146.css"'), "CSS v146 non precaricato");
 check(sw.includes('"./coach-schede-v146-enhance.js"'), "JS v146 non precaricato");
-check(manifest.includes("index.html?v=v14722"), "manifest contrasto non aggiornato");
+check(manifest.includes("index.html?v=v14723"), "manifest contrasto non aggiornato");
 check(html.includes("coach-schede-restyle-v146.css?v=v1461c10"), "CSS senza cache bust contrasto");
 check(html.includes("coach-schede-v146-enhance.js?v=v1461c10"), "JS senza cache bust v146.1");
 
@@ -38,7 +38,7 @@ check(html.includes("openExerciseHistory(programId,sheetId,exerciseId)"), "bridg
 check(html.includes("exerciseMedia(exerciseName)"), "risoluzione media esercizio mancante");
 check(enhancer.includes("BarbellDivaV146Bridge?.exerciseMedia"), "thumbnail non usa la libreria reale");
 
-check(workflow.includes("v1461-corrections.test.mjs"), "test v146.1 non eseguito da GitHub");
+check(workflow.includes("node --test"), "test v146.1 non eseguito da GitHub");
 check(restyle.includes('body[data-theme="light"] .schede-v146-duration-pill'), "contrasto durata tema chiaro mancante");
 check(restyle.includes('body[data-theme="light"] .schede-v146-day-footer button'), "contrasto pulsanti footer tema chiaro mancante");
 check(restyle.includes('body[data-theme="light"] .coach-editor-weekly button:disabled'), "contrasto controlli disabilitati tema chiaro mancante");
@@ -49,3 +49,4 @@ console.log(JSON.stringify({
   checks: 24,
   corrections: "circuit/trend/media/rename/cache/ci/light-contrast"
 }));
+

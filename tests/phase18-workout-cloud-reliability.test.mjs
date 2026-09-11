@@ -1,10 +1,11 @@
 import fs from "node:fs/promises";
 import vm from "node:vm";
 
-const html = await fs.readFile(new URL("../atlas-coach-app.html", import.meta.url), "utf8");
-const script = html.slice(html.lastIndexOf("<script>") + 8, html.lastIndexOf("</script>"))
-  .replace(/\s+initFirebase\(\);\s+render\(\);\s+importBundledNutritionBackup\(\);\s*$/, "");
-
+const html = await fs.readFile(new URL("../index.html", import.meta.url), "utf8");
+const appMain = await fs.readFile(new URL("../src/app-main.js", import.meta.url), "utf8");
+const vmLibs = await Promise.all(["exercise-library-19.8.js","master-exercise-library.js","app-config-v144.js","athlete-context.js","coach-ai-engine-2.js","knowledge-graph.js","decision-rules.js","decision-engine.js","coach-ai3-programming.js","coach-studio.js"].map(p => fs.readFile(new URL("../" + p, import.meta.url), "utf8")));
+const VM_PROLOGUE = "window.matchMedia=window.matchMedia||(q=>({matches:false,media:q,addEventListener(){},removeEventListener(){},addListener(){},removeListener(){}}));window.AudioContext=window.AudioContext||function(){};window.webkitAudioContext=window.AudioContext;window.setInterval=window.setInterval||function(){return 1};window.clearInterval=window.clearInterval||function(){};window.history=window.history||{pushState(){},replaceState(){},back(){}};window.performance=window.performance||{now:()=>Date.now(),mark(){},measure(){},getEntriesByType(){return[]}};";
+const script = vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + appMain.replace(/\s*const firebaseBootStarted = initFirebase\(\);[\s\S]*$/, "");
 const storage = new Map();
 let quota = Infinity;
 const localStorage = {
@@ -24,7 +25,7 @@ const localStorage = {
 };
 const element = { addEventListener(){}, querySelector(){return null}, querySelectorAll(){return[]}, closest(){return null}, classList:{add(){},remove(){},toggle(){}}, style:{}, dataset:{}, setAttribute(){}, getAttribute(){return null}, getBoundingClientRect(){return {width:320,height:180}}, innerHTML:"", textContent:"", disabled:false, scrollIntoView(){} };
 const document = { getElementById(){return {...element}}, querySelector(){return null}, querySelectorAll(){return[]}, createElement(){return {...element}}, body:{...element}, documentElement:{...element}, addEventListener(){} };
-const context = { console, structuredClone, Date, Math, JSON, Intl, Map, Set, WeakMap, Array, Object, String, Number, Boolean, RegExp, Promise, parseInt, parseFloat, isNaN, encodeURIComponent, localStorage, sessionStorage:localStorage, document, navigator:{}, location:{protocol:"https:",origin:"https://example.test",hash:"",reload(){}}, URL:{createObjectURL(){return "blob:test"},revokeObjectURL(){}}, Blob:class{}, FileReader:class{}, setTimeout(fn,ms){return globalThis.setTimeout(fn,Math.min(Number(ms)||0,10))}, clearTimeout(id){globalThis.clearTimeout(id)}, requestAnimationFrame(fn){if(typeof fn==="function")fn();return 1}, addEventListener(){}, removeEventListener(){}, matchMedia(){return {matches:true}}, window:null, globalThis:null };
+const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math, JSON, Intl, Map, Set, WeakMap, Array, Object, String, Number, Boolean, RegExp, Promise, parseInt, parseFloat, isNaN, encodeURIComponent, localStorage, sessionStorage:localStorage, document, navigator:{}, location:{protocol:"https:",origin:"https://example.test",hash:"",reload(){}}, URL:{createObjectURL(){return "blob:test"},revokeObjectURL(){}}, Blob:class{}, FileReader:class{}, setTimeout(fn,ms){return globalThis.setTimeout(fn,Math.min(Number(ms)||0,10))}, clearTimeout(id){globalThis.clearTimeout(id)}, requestAnimationFrame(fn){if(typeof fn==="function")fn();return 1}, addEventListener(){}, removeEventListener(){}, matchMedia(){return {matches:true}}, window:null, globalThis:null };
 context.__storage = storage;
 context.__setQuota = (value) => { quota = value; };
 context.window = context;
@@ -68,7 +69,7 @@ const result = await vm.runInContext(`(async()=>{
   const programWrites=[]; let rootWrites=0;
   const records=new Map();
   const collection={
-    doc(id){return {set:async(value)=>{programWrites.push(id);records.set(id,value)}}},
+    doc(id){return {set:async(value)=>{programWrites.push(id);records.set(id,value)},get:async()=>({exists:false,data:()=>null}),delete:async()=>{records.delete(id)}}},
     get:async()=>({forEach(fn){for(const [id,value] of records)fn({id,data:()=>value})}}),
     onSnapshot(){return()=>{}}
   };
@@ -83,14 +84,16 @@ const result = await vm.runInContext(`(async()=>{
   const program=programRepository.getPrograms()[0]; const sheet=programRepository.getSheets(program.id)[0];
   programRepository.updateSheet(program.id,sheet.id,{note:"test sync mirato"},{cloud:false,immediate:true});
   await saveCloudState();
-  if(programWrites.length!==initialProgramWrites+1) throw new Error("La modifica Coach non sincronizza solo il programma cambiato");
+  const changedWrites=programWrites.slice(initialProgramWrites);
+  const encodedProgramId=encodeURIComponent(program.id);
+  if(changedWrites.length<1||!changedWrites.every(id=>id.includes(encodedProgramId))) throw new Error("La modifica Coach non sincronizza solo il programma cambiato");
   return {week:workout.week,session:session.sessionCode,initialProgramWrites,programWrites:programWrites.length,rootWrites};
 })()`, context);
 
 if (!html.includes("Settimana ${context.week}")) throw new Error("Etichetta settimana dinamica mancante");
 if (!html.includes("releaseObsoleteLocalBackups")) throw new Error("Recupero quota locale mancante");
 if (!html.includes("changedPrograms.length")) throw new Error("Cloud programmi non incrementale");
-if (!html.includes('const reloadKey = `atlas-${APP_BUILD}-reload`')) throw new Error("Chiave cache dinamica non impostata");
+if (!html.includes('./service-worker.js?v=${APP_BUILD}')) throw new Error("Chiave cache dinamica non impostata");
 if (!html.includes("newlyMarkedSessions")) throw new Error("Le sessioni locali non vengono marcate dopo il cloud");
 if (!html.includes('id="cloudOperationStatus"') || !html.includes('setCloudOperation("working"')) throw new Error("Indicatore sincronizzazione visibile mancante");
 if (!html.includes('<details class="card danger-zone">') || !html.includes("requestClearAllData(clearData)")) throw new Error("Svuota dati non protetto");

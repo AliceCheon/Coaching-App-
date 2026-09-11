@@ -132,7 +132,7 @@
   function preWorkoutHtml(context) {
     const session = context.session;
     if (!session) {
-      return `<section class="v147-empty card"><h2>Nessuna scheda disponibile</h2><p>Seleziona una fase o una scheda manuale per preparare il workout.</p>${modeControlsHtml(context)}</section>`;
+      return `<section class="v147-empty card"><h2>Nessuna scheda disponibile</h2><p>Seleziona una fase o una scheda manuale per preparare il workout.</p>${modeControlsHtml(context)}${workoutMascotLayerHtml()}</section>`;
     }
     const exercises = session.exercises || [];
     const muscles = uniqueMuscles(session);
@@ -140,6 +140,7 @@
     const visibleExercises = previewExpanded ? exercises : exercises.slice(0, 5);
     return `
       <div class="v147-workout v147-pre">
+        ${workoutMascotLayerHtml()}
         <header class="v147-title">
           <div><span class="section-eyebrow">Barbell Diva Workout</span><h2>Workout del giorno</h2></div>
           <label class="v147-date"><span>Data</span><input type="date" id="trainingDate" value="${escapeHtml(context.date)}"></label>
@@ -251,6 +252,7 @@
 
     return `
       <div class="v147-workout v147-active ${paused ? "is-paused" : ""}">
+        ${workoutMascotLayerHtml()}
         ${outlineHtml(context, active, snapshot)}
         <header class="v147-active-head">
           <button type="button" class="v147-outline-button" data-v147-outline-open>☰ <span>Scaletta workout</span></button>

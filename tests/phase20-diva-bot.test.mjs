@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import assert from "node:assert/strict";
 
-const html = await fs.readFile(new URL("../index.html", import.meta.url), "utf8");
+const html = await fs.readFile(new URL("../index.html", import.meta.url), "utf8") + "\n" + await fs.readFile(new URL("../coach-studio-inline.css", import.meta.url), "utf8") + "\n" + await fs.readFile(new URL("../src/app-main.js", import.meta.url), "utf8");
 const serviceWorker = await fs.readFile(new URL("../service-worker.js", import.meta.url), "utf8");
 
 for (const state of ["idle", "happy", "celebrate", "thinking", "encouraging", "warning", "rest"]) {
@@ -21,7 +21,8 @@ assert.match(html, /prefers-reduced-motion:reduce/);
 assert.match(html, /data-dashboard-coach-open/);
 assert.match(html, /openCoachModal\("coach-ai-confirm", \{ suggestion:first \}\)/);
 assert.match(html, /serviceWorker\.register\(`\.\/service-worker\.js\?v=\$\{APP_BUILD\}`/);
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v106"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14728-workout-mascot"/);
 assert.doesNotMatch(html, /6e2fab5e-6659-403b-9ac6-4c9ac2083406/);
 assert.doesNotMatch(html, /C:\/Users\/AliceClemente\/Downloads/);
 console.log(JSON.stringify({ ok:true, mascot:"Diva Bot", states:8, mobile:true, cache:"v106" }));
+
