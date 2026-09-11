@@ -3441,13 +3441,17 @@
     .coach-mascot-reaction .coach-avatar { width:58px; height:58px; border-radius:17px; }
     .coach-mascot-reaction p { margin:0; color:#ffe9f7; font-size:.78rem; line-height:1.35; }
     .training-screen-wrap { position:relative; min-height:100%; }
-    .workout-mascot-layer { position:fixed; top:8px; z-index:35; width:100%; height:0; pointer-events:none; overflow:visible; }
-    .workout-mascot-anchor { --workout-mascot-x:0px; --workout-mascot-y:0px; position:absolute; top:0; right:0; width:124px; height:138px; pointer-events:none; transform:translate3d(var(--workout-mascot-x),var(--workout-mascot-y),0); transition:transform 320ms cubic-bezier(.2,.8,.2,1),opacity 180ms ease; filter:drop-shadow(0 14px 18px rgba(12,3,26,.44)) drop-shadow(0 0 14px rgba(255,82,180,.18)); }
+    .workout-mascot-layer { position:fixed; top:8px; right:8px; z-index:35; width:auto; height:auto; pointer-events:none; overflow:visible; }
+    .workout-mascot-anchor { --workout-mascot-x:0px; --workout-mascot-y:0px; position:relative; top:0; right:0; width:80px; height:90px; pointer-events:none; transform:translate3d(var(--workout-mascot-x),var(--workout-mascot-y),0); transition:transform 320ms cubic-bezier(.2,.8,.2,1),opacity 180ms ease; filter:drop-shadow(0 8px 12px rgba(12,3,26,.35)) drop-shadow(0 0 10px rgba(255,82,180,.25)); }
     .workout-mascot-anchor.is-dragging,.workout-mascot-anchor.is-restoring { transition:none; }
     .workout-mascot-button { width:100%; height:100%; display:grid; place-items:center; padding:0; border:0; background:transparent; color:inherit; pointer-events:auto; cursor:grab; touch-action:none; }
-    .workout-mascot-button:active { cursor:grabbing; }
+    
+    .workout-mascot-button::before { content:''; position:absolute; top:-4px; right:-4px; width:18px; height:18px; border-radius:50%; background:linear-gradient(135deg,#ff72c2,#ff3c8e); box-shadow:0 2px 8px rgba(255,60,142,.5); opacity:0; transition:opacity .2s ease; }
+    .workout-mascot-button:hover::before { opacity:1; }
+    .workout-mascot-button::after { content:'?'; position:absolute; top:-2px; right:-2px; font-size:10px; color:#fff; opacity:0; transition:opacity .2s ease; }
+    .workout-mascot-button:hover::after { opacity:1; }
     .workout-mascot-button:focus-visible { outline:2px solid var(--pink-soft); outline-offset:2px; border-radius:22px; }
-    .workout-mascot-button .coach-avatar { width:118px; height:132px; }
+    .workout-mascot-button .coach-avatar { width:76px; height:86px; }
     .workout-mascot-bubble { position:absolute; right:calc(100% - 8px); top:15px; width:max-content; max-width:min(250px,42vw); padding:9px 11px; border:1px solid rgba(255,184,220,.42); border-radius:14px 14px 4px 14px; background:linear-gradient(145deg,rgba(61,36,80,.98),rgba(31,18,47,.98)); color:#ffe9f7; box-shadow:0 12px 34px rgba(8,2,18,.38); font-size:.76rem; line-height:1.35; pointer-events:none; animation:premiumRise .18s ease both; }
     .workout-mascot-bubble span { padding-right:13px; }
     .workout-mascot-bubble-close { position:absolute; top:3px; right:5px; width:18px; height:18px; padding:0; border:0; border-radius:50%; background:transparent; color:currentColor; font-size:1rem; line-height:1; pointer-events:auto; }
@@ -3461,8 +3465,8 @@
     .workout-mascot-restore { margin:0 0 10px auto; display:block; padding:6px 9px; border-radius:999px; background:transparent; color:var(--pink-soft); border:1px solid rgba(255,184,220,.25); font-size:.7rem; }
     body[data-theme="light"] .workout-mascot-bubble,body[data-theme="light"] .workout-mascot-menu { background:linear-gradient(145deg,#fff8fd,#efe2f8); color:#493453; }
     @media(min-width:601px) and (max-width:980px){
-      .workout-mascot-anchor { width:104px; height:116px; }
-      .workout-mascot-button .coach-avatar { width:100px; height:112px; }
+      .workout-mascot-anchor { width:70px; height:78px; }
+      .workout-mascot-button .coach-avatar { width:66px; height:74px; }
     }
     body[data-theme="light"] .dashboard-coach-card { background:linear-gradient(135deg,#fff7fc,#f2e5fb); }
     body[data-theme="light"] .coach-speech { background:rgba(255,255,255,.88); }
@@ -4765,3 +4769,7 @@
     #divaRobot, .diva-popup, #diva-robot-styles,
     #globalDivaBotHost > div:not(.coach-avatar):not([data-diva-bot]) { display:none !important; }
     @media(prefers-reduced-motion:reduce){ .diva-bot,.diva-bot-body,.diva-bot-antenna,.diva-bot-heart-shape,.diva-bot-barbell{animation:none !important;} .diva-bot-heart-shape{opacity:1;transform:none;} }
+
+
+
+

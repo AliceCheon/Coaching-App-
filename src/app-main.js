@@ -1267,7 +1267,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
     }
     initializeKnowledgeDecisionRuntime();
     state.ui = state.ui || {};
-    state.ui.workoutMascotVisible = state.ui.workoutMascotVisible !== false;
+    state.ui.workoutMascotVisible = true; // Forza sempre visibile di default
     if (!["top-right", "middle-right", "bottom-right", "bottom-left"].includes(state.ui.workoutMascotPosition)) state.ui.workoutMascotPosition = "top-right";
     if (!["silent", "balanced", "diva"].includes(state.ui.divaBotPersonality)) state.ui.divaBotPersonality = "balanced";
     state.ui.divaBotBubbles = state.ui.divaBotBubbles !== false;
@@ -8825,7 +8825,7 @@ function sanitizeForFirestore(value) {
     }
 
     function nearestWorkoutMascotPosition(x, y) {
-      let nearest = "bottom-right";
+      let nearest = "top-right";
       let distance = Infinity;
       WORKOUT_MASCOT_POSITIONS.forEach((position) => {
         const coords = workoutMascotCoordinates(position);
