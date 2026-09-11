@@ -6157,7 +6157,7 @@ function sanitizeForFirestore(value) {
         if (enteringWorkout) {
           resetDivaBotSession();
           setCoachMascotState("idle");
-          requestAnimationFrame(() => moveWorkoutMascot(state.ui.workoutMascotPosition || "bottom-right"));
+          requestAnimationFrame(() => moveWorkoutMascot(state.ui.workoutMascotPosition || "top-right"));
           const lowRecovery = readinessScore() < 50 || decisionPriority().level <= 1;
           if (lowRecovery) triggerDivaBotReaction("recovery_warning");
           else triggerDivaBotReaction("workout_opened");
@@ -8746,7 +8746,7 @@ function sanitizeForFirestore(value) {
       const anchor = layer?.querySelector(".workout-mascot-anchor");
       const screen = document.getElementById("screen");
       if (!layer || !anchor || !screen) return null;
-      const position = WORKOUT_MASCOT_POSITIONS.has(positionName) ? positionName : "bottom-right";
+      const position = WORKOUT_MASCOT_POSITIONS.has(positionName) ? positionName : "top-right";
       const anchorWidth = anchor.offsetWidth || 124;
       const anchorHeight = anchor.offsetHeight || 138;
       const mobile = window.matchMedia?.("(max-width:980px)").matches;
@@ -8760,7 +8760,7 @@ function sanitizeForFirestore(value) {
     }
 
     function moveWorkoutMascot(positionName, options = {}) {
-      const position = WORKOUT_MASCOT_POSITIONS.has(positionName) ? positionName : "bottom-right";
+      const position = WORKOUT_MASCOT_POSITIONS.has(positionName) ? positionName : "top-right";
       const layer = document.getElementById("workoutMascotLayer");
       const anchor = layer?.querySelector(".workout-mascot-anchor");
       const coords = workoutMascotCoordinates(position);
@@ -8888,7 +8888,7 @@ function sanitizeForFirestore(value) {
       const anchor = button.closest(".workout-mascot-anchor");
       anchor?.classList.add("is-restoring");
       requestAnimationFrame(() => {
-        moveWorkoutMascot(state.ui.workoutMascotPosition || "bottom-right");
+        moveWorkoutMascot(state.ui.workoutMascotPosition || "top-right");
         requestAnimationFrame(() => anchor?.classList.remove("is-restoring"));
       });
       button.addEventListener("contextmenu", (event) => { event.preventDefault(); showWorkoutMascotMenu(); });
@@ -8912,8 +8912,8 @@ function sanitizeForFirestore(value) {
       button.addEventListener("click", () => {
         if (workoutMascotUi.suppressClick) { workoutMascotUi.suppressClick = false; return; }
         if (!window.matchMedia?.("(max-width:600px)").matches) return;
-        const cycle = ["bottom-right", "bottom-left", "top-right"];
-        const current = button.closest(".workout-mascot-anchor")?.dataset.position || "bottom-right";
+        const cycle = ["top-right", "bottom-right", "bottom-left"];
+        const current = button.closest(".workout-mascot-anchor")?.dataset.position || "top-right";
         moveWorkoutMascot(cycle[(cycle.indexOf(current) + 1) % cycle.length], { persist:true });
       });
       document.querySelector("[data-workout-mascot-hide]")?.addEventListener("click", () => setWorkoutMascotVisibility(false));

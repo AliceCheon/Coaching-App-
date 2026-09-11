@@ -5,20 +5,20 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
-const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8") + "\n" + fs.readFileSync(path.join(root, "coach-studio-inline.css"), "utf8") + "\n" + fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 
 assert.match(html, /class="training-screen-wrap"/);
 assert.match(html, /id="workoutMascotLayer" class="workout-mascot-layer"/);
 assert.match(html, /coachMascotHtml\("workout-floating"\)/);
 assert.doesNotMatch(html, /workout-coach-strip/);
-assert.match(html, /position:sticky; top:8px; z-index:35/);
+assert.match(html, /position:fixed; top:8px; z-index:35/);
 assert.match(html, /pointer-events:none/);
 assert.match(html, /const WORKOUT_MASCOT_POSITIONS = new Set\(\["top-right", "middle-right", "bottom-right", "bottom-left"\]\)/);
 assert.match(html, /function moveWorkoutMascot\(positionName/);
 assert.match(html, /pointerdown/);
 assert.match(html, /document\.removeEventListener\("pointermove", workoutMascotDragMove\)/);
 assert.match(html, /nearestWorkoutMascotPosition/);
-assert.match(html, /\["bottom-right", "bottom-left", "top-right"\]/);
+assert.match(html, /\["top-right", "bottom-right", "bottom-left"\]/);
 assert.match(html, /state\.ui\.workoutMascotVisible/);
 assert.match(html, /Mostra Diva Bot durante l'allenamento/);
 assert.match(html, /function showWorkoutMascotBubble/);
