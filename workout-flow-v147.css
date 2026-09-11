@@ -411,7 +411,69 @@ body.workout-v147-running .desktop-rail { display: none !important; }
 body.workout-v147-running .stage { grid-template-columns: 1fr !important; }
 body.workout-v147-running .phone-shell { width: 100% !important; max-width: none !important; }
 body.workout-v147-running .top-tabs { display: none; }
-body.workout-v147-running #globalDivaBotHost { display: none !important; }
+
+/* Robottina Diva Bot visibile durante l'allenamento con animazioni di incoraggiamento */
+body.workout-v147-running #globalDivaBotHost {
+  display: block !important;
+  position: fixed;
+  z-index: 10010;
+  right: 8px;
+  bottom: 76px;
+  transform: scale(.8);
+  transform-origin: right bottom;
+  pointer-events: none;
+}
+body.workout-v147-running #globalDivaBotHost .global-diva-bot {
+  pointer-events: auto;
+}
+body.workout-v147-running .global-diva-bot {
+  animation: divaWorkoutCheer 6s ease-in-out infinite !important;
+}
+body.workout-v147-running .global-diva-bot .diva-bot {
+  animation: divaWorkoutFloat 3s ease-in-out infinite !important;
+}
+body.workout-v147-running .global-diva-bot .diva-bot-arm-left {
+  animation: divaWorkoutWave 2.5s ease-in-out infinite !important;
+}
+body.workout-v147-running .global-diva-bot .diva-bot-arm-right {
+  animation: divaWorkoutWaveRight 3s ease-in-out infinite !important;
+}
+body.workout-v147-running .global-diva-bot .diva-bot-heart-shape {
+  animation: divaWorkoutHeart 1.5s ease-in-out infinite !important;
+}
+body.workout-v147-running .global-diva-bot .diva-bot-antenna {
+  animation: divaWorkoutAntenna 2s ease-in-out infinite !important;
+}
+@keyframes divaWorkoutCheer {
+  0%, 100% { transform: scale(.8) translateY(0); }
+  25% { transform: scale(.82) translateY(-3px); }
+  50% { transform: scale(.8) translateY(0); }
+  75% { transform: scale(.82) translateY(-2px); }
+}
+@keyframes divaWorkoutFloat {
+  0%, 100% { transform: translateY(0) rotate(-0.5deg); }
+  50% { transform: translateY(-4px) rotate(0.5deg); }
+}
+@keyframes divaWorkoutWave {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(25deg); }
+  50% { transform: rotate(15deg); }
+  75% { transform: rotate(30deg); }
+}
+@keyframes divaWorkoutWaveRight {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-20deg); }
+  60% { transform: rotate(-10deg); }
+  80% { transform: rotate(-25deg); }
+}
+@keyframes divaWorkoutHeart {
+  0%, 100% { transform: scale(.94); opacity: .76; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+@keyframes divaWorkoutAntenna {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(4deg); }
+}
 
 body[data-theme="dark"] .v147-workout {
   --v147-ink: #fff5fc;
