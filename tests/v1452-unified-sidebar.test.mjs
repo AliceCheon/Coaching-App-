@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8") + "\n" + fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "unified-sidebar-v1452.css"), "utf8");
 const sw = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
 const check = (condition, message) => assert.ok(condition, message);

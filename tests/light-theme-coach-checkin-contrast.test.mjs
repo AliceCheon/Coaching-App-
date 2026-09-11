@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 
-const html = await fs.readFile(new URL("../atlas-coach-app.html", import.meta.url), "utf8");
+const html = await fs.readFile(new URL("../index.html", import.meta.url), "utf8") + "\n" + await fs.readFile(new URL("../coach-studio-inline.css", import.meta.url), "utf8") + "\n" + await fs.readFile(new URL("../src/app-main.js", import.meta.url), "utf8");
 
 const required = [
   "Contrasto Lavender Diva",
@@ -26,6 +26,6 @@ const workbench = html.slice(workbenchStart, workbenchEnd);
 if (workbench.includes("muscle-map-premium.png")) throw new Error("la vecchia immagine anatomica compare ancora nel Coach");
 if (!workbench.includes("coachMascotHtml()")) throw new Error("robottino Coach non riutilizzato nel pannello");
 if (!html.includes('body[data-theme="dark"] .coach-mascot-tip')) throw new Error("stile scuro del robottino non preservato");
-if (!html.includes('const reloadKey = `atlas-${APP_BUILD}-reload`')) throw new Error("chiave ricarica PWA dinamica mancante");
+if (!html.includes('./service-worker.js?v=${APP_BUILD}')) throw new Error("chiave ricarica PWA dinamica mancante");
 
 console.log(JSON.stringify({ ok:true, coachContrast:true, checkinContrast:true, mascot:true, cache:"v92" }));

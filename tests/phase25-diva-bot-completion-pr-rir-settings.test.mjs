@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
-const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8") + "\n" + fs.readFileSync(path.join(root, "coach-studio-inline.css"), "utf8") + "\n" + fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 const serviceWorker = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
 
 assert.match(html, /workout_saved_partial:\{ priority:"medium", cooldown:20000/);
@@ -28,7 +28,8 @@ assert.match(html, /state\.training\?\.actualRir\?\./);
 assert.match(html, /data-diva-bot-setting="visible"/);
 assert.match(html, /data-diva-bot-setting="personality"/);
 assert.match(html, /function updateDivaBotPreference/);
-assert.match(html, /const APP_BUILD = "v106"/);
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v106"/);
+assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14728-workout-mascot"/);
 
 console.log(JSON.stringify({ ok:true, partialSave:true, strictCompletion:true, distinctPr:true, rirGuarded:true, settingsSynced:true }));
+

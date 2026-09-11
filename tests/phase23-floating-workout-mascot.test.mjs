@@ -11,7 +11,7 @@ assert.match(html, /class="training-screen-wrap"/);
 assert.match(html, /id="workoutMascotLayer" class="workout-mascot-layer"/);
 assert.match(html, /coachMascotHtml\("workout-floating"\)/);
 assert.doesNotMatch(html, /workout-coach-strip/);
-assert.match(html, /position:fixed; top:8px; z-index:35/);
+assert.match(html, /position:fixed; top:8px; right:8px; z-index:35/);
 assert.match(html, /pointer-events:none/);
 assert.match(html, /const WORKOUT_MASCOT_POSITIONS = new Set\(\["top-right", "middle-right", "bottom-right", "bottom-left"\]\)/);
 assert.match(html, /function moveWorkoutMascot\(positionName/);

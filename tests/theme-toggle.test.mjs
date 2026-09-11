@@ -1,9 +1,11 @@
 import fs from "node:fs/promises";
 import vm from "node:vm";
 
-const html = await fs.readFile(new URL("../atlas-coach-app.html", import.meta.url), "utf8");
-const script = html.slice(html.lastIndexOf("<script>") + 8, html.lastIndexOf("</script>"))
-  .replace(/\s+initFirebase\(\);\s+render\(\);\s+importBundledNutritionBackup\(\);\s*$/, "");
+const html = await fs.readFile(new URL("../index.html", import.meta.url), "utf8");
+const appMain = await fs.readFile(new URL("../src/app-main.js", import.meta.url), "utf8");
+const vmLibs = await Promise.all(["exercise-library-19.8.js","master-exercise-library.js","app-config-v144.js","athlete-context.js","coach-ai-engine-2.js","knowledge-graph.js","decision-rules.js","decision-engine.js","coach-ai3-programming.js","coach-studio.js"].map(p => fs.readFile(new URL("../" + p, import.meta.url), "utf8")));
+const VM_PROLOGUE = "window.matchMedia=window.matchMedia||(q=>({matches:false,media:q,addEventListener(){},removeEventListener(){},addListener(){},removeListener(){}}));window.AudioContext=window.AudioContext||function(){};window.webkitAudioContext=window.AudioContext;window.setInterval=window.setInterval||function(){return 1};window.clearInterval=window.clearInterval||function(){};window.history=window.history||{pushState(){},replaceState(){},back(){}};window.performance=window.performance||{now:()=>Date.now(),mark(){},measure(){},getEntriesByType(){return[]}};";
+const script = vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + appMain.replace(/\s*const firebaseBootStarted = initFirebase\(\);[\s\S]*$/, "");
 const store = new Map();
 const localStorage = { getItem:key=>store.get(key)??null, setItem:(key,value)=>store.set(key,String(value)), removeItem:key=>store.delete(key) };
 const elements = new Map();
@@ -17,7 +19,7 @@ const document = {
   querySelector(selector){return selector === 'meta[name="theme-color"]' ? document.getElementById("themeMeta") : null},
   querySelectorAll(){return[]}, createElement(){return makeElement()}, body:makeElement(), documentElement:makeElement(), addEventListener(){}
 };
-const context = { console, structuredClone, Date, Math, JSON, Intl, Map, Set, WeakMap, Array, Object, String, Number, Boolean, RegExp, Promise, parseInt, parseFloat, isNaN, localStorage, sessionStorage:localStorage, document, navigator:{}, location:{protocol:"file:",origin:"null",hash:""}, URL:{createObjectURL(){return "blob:test"},revokeObjectURL(){}}, Blob:class{}, FileReader:class{}, setTimeout(){return 1}, clearTimeout(){}, requestAnimationFrame(){return 1}, addEventListener(){}, removeEventListener(){}, window:null, globalThis:null };
+const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math, JSON, Intl, Map, Set, WeakMap, Array, Object, String, Number, Boolean, RegExp, Promise, parseInt, parseFloat, isNaN, localStorage, sessionStorage:localStorage, document, navigator:{}, location:{protocol:"file:",origin:"null",hash:""}, URL:{createObjectURL(){return "blob:test"},revokeObjectURL(){}}, Blob:class{}, FileReader:class{}, setTimeout(){return 1}, clearTimeout(){}, requestAnimationFrame(){return 1}, addEventListener(){}, removeEventListener(){}, window:null, globalThis:null };
 context.window=context; context.globalThis=context; vm.createContext(context); new vm.Script(script).runInContext(context);
 
 const result = vm.runInContext(`(() => {

@@ -29,10 +29,8 @@ jobs:
         run: |
           for file in *.js src/*.js; do node --check "$file"; done
 
-      - name: Run core engine and workout tests
-        run: |
-          node tests/v147-workout-flow.test.mjs
-          node tests/programming-engine-phase20a.test.mjs
+      - name: Run full test suite
+        run: node --test
 
       - name: Check Intensita nuovo and sync repair are embedded
         run: |

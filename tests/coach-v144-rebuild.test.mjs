@@ -2,7 +2,7 @@ import fs from "node:fs";
 import assert from "node:assert/strict";
 
 const root = new URL("../", import.meta.url);
-const html = fs.readFileSync(new URL("index.html", root), "utf8");
+const html = fs.readFileSync(new URL("index.html", root), "utf8") + fs.readFileSync(new URL("coach-studio-inline.css", root), "utf8") + fs.readFileSync(new URL("src/app-main.js", root), "utf8");
 const editorCss = fs.readFileSync(new URL("coach-program-editor-19.8.css", root), "utf8");
 
 const checks = [
