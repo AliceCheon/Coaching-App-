@@ -412,6 +412,10 @@ body.workout-v147-running .stage { grid-template-columns: 1fr !important; }
 body.workout-v147-running .phone-shell { width: 100% !important; max-width: none !important; }
 body.workout-v147-running .top-tabs { display: none; }
 
+/* In tutta la zona workout (anteprima compresa) la Diva Bot è già
+   mostrata dalla mascotte dedicata: nascondi quella globale per
+   evitare che ne appaiano due. */
+body.workout-v147-screen #globalDivaBotHost,
 body.workout-v147-running #globalDivaBotHost {
   display: none !important;
 }
