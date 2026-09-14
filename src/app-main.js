@@ -1297,6 +1297,12 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
     let lastCloudWriteAt = "";
     let lastCloudSnapshotAt = "";
     let lastCloudError = "";
+    // === ANTI-TEMPESTA CLOUD (nuove variabili) ===
+    let lastCloudWriteAtMs = 0;        // momento (ms) dell'ultima scrittura cloud fatta da questo dispositivo
+    let __intensitaRepairDone = false; // flag in memoria: la riparazione note gira UNA volta per sessione, mai in loop
+    let pendingRemoteRender = false;   // render remoto rinviato perché l'utente sta scrivendo in un campo
+    let lastRemoteRenderAt = 0;        // per coalescere i render guidati dal cloud
+    let __cloudRenderTimer = null;
     let localSaveTimer = null;
     let automaticBackupTimer = null;
     let dataSafetyRestoring = false;
@@ -1409,6 +1415,16 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       return Number.isFinite(parsed) ? parsed : null;
     }
 
+    // FIX "il valore cancellato ricompare": quando l'utente SVUOTA un campo
+    // inline (sets/reps/rir/rpe/recupero/carico), i fallback `??` e `||` sulla
+    // prescrizione base dell'esercizio facevano tornare il valore vecchio
+    // (es. "1x8") al prossimo render. Il marker `cleared:true` registra
+    // l'intenzione dell'utente e impedisce qualunque fallback.
+    function isClearedValue(v) { return !!(v && typeof v === "object" && v.cleared); }
+    function clearedNumber(value) { return value === "" ? { cleared: true } : optionalNumber(value); }
+    function clearedReps(value) { const c = value === "" ? { cleared: true } : {}; return { ...parseReps(value), ...c }; }
+    function clearedRir(value) { const c = value === "" ? { cleared: true } : {}; return { ...parseRir(value), ...c }; }
+
     function parseReps(value) {
       if (value && typeof value === "object" && !Array.isArray(value)) {
         return {
@@ -1474,12 +1490,12 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
           id: String(value.id || stableId("week", number, JSON.stringify(value))),
           week: number,
           weekNumber: number,
-          sets: optionalNumber(value.sets),
+          sets: isClearedValue(value.sets) ? { cleared: true } : optionalNumber(value.sets),
           reps: parseReps(value.reps),
           rir: parseRir(value.rir),
           rpe: parseRir(value.rpe),
           rest: parseRest(value.rest),
-          restSeconds: optionalNumber(value.restSeconds) ?? optionalNumber(value.rest?.seconds),
+          restSeconds: isClearedValue(value.restSeconds) ? { cleared: true } : (optionalNumber(value.restSeconds) ?? optionalNumber(value.rest?.seconds)),
           prescribedLoad: parsePrescribedLoad(value.prescribedLoad ?? { value: value.load, unit: value.loadUnit }),
           loadUnit: value.loadUnit || value.prescribedLoad?.unit || "kg",
           tempo: parseTempo(value.tempo ?? fallback.tempo),
@@ -1696,8 +1712,9 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       if (!week) return "";
       if (week.legacyLabel) return week.legacyLabel;
       const reps = formatReps(week.reps);
-      if (week.type === "test" && !week.sets) return week.note || "test";
-      const core = week.sets && reps ? `${week.sets} x ${reps}` : week.sets ? String(week.sets) : reps;
+      const sets = isClearedValue(week.sets) ? null : (week.sets && typeof week.sets === "object" ? null : week.sets);
+      if (week.type === "test" && !sets) return week.note || "test";
+      const core = sets && reps ? `${sets} x ${reps}` : sets ? String(sets) : reps;
       return [core, week.type === "deload" ? "scarico" : "", week.note].filter(Boolean).join(" ").trim();
     }
 
@@ -2376,7 +2393,12 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
     }
 
     function newerEntity(left = {}, right = {}) {
-      return entityTimestamp(right) >= entityTimestamp(left) ? right : left;
+      // Parità di timestamp: vince l'entità GIÀ PRESENTE (left). Con ">=" il
+      // merge faceva vincere la copia in ARRIVO anche a parità, così una copia
+      // cloud non aggiornata (quota esaurita, scritture fallite) poteva
+      // resuscitare esercizi cancellati o vecchi valori tipo "1x8" ad ogni
+      // snapshot o ricaricamento della pagina.
+      return entityTimestamp(right) > entityTimestamp(left) ? right : left;
     }
 
     function mergeExerciseCollections(older = [], newer = [], context = {}) {
@@ -4133,6 +4155,14 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
     }
 
     function repairIntensitaNotesFromLibrary(targetState = state) {
+      // GUARDIA ANTI-LOOP (causa "resource-exhausted"): questa riparazione è
+      // "una volta per build". Se il flag è già in meta OPPURE è già stata
+      // eseguita in questa sessione, NON riparare di nuovo. Senza questa
+      // guardia ogni snapshot cloud ri-trovava le stesse note vuote (il meta
+      // col flag si perde nel merge o la scrittura falliva per quota) e
+      // ri-pianificava una scrittura su Firestore → loop infinito di
+      // scritture → "resource-exhausted" → tempesta di render.
+      if (targetState?.meta?.intensitaNotesRepairBuild === INTENSITA_NUOVO_BUILD || __intensitaRepairDone) return 0;
       const target = (targetState.programs || []).find((program) => {
         const label = String(program.phase || program.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         return label.includes("intensita") && (label.includes("agosto") || label.includes("ottobre"))
@@ -4169,6 +4199,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         if (sheet.exercises.some((exercise) => exercise.updatedAt === stamp)) sheet.updatedAt = stamp;
       });
       if (repaired) {
+        __intensitaRepairDone = true; // una sola volta per sessione: spezza il loop riparazione→scrittura→snapshot
         target.updatedAt = stamp;
         targetState.meta = { ...(targetState.meta || {}), intensitaNotesRepairBuild: INTENSITA_NUOVO_BUILD, programsUpdatedAt: stamp, cloudProgramsUpdatedAt: "" };
       }
@@ -4192,12 +4223,19 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         : "Accesso Google attivo. Sincronizzazione in preparazione.";
     }
 
+    let firebaseInitDone = false;
     function initFirebase() {
       if (!firebaseConfigured() || !window.firebase) return false;
+      // IDEMPOTENTE: un secondo initFirebase() aggiungerebbe un altro handler
+      // onAuthStateChanged e soprattutto ri-chiamerebbe .settings(), che RESETTA
+      // la connessione Firestore (avviso "You are overriding the original host"
+      // e scritture in volo perse). Un init è sufficiente per tutta la sessione.
+      if (firebaseInitDone) return true;
       if (!window.firebase.apps.length) window.firebase.initializeApp(FIREBASE_CONFIG);
       authService = window.firebase.auth();
       dbService = window.firebase.firestore ? window.firebase.firestore() : null;
       window.firebase.firestore().settings({ experimentalForceLongPolling: true });
+      firebaseInitDone = true;
       authService.setPersistence(window.firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
       authService.getRedirectResult().catch(() => {
         showToast("Login Google non completato. Controlla domini autorizzati.");
@@ -4622,6 +4660,10 @@ function sanitizeForFirestore(value) {
         if (!snapshot.exists || !data?.state || !stamp || stamp === lastCloudWriteAt || stamp === lastCloudSnapshotAt) return;
         lastCloudSnapshotAt = stamp;
         if (cloudLoading) return;
+        // FINESTRA DI QUIETE (8s): dopo una nostra scrittura ignora gli snapshot
+        // arrivati per altre vie (secondo doc.set, gare tra dispositivi). Evita
+        // ping-pong merge→scrittura→snapshot e revert mentre l'utente modifica.
+        if (Date.now() - lastCloudWriteAtMs < 8000) return;
         const account = state.profile.account || {};
         const remoteState = clone(data.state);
         try { remoteState.programs = await loadCloudPrograms(data); }
@@ -4638,7 +4680,7 @@ function sanitizeForFirestore(value) {
         lastCloudError = "";
         echoLocalStateQuietly();
         if (cloudNotesRepaired) scheduleCloudSave();
-        render();
+        renderCloudSoon();
       }, (error) => {
         lastCloudError = cloudErrorText(error, "aggiornamento automatico");
         state.profile.account.cloudStatus = "errore cloud";
@@ -4648,10 +4690,16 @@ function sanitizeForFirestore(value) {
     }
 
     let lastCloudSaveAttemptAt = 0;
-    const MIN_CLOUD_SAVE_GAP_MS = 4000; // non scrivere su Firestore più di una volta ogni 4s
+    const MIN_CLOUD_SAVE_GAP_MS = 12000; // non scrivere su Firestore più di una volta ogni 12s (il doc radice è grande: il vecchio gap di 4s esauriva la quota di banda)
+
+    function syncPausedUntil() { return Number(state.meta?.syncPausedUntil || 0); }
 
     function scheduleCloudSave() {
       if (!cloudUser || !dbService || cloudLoading || !state.profile.account?.syncReady) return;
+      if (Date.now() < syncPausedUntil()) {
+        console.log("[cloud] Scritture in pausa anti-flood (quota Firestore).");
+        return;
+      }
       if (state.profile.account?.syncPaused) {
         console.log("Cloud sync paused by user or system");
         return;
@@ -4726,6 +4774,7 @@ function sanitizeForFirestore(value) {
         const cloudRevisions = state.meta?.cloudProgramRevisions || {};
         changedPrograms = currentPrograms.filter((program) => String(cloudRevisions[program.id] || "") !== String(revisions[program.id] || ""));
         lastCloudWriteAt = cloudUpdatedAt;
+        lastCloudWriteAtMs = Date.now(); // memoria per la finestra di quiete degli snapshot
         payload.profile.account.cloudStatus = "sync";
         payload.profile.account.syncReady = true;
         payload.meta = { ...(payload.meta || {}), cloudProgramRevisions: cloudRevisions };
@@ -4764,6 +4813,14 @@ function sanitizeForFirestore(value) {
       } catch (error) {
         if (!rootStateSaved) newlyMarkedSessions.forEach((session) => delete session.cloudSyncedAt);
         lastCloudError = cloudErrorText(error, "caricamento");
+        // ANTI-FLOOD: se Firestore dice che abbiamo esaurito la quota/banda,
+        // fermare i tentativi per 3 minuti. Senza questa pausa ogni nuovo
+        // tentativo falliva a sua volta e alimentava la tempesta di errori
+        // "resource-exhausted" / "Write stream exhausted".
+        if (String(error?.code || "").includes("resource-exhausted") || String(error?.message || "").toLowerCase().includes("resource-exhausted")) {
+          state.meta = { ...(state.meta || {}), syncPausedUntil: Date.now() + 3 * 60 * 1000 };
+          console.warn("[cloud] Quota Firestore esaurita: scritture in pausa per 3 minuti.");
+        }
         if (rootStateSaved && changedPrograms.length) lastCloudError = `Allenamento e logbook sincronizzati; schede in attesa — ${lastCloudError}`;
         state.profile.account.cloudStatus = rootStateSaved ? "sync parziale" : "errore sync";
         echoLocalStateQuietly();
@@ -4849,7 +4906,8 @@ function sanitizeForFirestore(value) {
           if (!persisted) {
             state.profile.account.cloudStatus = "sync";
           }
-          if (cloudNotesRepaired) await saveCloudState();
+          // La riparazione note non deve più innescare scritture durante la pausa anti-flood
+          if (cloudNotesRepaired && Date.now() >= syncPausedUntil()) await saveCloudState();
           if (!options.silent) showToast("Dati cloud caricati.");
         } else {
           state.profile.account.cloudStatus = "sync";
@@ -4939,7 +4997,7 @@ function sanitizeForFirestore(value) {
     }
 
     function reliableSessionDocId(id) { return encodeURIComponent(String(id || "session")).replaceAll(".", "%2E"); }
-    function scheduleReliableSync(delay = 400) { clearTimeout(reliableSyncTimer); reliableSyncTimer = setTimeout(() => flushReliableSync({ silent:true }), delay); }
+    function scheduleReliableSync(delay = 400) { clearTimeout(reliableSyncTimer); if (Date.now() < syncPausedUntil()) delay = Math.max(delay, 60000); reliableSyncTimer = setTimeout(() => flushReliableSync({ silent:true }), delay); }
 
     function mergeReliableRemoteSession(remote = {}) {
       if (!remote?.id) return false; const sessions = state.training.sessions || (state.training.sessions = []); const index = sessions.findIndex(item => String(item.id) === String(remote.id));
@@ -4981,7 +5039,7 @@ function sanitizeForFirestore(value) {
     function startReliableSessionsRealtime(){
       if (cloudSessionsUnsubscribe) return true; // già attivo: non serve smontare e rimontare il listener ogni volta
       const collection=reliableSessionsCollection(); if(!collection||!state.profile.account?.syncReady)return false;
-      cloudSessionsUnsubscribe=collection.onSnapshot(snapshot=>{let changed=false;let fromOtherDevice=false;snapshot.docChanges().forEach(change=>{if(!["added","modified"].includes(change.type))return;const remote=change.doc.data()?.session||change.doc.data();if(remote?.deviceId===reliableDeviceId()&&(state.training.sessions||[]).some(item=>item.dataHash&&item.dataHash===remote.dataHash))return;if(remote?.deviceId&&remote.deviceId!==reliableDeviceId())fromOtherDevice=true;changed=mergeReliableRemoteSession(remote)||changed;reliableSyncQueue?.audit("received-remote",{entityId:remote?.id,deviceId:remote?.deviceId||""});});if(changed){reliableSyncUi.lastSuccess=new Date().toISOString();if(fromOtherDevice)notifyDeviceSync("Nuovo allenamento sincronizzato 📲","È arrivato un allenamento salvato su un altro dispositivo.");refreshReliableSyncStatus();echoLocalStateQuietly();render();}},error=>{reliableSyncUi.status="error";reliableSyncUi.lastError=cloudErrorText(error,"aggiornamento sedute");}); return true;
+      cloudSessionsUnsubscribe=collection.onSnapshot(snapshot=>{let changed=false;let fromOtherDevice=false;snapshot.docChanges().forEach(change=>{if(!["added","modified"].includes(change.type))return;const remote=change.doc.data()?.session||change.doc.data();if(remote?.deviceId===reliableDeviceId()&&(state.training.sessions||[]).some(item=>item.dataHash&&item.dataHash===remote.dataHash))return;if(remote?.deviceId&&remote.deviceId!==reliableDeviceId())fromOtherDevice=true;changed=mergeReliableRemoteSession(remote)||changed;reliableSyncQueue?.audit("received-remote",{entityId:remote?.id,deviceId:remote?.deviceId||""});});if(changed){reliableSyncUi.lastSuccess=new Date().toISOString();if(fromOtherDevice)notifyDeviceSync("Nuovo allenamento sincronizzato 📲","È arrivato un allenamento salvato su un altro dispositivo.");refreshReliableSyncStatus();echoLocalStateQuietly();renderCloudSoon();}},error=>{reliableSyncUi.status="error";reliableSyncUi.lastError=cloudErrorText(error,"aggiornamento sedute");}); return true;
     }
 
     function reliableDuplicateLabel(session = {}) {
@@ -5118,6 +5176,7 @@ function sanitizeForFirestore(value) {
     });
     setInterval(() => {
       if (cloudUser && navigator.onLine && !cloudLoading) {
+        if (Date.now() < syncPausedUntil()) return; // pausa anti-flood attiva: niente tentativi
         const st = state.profile.account;
         if (st?.syncPaused) {
           st.syncPaused = false;
@@ -6088,13 +6147,90 @@ function sanitizeForFirestore(value) {
       if (weeks) { weeks.scrollTop = viewport.weeksTop; weeks.scrollLeft = viewport.weeksLeft; }
     }
 
+    // === PROTEZIONE EDITING UTENTE (fix "1x8 ricompare") ===
+    // Il fix è duplice:
+    // 1. userIsEditingScreen(): se l'utente sta scrivendo in un campo dentro
+    //    #screen, i render guidati dal cloud (onSnapshot, sync sedute) NON
+    //    distruggono più il DOM in quel momento — vengono rinviati a quando
+    //    il campo perde il focus (flush via "focusout").
+    // 2. capture/restore: se un render ricostruisce comunque lo schermo,
+    //    il valore scritto e il cursore del campo attivo vengono preservati.
+    function userIsEditingScreen() {
+      const el = document.activeElement;
+      if (!el) return false;
+      const tag = el.tagName;
+      if (tag !== "INPUT" && tag !== "TEXTAREA" && !el.isContentEditable) return false;
+      if (tag === "INPUT" && ["checkbox", "radio", "color", "range", "button", "submit"].includes(el.type)) return false;
+      const screen = document.getElementById("screen");
+      return !!(screen && screen.contains(el));
+    }
+
+    function captureScreenEditingState(screen) {
+      const el = document.activeElement;
+      if (!el || !screen.contains(el) || (el.tagName !== "INPUT" && el.tagName !== "TEXTAREA")) return null;
+      let selector = null;
+      try {
+        if (el.id) selector = `#${CSS.escape(el.id)}`;
+        else if (el.dataset.editExercise !== undefined && el.dataset.editKey) selector = `[data-edit-exercise="${CSS.escape(el.dataset.editExercise)}"][data-edit-key="${CSS.escape(el.dataset.editKey)}"]`;
+        else if (el.dataset.coachSheetField) selector = `[data-coach-sheet-field="${CSS.escape(el.dataset.coachSheetField)}"]`;
+      } catch (_) { return null; }
+      if (!selector) return null;
+      return { selector, value: el.value, start: el.selectionStart, end: el.selectionEnd, scrollTop: el.scrollTop };
+    }
+
+    function restoreScreenEditingState(capture) {
+      if (!capture) return;
+      let el = null;
+      try { el = document.querySelector(capture.selector); } catch (_) {}
+      if (!el) return;
+      if (document.activeElement !== el) { try { el.focus({ preventScroll: true }); } catch (_) { el.focus(); } }
+      // Preserva il testo non ancora committato (es. "1x8" cancellato che ricompariva)
+      if (el.value !== capture.value) el.value = capture.value;
+      try { if (capture.start != null && el.setSelectionRange && el.value.length >= capture.start) el.setSelectionRange(capture.start, capture.end); } catch (_) {}
+      if (capture.scrollTop) el.scrollTop = capture.scrollTop;
+    }
+
+    // Render remoto coalesciuto: max 1 render ogni 800ms, e MAI mentre l'utente scrive.
+    function renderCloudSoon(delay = 800) {
+      if (userIsEditingScreen()) { pendingRemoteRender = true; return; }
+      const wait = Math.max(0, lastRemoteRenderAt + delay - Date.now());
+      clearTimeout(__cloudRenderTimer);
+      __cloudRenderTimer = setTimeout(() => {
+        if (userIsEditingScreen()) { pendingRemoteRender = true; return; }
+        lastRemoteRenderAt = Date.now();
+        render();
+      }, wait);
+    }
+
+    // Quando il campo perde il focus, esegue il render remoto rimandato.
+    document.addEventListener("focusout", () => {
+      setTimeout(() => {
+        if (!pendingRemoteRender || userIsEditingScreen()) return;
+        pendingRemoteRender = false;
+        render();
+      }, 120);
+    });
+
+    // === ANTI-LOOP GUARD per render() ===
+    // Previene re-render ravvicinati che causano loop infinito (es. nella sezione programmi)
+    let __renderGuardAt = 0;
+    let __renderGuardCount = 0;
+    const RENDER_GUARD_MS = 250; // min tempo tra render consecutivi
     function render() {
-      const coachRenderStarted = performance.now();
-      window.__coachPerfMetrics.globalRenders += 1;
-      coachProgramUi.modalDiagnostics.globalRenders += 1;
-      if (coachProgramUi.modal) coachProgramUi.modalDiagnostics.globalRendersWithModal += 1;
-      cancelPremiumMetricAnimations();
-      if (activeScreen === "coach" && !coachDesktopAllowed()) { activeScreen = "dashboard"; activeBottom = "home"; state.profile.mode = "athlete"; }
+      const __now = Date.now();
+      if (__now - __renderGuardAt < RENDER_GUARD_MS) {
+        __renderGuardCount++;
+        if (__renderGuardCount <= 5 || __renderGuardCount % 50 === 0) {
+          console.warn(`[render-guard] Render bloccato (${__renderGuardCount}x) — chiamato troppo rapidamente. Stack:`, new Error().stack?.split('\n').slice(1, 4).join(' → '));
+        }
+        return; // BLOCCA il render se troppo ravvicinato
+      }
+      __renderGuardAt = __now;
+      if (__renderGuardCount > 0) {
+        console.info(`[render-guard] Loop interrotto dopo ${__renderGuardCount} chiamate bloccate. Riprendo il render.`);
+      }
+      __renderGuardCount = 0;
+      // === FINE ANTI-LOOP GUARD ===
       const coachViewport = captureCoachViewport();
       const enteringWorkout = activeScreen === "training" && lastRenderedScreen !== "training";
       document.body.dataset.theme = state.profile.theme || "dark";
@@ -6137,19 +6273,32 @@ function sanitizeForFirestore(value) {
       document.getElementById("appTitle").textContent = titleMap[activeScreen][0];
       document.getElementById("appSubtitle").textContent = titleMap[activeScreen][1];
       document.getElementById("modeButton").textContent = "C";
-      if (activeScreen === "dashboard") screen.innerHTML = dashboardHtml();
-      if (activeScreen === "training") screen.innerHTML = trainingHtml();
-      if (activeScreen === "progress") screen.innerHTML = progressHtml();
-      if (activeScreen === "logbook") screen.innerHTML = logbookHtml();
-      if (activeScreen === "volume") screen.innerHTML = volumeScreenHtml();
-      if (activeScreen === "quiz") screen.innerHTML = quizHtml();
-      if (activeScreen === "coach") screen.innerHTML = coachHtml();
-      if (activeScreen === "settings") screen.innerHTML = settingsHtml();
+      // Cache HTML per evitare di ricreare il DOM se il contenuto non è cambiato (riduce loop e handler duplicati)
+      const screenHtmlKey = `__coach_screen_html_${activeScreen}`;
+      let newScreenHtml = null;
+      if (activeScreen === "dashboard") newScreenHtml = dashboardHtml();
+      else if (activeScreen === "training") newScreenHtml = trainingHtml();
+      else if (activeScreen === "progress") newScreenHtml = progressHtml();
+      else if (activeScreen === "logbook") newScreenHtml = logbookHtml();
+      else if (activeScreen === "volume") newScreenHtml = volumeScreenHtml();
+      else if (activeScreen === "quiz") newScreenHtml = quizHtml();
+      else if (activeScreen === "coach") newScreenHtml = coachHtml();
+      else if (activeScreen === "settings") newScreenHtml = settingsHtml();
+      const prevScreenHtml = window[screenHtmlKey];
+      const editingCapture = newScreenHtml !== prevScreenHtml ? captureScreenEditingState(screen) : null;
+      if (newScreenHtml !== prevScreenHtml) {
+        window[screenHtmlKey] = newScreenHtml;
+        screen.innerHTML = newScreenHtml;
+      }
       renderCoachModalPortal();
       if (lastRenderedScreen && lastRenderedScreen !== activeScreen && premiumMotionEnabled()) { screen.classList.remove("screen-enter"); requestAnimationFrame(() => screen.classList.add("screen-enter")); }
       ensureCoachMascotFallbacks();
-      bindScreen();
-      if (activeScreen === "coach") bindCoachEditorDelegation();
+      // Solo se il DOM è stato ricreato, riassocia gli event listener
+      if (newScreenHtml !== prevScreenHtml) {
+        bindScreen();
+        if (activeScreen === "coach") bindCoachEditorDelegation();
+        restoreScreenEditingState(editingCapture); // ridà focus, testo e cursore al campo attivo
+      }
       bindModalController();
       bindPremiumMetrics();
       if (activeScreen === "training") {
@@ -6515,7 +6664,13 @@ function sanitizeForFirestore(value) {
 
     function renderGlobalDivaBot() {
       const host = document.getElementById("globalDivaBotHost");
-      if (host) host.innerHTML = globalDivaBotHtml();
+      if (host) {
+        // Evita di sostituire il DOM se il contenuto non è cambiato (riduce trigger del MutationObserver)
+        const newHtml = globalDivaBotHtml();
+        if (host.innerHTML !== newHtml) {
+          host.innerHTML = newHtml;
+        }
+      }
       const visible = state.ui?.globalDivaVisible !== false;
       const railToggle = document.querySelector(".diva-rail-toggle");
       if (railToggle) {
@@ -7081,9 +7236,14 @@ function sanitizeForFirestore(value) {
       const week=(exercise?.progression?.weeks||[]).find((item)=>Number(item.weekNumber||item.week)===Number(weekNumber))||{};
       const som=coachExerciseSom(exercise);
       return {
-        sets:week.sets??base.sets??"", reps:formatReps(week.reps||base.reps)||"", restSeconds:week.restSeconds??week.rest?.seconds??base.rest?.seconds??"",
-        loadValue:week.prescribedLoad?.value??base.prescribedLoad?.value??"", loadUnit:week.prescribedLoad?.unit||base.prescribedLoad?.unit||"kg",
-        rpe:week.rpe?.label||base.rpe?.label||"", rir:week.rir?.label||base.rir?.label||"", som, tempo:som,
+        sets:isClearedValue(week.sets)?"":(week.sets??base.sets??""),
+        reps:isClearedValue(week.reps)?"":formatReps(week.reps||base.reps),
+        restSeconds:isClearedValue(week.restSeconds)?"":(week.restSeconds??week.rest?.seconds??base.rest?.seconds??""),
+        loadValue:isClearedValue(week.prescribedLoad)?"":(week.prescribedLoad?.value??base.prescribedLoad?.value??""),
+        loadUnit:week.prescribedLoad?.unit||base.prescribedLoad?.unit||"kg",
+        rpe:isClearedValue(week.rpe)?"":(week.rpe?.label||base.rpe?.label||""),
+        rir:isClearedValue(week.rir)?"":(week.rir?.label||base.rir?.label||""),
+        som, tempo:som,
         note:String(week.notes || week.note || exercise?.note || [exercise?.metadata?.excelNote1, exercise?.metadata?.excelNote2].filter(Boolean).join(" ") || "").trim(), source:week.source||"base"
       };
     }
@@ -8042,13 +8202,13 @@ function sanitizeForFirestore(value) {
       const weeks=(exercise.progression?.weeks||[]).map((item)=>clone(item));
       let week=weeks.find((item)=>Number(item.weekNumber||item.week)===Number(weekNumber));
       if(!week){ week=parseWeekPrescription({},Number(weekNumber)||1); weeks.push(week); }
-      if(field==="sets") week.sets=optionalNumber(value);
-      if(field==="reps") week.reps=parseReps(value);
-      if(field==="restSeconds"){week.restSeconds=optionalNumber(value);week.rest=parseRest({seconds:optionalNumber(value)});}
-      if(field==="loadValue") week.prescribedLoad=parsePrescribedLoad({value:optionalNumber(value),unit:week.prescribedLoad?.unit||"kg"});
-      if(field==="loadUnit") week.prescribedLoad=parsePrescribedLoad({value:week.prescribedLoad?.value,unit:value||"kg"});
-      if(field==="rpe") week.rpe=parseRir(value);
-      if(field==="rir") week.rir=parseRir(value);
+      if(field==="sets") week.sets=clearedNumber(value);
+      if(field==="reps") week.reps=clearedReps(value);
+      if(field==="restSeconds"){week.restSeconds=clearedNumber(value);week.rest=parseRest({seconds:optionalNumber(value)});}
+      if(field==="loadValue") week.prescribedLoad = value==="" ? { ...parsePrescribedLoad({value:null,unit:week.prescribedLoad?.unit||"kg"}), cleared:true } : parsePrescribedLoad({value:optionalNumber(value),unit:week.prescribedLoad?.unit||"kg"});
+      if(field==="loadUnit") week.prescribedLoad = { ...parsePrescribedLoad({value:isClearedValue(week.prescribedLoad)?null:week.prescribedLoad?.value,unit:value||"kg"}), ...(isClearedValue(week.prescribedLoad)?{cleared:true}:{}) };
+      if(field==="rpe") week.rpe=clearedRir(value);
+      if(field==="rir") week.rir=clearedRir(value);
       if(field==="note") {
         const note=String(value||"");
         week.notes=note;
@@ -10803,14 +10963,18 @@ function sanitizeForFirestore(value) {
         const arrow=button.querySelector("em"); if(arrow) arrow.textContent=studio.trainingMenuOpen?"⌃":"⌄";
       }));
       document.querySelectorAll("[data-coach-studio-route]").forEach((button) => button.addEventListener("click", () => coachStudioNavigate(button.dataset.coachStudioRoute)));
-      document.querySelectorAll("[data-coach-exit]").forEach((button) => button.addEventListener("click", () => {
-        state.profile.mode = "athlete";
-        activeScreen = "dashboard";
-        activeBottom = "home";
-        saveState();
-        history.replaceState({}, "", location.pathname + location.search + "#dashboard");
-        render();
-      }));
+      document.querySelectorAll("[data-coach-exit]").forEach((button) => {
+        if (button.dataset.coachExitBound) return;
+        button.dataset.coachExitBound = "1";
+        button.addEventListener("click", () => {
+          state.profile.mode = "athlete";
+          activeScreen = "dashboard";
+          activeBottom = "home";
+          saveState();
+          history.replaceState({}, "", location.pathname + location.search + "#dashboard");
+          render();
+        });
+      });
       if(document.body.dataset.coachToolActionsBound!=="1"){
         document.body.dataset.coachToolActionsBound="1";
         document.body.addEventListener("click",(event)=>{
@@ -11914,6 +12078,9 @@ function sanitizeForFirestore(value) {
       const customExerciseButton = document.querySelector("[data-exercise-custom]");
       if (customExerciseButton) customExerciseButton.addEventListener("click", () => { openCoachModal("technical-exercise-edit", { exerciseId:"", addToSheet:true }); render(); });
       document.querySelectorAll("[data-coach-sheet-field]").forEach((field) => {
+        // DEDUP: evita handler duplicati se bindScreen() viene chiamato più volte
+        if (field.dataset.coachSheetBound) return;
+        field.dataset.coachSheetBound = "1";
         field.addEventListener("input", () => {
           const draft = activeCoachBuilder();
           if (!draft) return;
@@ -11946,6 +12113,9 @@ function sanitizeForFirestore(value) {
       const saveEditedProgram = document.getElementById("saveEditedProgram");
       if (saveEditedProgram) saveEditedProgram.addEventListener("click", saveEditedProgramSession);
       document.querySelectorAll("[data-edit-exercise]").forEach((field) => {
+        // DEDUP: evita handler duplicati se bindScreen() viene chiamato più volte
+        if (field.dataset.editExerciseBound) return;
+        field.dataset.editExerciseBound = "1";
         field.addEventListener("change", () => {
           const session = selectedCoachProgramSession();
           const exercise = session?.exercises?.[Number(field.dataset.editExercise)];
@@ -11976,6 +12146,7 @@ function sanitizeForFirestore(value) {
           if (key === "muscle") setTimeout(render, 0);
         });
       });
+
       const saveFeedback = document.getElementById("saveFeedback");
       if (saveFeedback) saveFeedback.addEventListener("click", saveCoachFeedback);
       const exportData = document.getElementById("exportData");
