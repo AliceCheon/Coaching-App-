@@ -4664,6 +4664,12 @@ function sanitizeForFirestore(value) {
         // arrivati per altre vie (secondo doc.set, gare tra dispositivi). Evita
         // ping-pong merge→scrittura→snapshot e revert mentre l'utente modifica.
         if (Date.now() - lastCloudWriteAtMs < 8000) return;
+        // PAUSA ANTI-FLOOD: mentre le scritture sono sospese (quota Firestore
+        // esaurita) NON applicare il merge dal cloud — il cloud contiene ancora
+        // la copia VECCHIA (es. con "1x8" ed esercizi non cancellati) e la
+        // sovrascriverebbe sulle modifiche locali che non possiamo caricare.
+        // Al termine della pausa l'intervallo di 45s rifà il load completo.
+        if (Date.now() < syncPausedUntil()) return;
         const account = state.profile.account || {};
         const remoteState = clone(data.state);
         try { remoteState.programs = await loadCloudPrograms(data); }
@@ -5027,7 +5033,16 @@ function sanitizeForFirestore(value) {
           await withTimeout(ref.set({ session:sanitizeForFirestore(payload), entityId:sanitizeForFirestore(payload.id), userId:cloudUser.uid, revision:payload.revision, dataHash:payload.dataHash, deviceId:payload.deviceId, updatedAt:payload.updatedAt, serverUpdatedAt:window.firebase.firestore.FieldValue.serverTimestamp() },{ merge:true }),40000);
           const local=(state.training.sessions||[]).find(item=>String(item.id)===String(payload.id)); if(local) Object.assign(local,{ syncStatus:"synced",cloudSyncedAt:payload.cloudSyncedAt,dataHash:payload.dataHash,deviceId:payload.deviceId,revision:payload.revision });
           reliableSyncQueue.markSynced(operation.operationId); reliableSyncQueue.audit("confirmed-cloud",{entityId:payload.id,deviceId:payload.deviceId}); synced++;
-        } catch(error) { reliableSyncQueue.markFailed(operation.operationId,cloudErrorText(error,"sincronizzazione seduta")); reliableSyncUi.lastError=cloudErrorText(error,"sincronizzazione seduta"); failed++; }
+        } catch(error) {
+          reliableSyncQueue.markFailed(operation.operationId,cloudErrorText(error,"sincronizzazione seduta")); reliableSyncUi.lastError=cloudErrorText(error,"sincronizzazione seduta"); failed++;
+          // ANTI-FLOOD: anche qui (non solo in saveCloudState) arma la pausa se
+          // la quota è esaurita. Senza di essa il retry tornava ogni ~1,5s e
+          // causava il "micro-refresh" continuo visto dall'utente.
+          if (String(error?.code || "").includes("resource-exhausted") || String(error?.message || "").toLowerCase().includes("resource-exhausted")) {
+            state.meta = { ...(state.meta || {}), syncPausedUntil: Date.now() + 3 * 60 * 1000 };
+            console.warn("[cloud] Quota Firestore esaurita (sedute): pausa 3 minuti.");
+          }
+        }
       }
       reliableSyncQueue.removeSynced(); if(synced) { reliableSyncUi.lastSuccess=new Date().toISOString(); notifyDeviceSync("Allenamento sincronizzato ✅", "Salvato sul cloud, sarà visibile su tutti i tuoi dispositivi."); } refreshReliableSyncStatus(); echoLocalStateQuietly();
       if(failed) scheduleReliableSync(Math.min(30000,1500*Math.max(1,reliableSyncStats().failed)));
@@ -9211,6 +9226,7 @@ function sanitizeForFirestore(value) {
       clearTimeout(coachMascotController.reactionTimer);
       coachMascotController.state = nextState;
       coachMascotController.message = String(options.message || "");
+      if (options.silentSound) window.__divaSilentStateChange = Date.now(); // marca il cambio come cosmetico: diva-bot-sounds non suonerà
       syncCoachMascotState();
       if (options.announce && options.message) showCoachMascotReaction(options.message);
       if ((nextState === "happy" || nextState === "celebrate") && divaBotPreferences().celebrations) addCoachMascotParticles();
@@ -9220,6 +9236,7 @@ function sanitizeForFirestore(value) {
           const returnState = COACH_MASCOT_STATES.has(options.returnState) ? options.returnState : "idle";
           coachMascotController.state = returnState;
           coachMascotController.message = "";
+          if (options.silentSound) window.__divaSilentStateChange = Date.now(); // anche il ritorno a idle resta silenzioso
           document.getElementById("coachMascotReaction")?.remove?.();
           const workoutBubble = document.getElementById("workoutMascotBubble");
           if (workoutBubble) workoutBubble.hidden = true;
@@ -10733,6 +10750,11 @@ function sanitizeForFirestore(value) {
 
     // === Integrazione Diva Bot: suoni, espressioni e messaggi sulla robottina ===
     function bindDivaBotIntegration() {
+      // IDEMPOTENTE: questa funzione viene richiamata a ogni render(); senza
+      // guardia accumulava un setInterval e 3 listener document PER OGNI
+      // render → N×cambi espressione → N×suoni ("i 3000 suoni della Diva").
+      if (window.__divaBotIntegrationBound) return;
+      window.__divaBotIntegrationBound = true;
       // Ascolta i messaggi dispatchati da diva-personality.js (analyzeAndReact / showDivaMessage)
       window.addEventListener("divaBotPersonalitieshowDivaMessage", (event) => {
         const detail = event.detail || {};
@@ -10766,11 +10788,13 @@ function sanitizeForFirestore(value) {
           playDivaBotSound("soft");
         }
       });
-      // Cambio espressione casuale ogni 25 secondi (solo quando idle)
+      // Cambio espressione casuale ogni 25 secondi (solo quando idle).
+      // È COSMETICO: non deve suonare (silentSound) — prima ogni cambio
+      // espressione scatenava un bip, e con gli interval accumulati erano decine.
       setInterval(() => {
         const expressionMap = ["happy", "thinking", "encouraging", "happy", "thinking"];
         const random = expressionMap[Math.floor(Math.random() * expressionMap.length)];
-        setCoachMascotState(random, { duration: 3000, returnState: "idle" });
+        setCoachMascotState(random, { duration: 3000, returnState: "idle", silentSound: true });
       }, 25000);
     }
 
@@ -13871,6 +13895,16 @@ function sanitizeForFirestore(value) {
 
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
           navigator.serviceWorker.addEventListener("controllerchange", () => {
+      // Quando un nuovo service worker prende il controllo (dopo un deploy),
+      // ricarica UNA sola volta la pagina: garantisce che telefono e PC eseguano
+      // la versione pubblicata senza richiedere doppie riaperture manuali.
+      try {
+        if (!sessionStorage.getItem("bd-sw-reloaded")) {
+          sessionStorage.setItem("bd-sw-reloaded", "1");
+          location.reload();
+          return;
+        }
+      } catch (_) {}
       console.log("Barbell Diva: service worker aggiornato in background.");
     });
       navigator.serviceWorker.register(`./service-worker.js?v=${APP_BUILD}`, { updateViaCache: "none" })

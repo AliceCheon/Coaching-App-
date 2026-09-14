@@ -1,11 +1,14 @@
 /* Barbell Diva - Service Worker
-   v14729-clean-header
-   - HTML: network-first con timeout (3s) + fallback cache → app shell
-   - Asset statici: cache-first con refresh in background (stale-while-revalidate)
+   v14731-network-first
+   - HTML + JS/CSS: NETWORK-FIRST con timeout (3s) + fallback cache → dopo un
+     deploy i dispositivi eseguono SEMPRE la versione pubblicata quando sono
+     online (il vecchio stale-while-revalidate serviva la copia vecchia alla
+     prima apertura: il telefono restava bloccato su versioni precedenti!)
+   - Immagini/font: cache-first con refresh in background (invarianti)
    - Match con ignoreSearch: resiste ai bump di versione (?v=...) e ai doppioni in cache
    - Cache key normalizzate per pathname (niente duplicati per ogni ?v=)
 */
-const CACHE_NAME = "atlas-app-v14730-smart-confirm";
+const CACHE_NAME = "atlas-app-v14731-network-first";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -100,9 +103,17 @@ self.addEventListener("fetch", (event) => {
     request.destination === "document" ||
     url.pathname.endsWith(".html");
 
-  if (isHtml) {
+  // JS e CSS: NETWORK-FIRST con timeout. Dopo un deploy il dispositivo deve
+  // eseguire sempre la versione pubblicata quando è online (fix telefono).
+  const isCode =
+    request.destination === "script" ||
+    request.destination === "style" ||
+    url.pathname.endsWith(".js") ||
+    url.pathname.endsWith(".css");
+
+  if (isHtml || isCode) {
     // Network-first con timeout: se la rete risponde entro 3 secondi aggiorna la
-    // cache e serve la pagina; altrimenti ripiega sulla copia cacheata (o sull'app shell).
+    // cache e serve il file fresco; altrimenti ripiega sulla copia cacheata.
     event.respondWith(
       withTimeout(fetch(request, { cache: "no-store" }), 3000)
         .then((response) => {
@@ -114,7 +125,7 @@ self.addEventListener("fetch", (event) => {
         })
         .catch(() =>
           caches.match(request, { ignoreSearch: true }).then(
-            (cached) => cached || caches.match("./index.html")
+            (cached) => cached || (isHtml ? caches.match("./index.html") : undefined)
           )
         )
     );
