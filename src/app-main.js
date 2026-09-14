@@ -5285,8 +5285,8 @@ function sanitizeForFirestore(value) {
       el.id = "unsynced-cloud-banner";
       el.hidden = true;
       el.setAttribute("role", "alert");
-      el.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:99999;max-width:min(92vw,580px);background:#3a1616;color:#ffe1e1;border:1px solid #b3564d;border-radius:14px;padding:12px 16px;font-size:14px;line-height:1.4;box-shadow:0 10px 30px rgba(0,0,0,.4);display:flex;gap:12px;align-items:center;justify-content:space-between;";
-      el.innerHTML = '<span data-unsynced-text></span><button type="button" data-unsynced-retry style="all:unset;cursor:pointer;background:#b3564d;color:#fff;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;flex:none;">Riprova ora</button>';
+      el.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom, 0px));z-index:99999;max-width:min(88vw,420px);background:rgba(26,12,14,.92);color:#ffd9d4;border:1px solid rgba(179,86,77,.55);border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.35;box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;gap:8px;align-items:center;justify-content:space-between;backdrop-filter:blur(6px);";
+      el.innerHTML = '<span data-unsynced-text style="flex:1;"></span><button type="button" data-unsynced-retry style="all:unset;cursor:pointer;background:transparent;color:#ffb0a6;border:1px solid rgba(255,176,166,.6);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;flex:none;">Riprova</button>';
       el.querySelector("[data-unsynced-retry]").addEventListener("click", () => {
         cloudSavePending = true;
         flushPendingCloudSave();
@@ -5308,7 +5308,7 @@ function sanitizeForFirestore(value) {
       const text = el.querySelector("[data-unsynced-text]");
       if (pending) {
         const mins = Math.max(1, Math.round((Date.now() - lastLocalChangeAt) / 60000));
-        if (text) text.textContent = `⚠️ Le modifiche non arrivano sul cloud da ~${mins} min. Restano su questo dispositivo: non chiudere l'app finché non torna "Sincronizzato".`;
+        if (text) text.textContent = `⚠️ Modifiche non sul cloud da ~${mins} min.`;
         if (el.hidden) el.hidden = false;
       } else if (!el.hidden) {
         el.hidden = true;
