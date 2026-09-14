@@ -1,6 +1,13 @@
 
     const STORE_KEY = "alice-method-app.v8";
     const COACH_DRAFT_RECOVERY_PREFIX = `${STORE_KEY}.coachDraft.`;
+    // Copie di sicurezza di secondo livello ("pre-merge"): ad ogni avvio archiviano
+    // lo stato locale PRIMA che il merge cloud possa sovrascriverlo. Il paracadute
+    // principale (STORE_KEY) viene infatti riscritto dallo stato fuso subito dopo
+    // il merge: se il merge riporta indietro dati vecchi (cloud riscritto da un
+    // dispositivo obsoleto), le modifiche recenti restano recuperabili QUI.
+    const PRE_MERGE_BACKUP_KEY = `${STORE_KEY}.premerge.v1`;
+    const PRE_MERGE_PREV_BACKUP_KEY = `${STORE_KEY}.premerge.prev.v1`;
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_DB_STORE = "sessions";
@@ -1296,6 +1303,8 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
     const reliableSyncUi = { status:"local", lastSuccess:"", lastError:"", remoteDevice:"", diagnostics:null, loading:false, resolving:false };
     let lastCloudWriteAt = "";
     let lastCloudSnapshotAt = "";
+    let lastLocalChangeAt = 0;       // ultima modifica locale persistita (banner "non sincronizzato")
+    let lastCloudWriteSuccessAt = 0; // ultima scrittura cloud COMPLETATA con successo (radice+schede o sedute)
     let lastCloudError = "";
     // === ANTI-TEMPESTA CLOUD (nuove variabili) ===
     let lastCloudWriteAtMs = 0;        // momento (ms) dell'ultima scrittura cloud fatta da questo dispositivo
@@ -3317,6 +3326,17 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
     };
 
 
+    // Archivia lo stato locale di avvio (raw JSON da localStorage) nella rete di
+    // sicurezza pre-merge, a rotazione su due generazioni. Mai chiamata dopo il
+    // merge: contiene SEMPRE lo stato "pre-fusione".
+    function writePreMergeBackup(raw) {
+      try {
+        const previous = localStorage.getItem(PRE_MERGE_BACKUP_KEY);
+        if (previous) localStorage.setItem(PRE_MERGE_PREV_BACKUP_KEY, previous);
+      } catch (error) { /* mai bloccare il boot */ }
+      try { localStorage.setItem(PRE_MERGE_BACKUP_KEY, String(raw || "")); } catch (error) { /* storage pieno: non bloccare */ }
+    }
+
     function loadState() {
       let saved = "";
       try {
@@ -3382,6 +3402,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
           loaded.meta = { ...(loaded.meta || {}), progressionAuditWarning:repaired.error || "Alcune progressioni legacy restano parziali.", progressionAudit:repaired.audit || null };
         }
         if (saved) {
+          try { writePreMergeBackup(saved); } catch (error) {}
           try { writeLocalStateSnapshot(loaded, { touch: false, cloud: false }); } catch (error) {}
         }
         if (loaded.training) loaded.training.openExercise = "";
@@ -3787,7 +3808,11 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       const store = window.BarbellDivaPhotoStore;
 
 
-      if (!Array.isArray(photos) || !photos.length) return snapshot;
+      // syncPausedUntil è runtime-only: non deve sopravvivere a un ricaricamento
+      // (una pausa anti-flood "stale", ricaricata da localStorage/cloud al boot,
+      // bloccava le scritture anche quando la quota era tornata disponibile).
+      const cleanSnapshot = { ...snapshot, meta: snapshot?.meta ? { ...snapshot.meta, syncPausedUntil: 0 } : snapshot?.meta };
+      if (!Array.isArray(photos) || !photos.length) return cleanSnapshot;
       const redacted = store && typeof store.needsRedaction === "function" && store.needsRedaction(photos)
         ? store.redactPhotoList(photos)
         : redactPhotoListFallback(photos);
@@ -3799,7 +3824,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
           try { showToast(lastPersistenceError, "error"); } catch (error) {}
         });
       }
-      return { ...snapshot, nutrition: { ...snapshot.nutrition, dashboard: { ...snapshot.nutrition.dashboard, photos: redacted } } };
+      return { ...cleanSnapshot, nutrition: { ...cleanSnapshot.nutrition, dashboard: { ...cleanSnapshot.nutrition.dashboard, photos: redacted } } };
     }
 
     function echoLocalStateQuietly(options = {}) {
@@ -3823,6 +3848,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
           localStorage.setItem(STORE_KEY, serialized);
         }
         lastPersistenceError = null;
+        if (options.touch !== false) { lastLocalChangeAt = Date.now(); updateUnsyncedCloudBanner(); }
         return true;
       } catch (error) {
         if (isStorageQuotaError(error)) {
@@ -4705,10 +4731,34 @@ function sanitizeForFirestore(value) {
 
     function syncPausedUntil() { return Number(state.meta?.syncPausedUntil || 0); }
 
+    // === CODA SCRITTURE DURANTE LA PAUSA ANTI-FLOOD ===
+    // Prima: durante la pausa scheduleCloudSave() buttava via la scrittura con un
+    // semplice return — ogni modifica fatta nei 3 minuti di pausa si PERDEVA per
+    // sempre (mai più riprovata). Ora viene accodata e riparte da sola alla scadenza.
+    let cloudSavePending = false;
+    let cloudSavePendingTimer = 0;
+
+    function armPendingCloudSaveRetry() {
+      clearTimeout(cloudSavePendingTimer);
+      const waitMs = Math.min(Math.max(1000, syncPausedUntil() - Date.now() + 1000), 10 * 60 * 1000);
+      cloudSavePendingTimer = setTimeout(flushPendingCloudSave, waitMs);
+    }
+
+    function flushPendingCloudSave() {
+      clearTimeout(cloudSavePendingTimer);
+      cloudSavePendingTimer = 0;
+      if (!cloudSavePending) return;
+      if (Date.now() < syncPausedUntil()) { armPendingCloudSaveRetry(); return; }
+      cloudSavePending = false;
+      scheduleCloudSave();
+    }
+
     function scheduleCloudSave() {
       if (!cloudUser || !dbService || cloudLoading || !state.profile.account?.syncReady) return;
       if (Date.now() < syncPausedUntil()) {
-        console.log("[cloud] Scritture in pausa anti-flood (quota Firestore).");
+        console.log("[cloud] Scritture in pausa anti-flood: modifica ACCODATA, riproverò alla scadenza.");
+        cloudSavePending = true;
+        armPendingCloudSaveRetry();
         return;
       }
       if (state.profile.account?.syncPaused) {
@@ -4788,7 +4838,9 @@ function sanitizeForFirestore(value) {
         lastCloudWriteAtMs = Date.now(); // memoria per la finestra di quiete degli snapshot
         payload.profile.account.cloudStatus = "sync";
         payload.profile.account.syncReady = true;
-        payload.meta = { ...(payload.meta || {}), cloudProgramRevisions: cloudRevisions };
+        // syncPausedUntil è runtime-only: non deve finire sul cloud, altrimenti la
+        // pausa anti-flood viaggia da un dispositivo all'altro e si ricarica all'avvio.
+        payload.meta = { ...(payload.meta || {}), cloudProgramRevisions: cloudRevisions, syncPausedUntil: 0 };
         await withTimeout(doc.set({
           updatedAt: cloudUpdatedAt,
           app: APP_NAME,
@@ -4809,6 +4861,7 @@ function sanitizeForFirestore(value) {
           }, { merge: true }), 40000);
         }
         programsSaved = true;
+        lastCloudWriteSuccessAt = Date.now();
         lastCloudSnapshotAt = cloudUpdatedAt;
         if (!lastCloudError?.startsWith("Schede sincronizzate")) lastCloudError = "";
         state.meta = { ...(state.meta || {}), programsUpdatedAt: programRevision, cloudProgramsUpdatedAt: programRevision, cloudProgramRevisions: revisions };
@@ -4817,6 +4870,7 @@ function sanitizeForFirestore(value) {
         state.profile.account.lastCloudSyncAt = cloudUpdatedAt;
         echoLocalStateQuietly();
         setPremiumSaveStatus("synced", "Sincronizzato");
+        updateUnsyncedCloudBanner();
         cloudRetryCount = 0; // Reset retry counter on success
         state.profile.account.syncPaused = false; // Reset pause flag on success
         if (activeScreen === "settings") render(); // altrimenti il testo di stato in Impostazioni resta congelato al render precedente
@@ -4830,12 +4884,17 @@ function sanitizeForFirestore(value) {
         // "resource-exhausted" / "Write stream exhausted".
         if (String(error?.code || "").includes("resource-exhausted") || String(error?.message || "").toLowerCase().includes("resource-exhausted")) {
           state.meta = { ...(state.meta || {}), syncPausedUntil: Date.now() + 3 * 60 * 1000 };
-          console.warn("[cloud] Quota Firestore esaurita: scritture in pausa per 3 minuti.");
+          // Le modifiche di questa scrittura fallita NON si perdono: restano in
+          // coda e riproveranno automaticamente alla scadenza della pausa.
+          cloudSavePending = true;
+          armPendingCloudSaveRetry();
+          console.warn("[cloud] Quota Firestore esaurita: scritture in pausa per 3 minuti. Modifiche accodate.");
         }
         if (rootStateSaved && changedPrograms.length) lastCloudError = `Allenamento e logbook sincronizzati; schede in attesa — ${lastCloudError}`;
         state.profile.account.cloudStatus = rootStateSaved ? "sync parziale" : "errore sync";
         echoLocalStateQuietly();
         setPremiumSaveStatus(rootStateSaved ? "waiting" : "error", rootStateSaved ? "Cloud in attesa" : "Errore di salvataggio");
+        updateUnsyncedCloudBanner();
         recordCloudError(error, "salvataggio doc radice");
         if (activeScreen === "settings") render(); // altrimenti il testo di stato in Impostazioni resta congelato al render precedente
         
@@ -5049,7 +5108,7 @@ function sanitizeForFirestore(value) {
           }
         }
       }
-      reliableSyncQueue.removeSynced(); if(synced) { reliableSyncUi.lastSuccess=new Date().toISOString(); notifyDeviceSync("Allenamento sincronizzato ✅", "Salvato sul cloud, sarà visibile su tutti i tuoi dispositivi."); } refreshReliableSyncStatus(); echoLocalStateQuietly();
+      reliableSyncQueue.removeSynced(); if(synced) { reliableSyncUi.lastSuccess=new Date().toISOString(); lastCloudWriteSuccessAt = Date.now(); updateUnsyncedCloudBanner(); notifyDeviceSync("Allenamento sincronizzato ✅", "Salvato sul cloud, sarà visibile su tutti i tuoi dispositivi."); } refreshReliableSyncStatus(); echoLocalStateQuietly();
       if(failed) scheduleReliableSync(Math.min(30000,1500*Math.max(1,reliableSyncStats().failed)));
       if(!options.silent) showToast(conflicts?"C'è un conflitto da controllare.":failed?"Cloud in attesa: riproverò automaticamente.":"Sincronizzazione completata.",conflicts||failed?"warning":"success");
       return {ok:!failed&&!conflicts,synced,failed,conflicts};
@@ -5201,7 +5260,10 @@ function sanitizeForFirestore(value) {
         if (st?.syncPaused) {
           st.syncPaused = false;
           scheduleCloudSave();
-        } else if (!st?.lastCloudSyncAt || st?.cloudStatus === "errore cloud" || st?.cloudStatus?.startsWith("errore")) {
+        } else if (!st?.lastCloudSyncAt || st?.cloudStatus === "errore cloud" || st?.cloudStatus?.startsWith("errore") || st?.cloudStatus === "sync parziale" || cloudSavePending) {
+          // FIX: "sync parziale" era escluso — dopo un fallimento parziale (radice
+          // ok, schede no) l'interval non riprovava MAI: le modifiche restavano
+          // appese all'infinito finché l'utente non rifaceva una modifica a mano.
           scheduleCloudSave();
           // Riprova ANCHE il download: se il primo caricamento cloud al boot
           // era fallito (rete, auth, Firestore), il solo re-upload non basta
@@ -5210,6 +5272,78 @@ function sanitizeForFirestore(value) {
         }
       }
     }, 45000);
+
+    // === BANNER "MODIFICHE NON SINCRONIZZATE" ===
+    // L'utente non deve più scoprire alla riapertura che le modifiche non erano
+    // arrivate sul cloud: se un cambio locale resta pendente oltre il debounce
+    // (12s) + margine, un banner fisso avvisa di non chiudere l'app.
+    function ensureUnsyncedBannerEl() {
+      let el = document.getElementById("unsynced-cloud-banner");
+      if (el) return el;
+      if (!document.body) return null;
+      el = document.createElement("div");
+      el.id = "unsynced-cloud-banner";
+      el.hidden = true;
+      el.setAttribute("role", "alert");
+      el.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:99999;max-width:min(92vw,580px);background:#3a1616;color:#ffe1e1;border:1px solid #b3564d;border-radius:14px;padding:12px 16px;font-size:14px;line-height:1.4;box-shadow:0 10px 30px rgba(0,0,0,.4);display:flex;gap:12px;align-items:center;justify-content:space-between;";
+      el.innerHTML = '<span data-unsynced-text></span><button type="button" data-unsynced-retry style="all:unset;cursor:pointer;background:#b3564d;color:#fff;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;flex:none;">Riprova ora</button>';
+      el.querySelector("[data-unsynced-retry]").addEventListener("click", () => {
+        cloudSavePending = true;
+        flushPendingCloudSave();
+        if (Date.now() >= syncPausedUntil()) scheduleCloudSave();
+        showToast("Nuovo tentativo di sincronizzazione…");
+      });
+      document.body.appendChild(el);
+      return el;
+    }
+
+    function updateUnsyncedCloudBanner() {
+      const el = ensureUnsyncedBannerEl();
+      if (!el) return;
+      const cloudActive = !!(cloudUser && state.profile.account?.syncReady);
+      const pending = cloudActive
+        && lastLocalChangeAt > 0
+        && (!lastCloudWriteSuccessAt || lastLocalChangeAt > lastCloudWriteSuccessAt)
+        && (Date.now() - lastLocalChangeAt) > 20000;
+      const text = el.querySelector("[data-unsynced-text]");
+      if (pending) {
+        const mins = Math.max(1, Math.round((Date.now() - lastLocalChangeAt) / 60000));
+        if (text) text.textContent = `⚠️ Le modifiche non arrivano sul cloud da ~${mins} min. Restano su questo dispositivo: non chiudere l'app finché non torna "Sincronizzato".`;
+        if (el.hidden) el.hidden = false;
+      } else if (!el.hidden) {
+        el.hidden = true;
+      }
+    }
+    setInterval(updateUnsyncedCloudBanner, 10000);
+
+    // === RIPRISTINO COPIE PRE-MERGE (anti-revert) ===
+    function restorePremergeBackup(which) {
+      const key = which === "prev" ? PRE_MERGE_PREV_BACKUP_KEY : PRE_MERGE_BACKUP_KEY;
+      let raw = "";
+      try { raw = localStorage.getItem(key) || ""; } catch (error) {}
+      if (!raw) { showToast("Nessuna copia pre-merge disponibile."); return; }
+      try {
+        const parsed = JSON.parse(raw);
+        const migration = runSchemaMigrations(parsed);
+        if (migration && !migration.ok) throw new Error(migration.errors.join(" "));
+        const restored = mergeState(clone(baseState), migration?.state || parsed);
+        hydrateStateModel(restored);
+        recoverWorkoutJournal(restored);
+        state = restored;
+        lastLocalChangeAt = Date.now(); // il ripristino è una modifica da ri-sincronizzare
+        saveState({ immediate: true, cloud: true });
+        render();
+        showToast("Copia pre-merge ripristinata. Il cloud verrà aggiornato appena possibile.", "success");
+      } catch (error) {
+        showToast(`Ripristino non riuscito: ${String(error?.message || error)}`, "error");
+      }
+    }
+    // Delegazione globale: i bottoni vivono in Diagnostica, che viene renderizzata dinamicamente
+    document.addEventListener("click", (event) => {
+      const button = event.target?.closest?.("[data-premerge-restore]");
+      if (!button) return;
+      restorePremergeBackup(button.dataset.premergeRestore);
+    });
 
     function withTimeout(promise, ms) {
       return Promise.race([
@@ -7707,9 +7841,16 @@ function sanitizeForFirestore(value) {
       return `<section class="coach-studio-page">${coachStudioPageHead("Analisi","Statistiche Coach","Una lettura sintetica dei dati già presenti nel programma e nel Logbook.")}<div class="coach-studio-kpis"><article class="coach-studio-kpi"><span>Workout completati</span><strong>${stats.completed}</strong><small>nel Logbook</small></article><article class="coach-studio-kpi"><span>Volume registrato</span><strong>${Math.round(stats.totalVolume)}</strong><small>kg complessivi</small></article><article class="coach-studio-kpi"><span>Esercizi programmati</span><strong>${stats.exercises}</strong><small>su ${stats.sheets} schede</small></article><article class="coach-studio-kpi"><span>Programmi attivi</span><strong>${stats.active}</strong><small>${stats.archived} archiviati</small></article></div><article class="coach-studio-card"><h3>Distribuzione esercizi per programma</h3><div class="coach-studio-stat-bars">${stats.byProgram.map((item)=>`<div class="coach-studio-stat-row"><strong>${escapeHtml(item.name)}</strong><div class="coach-studio-stat-track"><div class="coach-studio-stat-fill" style="width:${Math.max(3,item.exercises/max*100)}%"></div></div><span>${item.exercises}</span></div>`).join("")}</div></article>${coachVolumePanelHtml()}</section>`;
     }
 
+    function premergeSafetyCardHtml() {
+      const read = (key) => { try { return !!localStorage.getItem(key); } catch (error) { return false; } };
+      const hasCurrent = read(PRE_MERGE_BACKUP_KEY);
+      const hasPrev = read(PRE_MERGE_PREV_BACKUP_KEY);
+      return `<article class="coach-studio-card"><span class="section-eyebrow">Reti di sicurezza</span><h3>Copie pre-merge (anti-revert)</h3><p class="micro-copy">Ad ogni avvio l'app archivia lo stato locale PRIMA di fonderlo col cloud. Se il merge ha riportato indietro dati vecchi (cloud riscritto da un altro dispositivo), da qui recuperi la copia precedente: il ripristino sostituisce lo stato corrente e lo rimette in coda di sincronizzazione.</p><div class="quick-actions"><button class="ghost-button" type="button" data-premerge-restore="v1"${hasCurrent ? "" : " disabled"}>Ripristina ultima copia</button><button class="ghost-button" type="button" data-premerge-restore="prev"${hasPrev ? "" : " disabled"}>Ripristina copia precedente</button></div></article>`;
+    }
+
     function coachStudioDiagnosticsHtml() {
       const metrics=window.BarbellDivaCoachStudio.programMetrics(state.programs),history=readBackupHistory(),records=state.masterExerciseLibrary?.records||[],incomplete=records.filter(record=>!record.patterns?.length||!record.equipment?.required?.length||!record.identity?.type||!record.muscles?.some(muscle=>muscle.role==="secondary")||record.biomechanics?.stability==null||record.fatigue?.systemic==null);
-      return `<section class="coach-studio-page">${coachStudioPageHead("Controllo tecnico","Diagnostica","Stato locale, cloud, cache, integrità e manutenzione dei dati tecnici.")}<div class="coach-diagnostic-grid"><div class="coach-diagnostic-item"><strong>${APP_BUILD}</strong><span>Build applicazione</span></div><div class="coach-diagnostic-item"><strong>Schema ${DATA_SCHEMA_VERSION}</strong><span>Versione dati</span></div><div class="coach-diagnostic-item"><strong>${navigator.onLine?"Online":"Offline"}</strong><span>Rete dispositivo</span></div><div class="coach-diagnostic-item"><strong>${state.profile.account?.syncReady?"Cloud pronto":"Solo locale"}</strong><span>Sincronizzazione</span></div><div class="coach-diagnostic-item"><strong>${metrics.programs}/${metrics.sheets}/${metrics.exercises}</strong><span>Programmi / schede / esercizi</span></div><div class="coach-diagnostic-item"><strong>${history.length}</strong><span>Backup locali</span></div></div><article class="coach-studio-card"><span class="section-eyebrow">Manutenzione Master Exercise Library</span><h3>${incomplete.length} esercizi con dati tecnici da completare</h3><p>Questa attività generale resta in Diagnostica. Diva Coach AI la mostrerà soltanto quando un dato mancante blocca l’analisi di uno specifico esercizio.</p><button class="ghost-button" data-coach-studio-route="library">Apri Libreria esercizi</button></article>${reliableSyncPanelHtml()}${cloudErrorLogCardHtml()}${dataProtectionHtml()}</section>`;
+      return `<section class="coach-studio-page">${coachStudioPageHead("Controllo tecnico","Diagnostica","Stato locale, cloud, cache, integrità e manutenzione dei dati tecnici.")}<div class="coach-diagnostic-grid"><div class="coach-diagnostic-item"><strong>${APP_BUILD}</strong><span>Build applicazione</span></div><div class="coach-diagnostic-item"><strong>Schema ${DATA_SCHEMA_VERSION}</strong><span>Versione dati</span></div><div class="coach-diagnostic-item"><strong>${navigator.onLine?"Online":"Offline"}</strong><span>Rete dispositivo</span></div><div class="coach-diagnostic-item"><strong>${state.profile.account?.syncReady?"Cloud pronto":"Solo locale"}</strong><span>Sincronizzazione</span></div><div class="coach-diagnostic-item"><strong>${metrics.programs}/${metrics.sheets}/${metrics.exercises}</strong><span>Programmi / schede / esercizi</span></div><div class="coach-diagnostic-item"><strong>${history.length}</strong><span>Backup locali</span></div></div><article class="coach-studio-card"><span class="section-eyebrow">Manutenzione Master Exercise Library</span><h3>${incomplete.length} esercizi con dati tecnici da completare</h3><p>Questa attività generale resta in Diagnostica. Diva Coach AI la mostrerà soltanto quando un dato mancante blocca l’analisi di uno specifico esercizio.</p><button class="ghost-button" data-coach-studio-route="library">Apri Libreria esercizi</button></article>${reliableSyncPanelHtml()}${premergeSafetyCardHtml()}${cloudErrorLogCardHtml()}${dataProtectionHtml()}</section>`;
     }
 
     function coachStudioSettingsHtml() {
