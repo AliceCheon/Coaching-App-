@@ -73,8 +73,16 @@
     // suonare: evita il flood di avvisi "The AudioContext was not allowed to
     // start" in console e il caos di bip ai primi re-render.
     if (c.state === "suspended") { try { c.resume?.(); } catch (_) {} return; }
+    // RATE LIMITER di sicurezza: mai più di un suono ogni 1500ms. Anche in
+    // scenari imprevisti (loop, re-render a raffica) la Diva non può più
+    // trasformarsi in un allarme: il surplus viene semplicemente ignorato.
+    const now = Date.now();
+    if (now - lastSoundPlayedAt < 1500) return;
+    lastSoundPlayedAt = now;
     try { blip(cfg, c.currentTime); } catch (_) {}
   }
+
+  let lastSoundPlayedAt = 0;
 
   function attachSync() {
     const target = document.getElementById("globalDivaBotHost");
@@ -93,6 +101,10 @@
         const state = avatar?.getAttribute("data-coach-state") || "";
         if (!state || state === lastSoundState) return;
         lastSoundState = state;
+        // Cambio COSMETICO (espressione casuale dell'intervallo 25s, blink ecc.):
+        // app-main.js marca questi cambi con __divaSilentStateChange; se il
+        // marcatore è fresco (<2s) il cambio non deve suonare.
+        if (Date.now() - Number(window.__divaSilentStateChange || 0) < 2000) return;
         playForState(state);
       }, 500); // attende 500ms di "quiete" prima di suonare
     });
