@@ -1710,7 +1710,12 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
 
     function formatWeekPrescription(week) {
       if (!week) return "";
-      if (week.legacyLabel) return week.legacyLabel;
+      // legacyLabel = etichetta testuale dell'import Excel ("1x8"). Vale SOLO
+      // per settimane mai toccate (source "legacy"): appena il coach modifica
+      // un campo (source "manual") o la progressione viene rigenerata ("auto")
+      // devono valere i dati reali, altrimenti "1x8" ricompariva nella vista
+      // workout anche dopo essere stato cancellato.
+      if (week.legacyLabel && week.source === "legacy") return week.legacyLabel;
       const reps = formatReps(week.reps);
       const sets = isClearedValue(week.sets) ? null : (week.sets && typeof week.sets === "object" ? null : week.sets);
       if (week.type === "test" && !sets) return week.note || "test";
@@ -6226,6 +6231,41 @@ function sanitizeForFirestore(value) {
       }, 120);
     });
 
+    // === DRAG & DROP ESERCIZI (delega globale, installata UNA volta) ===
+    // Prima i listener erano bindati direttamente sulle righe in bindScreen(),
+    // ma renderCoachProgramBoardLocal() sostituisce la board a ogni modifica
+    // uccidendoli: il trascinamento partiva ma il rilascio non faceva nulla.
+    function installCoachDragDelegation() {
+      if (document.__coachDragDelegated) return;
+      document.__coachDragDelegated = true;
+      document.addEventListener("dragstart", (event) => {
+        const row = event.target?.closest?.("[data-exercise-id][draggable='true']");
+        if (row) coachProgramUi.draggedExerciseId = row.dataset.exerciseId;
+      });
+      document.addEventListener("dragover", (event) => {
+        if (event.target?.closest?.("[data-exercise-id][draggable='true']")) event.preventDefault();
+      });
+      document.addEventListener("drop", (event) => {
+        const row = event.target?.closest?.("[data-exercise-id][draggable='true']");
+        if (!row) return;
+        event.preventDefault();
+        const source = coachProgramUi.draggedExerciseId;
+        const target = row.dataset.exerciseId;
+        if (!source || source === target) return;
+        const { program, sheet } = ensureCoachProgramSelection();
+        if (!program || !sheet) return;
+        const ids = programRepository.getExercises(program.id, sheet.id).map((item) => item.id);
+        if (!ids.includes(source) || !ids.includes(target)) return;
+        rememberExerciseState(program.id, sheet.id);
+        ids.splice(ids.indexOf(target), 0, ids.splice(ids.indexOf(source), 1)[0]);
+        programRepository.reorderExercises(program.id, sheet.id, ids, { immediate: true });
+        discardCoachDraft(program.id, sheet.id);
+        coachProgramUi.draggedExerciseId = "";
+        render();
+      });
+    }
+    installCoachDragDelegation();
+
     // === ANTI-LOOP GUARD per render() ===
     // Previene re-render ravvicinati che causano loop infinito (es. nella sezione programmi)
     let __renderGuardAt = 0;
@@ -8229,7 +8269,7 @@ function sanitizeForFirestore(value) {
         week.notes=note;
         week.note=note;
       }
-      week.source="manual"; week.weekNumber=Number(weekNumber)||1;
+      week.source="manual"; week.weekNumber=Number(weekNumber)||1; week.legacyLabel=""; // la modifica manuale uccide l'etichetta legacy ("1x8")
       const manualWeeks=Array.from(new Set([...(exercise.progression?.manualWeeks||[]).map(Number),week.weekNumber])).sort((a,b)=>a-b);
       return { progression:{ ...(exercise.progression||{}), weeks:weeks.sort((a,b)=>Number(a.weekNumber||a.week)-Number(b.weekNumber||b.week)), manualWeeks } };
     }
@@ -11610,24 +11650,9 @@ function sanitizeForFirestore(value) {
         discardCoachDraft(program.id, sheet.id);
         render();
       }));
-      document.querySelectorAll("[data-exercise-id][draggable='true']").forEach((row) => {
-        row.addEventListener("dragstart", () => { coachProgramUi.draggedExerciseId = row.dataset.exerciseId; });
-        row.addEventListener("dragover", (event) => event.preventDefault());
-        row.addEventListener("drop", (event) => {
-          event.preventDefault();
-          const source = coachProgramUi.draggedExerciseId;
-          const target = row.dataset.exerciseId;
-          const { program, sheet } = ensureCoachProgramSelection();
-          if (!source || source === target) return;
-          const ids = programRepository.getExercises(program.id, sheet.id).map((item) => item.id);
-          rememberExerciseState(program.id, sheet.id);
-          ids.splice(ids.indexOf(target), 0, ids.splice(ids.indexOf(source), 1)[0]);
-          programRepository.reorderExercises(program.id, sheet.id, ids, { immediate: true });
-          discardCoachDraft(program.id, sheet.id);
-          coachProgramUi.draggedExerciseId = "";
-          render();
-        });
-      });
+      // Il drag & drop delle righe è gestito da una delega globale su document
+      // (installata una sola volta, vedi installCoachDragDelegation): qui i
+      // listener diretti morivano a ogni renderCoachProgramBoardLocal().
       document.querySelectorAll("[data-exercise-action]").forEach((button) => {
         if(button.closest('.coach-program-board[data-local-delegated="1"]'))return;
         button.addEventListener("click", () => {
