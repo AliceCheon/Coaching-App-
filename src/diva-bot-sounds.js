@@ -65,18 +65,36 @@
 
   function playForState(state) {
     if (muted) return;
-    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia && window.matchMedia("prefers-reduced-motion: reduce").matches) return;
     const cfg = SOUND_MAP[state] || SOUND_MAP.idle;
-    try { blip(cfg); } catch (_) {}
+    const c = getCtx();
+    if (!c) return;
+    // Se l'AudioContext è sospeso (nessun gesto utente ancora) NON provare a
+    // suonare: evita il flood di avvisi "The AudioContext was not allowed to
+    // start" in console e il caos di bip ai primi re-render.
+    if (c.state === "suspended") { try { c.resume?.(); } catch (_) {} return; }
+    try { blip(cfg, c.currentTime); } catch (_) {}
   }
 
   function attachSync() {
     const target = document.getElementById("globalDivaBotHost");
     if (!target || target.__divaBotSoundHooked) return;
     target.__divaBotSoundHooked = true;
+    // Suona SOLO quando lo stato emotivo CAMBIA DAVVERO (idle→happy ecc.).
+    // Prima suonava a ogni MutationObserver, cioè a ogni re-render: con la
+    // sincronizzazione cloud attiva erano bip continui.
+    let lastSoundState = "";
+    let soundDebounceTimer = null;
     const obs = new MutationObserver(() => {
-      const avatar = target.querySelector(".coach-avatar[data-coach-state]");
-      if (avatar) playForState(avatar.getAttribute("data-coach-state"));
+      if (soundDebounceTimer) return; // ignora se già in attesa
+      soundDebounceTimer = setTimeout(() => {
+        soundDebounceTimer = null;
+        const avatar = target.querySelector(".coach-avatar[data-coach-state]");
+        const state = avatar?.getAttribute("data-coach-state") || "";
+        if (!state || state === lastSoundState) return;
+        lastSoundState = state;
+        playForState(state);
+      }, 500); // attende 500ms di "quiete" prima di suonare
     });
     obs.observe(target, { attributes: true, subtree: true, attributeFilter: ["data-coach-state"] });
   }
