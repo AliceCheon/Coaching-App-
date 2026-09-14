@@ -4737,6 +4737,7 @@ function sanitizeForFirestore(value) {
     // sempre (mai più riprovata). Ora viene accodata e riparte da sola alla scadenza.
     let cloudSavePending = false;
     let cloudSavePendingTimer = 0;
+    let cloudNetworkDisabled = false; // stop al flood di retry interno del SDK Firestore durante la pausa
 
     function armPendingCloudSaveRetry() {
       clearTimeout(cloudSavePendingTimer);
@@ -4797,6 +4798,10 @@ function sanitizeForFirestore(value) {
     }
 
     async function saveCloudStateInner() {
+      if (cloudNetworkDisabled && dbService?.enableNetwork) {
+        try { await dbService.enableNetwork(); cloudNetworkDisabled = false; console.log("[cloud] Rete Firestore riattivata: svuoto la coda di scritture."); }
+        catch (networkError) { /* riproverà al prossimo tentativo */ }
+      }
       const doc = cloudDocument();
       if (!doc) {
         lastCloudError = cloudUser ? "Firestore non disponibile: ricarica la pagina e riprova." : "Accedi con Google prima di sincronizzare.";
@@ -4823,6 +4828,8 @@ function sanitizeForFirestore(value) {
       if (Array.isArray(cloudPhotos) && cloudPhotos.length) {
         payload.nutrition = { ...payload.nutrition, dashboard: { ...payload.nutrition.dashboard, photos: redactPhotoListFallback(cloudPhotos) } };
       }
+      const rootPayloadBytes = JSON.stringify(payload).length;
+      if (rootPayloadBytes > 800000) console.warn(`[cloud] Payload radice grande: ${Math.round(rootPayloadBytes / 1024)} KB (limite documento Firestore: 1 MB) — se cresce ancora va spezzato.`);
       const sessionCount = (payload.training?.sessions || []).length;
       if (payload.training) payload.training = { ...payload.training, sessions: [], exercises: [] }; // "exercises" è un indice ricalcolato in automatico da programmi+sedute, non serve spedirlo
       let rootStateSaved = false;
@@ -4888,6 +4895,14 @@ function sanitizeForFirestore(value) {
           // coda e riproveranno automaticamente alla scadenza della pausa.
           cloudSavePending = true;
           armPendingCloudSaveRetry();
+          // STOP AL FLOOD: il SDK Firestore continua a ritentare da solo e la sua
+          // coda interna esplode ("Write stream exhausted maximum allowed queued
+          // writes"). Sospendo la rete del SDK per la durata della pausa: al ritorno
+          // la coda si svuota in un colpo solo invece di martellare il server.
+          if (!cloudNetworkDisabled && dbService?.disableNetwork) {
+            try { await dbService.disableNetwork(); cloudNetworkDisabled = true; console.warn("[cloud] Rete Firestore sospesa fino alla fine della pausa anti-flood."); }
+            catch (networkError) { /* mai bloccare il flusso di errore */ }
+          }
           console.warn("[cloud] Quota Firestore esaurita: scritture in pausa per 3 minuti. Modifiche accodate.");
         }
         if (rootStateSaved && changedPrograms.length) lastCloudError = `Allenamento e logbook sincronizzati; schede in attesa — ${lastCloudError}`;
@@ -5285,7 +5300,7 @@ function sanitizeForFirestore(value) {
       el.id = "unsynced-cloud-banner";
       el.hidden = true;
       el.setAttribute("role", "alert");
-      el.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom, 0px));z-index:99999;max-width:min(88vw,420px);background:rgba(26,12,14,.92);color:#ffd9d4;border:1px solid rgba(179,86,77,.55);border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.35;box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;gap:8px;align-items:center;justify-content:space-between;backdrop-filter:blur(6px);";
+      el.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom, 0px));z-index:99999;max-width:min(88vw,420px);background:linear-gradient(90deg, var(--purple-primary,#6a2c91), var(--pink-hot,#ff5eb1));color:#fff;border:none;border-radius:999px;padding:7px 14px;font-size:12px;line-height:1.35;box-shadow:0 6px 18px rgba(255,94,177,.35);display:flex;gap:8px;align-items:center;backdrop-filter:blur(6px);";
       el.innerHTML = '<span data-unsynced-text style="flex:1;"></span>';
       document.body.appendChild(el);
       return el;
@@ -5301,8 +5316,9 @@ function sanitizeForFirestore(value) {
         && (Date.now() - lastLocalChangeAt) > 20000;
       const text = el.querySelector("[data-unsynced-text]");
       if (pending) {
-        const mins = Math.max(1, Math.round((Date.now() - lastLocalChangeAt) / 60000));
-        if (text) text.textContent = `⚠️ Modifiche non sul cloud da ~${mins} min.`;
+        const secs = Math.max(0, Date.now() - lastLocalChangeAt);
+        const when = secs < 90000 ? "poco fa" : `da ~${Math.round(secs / 60000)} min`;
+        if (text) text.textContent = `⚠️ Modifiche non ancora sul cloud (${when}). Riprovo da sola.`;
         if (el.hidden) el.hidden = false;
       } else if (!el.hidden) {
         el.hidden = true;
@@ -6425,6 +6441,7 @@ function sanitizeForFirestore(value) {
         console.info(`[render-guard] Loop interrotto dopo ${__renderGuardCount} chiamate bloccate. Riprendo il render.`);
       }
       __renderGuardCount = 0;
+      const coachRenderStarted = performance.now(); // metriche render coach (riferito in fondo a render)
       // === FINE ANTI-LOOP GUARD ===
       const coachViewport = captureCoachViewport();
       const enteringWorkout = activeScreen === "training" && lastRenderedScreen !== "training";
