@@ -5286,13 +5286,7 @@ function sanitizeForFirestore(value) {
       el.hidden = true;
       el.setAttribute("role", "alert");
       el.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom, 0px));z-index:99999;max-width:min(88vw,420px);background:rgba(26,12,14,.92);color:#ffd9d4;border:1px solid rgba(179,86,77,.55);border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.35;box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;gap:8px;align-items:center;justify-content:space-between;backdrop-filter:blur(6px);";
-      el.innerHTML = '<span data-unsynced-text style="flex:1;"></span><button type="button" data-unsynced-retry style="all:unset;cursor:pointer;background:transparent;color:#ffb0a6;border:1px solid rgba(255,176,166,.6);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;flex:none;">Riprova</button>';
-      el.querySelector("[data-unsynced-retry]").addEventListener("click", () => {
-        cloudSavePending = true;
-        flushPendingCloudSave();
-        if (Date.now() >= syncPausedUntil()) scheduleCloudSave();
-        showToast("Nuovo tentativo di sincronizzazione…");
-      });
+      el.innerHTML = '<span data-unsynced-text style="flex:1;"></span>';
       document.body.appendChild(el);
       return el;
     }
@@ -5343,6 +5337,18 @@ function sanitizeForFirestore(value) {
       const button = event.target?.closest?.("[data-premerge-restore]");
       if (!button) return;
       restorePremergeBackup(button.dataset.premergeRestore);
+    });
+    // "Riprova sincronizzazione" (Impostazioni): ri-parte sia con le schede (root
+    // doc, anche se in pausa anti-flood — la coda riproverà alla scadenza) sia con
+    // le sedute (download+flush della coda affidabile).
+    document.addEventListener("click", (event) => {
+      const button = event.target?.closest?.("[data-cloud-retry-sync]");
+      if (!button) return;
+      cloudSavePending = true;
+      flushPendingCloudSave();
+      if (Date.now() >= syncPausedUntil()) scheduleCloudSave();
+      if (typeof synchronizeReliableNow === "function") synchronizeReliableNow();
+      showToast("Nuovo tentativo di sincronizzazione…");
     });
 
     function withTimeout(promise, ms) {
@@ -6725,10 +6731,10 @@ function sanitizeForFirestore(value) {
       </div>`;
     }
 
-    function reliableSyncPanelHtml(){
+    function reliableSyncPanelHtml(options = {}){
       initReliableSync();const stats=reliableSyncStats(),status=refreshReliableSyncStatus(),labels={synced:"Sincronizzato",syncing:"Sincronizzazione in corso",offline:"Offline: salvo in coda",error:"Cloud in attesa",conflict:"Conflitto da controllare",local:"Solo su questo dispositivo"},diag=reliableSyncUi.diagnostics;
       const candidates=(diag?.pairs||[]).map((pair,index)=>`<article class="duplicate-resolution-card"><div><strong>Confronto ${index+1}</strong><p>${escapeHtml(pair.left.label)}</p><small>${escapeHtml(pair.left.details||"")} · ${escapeHtml(backupDateLabel(pair.left.completedAt))}</small></div><div><p>${escapeHtml(pair.right.label)}</p><small>${escapeHtml(pair.right.details||"")} · ${escapeHtml(backupDateLabel(pair.right.completedAt))}</small></div><div class="quick-actions"><button class="ghost-button" data-duplicate-keep="${escapeHtml(pair.left.id)}" data-duplicate-remove="${escapeHtml(pair.right.id)}">Mantieni la prima</button><button class="ghost-button" data-duplicate-keep="${escapeHtml(pair.right.id)}" data-duplicate-remove="${escapeHtml(pair.left.id)}">Mantieni la seconda</button></div></article>`).join("");
-      return `<section class="card reliable-sync-card"><div class="row"><div><span class="section-eyebrow">PC + telefono</span><h3>Sincronizzazione sedute</h3></div><span class="chip">${escapeHtml(labels[status]||status)}</span></div><div class="training-context-grid"><div><strong>Ultimo successo</strong><p class="micro-copy">${reliableSyncUi.lastSuccess?escapeHtml(backupDateLabel(reliableSyncUi.lastSuccess)):"non ancora confermato"}</p></div><div><strong>In coda</strong><p class="micro-copy">${Number(stats.pending||0)+Number(stats.syncing||0)+Number(stats.failed||0)}</p></div><div><strong>Questo dispositivo</strong><p class="micro-copy">${escapeHtml(reliableDeviceId())}</p></div><div><strong>Ultimo dispositivo remoto</strong><p class="micro-copy">${escapeHtml(reliableSyncUi.remoteDevice||"nessuno")}</p></div></div>${reliableSyncUi.lastError?`<p class="sync-error">${escapeHtml(reliableSyncUi.lastError)}</p>`:""}<div class="quick-actions"><button class="gold-button" data-reliable-sync-now>Sincronizza ora</button><button class="ghost-button" data-reliable-sync-check ${reliableSyncUi.loading||reliableSyncUi.resolving?"disabled":""}>${reliableSyncUi.loading?"Controllo in corso…":"Controlla e risolvi sedute"}</button></div>${diag?`<div class="training-context-grid"><div><strong>${diag.onlyLocal}</strong><p class="micro-copy">solo su questo dispositivo</p></div><div><strong>${diag.onlyCloud}</strong><p class="micro-copy">solo nel cloud</p></div><div><strong>${diag.possibleDuplicates}</strong><p class="micro-copy">confronti che richiedono la tua scelta</p></div></div>${diag.cleanedDuplicates?`<p class="sync-success">${diag.cleanedDuplicates} doppion${diag.cleanedDuplicates===1?"e identico rimosso":"i identici rimossi"} automaticamente da dispositivo e cloud.</p>`:""}${candidates?`<div class="duplicate-resolution-list"><h4>Sedute simili da confrontare</h4>${candidates}</div>`:""}${!diag.possibleDuplicates&&!diag.onlyLocal&&!diag.onlyCloud?'<p class="sync-success">Controllo completato: PC, telefono e Logbook sono allineati.</p>':""}`:""}<details><summary>Registro tecnico</summary><div class="history">${(reliableSyncQueue?.auditLog?.()||[]).slice(-6).reverse().map(row=>`<div class="history-row"><span><strong>${escapeHtml(row.event)}</strong><small>${escapeHtml(backupDateLabel(row.at))}</small></span><small>${escapeHtml(row.entityId||"")}</small></div>`).join("")||'<p class="micro-copy">Nessuna operazione registrata.</p>'}</div></details></section>`;
+      return `<section class="card reliable-sync-card"><div class="row"><div><span class="section-eyebrow">PC + telefono</span><h3>Sincronizzazione sedute</h3></div><span class="chip">${escapeHtml(labels[status]||status)}</span></div><div class="training-context-grid"><div><strong>Ultimo successo</strong><p class="micro-copy">${reliableSyncUi.lastSuccess?escapeHtml(backupDateLabel(reliableSyncUi.lastSuccess)):"non ancora confermato"}</p></div><div><strong>In coda</strong><p class="micro-copy">${Number(stats.pending||0)+Number(stats.syncing||0)+Number(stats.failed||0)}</p></div><div><strong>Questo dispositivo</strong><p class="micro-copy">${escapeHtml(reliableDeviceId())}</p></div><div><strong>Ultimo dispositivo remoto</strong><p class="micro-copy">${escapeHtml(reliableSyncUi.remoteDevice||"nessuno")}</p></div></div>${reliableSyncUi.lastError?`<p class="sync-error">${escapeHtml(reliableSyncUi.lastError)}</p>`:""}<div class="quick-actions"><button class="gold-button" data-reliable-sync-now>Sincronizza ora</button>${options.retry?`<button type="button" data-cloud-retry-sync style="all:unset;cursor:pointer;background:var(--pink-hot,#ff5eb1);color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;text-align:center;">Riprova sincronizzazione</button>`:""}<button class="ghost-button" data-reliable-sync-check ${reliableSyncUi.loading||reliableSyncUi.resolving?"disabled":""}>${reliableSyncUi.loading?"Controllo in corso…":"Controlla e risolvi sedute"}</button></div>${diag?`<div class="training-context-grid"><div><strong>${diag.onlyLocal}</strong><p class="micro-copy">solo su questo dispositivo</p></div><div><strong>${diag.onlyCloud}</strong><p class="micro-copy">solo nel cloud</p></div><div><strong>${diag.possibleDuplicates}</strong><p class="micro-copy">confronti che richiedono la tua scelta</p></div></div>${diag.cleanedDuplicates?`<p class="sync-success">${diag.cleanedDuplicates} doppion${diag.cleanedDuplicates===1?"e identico rimosso":"i identici rimossi"} automaticamente da dispositivo e cloud.</p>`:""}${candidates?`<div class="duplicate-resolution-list"><h4>Sedute simili da confrontare</h4>${candidates}</div>`:""}${!diag.possibleDuplicates&&!diag.onlyLocal&&!diag.onlyCloud?'<p class="sync-success">Controllo completato: PC, telefono e Logbook sono allineati.</p>':""}`:""}<details><summary>Registro tecnico</summary><div class="history">${(reliableSyncQueue?.auditLog?.()||[]).slice(-6).reverse().map(row=>`<div class="history-row"><span><strong>${escapeHtml(row.event)}</strong><small>${escapeHtml(backupDateLabel(row.at))}</small></span><small>${escapeHtml(row.entityId||"")}</small></div>`).join("")||'<p class="micro-copy">Nessuna operazione registrata.</p>'}</div></details></section>`;
     }
 
     function cloudErrorLogCardHtml() {
@@ -6745,7 +6751,7 @@ function sanitizeForFirestore(value) {
     }
 
     function settingsHtml() {
-      return `<div class="phase11-dashboard settings-screen"><section class="phase11-hero card"><div><span class="section-eyebrow">Tutto in un posto</span><h2>Impostazioni</h2><p>Preferenze dell'app, Diva Bot, protezione dati e sincronizzazione.</p></div><span class="chip">${APP_BUILD}</span></section>${divaBotSettingsHtml()}${experienceSettingsHtml()}${reliableSyncPanelHtml()}${dataProtectionHtml()}${accountCardHtml()}</div>`;
+      return `<div class="phase11-dashboard settings-screen"><section class="phase11-hero card"><div><span class="section-eyebrow">Tutto in un posto</span><h2>Impostazioni</h2><p>Preferenze dell'app, Diva Bot, protezione dati e sincronizzazione.</p></div><span class="chip">${APP_BUILD}</span></section>${divaBotSettingsHtml()}${experienceSettingsHtml()}${reliableSyncPanelHtml({ retry: true })}${dataProtectionHtml()}${accountCardHtml()}</div>`;
     }
 
     function dashboardSummaryCard(icon, label, value, detail, color, metric = null) {
