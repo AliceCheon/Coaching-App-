@@ -4363,6 +4363,57 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       return `program-v1-${encodeURIComponent(String(programId || "program")).replaceAll(".", "%2E")}`;
     }
 
+    // === SPLIT DELLA RADICE (limite Firestore: 1 MiB per documento) ===
+    // Il documento radice contiene tutto lo stato (tranne programmi e sedute,
+    // già in sottoraccolte). Crescendo nel tempo ha superato il limite: OGNI
+    // set falliva (400 sul canale Write) e la coda interna del SDK esplodeva
+    // ("Write stream exhausted maximum allowed queued writes") — anche con la
+    // quotaDaily LONTANO dall'esaurimento. Soluzione: i campi radice troppo
+    // grandi viaggiano in documenti dedicati ("blob") scritti solo quando
+    // cambia davvero il loro contenuto.
+    const CLOUD_BLOB_MIN_BYTES = 120000;
+    const CLOUD_BLOB_EXCLUDED = new Set(["meta", "profile", "migrations"]);
+
+    function stateFieldBytes(value) {
+      try { return new TextEncoder().encode(JSON.stringify(value ?? null)).length; }
+      catch (error) { return 0; }
+    }
+
+    function cloudStateBlobsCollection() {
+      const doc = cloudDocument();
+      return doc ? doc.collection("stateBlobs") : null;
+    }
+
+    function cloudBlobDocId(field) {
+      return `blob-v1-${encodeURIComponent(String(field || "field")).replaceAll(".", "%2E")}`;
+    }
+
+    function cloudBlobHash(serialized) {
+      let hash = 0;
+      for (let i = 0; i < serialized.length; i++) hash = ((hash << 5) - hash + serialized.charCodeAt(i)) | 0;
+      return `${hash}:${serialized.length}`;
+    }
+
+    // Carica i blob elencati nella radice e li rimette dentro remoteState prima
+    // del merge: il resto della pipeline (mergeCloudAndLocalState, newerEntity)
+    // continua a comportarsi esattamente come prima. Se un blob manca o fallisce,
+    // si ripiega sul campo dentro rootData.state (retrocompatibile).
+    async function loadCloudStateBlobs(rootData = {}) {
+      const fields = Array.isArray(rootData?.blobFields) ? rootData.blobFields : [];
+      if (!fields.length) return {};
+      const collection = cloudStateBlobsCollection();
+      if (!collection) return {};
+      const out = {};
+      await Promise.all(fields.map(async (field) => {
+        try {
+          const snap = await withTimeout(collection.doc(cloudBlobDocId(field)).get(), 30000);
+          const data = snap?.data?.();
+          if (data && Object.prototype.hasOwnProperty.call(data, "data")) out[field] = data.data;
+        } catch (error) { /* fallback: il campo resta quello dentro rootData.state */ }
+      }));
+      return out;
+    }
+
     // --- Salvataggio cloud programmi in formato v2 (per-scheda) ---------------
     // BUG STORICO: fino alla v1, ogni programma veniva scritto come UN SOLO
     // documento Firestore contenente tutte le sue schede/esercizi/settimane.
@@ -4708,6 +4759,10 @@ function sanitizeForFirestore(value) {
           lastCloudError = cloudErrorText(error, "download programmi");
           return;
         }
+        try {
+          const liveBlobs = await loadCloudStateBlobs(data);
+          Object.keys(liveBlobs).forEach((blobField) => { remoteState[blobField] = liveBlobs[blobField]; });
+        } catch (blobError) { /* fallback: campo dentro rootData.state */ }
         state = mergeCloudAndLocalState(state, remoteState);
         const cloudNotesRepaired = repairIntensitaNotesFromLibrary(state);
         recoverWorkoutJournal(state);
@@ -4829,7 +4884,32 @@ function sanitizeForFirestore(value) {
         payload.nutrition = { ...payload.nutrition, dashboard: { ...payload.nutrition.dashboard, photos: redactPhotoListFallback(cloudPhotos) } };
       }
       const rootPayloadBytes = JSON.stringify(payload).length;
-      if (rootPayloadBytes > 800000) console.warn(`[cloud] Payload radice grande: ${Math.round(rootPayloadBytes / 1024)} KB (limite documento Firestore: 1 MB) — se cresce ancora va spezzato.`);
+      // === CALCOLO BLOB: campi radice troppo pesanti vanno in documenti dedicati ===
+      const blobCollection = cloudStateBlobsCollection();
+      const blobFields = [];
+      const blobHashes = {};
+      const blobStamps = { ...(state.meta?.cloudBlobStamps || {}) };
+      const blobSizes = {};
+      Object.keys(payload).forEach((field) => {
+        if (CLOUD_BLOB_EXCLUDED.has(field)) return;
+        const bytes = stateFieldBytes(payload[field]);
+        if (blobCollection && bytes >= CLOUD_BLOB_MIN_BYTES) {
+          blobSizes[field] = bytes;
+          blobHashes[field] = cloudBlobHash(JSON.stringify(payload[field]));
+          blobFields.push(field);
+        }
+      });
+      const pendingBlobs = blobFields.filter((field) => String(blobStamps[field]?.hash || "") !== blobHashes[field]);
+      const blobBytesTotal = blobFields.reduce((sum, field) => sum + (blobSizes[field] || 0), 0);
+      const rootBytesAfterBlobs = rootPayloadBytes - blobBytesTotal;
+      const topFields = Object.keys(payload)
+        .filter((field) => !CLOUD_BLOB_EXCLUDED.has(field))
+        .map((field) => `${field} ${Math.round(stateFieldBytes(payload[field]) / 1024)}KB`)
+        .sort((a, b) => Number(b.match(/(\d+)KB/)?.[1] || 0) - Number(a.match(/(\d+)KB/)?.[1] || 0))
+        .slice(0, 4)
+        .join(", ");
+      console.info(`[cloud] Radice: ${Math.round(rootBytesAfterBlobs / 1024)} KB · blob: ${blobFields.join(", ") || "nessuno"} · più pesanti: ${topFields}`);
+      if (rootBytesAfterBlobs > 800000) console.warn("[cloud] La radice resta sopra 800 KB anche dopo lo split: va analizzata in Diagnostica.");
       const sessionCount = (payload.training?.sessions || []).length;
       if (payload.training) payload.training = { ...payload.training, sessions: [], exercises: [] }; // "exercises" è un indice ricalcolato in automatico da programmi+sedute, non serve spedirlo
       let rootStateSaved = false;
@@ -4848,6 +4928,13 @@ function sanitizeForFirestore(value) {
         // syncPausedUntil è runtime-only: non deve finire sul cloud, altrimenti la
         // pausa anti-flood viaggia da un dispositivo all'altro e si ricarica all'avvio.
         payload.meta = { ...(payload.meta || {}), cloudProgramRevisions: cloudRevisions, syncPausedUntil: 0 };
+        const stateFieldForFirestore = sanitizeForFirestore(payload);
+        if (blobCollection && blobFields.length) {
+          // I campi spostati nei blob vengono RIMOSSI dalla radice (sentinella
+          // delete + merge): il documento torna sotto il limite di 1 MiB.
+          const deleteSentinel = window.firebase?.firestore?.FieldValue?.delete?.();
+          if (deleteSentinel) blobFields.forEach((field) => { stateFieldForFirestore[field] = deleteSentinel; });
+        }
         await withTimeout(doc.set({
           updatedAt: cloudUpdatedAt,
           app: APP_NAME,
@@ -4857,9 +4944,25 @@ function sanitizeForFirestore(value) {
           programsUpdatedAt: state.meta?.cloudProgramsUpdatedAt || "",
           sessionStorage: "subcollection-v1",
           sessionCount,
-          state: sanitizeForFirestore(payload)
+          blobFields,
+          state: stateFieldForFirestore
         }, { merge: true }), 40000);
         rootStateSaved = true;
+        if (blobCollection && pendingBlobs.length) {
+          for (const field of pendingBlobs) {
+            try {
+              await withTimeout(blobCollection.doc(cloudBlobDocId(field)).set({
+                field, updatedAt: cloudUpdatedAt, bytes: blobSizes[field] || 0, hash: blobHashes[field],
+                data: sanitizeForFirestore(payload[field])
+              }), 30000);
+              blobStamps[field] = { hash: blobHashes[field], at: cloudUpdatedAt };
+              state.meta = { ...(state.meta || {}), cloudBlobStamps: blobStamps };
+            } catch (blobError) {
+              // Non deve far fallire il salvataggio: il blob riparte col prossimo giro
+              console.warn(`[cloud] Blob "${field}" rimandato al prossimo salvataggio:`, blobError?.message || blobError);
+            }
+          }
+        }
         if (changedPrograms.length) await withTimeout(saveCloudPrograms(clone(changedPrograms), cloudUpdatedAt), 30000);
         if (changedPrograms.length) {
           await withTimeout(doc.set({
@@ -4967,6 +5070,10 @@ function sanitizeForFirestore(value) {
           const rootData = snapshot.data();
           const remoteState = clone(rootData.state);
           remoteState.programs = await loadCloudPrograms(rootData);
+          try {
+            const rootBlobs = await loadCloudStateBlobs(rootData);
+            Object.keys(rootBlobs).forEach((blobField) => { remoteState[blobField] = rootBlobs[blobField]; });
+          } catch (blobError) { /* fallback: i campi restano quelli dentro rootData.state */ }
           const remoteSessions = await loadCloudSessions(rootData);
           if (remoteSessions) { // formato nuovo: le sedute arrivano dalla collezione leggera, non dal blocco unico
             if (!remoteState.training) remoteState.training = {};
@@ -7871,9 +7978,26 @@ function sanitizeForFirestore(value) {
       return `<article class="coach-studio-card"><span class="section-eyebrow">Reti di sicurezza</span><h3>Copie pre-merge (anti-revert)</h3><p class="micro-copy">Ad ogni avvio l'app archivia lo stato locale PRIMA di fonderlo col cloud. Se il merge ha riportato indietro dati vecchi (cloud riscritto da un altro dispositivo), da qui recuperi la copia precedente: il ripristino sostituisce lo stato corrente e lo rimette in coda di sincronizzazione.</p><div class="quick-actions"><button class="ghost-button" type="button" data-premerge-restore="v1"${hasCurrent ? "" : " disabled"}>Ripristina ultima copia</button><button class="ghost-button" type="button" data-premerge-restore="prev"${hasPrev ? "" : " disabled"}>Ripristina copia precedente</button></div></article>`;
     }
 
+    function cloudSizeBreakdownCardHtml() {
+      const rows = Object.keys(state || {})
+        .filter((field) => !CLOUD_BLOB_EXCLUDED.has(field))
+        .map((field) => ({ field, bytes: stateFieldBytes(state[field]) }))
+        .sort((a, b) => b.bytes - a.bytes).slice(0, 8);
+      const total = rows.reduce((sum, row) => sum + row.bytes, 0);
+      const stamps = state.meta?.cloudBlobStamps || {};
+      const maxBytes = Math.max(1, rows[0]?.bytes || 1);
+      const rowHtml = (row) => {
+        const kb = Math.round(row.bytes / 1024);
+        const isBlob = row.bytes >= CLOUD_BLOB_MIN_BYTES;
+        const pct = Math.max(2, Math.round((row.bytes / maxBytes) * 100));
+        return `<div style="display:flex;align-items:center;gap:8px;margin:4px 0;"><span style="flex:none;width:150px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(row.field)}">${escapeHtml(row.field)}</span><span style="flex:1;height:8px;border-radius:4px;background:${isBlob ? "var(--pink-hot,#ff5eb1)" : "var(--purple-primary,#6a2c91)"};opacity:.75;width:${pct}%;"></span><strong style="flex:none;width:70px;text-align:right;font-size:12px;">${kb} KB</strong>${isBlob ? '<span class="chip" style="flex:none;font-size:10px;">blob</span>' : ""}${stamps[row.field] ? '<span style="flex:none;font-size:10px;opacity:.7;">✓ cloud</span>' : ""}</div>`;
+      };
+      return `<article class="coach-studio-card"><span class="section-eyebrow">Diagnosi dimensione cloud</span><h3>Peso dati: radice ${(total / 1024).toFixed(0)} KB (limite documento: 1024 KB)</h3><p class="micro-copy">I campi rosa superano la soglia blob (${Math.round(CLOUD_BLOB_MIN_BYTES / 1024)} KB) e viaggiano in documenti separati per restare sotto il limite Firestore di 1 MiB — è la protezione che evita il blocco "Write stream exhausted". I campi viola restano nel documento radice.</p>${rows.map(rowHtml).join("")}</article>`;
+    }
+
     function coachStudioDiagnosticsHtml() {
       const metrics=window.BarbellDivaCoachStudio.programMetrics(state.programs),history=readBackupHistory(),records=state.masterExerciseLibrary?.records||[],incomplete=records.filter(record=>!record.patterns?.length||!record.equipment?.required?.length||!record.identity?.type||!record.muscles?.some(muscle=>muscle.role==="secondary")||record.biomechanics?.stability==null||record.fatigue?.systemic==null);
-      return `<section class="coach-studio-page">${coachStudioPageHead("Controllo tecnico","Diagnostica","Stato locale, cloud, cache, integrità e manutenzione dei dati tecnici.")}<div class="coach-diagnostic-grid"><div class="coach-diagnostic-item"><strong>${APP_BUILD}</strong><span>Build applicazione</span></div><div class="coach-diagnostic-item"><strong>Schema ${DATA_SCHEMA_VERSION}</strong><span>Versione dati</span></div><div class="coach-diagnostic-item"><strong>${navigator.onLine?"Online":"Offline"}</strong><span>Rete dispositivo</span></div><div class="coach-diagnostic-item"><strong>${state.profile.account?.syncReady?"Cloud pronto":"Solo locale"}</strong><span>Sincronizzazione</span></div><div class="coach-diagnostic-item"><strong>${metrics.programs}/${metrics.sheets}/${metrics.exercises}</strong><span>Programmi / schede / esercizi</span></div><div class="coach-diagnostic-item"><strong>${history.length}</strong><span>Backup locali</span></div></div><article class="coach-studio-card"><span class="section-eyebrow">Manutenzione Master Exercise Library</span><h3>${incomplete.length} esercizi con dati tecnici da completare</h3><p>Questa attività generale resta in Diagnostica. Diva Coach AI la mostrerà soltanto quando un dato mancante blocca l’analisi di uno specifico esercizio.</p><button class="ghost-button" data-coach-studio-route="library">Apri Libreria esercizi</button></article>${reliableSyncPanelHtml()}${premergeSafetyCardHtml()}${cloudErrorLogCardHtml()}${dataProtectionHtml()}</section>`;
+      return `<section class="coach-studio-page">${coachStudioPageHead("Controllo tecnico","Diagnostica","Stato locale, cloud, cache, integrità e manutenzione dei dati tecnici.")}<div class="coach-diagnostic-grid"><div class="coach-diagnostic-item"><strong>${APP_BUILD}</strong><span>Build applicazione</span></div><div class="coach-diagnostic-item"><strong>Schema ${DATA_SCHEMA_VERSION}</strong><span>Versione dati</span></div><div class="coach-diagnostic-item"><strong>${navigator.onLine?"Online":"Offline"}</strong><span>Rete dispositivo</span></div><div class="coach-diagnostic-item"><strong>${state.profile.account?.syncReady?"Cloud pronto":"Solo locale"}</strong><span>Sincronizzazione</span></div><div class="coach-diagnostic-item"><strong>${metrics.programs}/${metrics.sheets}/${metrics.exercises}</strong><span>Programmi / schede / esercizi</span></div><div class="coach-diagnostic-item"><strong>${history.length}</strong><span>Backup locali</span></div></div><article class="coach-studio-card"><span class="section-eyebrow">Manutenzione Master Exercise Library</span><h3>${incomplete.length} esercizi con dati tecnici da completare</h3><p>Questa attività generale resta in Diagnostica. Diva Coach AI la mostrerà soltanto quando un dato mancante blocca l’analisi di uno specifico esercizio.</p><button class="ghost-button" data-coach-studio-route="library">Apri Libreria esercizi</button></article>${reliableSyncPanelHtml()}${premergeSafetyCardHtml()}${cloudSizeBreakdownCardHtml()}${cloudErrorLogCardHtml()}${dataProtectionHtml()}</section>`;
     }
 
     function coachStudioSettingsHtml() {
