@@ -3394,6 +3394,16 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
           if (historyCleanup.length) writeBackupHistory(historyCleanup);
           loaded.meta = { ...(loaded.meta || {}), cleanupV14719: true };
         }
+        // Bonifica nutrizione (v14738): il modulo Nutrizione è stato tolto
+        // dall'app, ma log, misure e foto erano rimasti nello stato locale e
+        // nella radice cloud, appesantendo ogni salvataggio (richiesta
+        // esplicita dell'utente). One-shot: si esegue una volta sola.
+        if (!loaded.meta?.nutritionPurgeV14738) {
+          const purgedNutrimentBytes = stateFieldBytes(loaded.nutrition);
+          if (purgedNutrimentBytes > 1024) console.info(`[cloud] Bonifica nutrizione (v14738): rimossi ${Math.round(purgedNutrimentBytes / 1024)} KB di dati residui del modulo tolto dall'app.`);
+          loaded.nutrition = {};
+          loaded.meta = { ...(loaded.meta || {}), nutritionPurgeV14738: true };
+        }
         // clean one-shot v147.19: rimuove le foto residue e alleggerisce la cronologia backup
         // Audit reale anche per backup già marcati v4: il flag non garantisce
         // che la progressione sia stata materialmente importata.
@@ -4929,6 +4939,14 @@ function sanitizeForFirestore(value) {
         // pausa anti-flood viaggia da un dispositivo all'altro e si ricarica all'avvio.
         payload.meta = { ...(payload.meta || {}), cloudProgramRevisions: cloudRevisions, syncPausedUntil: 0 };
         const stateFieldForFirestore = sanitizeForFirestore(payload);
+        // Bonifica nutrizione (v14738): il modulo è stato tolto dall'app. Se lo
+        // stato locale non ha più dati Nutrizione, togli dal documento radice
+        // anche il vecchio blocco residuo (il merge da solo non cancella i
+        // sotto-campi già presenti nel cloud).
+        if (!payload.nutrition || typeof payload.nutrition !== "object" || !Object.keys(payload.nutrition).length) {
+          const nutritionDeleteSentinel = window.firebase?.firestore?.FieldValue?.delete?.();
+          if (nutritionDeleteSentinel) stateFieldForFirestore.nutrition = nutritionDeleteSentinel;
+        }
         if (blobCollection && blobFields.length) {
           // I campi spostati nei blob vengono RIMOSSI dalla radice (sentinella
           // delete + merge): il documento torna sotto il limite di 1 MiB.
@@ -14343,7 +14361,11 @@ function sanitizeForFirestore(value) {
 
     const firebaseBootStarted = initFirebase();
     render();
-    importBundledNutritionBackup();
+    // Bonifica nutrizione (v14738): il modulo Nutrizione non fa più parte
+    // dell'app, quindi NON reimportiamo il backup Food bundled: altrimenti i
+    // dati appena bonificati tornerebbero nello stato al primo avvio.
+    // La funzione resta definita (e testata) per un'eventuale riattivazione.
+    // importBundledNutritionBackup();
     const premiumSplash = document.getElementById("premiumSplash");
     if (state.ui?.splashEnabled === false) premiumSplash?.classList.add("is-hidden");
     else {
