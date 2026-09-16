@@ -507,7 +507,7 @@
   }
 
   // Toast notification
-  function showToast(message, type = "info", duration = 3000) {
+  function showToast(message, type = "info", duration = Math.min(Number(duration) || 2000, 2000)) {
     const toast = document.createElement("div");
     toast.className = "ui-toast";
 
