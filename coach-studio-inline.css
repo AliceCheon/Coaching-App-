@@ -4879,3 +4879,17 @@
       color: #a1758d; font-size: .6rem; font-weight: 800;
       letter-spacing: .08em; text-transform: uppercase;
     }
+
+    /* === v14743 A · palloncino cloud: mai fisso, max 2 secondi === */
+    #unsynced-cloud-banner[hidden] { display: none !important; }
+    #unsynced-cloud-banner { transition: opacity .35s ease; }
+
+    /* === v14743 B · schermo di copertina Z Flip: riempimento verticale ===
+       Sul FlexWindow il viewport visibile e' piu' basso di 100vh (barre di
+       sistema + area sicura): con 100vh la schermata risultava tagliata in
+       basso. 100dvh segue l'altezza realmente visibile. */
+    @media (max-height: 430px) and (max-width: 560px) {
+      .desktop-rail { display: none !important; }
+      body { min-height: 100dvh !important; }
+      .stage { min-height: 100dvh !important; height: 100dvh !important; }
+    }
