@@ -5425,7 +5425,7 @@ function sanitizeForFirestore(value) {
       el.id = "unsynced-cloud-banner";
       el.hidden = true;
       el.setAttribute("role", "alert");
-      el.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom, 0px));z-index:99999;max-width:min(88vw,420px);background:linear-gradient(90deg, var(--purple-primary,#6a2c91), var(--pink-hot,#ff5eb1));color:#fff;border:none;border-radius:999px;padding:7px 14px;font-size:12px;line-height:1.35;box-shadow:0 6px 18px rgba(255,94,177,.35);display:flex;gap:8px;align-items:center;backdrop-filter:blur(6px);";
+      el.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom, 0px));z-index:99999;max-width:min(88vw,420px);background:linear-gradient(90deg, var(--purple-primary,#6a2c91), var(--pink-hot,#ff5eb1));color:#fff;border:none;border-radius:999px;padding:7px 14px;font-size:12px;line-height:1.35;box-shadow:0 6px 18px rgba(255,94,177,.35);display:none;gap:8px;align-items:center;backdrop-filter:blur(6px);";
       el.innerHTML = '<span data-unsynced-text style="flex:1;"></span>';
       document.body.appendChild(el);
       return el;
@@ -5439,17 +5439,51 @@ function sanitizeForFirestore(value) {
         && lastLocalChangeAt > 0
         && (!lastCloudWriteSuccessAt || lastLocalChangeAt > lastCloudWriteSuccessAt)
         && (Date.now() - lastLocalChangeAt) > 20000;
-      const text = el.querySelector("[data-unsynced-text]");
-      if (pending) {
-        const secs = Math.max(0, Date.now() - lastLocalChangeAt);
-        const when = secs < 90000 ? "poco fa" : `da ~${Math.round(secs / 60000)} min`;
-        if (text) text.textContent = `⚠️ Modifiche non ancora sul cloud (${when}). Riprovo da sola.`;
-        if (el.hidden) el.hidden = false;
-      } else if (!el.hidden) {
-        el.hidden = true;
-      }
+      if (!pending) return; // v14743: senza avvisi il palloncino resta invisibile
+      const secs = Math.max(0, Date.now() - lastLocalChangeAt);
+      const when = secs < 90000 ? "poco fa" : `da ~${Math.round(secs / 60000)} min`;
+      const message = `⚠️ Modifiche non ancora sul cloud (${when}). Riprovo da sola.`;
+      if (!el.hidden) return; // gia' a schermo: lascia finire i suoi 2 secondi
+      const signature = `pending:${when}`;
+      const now = Date.now();
+      if (signature === unsyncedBannerSignature && (now - unsyncedBannerShownAt) < UNSYNCED_BANNER_COOLDOWN_MS) return;
+      unsyncedBannerSignature = signature;
+      unsyncedBannerShownAt = now;
+      flashUnsyncedCloudBanner(message);
     }
+// === v14743 · palloncino cloud: mai fisso, appare MAX 2 secondi e sfuma ===
+    const UNSYNCED_BANNER_SHOW_MS = 2000;
+    const UNSYNCED_BANNER_COOLDOWN_MS = 120000;
+    let unsyncedBannerHideTimer = null;
+    let unsyncedBannerShownAt = 0;
+    let unsyncedBannerSignature = "";
+
+    function hideUnsyncedCloudBanner() {
+      const el = document.getElementById("unsynced-cloud-banner");
+      if (!el) return;
+      clearTimeout(unsyncedBannerHideTimer);
+      el.style.opacity = "0";
+      unsyncedBannerHideTimer = setTimeout(() => {
+        el.hidden = true;
+        el.style.display = "none";
+        el.style.opacity = "";
+      }, 380);
+    }
+
+    function flashUnsyncedCloudBanner(message) {
+      const el = ensureUnsyncedBannerEl();
+      if (!el) return;
+      const text = el.querySelector("[data-unsynced-text]");
+      if (text) text.textContent = message;
+      el.hidden = false;
+      el.style.display = "flex";
+      el.style.opacity = "1";
+      clearTimeout(unsyncedBannerHideTimer);
+      unsyncedBannerHideTimer = setTimeout(hideUnsyncedCloudBanner, UNSYNCED_BANNER_SHOW_MS);
+    }
+
     setInterval(updateUnsyncedCloudBanner, 10000);
+    hideUnsyncedCloudBanner();
 
     // === RIPRISTINO COPIE PRE-MERGE (anti-revert) ===
     function restorePremergeBackup(which) {
@@ -14089,14 +14123,15 @@ function sanitizeForFirestore(value) {
 
     const toastManager = { queue: [], visible: [], timers: new Map(), nextId: 0 };
 
+    const TOAST_MAX_MS = 2000; // v14743: nessun avviso resta a schermo piu' di 2 secondi
     function toastDefinition(type) {
       return {
-        success: { icon: "✓", duration: 2800 },
-        info: { icon: "i", duration: 3000 },
-        warning: { icon: "!", duration: 4600 },
-        error: { icon: "×", duration: 0 },
-        pr: { icon: "★", duration: 5200 }
-      }[type] || { icon: "i", duration: 3000 };
+        success: { icon: "✓", duration: 2000 },
+        info: { icon: "i", duration: 2000 },
+        warning: { icon: "!", duration: 2000 },
+        error: { icon: "×", duration: 2000 },
+        pr: { icon: "★", duration: 2000 }
+      }[type] || { icon: "i", duration: 2000 };
     }
 
     function enqueueToast(message, type = "info", options = {}) {
@@ -14105,7 +14140,7 @@ function sanitizeForFirestore(value) {
       const last = [...toastManager.visible, ...toastManager.queue].at(-1);
       if (last?.text === text && last?.type === type) return last.id;
       const meta = toastDefinition(type);
-      const toast = { id: `toast-${Date.now()}-${++toastManager.nextId}`, text, type, duration: options.duration ?? meta.duration, dismissible: options.dismissible ?? (type === "error" || type === "warning" || type === "pr"), icon: meta.icon };
+      const toast = { id: `toast-${Date.now()}-${++toastManager.nextId}`, text, type, duration: Math.min(Number(options.duration ?? meta.duration) || TOAST_MAX_MS, TOAST_MAX_MS), dismissible: options.dismissible ?? (type === "error" || type === "warning" || type === "pr"), icon: meta.icon };
       toastManager.queue.push(toast);
       renderToastQueue();
       return toast.id;
