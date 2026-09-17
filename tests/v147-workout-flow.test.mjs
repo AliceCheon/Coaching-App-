@@ -68,7 +68,7 @@ test("annulla workout elimina la bozza senza inviarla al Logbook", () => {
 test("il flusso v147 mantiene la Diva Bot dentro il workout attivo", () => {
   assert.match(js, /workoutMascotLayerHtml\(\)/);
   assert.match(js, /<div class="v147-workout v147-active/);
-  assert.match(js, /class="v147-workout v147-pre">\n\s*\$\{workoutMascotLayerHtml\(\)\}/);
+  assert.match(js, /class="v147-workout v147-pre">\r?\n\s*\$\{workoutMascotLayerHtml\(\)\}/);
   assert.match(js, /class="v147-workout v147-active/);
   assert.match(app, /function workoutMascotLayerHtml/);
   assert.match(app, /id="workoutMascotLayer" class="workout-mascot-layer"/);

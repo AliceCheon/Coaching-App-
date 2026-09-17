@@ -6411,6 +6411,7 @@ function sanitizeForFirestore(value) {
 
     function syncThemeUi() {
       const theme = state.profile.theme === "light" ? "light" : "dark";
+      document.body.dataset.theme = theme; // applica il tema subito: il render successivo può essere bloccato dall'anti-loop guard
       const button = document.getElementById("themeButton");
       const themeMeta = document.querySelector('meta[name="theme-color"]');
       if (themeMeta) themeMeta.setAttribute("content", theme === "light" ? "#c9a7ef" : "#090918");
@@ -14219,6 +14220,7 @@ function sanitizeForFirestore(value) {
 
     document.getElementById("themeButton").addEventListener("click", () => {
       state.profile.theme = state.profile.theme === "light" ? "dark" : "light";
+      syncThemeUi(); // feedback immediato: render() può essere scartato dall'anti-loop guard (250 ms)
       saveState();
       render();
       showToast(state.profile.theme === "light" ? "Tema chiaro attivo." : "Tema scuro attivo.");

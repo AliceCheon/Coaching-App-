@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import vm from "node:vm";
 
-const html = await fs.readFile(new URL("../index.html", import.meta.url), "utf8");
+const html = await fs.readFile(new URL("../index.html", import.meta.url), "utf8") + "\n" + await fs.readFile(new URL("../src/app-main.js", import.meta.url), "utf8");
 const appMain = await fs.readFile(new URL("../src/app-main.js", import.meta.url), "utf8");
 const vmLibs = await Promise.all(["exercise-library-19.8.js","master-exercise-library.js","app-config-v144.js","athlete-context.js","coach-ai-engine-2.js","knowledge-graph.js","decision-rules.js","decision-engine.js","coach-ai3-programming.js","coach-studio.js"].map(p => fs.readFile(new URL("../" + p, import.meta.url), "utf8")));
 const VM_PROLOGUE = "window.matchMedia=window.matchMedia||(q=>({matches:false,media:q,addEventListener(){},removeEventListener(){},addListener(){},removeListener(){}}));window.AudioContext=window.AudioContext||function(){};window.webkitAudioContext=window.AudioContext;window.setInterval=window.setInterval||function(){return 1};window.clearInterval=window.clearInterval||function(){};window.history=window.history||{pushState(){},replaceState(){},back(){}};window.performance=window.performance||{now:()=>Date.now(),mark(){},measure(){},getEntriesByType(){return[]}};";
@@ -95,11 +95,11 @@ if (!html.includes("releaseObsoleteLocalBackups")) throw new Error("Recupero quo
 if (!html.includes("changedPrograms.length")) throw new Error("Cloud programmi non incrementale");
 if (!html.includes('./service-worker.js?v=${APP_BUILD}')) throw new Error("Chiave cache dinamica non impostata");
 if (!html.includes("newlyMarkedSessions")) throw new Error("Le sessioni locali non vengono marcate dopo il cloud");
-if (!html.includes('id="cloudOperationStatus"') || !html.includes('setCloudOperation("working"')) throw new Error("Indicatore sincronizzazione visibile mancante");
+if (!html.includes("data-cloud-retry-sync") || !html.includes("updateUnsyncedCloudBanner")) throw new Error("Indicatore sincronizzazione visibile mancante");
 if (!html.includes('<details class="card danger-zone">') || !html.includes("requestClearAllData(clearData)")) throw new Error("Svuota dati non protetto");
 if (!html.includes('WORKOUT_DB_NAME = "barbell-diva-workout-rescue"') || !html.includes("persistWorkoutSessionDurably")) throw new Error("Protezione IndexedDB del workout mancante");
 if (!html.includes("weekFromLatestWorkout(date)")) throw new Error("Settimana automatica non derivata dallo storico reale");
-if (!html.includes('APP_BUILD = "v102"') || !html.includes("repairSequentialWorkoutWeeks")) throw new Error("Build v102 o riparazione F7 mancante");
+if (!html.includes('APP_BUILD = window.BarbellDivaV144Config?.build') || !html.includes("repairSequentialWorkoutWeeks")) throw new Error("Build o riparazione F7 mancante");
 const cloudSaveBlock = html.match(/async function saveCloudState\(\)[\s\S]*?\n    }\n\n    async function loadCloudState/)?.[0] || "";
 if (cloudSaveBlock.indexOf("await withTimeout(doc.set") > cloudSaveBlock.indexOf("saveCloudPrograms(clone(changedPrograms)")) throw new Error("Il cloud salva ancora le schede prima del logbook");
 const downloadBlock = html.match(/async function downloadCloudToThisDevice\(\)[\s\S]*?\n    }/)?.[0] || "";

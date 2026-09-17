@@ -359,9 +359,7 @@
     }
 
     .round-button svg {
-      width: 18px;
-      height: 18px;
-      stroke: currentColor;
+      width: 18px; height: 18px; stroke: currentColor;
       stroke-linecap: round;
       stroke-linejoin: round;
     }
@@ -443,9 +441,7 @@
     }
 
     .nav-button svg, .rail-dot svg {
-      width: 18px;
-      height: 18px;
-      stroke: currentColor;
+      width: 20px; height: 20px; stroke: currentColor;
     }
 
     .nav-button.active {
@@ -3646,7 +3642,7 @@
         bottom: calc(10px + env(safe-area-inset-bottom));
         width: auto;
         min-height: 64px;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         grid-auto-rows: 1fr;
         padding: 6px;
         border-radius: 22px;
@@ -3682,7 +3678,7 @@
         bottom: calc(8px + env(safe-area-inset-bottom));
         width: auto;
         min-height: 62px;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         grid-auto-rows: 1fr;
         border-radius: 20px;
         padding: 5px;
@@ -3695,12 +3691,26 @@
 
       .nav-button {
         min-height: 52px;
-        font-size: .46rem;
-        line-height: 1.05;
-        letter-spacing: -.015em;
+        min-width: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: .5rem;
+        line-height: 1.1;
+        letter-spacing: -.01em;
         white-space: nowrap;
         overflow: hidden;
-        border-radius: 16px;
+        border-radius: 14px;
+        padding: 8px 4px;
+        gap: 4px;
+      }
+
+      .nav-button svg,
+      .nav-button .rail-dot svg {
+        width: 26px;
+        height: 26px;
       }
 
       .screen {
@@ -4766,4 +4776,7 @@
     .phone-shell, .phone { border-radius:0 !important; border:0 !important; box-shadow:none !important; }
     .phone-shell { background:transparent !important; }
     .phone { background:transparent !important; }
+
+
+
 
