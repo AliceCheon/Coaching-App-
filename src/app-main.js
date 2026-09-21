@@ -2098,7 +2098,11 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       Object.entries(record.relations||{}).forEach(([type,ids])=>(ids||[]).forEach((targetId)=>{state.masterExerciseLibrary=window.BarbellDivaMasterLibrary.link(state.masterExerciseLibrary,record.id,targetId,type);}));
       invalidateTechnicalLibraryCache();
       saveState({ immediate:true });
-      return window.BarbellDivaMasterLibrary.toTechnicalProfile(window.BarbellDivaMasterLibrary.resolve(state.masterExerciseLibrary,record.id));
+      // La proiezione della Master Library va riportata nel modello tecnico
+      // completo (stessa catena usata da technicalExerciseLibrary): altrimenti
+      // gli override manuali del coach non risultano applicati subito dopo il
+      // salvataggio, pur essendo stati registrati.
+      return technicalExerciseProfile(window.BarbellDivaMasterLibrary.toTechnicalProfile(window.BarbellDivaMasterLibrary.resolve(state.masterExerciseLibrary,record.id)), { origin:record.provenance?.origin || "custom" });
     }
 
     function technicalProfileUsage(profileId) {
@@ -4750,18 +4754,29 @@ function sanitizeForFirestore(value) {
         const data = snapshot.data?.();
         const stamp = String(data?.updatedAt || "");
         if (!snapshot.exists || !data?.state || !stamp || stamp === lastCloudWriteAt || stamp === lastCloudSnapshotAt) return;
-        lastCloudSnapshotAt = stamp;
         if (cloudLoading) return;
-        // FINESTRA DI QUIETE (8s): dopo una nostra scrittura ignora gli snapshot
-        // arrivati per altre vie (secondo doc.set, gare tra dispositivi). Evita
-        // ping-pong merge→scrittura→snapshot e revert mentre l'utente modifica.
-        if (Date.now() - lastCloudWriteAtMs < 8000) return;
+        // FINESTRA DI QUIETE (8s): dopo una nostra scrittura ignora gli ECO di
+        // quella scrittura arrivati per altre vie (secondo doc.set, gare tra
+        // dispositivi). Evita ping-pong merge→scrittura→snapshot e revert
+        // mentre l'utente modifica. updatedAt è generato dal client PRIMA del
+        // write (saveCloudStateInner), quindi l'eco diretto ha lo stesso stamp
+        // ed è già filtrato dal check qui sopra; uno stamp strettamente più
+        // nuovo non è un eco ma una modifica remota vera (altro dispositivo) e
+        // va applicata subito: prima restava bloccata 8 secondi e — peggio —
+        // il suo stamp veniva segnato come "già visto" e non era mai più
+        // riapplicato (bug trovato da tests/phase17-mobile-cloud-coach-fluidity).
+        const remoteIsNewer = !!lastCloudWriteAt && stamp > lastCloudWriteAt;
+        if (Date.now() - lastCloudWriteAtMs < 8000 && !remoteIsNewer) return;
         // PAUSA ANTI-FLOOD: mentre le scritture sono sospese (quota Firestore
         // esaurita) NON applicare il merge dal cloud — il cloud contiene ancora
         // la copia VECCHIA (es. con "1x8" ed esercizi non cancellati) e la
         // sovrascriverebbe sulle modifiche locali che non possiamo caricare.
         // Al termine della pausa l'intervallo di 45s rifà il load completo.
         if (Date.now() < syncPausedUntil()) return;
+        // Lo stamp viene segnato come "visto" SOLO quando lo snapshot è davvero
+        // processato: quelli scartati dai guard qui sopra (eco in finestra di
+        // quiete, pausa anti-flood) restano ri-applicabili al prossimo firing.
+        lastCloudSnapshotAt = stamp;
         const account = state.profile.account || {};
         const remoteState = clone(data.state);
         try { remoteState.programs = await loadCloudPrograms(data); }
@@ -4930,7 +4945,16 @@ function sanitizeForFirestore(value) {
         const programRevision = programsRevision();
         const revisions = programRevisionMap(currentPrograms);
         const cloudRevisions = state.meta?.cloudProgramRevisions || {};
-        changedPrograms = currentPrograms.filter((program) => String(cloudRevisions[program.id] || "") !== String(revisions[program.id] || ""));
+        // Un programma MAI registrato (nessuna voce in cloudProgramRevisions) va
+        // sempre inviato. Senza questo controllo un programma ancora senza
+        // updatedAt produce revisione "" che, confrontata con l'assenza di voce
+        // (anche lei ""), risultava "non modificato": il programma non arrivava
+        // MAI sul cloud (bug trovato da tests/phase17-mobile-cloud-coach-fluidity).
+        changedPrograms = currentPrograms.filter((program) => {
+          const key = String(program.id);
+          if (!Object.prototype.hasOwnProperty.call(cloudRevisions, key)) return true;
+          return String(cloudRevisions[key] || "") !== String(revisions[key] || "");
+        });
         lastCloudWriteAt = cloudUpdatedAt;
         lastCloudWriteAtMs = Date.now(); // memoria per la finestra di quiete degli snapshot
         payload.profile.account.cloudStatus = "sync";

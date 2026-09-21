@@ -43,7 +43,10 @@ const result = vm.runInContext(`(() => {
   check("TEST 6 custom con progressioni",programRepository.getExerciseById(program.id,sheet.id,addedExercise.id).progression.weeks.length===8);
 
   state.coach.activeTab="library"; const workbench=coachWorkbenchHtml();
-  check("TEST 7 Libreria solo nel Coach",workbench.includes("Libreria tecnica esercizi")&&workbench.includes('data-coach-tab="library"'));
+  // Il titolo visibile della sezione è cambiato in Fase 22 ("Master Exercise
+  // Library"): l'assert verifica la struttura (tab Libreria + laboratorio
+  // effettivamente renderizzato dentro il workbench del Coach), non la copy.
+  check("TEST 7 Libreria solo nel Coach",workbench.includes('data-coach-tab="library"')&&workbench.includes("exercise-lab-hero")&&workbench.includes("data-lab-query"));
   const mobileNav=sourceHtml.slice(sourceHtml.indexOf('<nav class="bottom-nav"'),sourceHtml.indexOf('</nav>',sourceHtml.indexOf('<nav class="bottom-nav"')));
   check("TEST 8 Libreria assente nav mobile",!mobileNav.includes("Libreria esercizi")&&sourceHtml.includes('@media(max-width:980px){ .exercise-lab,.coach-internal-tabs{display:none!important;}'));
   coachProgramUi.labQuery="glute drive"; coachProgramUi.labFilters={muscle:"Glutei"};
@@ -71,11 +74,17 @@ const result = vm.runInContext(`(() => {
   const deleteAdded=addTechnicalExerciseToActiveSheet(deleteProfile);
   check("TEST 17d profilo usato in una scheda",deleteAdded.ok&&technicalProfileUsage(deleteId).length===1);
   openCoachModal("technical-exercise-delete",{exerciseId:deleteId});
-  const deleteModal=coachUiModalHtml();
-  check("TEST 17e conferma con conteggio",deleteModal.includes("utilizzato in 1 scheda")&&deleteModal.includes("Elimina dalla Libreria"));
+  // Da quando i modal vivono nel portale (#coachModalPortalHost), coachUiModalHtml()
+  // produce markup solo mentre è il portale a richiederlo: si riproduce lo stesso
+  // passaggio usato da renderCoachModalPortal (src/app-main.js).
+  coachModalRenderingPortal=true; const deleteModal=coachUiModalHtml(); coachModalRenderingPortal=false;
+  // Fase 22 (Master Exercise Library): l'azione non cancella più il record ma lo
+  // ARCHIVIA (ID, cronologia e relazioni restano validi) e la copy è cambiata di
+  // conseguenza; la scheda non incorpora più una copia del profilo (fonte unica).
+  check("TEST 17e conferma con conteggio",deleteModal.includes("collegato a 1 scheda")&&deleteModal.includes("Archivia esercizio"));
   saveCoachUiModal();
   const embeddedAfterDelete=programRepository.getExercises(program.id,sheet.id).find(x=>x.metadata?.technicalProfileId===deleteId);
-  check("TEST 17f rimozione non rompe scheda",!state.coach.exerciseLibrary.some(x=>x.id===deleteId)&&embeddedAfterDelete&&embeddedAfterDelete.metadata?.technicalProfile?.id===deleteId);
+  check("TEST 17f archiviazione non rompe scheda",!technicalExerciseLibrary().some(x=>x.id===deleteId)&&!!embeddedAfterDelete&&embeddedAfterDelete.metadata?.technicalProfileId===deleteId);
   const beforeWeeks=programRepository.getExerciseById(program.id,sheet.id,baseExercise.id).progression.weeks.map(x=>x.prescribedLoad?.value);
   discardCoachDraft(program.id,sheet.id); const draft=activeCoachBuilder(); const row=draft.rows.find(x=>x.id===baseExercise.id); row.note="nota vista esercizi"; draft.dirtyRows.add(row.id); commitActiveCoachDraft({immediate:true,quiet:true});
   const afterWeeks=programRepository.getExerciseById(program.id,sheet.id,baseExercise.id).progression.weeks.map(x=>x.prescribedLoad?.value);
@@ -83,8 +92,10 @@ const result = vm.runInContext(`(() => {
   check("TEST 19 nessuna progressione persa",JSON.stringify(beforeWeeks)===JSON.stringify(afterWeeks)&&afterWeeks.length===8);
   check("TEST 20 JavaScript valido",typeof exerciseLabHtml==="function"&&typeof technicalExerciseProfile==="function");
   check("TEST 20b inferenza locale disponibile",typeof inferTechnicalExerciseAnalysis==="function"&&sourceHtml.includes('id="techPerceivedHardest"'));
-  check("TEST 21 esperienza mobile atleta invariata",sourceHtml.includes('.coach-nav,')&&sourceHtml.includes('.bottom-nav .coach-nav')&&sourceHtml.includes('window.matchMedia("(min-width: 981px)")'));
-  check("TEST 22 sync Firebase conservato",sourceHtml.includes("scheduleCloudSave")&&sourceHtml.includes("saveCloudState")&&state.coach.exerciseLibrary.some(x=>x.id==="custom-stable-1"));
+  // Assert comportamentali: il gate desktop usa ora optional chaining e la libreria
+  // vive nella Master Library (state.coach.exerciseLibrary è lo store legacy).
+  check("TEST 21 esperienza mobile atleta invariata",sourceHtml.includes('.coach-nav,')&&sourceHtml.includes('.bottom-nav .coach-nav')&&sourceHtml.includes("(min-width: 981px)")&&sourceHtml.includes("window.matchMedia?.("));
+  check("TEST 22 sync Firebase conservato",sourceHtml.includes("scheduleCloudSave")&&sourceHtml.includes("saveCloudState")&&technicalExerciseLibrary().some(x=>x.id===customId));
   return {ok:true,checks,baselineCounts,countsAfterTest:technicalProfileCounts(),examples:{known:{name:systemAnalysis.name,confidence:systemAnalysis.aiAnalysis.confidence,resistanceProfile:systemAnalysis.resistanceProfile.type,hardestRom:systemAnalysis.resistanceProfile.hardestRom,reasoning:systemAnalysis.aiAnalysis.reasoning,ratings:systemAnalysis.ratings,programming:systemAnalysis.programming},custom:{name:customAnalysis.name,confidence:customAnalysis.aiAnalysis.confidence,resistanceProfile:customAnalysis.resistanceProfile.type,hardestRom:customAnalysis.resistanceProfile.hardestRom,reasoning:customAnalysis.aiAnalysis.reasoning,ratings:customAnalysis.ratings,programming:customAnalysis.programming}}};
 })()`, context);
 
