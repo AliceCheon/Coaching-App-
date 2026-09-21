@@ -1028,7 +1028,8 @@
 };
 
 
-    const DATA_SCHEMA_VERSION = 10;
+    // FASE 1.10: schema v11 = log decisioni unico (coachAi3.decisions).
+const DATA_SCHEMA_VERSION = 11;
     const BACKUP_SCHEMA_VERSION = 1;
     const BACKUP_HISTORY_KEY = "alice-method-app.v8.backup-history.v1";
     const BACKUP_BUILD_KEY = "alice-method-app.v8.backup-build.v1";
@@ -1036,7 +1037,13 @@
     const PRE_V55_BACKUP_KEY = "alice-method-app.pre-v55-backup";
     const PRE_WEEK_CONSOLIDATION_BACKUP_KEY = "barbell-diva.pre-week-consolidation-backup";
     const PROGRAM_STATUSES = new Set(["draft", "available", "active", "archived", "deleted"]);
-    const SCHEMA_MIGRATIONS = new Map([[1, migrateV1ToV2], [2, migrateV2ToV3], [3, migrateV3ToV4], [4, migrateV4ToV5], [5, migrateV5ToV6], [6, migrateV6ToV7], [7, migrateV7ToV8], [8, migrateV8ToV9], [9, migrateV9ToV10]]);
+    const SCHEMA_MIGRATIONS = new Map([[1, migrateV1ToV2], [2, migrateV2ToV3], [3, migrateV3ToV4], [4, migrateV4ToV5], [5, migrateV5ToV6], [6, migrateV6ToV7], [7, migrateV7ToV8], [8, migrateV8ToV9], [9, migrateV9ToV10], [10, migrateV10ToV11]]);
+    // FASE 1.9: la versione dello stato coachAi3 segue SEMPRE la VERSION del
+    // motore (window.BarbellDivaCoachAI3, caricato prima di app-main in
+    // index.html). Prima era "3.1.0" hardcoded in 3 punti mentre il motore
+    // dichiarava "3.0.0": versioni disallineate senza motivo. Il fallback
+    // copre i contesti di test che non caricano il file del motore.
+    const COACH_AI3_VERSION = window.BarbellDivaCoachAI3?.VERSION || "3.0.0";
 
     const baseState = {
       profile: {
@@ -1075,7 +1082,7 @@
       athleteIntelligence: {},
       masterExerciseLibrary: window.BarbellDivaMasterLibrary.bootstrapStore({}, { names:window.BARBELL_DIVA_EXERCISE_NAMES_19_8 || [], profiles:Object.entries(COACH_EXERCISE_LIBRARY||{}).flatMap(([group,rows])=>(rows||[]).map(row=>({...row,muscle:row.som||group,origin:"system"}))), programs:buildProgramsFromLegacy(PROGRAM_LIBRARY, []).map(consolidateLegacyWeeklyProgram) }),
       knowledgeEngine: { version:"23.0.0", lastSnapshotHash:"", cacheMeta:{hits:0,misses:0,invalidations:0}, eventLog:[], updatedAt:null },
-      coachAi3: { version:"3.1.0", history:[], ignorePreferences:{}, ignoreHistory:[], resolvedPreferences:{}, lastProposalAt:null, selectedProgramId:"", lastAnalysisByProgram:{}, lastSimulationByProgram:{} },
+      coachAi3: { version:COACH_AI3_VERSION, history:[], ignorePreferences:{}, ignoreHistory:[], resolvedPreferences:{}, lastProposalAt:null, selectedProgramId:"", lastAnalysisByProgram:{}, lastSimulationByProgram:{} },
       // Anche il primo avvio (senza un backup precedente) passa dalla stessa
       // normalizzazione usata dalla migrazione: la griglia non deve mai
       // ricevere le vecchie schede settimanali come celle vuote.
@@ -2622,9 +2629,31 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
 
     function migrateV9ToV10(input = {}) {
       const migrated=clone(input||{});
-      migrated.coachAi3={version:"3.1.0",history:[],ignorePreferences:{},ignoreHistory:[],resolvedPreferences:{},lastProposalAt:null,selectedProgramId:"",lastAnalysisByProgram:{},lastSimulationByProgram:{},...(migrated.coachAi3||{})};
+      migrated.coachAi3={version:COACH_AI3_VERSION,history:[],ignorePreferences:{},ignoreHistory:[],resolvedPreferences:{},lastProposalAt:null,selectedProgramId:"",lastAnalysisByProgram:{},lastSimulationByProgram:{},...(migrated.coachAi3||{})};
       migrated.coachAi3.history=Array.isArray(migrated.coachAi3.history)?migrated.coachAi3.history.slice(-500):[];
-      migrated.meta={...(migrated.meta||{}),schemaVersion:10,coachAi3MigrationAt:new Date().toISOString(),coachAi3Version:"3.0.0"};
+      migrated.meta={...(migrated.meta||{}),schemaVersion:10,coachAi3MigrationAt:new Date().toISOString(),coachAi3Version:COACH_AI3_VERSION};
+      return migrated;
+    }
+
+    // FASE 1.10: unifica history (proposte) + ignoreHistory (ignori) nel log
+    // decisioni unico `coachAi3.decisions`. Fallback retrocompatibile: i
+    // lettori (coachAi3DecisionLog) continuano a leggere i campi legacy se
+    // `decisions` è assente, quindi gli stati v10 restano leggibili anche
+    // prima che la migrazione passi (es. snapshot cloud in arrivo).
+    function migrateV10ToV11(input = {}) {
+      const migrated=clone(input||{});
+      const ai3={...(migrated.coachAi3||{})};
+      const unified=new Map();
+      (Array.isArray(ai3.history)?ai3.history:[]).forEach((item)=>{if(item?.id)unified.set(String(item.id),{type:"proposal",...item});});
+      (Array.isArray(ai3.ignoreHistory)?ai3.ignoreHistory:[]).forEach((item)=>{
+        const id=String(item?.id||item?.key||`ignore-${item?.createdAt||""}`);if(!id||id==="ignore-")return;
+        unified.set(id,{...(unified.get(id)||{}),...item,id,type:"ignore",status:item.status||"ignored"});
+      });
+      ai3.decisions=[...unified.values()]
+        .sort((a,b)=>Date.parse(b.updatedAt||b.createdAt||"")-Date.parse(a.updatedAt||a.createdAt||""))
+        .slice(0,500);
+      migrated.coachAi3=ai3;
+      migrated.meta={...(migrated.meta||{}),schemaVersion:11,coachAiDecisionLogMigrationAt:new Date().toISOString()};
       return migrated;
     }
 
@@ -2835,9 +2864,15 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         ...(target.knowledgeEngine || {})
       };
       target.knowledgeEngine.eventLog = Array.isArray(target.knowledgeEngine.eventLog) ? target.knowledgeEngine.eventLog.slice(-200) : [];
-      target.coachAi3={version:"3.1.0",history:[],ignorePreferences:{},ignoreHistory:[],resolvedPreferences:{},lastProposalAt:null,selectedProgramId:"",lastAnalysisByProgram:{},lastSimulationByProgram:{},...(target.coachAi3||{})};
+      // La versione NON è dato utente: dopo lo spread viene forzata alla
+      // VERSION del motore così gli stati salvati con "3.1.0" si riallineano
+      // al primo avvio senza migrazione esplicita.
+      target.coachAi3={version:COACH_AI3_VERSION,history:[],ignorePreferences:{},ignoreHistory:[],resolvedPreferences:{},lastProposalAt:null,selectedProgramId:"",lastAnalysisByProgram:{},lastSimulationByProgram:{},...(target.coachAi3||{}),version:COACH_AI3_VERSION};
       target.coachAi3.lastAnalysisByProgram=target.coachAi3.lastAnalysisByProgram&&typeof target.coachAi3.lastAnalysisByProgram==="object"?target.coachAi3.lastAnalysisByProgram:{};
       target.coachAi3.history=Array.isArray(target.coachAi3.history)?target.coachAi3.history.slice(-500):[];
+      // FASE 1.10: il log decisioni unico vive qui; i campi history/ignoreHistory
+      // restano normalizzati come fallback retrocompatibile per i lettori.
+      target.coachAi3.decisions=Array.isArray(target.coachAi3.decisions)?target.coachAi3.decisions.slice(0,500):[];
       target.coach = target.coach || {};
       target.coach.studio = window.BarbellDivaCoachStudio.normalizeStudio(target.coach.studio);
       target.coach.questionnaires = Array.isArray(target.coach.questionnaires) ? target.coach.questionnaires : clone(baseState.coach.questionnaires);
@@ -8206,6 +8241,22 @@ function sanitizeForFirestore(value) {
       const decisionContext=knowledge.getDecisionContext();
       const history=Object.values(state.athleteIntelligence?.insightHistory||{}).flat();
       const result=coachAiApplyIgnorePreferences(runtime.evaluate({state,programId:decisionContext.program.id,athleteApi:window.BarbellDivaAthleteContext,masterApi:window.BarbellDivaMasterLibrary,history,config:{performanceWindow:Number(coachProgramUi.ai2Window)||5}}));
+      // FASE 1.10: insightHistory torna a essere scritto. L'analisi registra gli
+      // insight prodotti per l'atleta attivo (dedupe per id, cap 50): la prossima
+      // analisi riceve così una cronologia reale invece di sempre vuota (il solo
+      // writer storico era l'handler irraggiungibile rimosso in bonifica).
+      try {
+        const athleteId=String(activeAthleteIntelligence()?.athlete?.id||"default");
+        const insights=Array.isArray(result?.insights)?result.insights:[];
+        if(athleteId&&insights.length){
+          const athleteStore=state.athleteIntelligence=state.athleteIntelligence&&typeof state.athleteIntelligence==="object"?state.athleteIntelligence:{};
+          const log=Array.isArray(athleteStore.insightHistory?.[athleteId])?athleteStore.insightHistory[athleteId].slice():[];
+          const seen=new Set(log.map(item=>item?.id));
+          const stamp=new Date().toISOString();
+          insights.forEach(item=>{if(item?.id&&!seen.has(item.id)){seen.add(item.id);log.push({id:String(item.id),title:String(item.title||item.type||"Insight"),severity:item.severity||"info",exerciseId:item.exerciseId||"",createdAt:item.createdAt||stamp});}});
+          athleteStore.insightHistory={...(athleteStore.insightHistory||{}),[athleteId]:log.slice(-50)};
+        }
+      } catch(insightHistoryError) { /* la cronologia non deve mai bloccare l'analisi */ }
       state.knowledgeEngine={...(state.knowledgeEngine||{}),version:runtime.VERSION,lastSnapshotHash:result.knowledgeFingerprint,cacheMeta:runtime.getStats(),eventLog:runtime.getEvents().slice(-200),updatedAt:new Date().toISOString()};
       coachAi2Cache={fingerprint:result.knowledgeFingerprint,program:decisionContext.program,context:decisionContext.context,result};
       return {program:decisionContext.program,context:decisionContext.context,result};
@@ -8244,9 +8295,13 @@ function sanitizeForFirestore(value) {
     }
 
     function coachAi3HistoryRecord(entry) {
-      state.coachAi3=state.coachAi3||{version:"3.0.0",history:[]};
+      state.coachAi3=state.coachAi3||{version:COACH_AI3_VERSION,history:[]};
       if(entry?.status==="accepted"&&coachProgramUi.ai3Preview)entry={...entry,...coachAi3Snapshot(coachProgramUi.ai3Preview,"accepted")};
       state.coachAi3.history=window.BarbellDivaCoachAI3.record(state.coachAi3.history,entry);
+      // FASE 1.10: `decisions` è il log decisioni unico (canone); `history`
+      // resta come specchio retrocompatibile per gli snapshot letti da
+      // versioni precedenti dell'app (es. altro dispositivo non aggiornato).
+      state.coachAi3.decisions=window.BarbellDivaCoachAI3.record(Array.isArray(state.coachAi3.decisions)?state.coachAi3.decisions:[],{type:"proposal",...entry}).slice(0,500);
       state.coachAi3.lastProposalAt=new Date().toISOString();
     }
 
@@ -8323,13 +8378,22 @@ function sanitizeForFirestore(value) {
       return `<div class="ai-priority-list">${top.map((item,index)=>{const insufficient=coachAiInsufficientReason(item);return `<article class="ai-priority-card ${escapeHtml(item.severity||"info")}"><div class="ai-priority-index">${index+1}</div><div><div class="row"><span class="chip">${escapeHtml(coachAiUiSeverity(item.severity))}</span><span class="chip">Priorità ${escapeHtml(item.priority??"—")}</span>${item.mergedCount>1?`<span class="chip">${item.mergedCount} rilievi riuniti</span>`:""}</div><h3>${escapeHtml(coachAiPlainText(item.title))}</h3><div class="ai-insight-summary"><div><b>Cosa ho trovato</b><p>${escapeHtml(coachAiPlainText(item.description||item.reason))}</p></div><div><b>Perché conta</b><p>${escapeHtml(coachAiPlainText(item.reason||"Può influire sulla qualità o sul recupero del programma."))}</p></div>${insufficient?`<div class="ai-insufficient-explanation"><b>Perché i dati non bastano</b><p>${escapeHtml(insufficient)}</p></div>`:""}</div><details><summary>Mostra i dati usati</summary>${coachAiDataHtml(item.data||[])}</details><div class="ai-coach-next-step"><b>Cosa suggerisco</b><p>${escapeHtml(coachAiPlainText(item.suggestion||"Controlla il confronto prima di applicare una modifica."))}</p></div><details class="ai-ignore-menu"><summary>Ignora</summary><button type="button" data-ai-ignore-mode="once" data-ai-ignore-id="${escapeHtml(item.id)}">Solo questa volta</button><button type="button" data-ai-ignore-mode="variant" data-ai-ignore-id="${escapeHtml(item.id)}">Mai per questa variante</button><button type="button" data-ai-ignore-mode="different" data-ai-ignore-id="${escapeHtml(item.id)}">I dati appartengono a una variante diversa</button></details><div class="quick-actions">${(item.actions||[]).map(action=>`<button class="ghost-button" data-ai2-action="${escapeHtml(action.type)}" data-ai2-insight-id="${escapeHtml(item.id)}">${escapeHtml(action.label)}</button>`).join("")}<button class="ghost-button" data-ai-section-target="suggestions">Vedi le soluzioni</button></div></div></article>`;}).join("")}</div>`;
     }
     function coachAiHistoryHtml(programId){
-      const source=(state.coachAi3?.history||[]).filter(item=>item.programId===programId).slice(0,60),seen=new Set(),history=source.filter(item=>{const row=item.changes?.[0],key=[item.status,row?.sheetId||"",row?.exerciseId||item.identityKey||item.exerciseId||String(item.title||"").split(":").pop().trim().toLowerCase()].join("|");if(seen.has(key))return false;seen.add(key);return true;}),labels={suggested:"Simulata",accepted:"Applicata",rejected:"Ignorata",ignored:"Ignorata",undone:"Annullata"};
+      // FASE 1.10: il canone è il log decisioni unico `decisions`; per stati non
+      // ancora migrati (o snapshot legacy) il fallback unisce i campi vecchi,
+      // come farebbe migrateV10ToV11.
+      const log=Array.isArray(state.coachAi3?.decisions)&&state.coachAi3.decisions.length?state.coachAi3.decisions:[...(state.coachAi3?.history||[]),...(state.coachAi3?.ignoreHistory||[])];
+      const source=log.filter(item=>item.programId===programId).slice(0,60),seen=new Set(),history=source.filter(item=>{const row=item.changes?.[0],key=[item.status,row?.sheetId||"",row?.exerciseId||item.identityKey||item.exerciseId||String(item.title||"").split(":").pop().trim().toLowerCase()].join("|");if(seen.has(key))return false;seen.add(key);return true;}),labels={suggested:"Simulata",accepted:"Applicata",rejected:"Ignorata",ignored:"Ignorata",undone:"Annullata"};
       return history.length?`<div class="ai-workspace-history">${history.map(item=>`<article><span class="chip ${escapeHtml(item.status)}">${escapeHtml(labels[item.status]||item.status)}</span><div><b>${escapeHtml(item.title||"Proposta Diva Coach AI")}</b><small>${escapeHtml(item.optionLabel||"")} · ${new Date(item.updatedAt||item.createdAt).toLocaleString("it-IT")}</small>${item.changes?.length?`<div class="ai-simulation-summary">${coachAi3SnapshotChangesHtml(item)}</div>`:""}</div></article>`).join("")}</div>`:`<article class="ai-workspace-empty"><span>↺</span><div><h3>Nessuna decisione registrata</h3><p>Le simulazioni, le proposte applicate e gli annullamenti compariranno qui, separati per programma.</p></div></article>`;
     }
     function coachAiStoreIgnore(item,mode="once",fingerprint=""){
       if(!item)return;state.coachAi3=state.coachAi3||{};state.coachAi3.ignorePreferences=state.coachAi3.ignorePreferences||{};state.coachAi3.ignoreHistory=state.coachAi3.ignoreHistory||[];
       const key=coachAiIgnoreKey(item,mode,fingerprint||coachAi2Cache.fingerprint||"");state.coachAi3.ignorePreferences[key]={mode,identityKey:item.identityKey||"",exerciseId:item.exerciseId||"",sheetId:item.sheetId||"",title:item.title||"",createdAt:new Date().toISOString()};
-      state.coachAi3.ignoreHistory.unshift({id:`ignore-${Date.now()}`,mode,key,programId:item.programId||coachAiSelectedProgramId(),identityKey:item.identityKey||"",exerciseId:item.exerciseId||"",sheetId:item.sheetId||"",title:item.title||"Segnalazione",createdAt:new Date().toISOString()});state.coachAi3.ignoreHistory=state.coachAi3.ignoreHistory.slice(0,200);
+      // FASE 1.10: la decisione viene costruita una volta sola e registrata sia
+      // nel mirror legacy (ignoreHistory) sia nel log decisioni unico.
+      const decision={id:`ignore-${Date.now()}`,type:"ignore",status:"ignored",mode,key,programId:item.programId||coachAiSelectedProgramId(),identityKey:item.identityKey||"",exerciseId:item.exerciseId||"",sheetId:item.sheetId||"",title:item.title||"Segnalazione",createdAt:new Date().toISOString()};
+      state.coachAi3.ignoreHistory.unshift({id:decision.id,mode,key,programId:decision.programId,identityKey:decision.identityKey,exerciseId:decision.exerciseId,sheetId:decision.sheetId,title:decision.title,createdAt:decision.createdAt});state.coachAi3.ignoreHistory=state.coachAi3.ignoreHistory.slice(0,200);
+      state.coachAi3.decisions=window.BarbellDivaCoachAI3.record(Array.isArray(state.coachAi3.decisions)?state.coachAi3.decisions:[],{...decision,updatedAt:decision.createdAt}).slice(0,500);
+      return decision;
     }
     function coachAiOpenChangedSheet(snapshot){const row=snapshot?.changes?.[0];if(!row)return showToast("Scheda modificata non trovata.");coachProgramUi.programId=row.programId||snapshot.programId;coachProgramUi.sheetId=row.sheetId;coachProgramUi.highlightExerciseId=row.exerciseId;coachProgramUi.expandedSheetIds=coachProgramUi.expandedSheetIds||new Set();coachProgramUi.expandedSheetIds.add(row.sheetId);coachStudioNavigate("program",{programId:coachProgramUi.programId});requestAnimationFrame(()=>document.querySelector(`[data-inline-row][data-exercise-id="${CSS.escape(row.exerciseId)}"]`)?.scrollIntoView({behavior:"smooth",block:"center"}));}
     // Anteprima della modifica di progressione proposta dalle card prioritarie.
@@ -11248,7 +11312,7 @@ function sanitizeForFirestore(value) {
       document.querySelector("[data-ai-exercise-sheet]")?.addEventListener("change",event=>{coachProgramUi.aiExerciseSheet=event.target.value;render();});
       document.querySelector("[data-ai-exercise-sort]")?.addEventListener("change",event=>{coachProgramUi.aiExerciseSort=event.target.value;render();});
       document.querySelector("[data-ai-exercise-issues]")?.addEventListener("change",event=>{coachProgramUi.aiExerciseOnlyIssues=event.target.checked;render();});
-      document.querySelectorAll("[data-ai-ignore-mode]").forEach(button=>button.addEventListener("click",()=>{const item=(coachAi2Cache.result?.insights||[]).find(entry=>entry.id===button.dataset.aiIgnoreId);if(!item)return showToast("Segnalazione non trovata.");coachAiStoreIgnore(item,button.dataset.aiIgnoreMode,coachAi2Cache.fingerprint);coachAi2Cache={fingerprint:"",result:null};saveState({immediate:true});showToast(button.dataset.aiIgnoreMode==="once"?"Segnalazione ignorata per questa analisi.":"Preferenza salvata soltanto per questa variante.");render();}));
+      document.querySelectorAll("[data-ai-ignore-mode]").forEach(button=>button.addEventListener("click",()=>{const item=(coachAi2Cache.result?.insights||[]).find(entry=>entry.id===button.dataset.aiIgnoreId);if(!item)return showToast("Segnalazione non trovata.");const decision=coachAiStoreIgnore(item,button.dataset.aiIgnoreMode,coachAi2Cache.fingerprint);if(decision)coachAi3HistoryRecord({...decision,title:item.title||decision.title,exerciseId:item.exerciseId||"",programId:item.programId||decision.programId});coachAi2Cache={fingerprint:"",result:null};saveState({immediate:true});showToast(button.dataset.aiIgnoreMode==="once"?"Segnalazione ignorata per questa analisi.":"Preferenza salvata soltanto per questa variante.");render();}));
       document.querySelector("[data-ai-recalculate]")?.addEventListener("click",(event)=>{event.currentTarget.disabled=true;event.currentTarget.textContent="Sto analizzando…";setTimeout(()=>{const next=coachAiSelectedProgramId();state.coachAi3=state.coachAi3||{};state.coachAi3.lastAnalysisByProgram=state.coachAi3.lastAnalysisByProgram||{};state.coachAi3.lastAnalysisByProgram[next]=new Date().toISOString();coachAi2Cache={fingerprint:"",result:null};saveState({immediate:true});render();showToast("Analisi aggiornata con i dati attuali.");},20);});
       document.querySelectorAll("[data-ai-section-target]").forEach((button)=>button.addEventListener("click",()=>{const target=document.getElementById(`ai-${button.dataset.aiSectionTarget}`);if(!target)return;if(target.tagName==="DETAILS")target.open=true;document.querySelectorAll(".ai-workspace-tabs [data-ai-section-target]").forEach((item)=>item.classList.toggle("active",item===button));target.scrollIntoView({behavior:"smooth",block:"start"});}));
       document.querySelector("[data-ai2-window]")?.addEventListener("change",(event)=>{coachProgramUi.ai2Window=Number(event.target.value)||5;coachAi2Cache={fingerprint:"",result:null};render();});

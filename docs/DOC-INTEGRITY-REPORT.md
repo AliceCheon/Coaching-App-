@@ -113,12 +113,31 @@ e il flusso si interrompeva in silenzio. Lo stesso valeva per:
 
 Verifica: ogni handler `data-ai2-*` ha ora il suo markup vivo (≥2 occorrenze = markup + handler).
 
-### Nota: `insightHistory` non è mai popolato
+### Nota: `insightHistory` — RISOLTO (Fase 1.10, 2026-09-21)
 
-`state.athleteIntelligence.insightHistory` viene **letto** dall'analisi (righe 8149, 8173) ma era
-**scritto solo** dall'handler `data-ai2-status`, ora rimosso perché irraggiungibile. Risultato: la
-cronologia passata all'analisi è sempre vuota. Non è una regressione (era già così), ma è una
-funzionalità da ricollegare: le azioni "Ignora / Più tardi / Archivia" scrivevano lì.
+`state.athleteIntelligence.insightHistory` viene **letto** dall'analisi ma era
+**scritto solo** dall'handler `data-ai2-status`, rimosso perché irraggiungibile:
+la cronologia passata all'analisi era quindi sempre vuota.
+**Fix:** ora `coachAi2Analysis` registra gli insight prodotti per l'atleta attivo
+(dedupe per id, cap 50, mai bloccante per l'analisi). La cronologia passata alla
+valutazione non è più vuota e il knowledge graph riceve di nuovo i nodi insight.
+
+### Canali di ingresso AI — DECISIONE (Fase 1.11, 2026-09-21)
+
+I "5 canali" del piano (panel + aside editor + floating + bot globale + popup) sono in
+realtà **una sola architettura con più porte**, tutte alimentate dalla stessa sorgente
+`coachAiSuggestions()` e convergenti sulla stessa superficie di analisi:
+
+- `coachAi2PageHtml` (rotta `ai` dello studio) = superficie di analisi completa (UNICA).
+- Panel laterale + aside editor = la stessa lista con tab Suggerimenti/Applicati/Ignorati.
+- Floating mascot, popup proattivo, card dashboard = *entry point* che aprono il pannello
+  o il modal del suggerimento (`coach-ai-list` / `coach-ai-confirm`).
+- Diva Bot globale = identità dell'app, non un canale dati separato.
+
+**Decisione: non rimuovere nulla.** Le porte sono coerenti tra loro (una sorgente dati,
+una destinazione) e sono coperte dai test di fase (phase8/9/10/21…). Tagliarle avrebbe
+appiattito l'UX senza guadagno architetturale. La vera duplicazione era nel motore
+(alias e code morte), già eliminata in Fase 1.7/1.8.
 
 ## Altro codice morto trovato (non rimosso: fuori dal perimetro CoachAI)
 
