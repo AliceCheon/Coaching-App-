@@ -58,3 +58,15 @@ Obiettivo:
 - Stato test: **164/164 pass** (`node --test`), sintassi OK.
 - Blocco aperto: nessuno
 - Prossimo step consigliato: decisione App Check (Fase 0.6) + Fase 1.9/1.10/1.11 (versione motore CoachAI, log decisioni unico v11, un solo ingresso AI), poi Fase 2 (estrazione src/coach-ai/).
+
+### 4) 2026-09-21 — Fase 1 completata
+
+- UUID: 0004
+- Commit riferimento: 888a111
+- Cosa è cambiato:
+  - Fase 1.9: `state.coachAi3.version` segue SEMPRE `window.BarbellDivaCoachAI3.VERSION` (costante `COACH_AI3_VERSION`, fallback "3.0.0" per i contesti test senza il motore). Gli stati salvati con "3.1.0" si riallineano al primo avvio senza migrazione dedicata.
+  - Fase 1.10: `DATA_SCHEMA_VERSION = 11` + `migrateV10ToV11` — log decisioni unico `coachAi3.decisions` (unione history+ignoreHistory, dedupe per id, ordinati per data, cap 500) con fallback legacy per i lettori; `insightHistory` torna scritto dall'analisi (dedupe per id, cap 50, mai bloccante): la cronologia passata alla valutazione non è più sempre vuota.
+  - Fase 1.11: decisione documentata in `docs/DOC-INTEGRITY-REPORT.md` — i "5 canali" AI sono in realtà una sola architettura con più porte: unica sorgente `coachAiSuggestions()`, unica superficie di analisi (`coachAi2PageHtml`), entry point coerenti (panel/aside/floating/popup/dashboard) e Diva Bot = identità, non canale dati. **Non si rimuove nulla** (coperto da phase8/9/10/21…); la duplicazione reale era nel motore, già eliminata in Fase 1.7/1.8.
+- Stato test: 164/164 pass in locale (`node --test`); CI run #175 **success** su GitHub.
+- Blocco aperto: nessuno
+- Prossimo step consigliato: Fase 2 — creare `src/coach-ai/` (rules/state/bridge/ui, ~2.500 righe fuori da app-main.js, stesso pattern IIFE+globali), `coach-ai.css` dedicato con namespace unificato (`.ai2-*` → `.coach-ai-*`), aggiornare `APP_SHELL` del service worker.
