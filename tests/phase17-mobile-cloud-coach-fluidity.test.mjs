@@ -18,11 +18,16 @@ const result = await vm.runInContext(`(async()=>{
   const program=programRepository.getPrograms()[0]; const sheet=programRepository.getSheets(program.id)[0]; const exercise=programRepository.getExercises(program.id,sheet.id)[0];
   if(!exercise) throw new Error("Esercizio test non disponibile");
   let listener=null; let cloudPayload=null;
+  // Le sottocollection (nutritionPhotos, stateBlobs, programmi…) nascono al
+  // primo uso: senza auto-creazione la scrittura dei blob cloud
+  // (blobCollection.doc().set) falliva con "Cannot read properties of undefined
+  // (reading 'set')" e l'app rimandava il blob al salvataggio successivo.
   const collections={nutritionPhotos:new Map()};
+  const ensure=(name)=>(collections[name]||(collections[name]=new Map()));
   const collectionFor=(name)=>({
-    get:async()=>({forEach(fn){for(const [id,value] of collections[name].entries())fn({id,data:()=>value})}}),
+    get:async()=>({forEach(fn){for(const [id,value] of ensure(name).entries())fn({id,data:()=>value})}}),
     onSnapshot(){return()=>{}},
-    doc(id){return {set:async(value)=>{collections[name].set(id,value);return true},get:async()=>({exists:false,data:()=>null}),delete:async()=>{collections[name].delete(id)}}}
+    doc(id){return {set:async(value)=>{ensure(name).set(id,value);return true},get:async()=>({exists:false,data:()=>null}),delete:async()=>{ensure(name).delete(id)}}}
   });
   const doc={
     set:async(value)=>{cloudPayload={...(cloudPayload||{}),...value,state:{...(cloudPayload?.state||{}),...(value.state||{}),meta:{...(cloudPayload?.state?.meta||{}),...(value.state?.meta||{})}}};return true},
@@ -59,7 +64,12 @@ const result = await vm.runInContext(`(async()=>{
 
 const navBlock = html.match(/<nav class="bottom-nav"[\s\S]*?<\/nav>/)?.[0] || "";
 for (const key of ["home","workout","progress","logbook","quiz"]) if (!navBlock.includes(`data-bottom="${key}"`)) throw new Error(`Tab mobile mancante: ${key}`);
-if (!html.includes("grid-template-columns: repeat(6, minmax(0, 1fr))")) throw new Error("Barra mobile non impostata a sei tab");
+// La nav mobile è a CINQUE tab (home, workout, progress, logbook, quiz — stessi
+// data-bottom controllati qui sopra) e la griglia vive in coach-studio-inline.css
+// (repeat(5, minmax(0,1fr)) con !important, blocchi @media max-width:980px/640px).
+// Il vecchio assert "sei tab" descriveva il layout pre-redesign ed è stato
+// aggiornato al comportamento attuale.
+if (!html.includes("grid-template-columns: repeat(5, minmax(0, 1fr))")) throw new Error("Barra mobile non impostata a cinque tab");
 if (!html.includes('body[data-theme="light"] .builder-v24-table input')) throw new Error("Contrasto chiaro editor non esplicito");
 if (!html.includes("captureCoachViewport") || !html.includes("restoreCoachViewport")) throw new Error("Posizione editor non preservata");
 if (/\[data-week-grid-field\][\s\S]{0,1800}updateCoachSaveIndicator\("saved"\);\s*render\(\)/.test(html)) throw new Error("La griglia continua a ridisegnarsi dopo ogni cella");

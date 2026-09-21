@@ -52,7 +52,8 @@ const APP_SHELL = [
   "./programming-engine.js",
   "./app-config-v144.js",
   "./coach-schede-v146-enhance.js",
-  "./workout-flow-v147.js"
+  "./workout-flow-v147.js",
+  "./keep-awake-v14742.js"
 ];
 
 self.addEventListener("install", (event) => {
