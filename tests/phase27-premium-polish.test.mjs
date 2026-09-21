@@ -19,7 +19,7 @@ assert.match(html, /writeBackupHistory/);
 assert.match(html, /"pre-update":3/);
 assert.match(html, /"pre-restore":5/);
 assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14738-nutrition-purge"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14744-coach-ai-sync"/);
 
 console.log(JSON.stringify({ ok:true, legacyAdapter:true, selectiveProgressions:true, premiumMotion:true, splash:true, reducedMotion:true }));
 
