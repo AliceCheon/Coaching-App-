@@ -1,8 +1,12 @@
-// Configurazione minima condivisa della build v146.1 con Workout Flow v147.
+// FONTE UNICA della versione (Fase 0.5): build + cache vivono SOLO qui.
+// Per rilasciare: aggiorna i due campi qui sotto, poi allinea i ?v= di
+// index.html, manifest.webmanifest e CACHE_NAME di service-worker.js al nuovo
+// token (v147.44 → "v14744"). Il test tests/version-single-source.test.mjs
+// fallisce se anche un solo punto resta indietro.
 (function (root) {
   root.BarbellDivaV144Config = Object.freeze({
-    build: "v147.38-nutrition-purge",
-    cache: "atlas-app-v14738-nutrition-purge",
+    build: "v147.44-coach-ai-sync",
+    cache: "atlas-app-v14744-coach-ai-sync",
     backupAutomaticLimit: 5,
     legacyModulesRemoved: ["nutrizione", "workout-pro"],
     firebase: Object.freeze({

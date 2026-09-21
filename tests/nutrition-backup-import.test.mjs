@@ -6,7 +6,10 @@ const html = await fs.readFile(new URL("index.html", root), "utf8");
 const appMain = await fs.readFile(new URL("src/app-main.js", root), "utf8");
 const vmLibs = await Promise.all(["exercise-library-19.8.js","master-exercise-library.js","app-config-v144.js","athlete-context.js","coach-ai-engine-2.js","knowledge-graph.js","decision-rules.js","decision-engine.js","coach-ai3-programming.js","coach-studio.js"].map(p => fs.readFile(new URL("../" + p, import.meta.url), "utf8")));
 const VM_PROLOGUE = "window.matchMedia=window.matchMedia||(q=>({matches:false,media:q,addEventListener(){},removeEventListener(){},addListener(){},removeListener(){}}));window.AudioContext=window.AudioContext||function(){};window.webkitAudioContext=window.AudioContext;window.setInterval=window.setInterval||function(){return 1};window.clearInterval=window.clearInterval||function(){};window.history=window.history||{pushState(){},replaceState(){},back(){}};window.performance=window.performance||{now:()=>Date.now(),mark(){},measure(){},getEntriesByType(){return[]}};";
-const backup = JSON.parse(await fs.readFile(new URL("backup/dashboard-alimentazione-backup-2026-07-15.json", root), "utf8"));
+// La copia in backup/ non è più tracciata nel repository (vedi .gitignore): il
+// file canonico è quello in root, che è anche l'asset runtime caricato dall'app
+// (src/app-main.js → BUNDLED_NUTRITION_BACKUP = "./dashboard-alimentazione-…").
+const backup = JSON.parse(await fs.readFile(new URL("dashboard-alimentazione-backup-2026-07-15.json", root), "utf8"));
 const script = vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + appMain.replace(/\s*const firebaseBootStarted = initFirebase\(\);[\s\S]*$/, "");
 const store = new Map();
 const localStorage = { getItem:k=>store.get(k)??null, setItem:(k,v)=>store.set(k,String(v)), removeItem:k=>store.delete(k) };

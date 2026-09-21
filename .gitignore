@@ -15,3 +15,6 @@ desktop.ini
 # Log
 *.log
 .cache/
+
+# Snapshot di sviluppo: restano solo in locale, mai nel repository
+backup/

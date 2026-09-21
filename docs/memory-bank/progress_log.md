@@ -46,3 +46,15 @@ Obiettivo:
 - Stato test: **163/163 pass** (`node --test`), `node --check` OK su tutti i JS.
 - Blocco aperto: nessuno
 - Prossimo step consigliato: Fase 0.4/0.5 del piano (gitignore backup/ + versione unica in app-config), poi Fase 1.9/1.10/1.11.
+
+### 3) 2026-09-21
+
+- UUID: 0003
+- Commit riferimento: questo commit — oggetto "chore: fase 0.4+0.5 — backup/ fuori dal repo e versione unificata v147.44" (dopo l'amend l'hash cambia: cercare per oggetto)
+- Cosa è cambiato:
+  - Fase 0.4: `backup/` in `.gitignore` + `git rm -r --cached` (6 file restano in locale, ~7 MB fuori dal repo); il test nutrizione ora legge il JSON canonico di root (hash identico alla copia backup, verificato).
+  - Fase 0.5: fonte unica di versione — `app-config-v144.js` (build `v147.44-coach-ai-sync`, cache `atlas-app-v14744-coach-ai-sync`); i 36 `?v=` di index.html (prima su 9 valori diversi), manifest, FIREBASE-LOGIN.md, CACHE_NAME del SW e 16 test allineati al token `v14744`.
+  - Nuovo test `tests/version-single-source.test.mjs`: fallisce se un solo `?v=` resta indietro rispetto ad app-config; valida anche la registrazione SW guidata da APP_BUILD.
+- Stato test: **164/164 pass** (`node --test`), sintassi OK.
+- Blocco aperto: nessuno
+- Prossimo step consigliato: decisione App Check (Fase 0.6) + Fase 1.9/1.10/1.11 (versione motore CoachAI, log decisioni unico v11, un solo ingresso AI), poi Fase 2 (estrazione src/coach-ai/).
