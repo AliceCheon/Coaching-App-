@@ -9,6 +9,40 @@
   const originalBindScreen = bindScreen;
   let localSaveTimer = 0;
 
+  /* === v14745 · il workout in corso non deve piu' sparire ===
+     Prima activeSession() pretendeva date + settimana + codice identici e il
+     contesto veniva RICALCOLATO da weekFromLatestWorkout/autoSessionCodeForDate,
+     che dipendono dallo storico: bastava che il merge cloud riparasse una
+     settimana (repairSequentialWorkoutWeeks) per far tornare la schermata
+     "Inizia allenamento" con il workout ancora integro in memoria. */
+  function activeSessionLoose() {
+    const active = state.training?.activeWorkout;
+    if (!active) return null;
+    return ["active", "paused"].includes(active.status) ? active : null;
+  }
+
+  function pinnedContext(base, active) {
+    if (!active) return base;
+    try {
+      const phase = active.phase || base.phase;
+      const code = String(active.sessionCode || base.session?.code || "");
+      const sheets = (typeof sessionsForPhase === "function") ? sessionsForPhase(phase) : [];
+      const sheet = sheets.find((item) => String(item.code) === code && item.phase === phase)
+        || sheets.find((item) => String(item.code) === code)
+        || base.session;
+      if (!sheet) return base;
+      const week = Number(active.week) || base.week;
+      const prescribe = (typeof exercisePrescriptionForTrainingWeek === "function") ? exercisePrescriptionForTrainingWeek : null;
+      const exercises = (sheet.exercises || []).map((exercise) => (prescribe ? prescribe(exercise, week) : exercise));
+      return { ...base, date: active.date || base.date, week, phase, session: { ...sheet, week, exercises }, pinnedToActive: true };
+    } catch (error) { return base; }
+  }
+
+  function ctxFor() {
+    const base = currentTrainingContext();
+    return pinnedContext(base, activeSessionLoose());
+  }
+
   function scheduleLocalSave(immediate = false) {
     window.clearTimeout(localSaveTimer);
     if (immediate) {
@@ -18,14 +52,28 @@
     localSaveTimer = window.setTimeout(() => saveState({ cloud: false }), 180);
   }
 
-  function activeSession(context = currentTrainingContext()) {
+  /* === v14747 · il debounce di QUESTO modulo non era protetto ===
+     L'handler visibilitychange/pagehide di app-main.js controlla il PROPRIO
+     localSaveTimer: una variabile diversa, in un altro scope. Il timer da 180 ms
+     di questo file non veniva quindi mai svuotato al momento del blocco schermo.
+     Se confermavi una serie e il telefono si bloccava entro 180 ms, la scrittura
+     non partiva. Qui viene forzata in modo SINCRONO nell'ultimo istante affidabile. */
+  function flushLocalSaveNow() {
+    if (!localSaveTimer) return;
+    window.clearTimeout(localSaveTimer);
+    localSaveTimer = 0;
+    saveState({ cloud: false, immediate: true });
+  }
+  document.addEventListener("visibilitychange", () => { if (document.hidden) flushLocalSaveNow(); }, false);
+  window.addEventListener("pagehide", flushLocalSaveNow, { passive: true });
+
+  function activeSession(context = ctxFor()) {
     const active = state.training?.activeWorkout;
     if (!active || !context?.session) return null;
-    const sameContext =
-      String(active.date || "") === String(context.date || "") &&
-      String(active.sessionCode || "") === String(context.session.code || "") &&
-      Number(active.week || 0) === Number(context.week || 0);
-    return sameContext && ["active", "paused"].includes(active.status) ? active : null;
+    // v14745: un workout in corso appartiene all'utente, non a una statistica.
+    // Resta visibile finche' non lo termina o lo annulla.
+    if (!["active", "paused"].includes(active.status)) return null;
+    return active;
   }
 
   function exerciseKey(exercise, index) {
@@ -187,7 +235,7 @@
     }
     if (!rows.length && (latest.kg || latest.value)) rows = [{ kg: latest.kg || latest.value, reps: latest.reps || exercise.reps, rir: latest.rir || exercise.rir || "" }];
     return {
-      source: Number(currentTrainingContext().week) === 1 ? "Ultimo programma" : "Ultima seduta",
+      source: Number(ctxFor().week) === 1 ? "Ultimo programma" : "Ultima seduta",
       rows: rows.slice(0, 5)
     };
   }
@@ -331,13 +379,13 @@
   }
 
   function workoutHtml() {
-    const context = currentTrainingContext();
+    const context = ctxFor();
     const active = activeSession(context);
     return active ? activeWorkoutHtml(context, active) : preWorkoutHtml(context);
   }
 
   function startWorkout() {
-    const context = currentTrainingContext();
+    const context = ctxFor();
     if (!context.session) return;
     state.training.activeWorkout = {
       version: VERSION,
@@ -362,7 +410,7 @@
   }
 
   function updateField(input) {
-    const context = currentTrainingContext();
+    const context = ctxFor();
     const active = activeSession(context);
     if (!active) return;
     const exerciseIndex = Math.max(0, Number(active.currentExercise) || 0);
@@ -384,7 +432,7 @@
   }
 
   function toggleSet(setIndex, forceDone) {
-    const context = currentTrainingContext();
+    const context = ctxFor();
     const active = activeSession(context);
     if (!active) return;
     const exerciseIndex = Math.max(0, Number(active.currentExercise) || 0);
@@ -403,7 +451,7 @@
   }
 
   async function finishWorkout() {
-    const context = currentTrainingContext();
+    const context = ctxFor();
     const active = activeSession(context);
     if (!active) return;
     const snapshot = completionSnapshot(context, active);
@@ -420,7 +468,7 @@
   }
 
   function copySetToNext(setIndex) {
-    const context = currentTrainingContext();
+    const context = ctxFor();
     const active = activeSession(context);
     if (!active) return;
     const exerciseIndex = Math.max(0, Number(active.currentExercise) || 0);
@@ -442,7 +490,7 @@
   }
 
   function cancelWorkout() {
-    const context = currentTrainingContext();
+    const context = ctxFor();
     const active = activeSession(context);
     if (!active) return;
     if (!window.confirm("Annullare questo workout? I dati inseriti in questa sessione verranno eliminati e non finiranno nel Logbook.")) return;
@@ -513,7 +561,7 @@
     root.querySelector("[data-v147-confirm-set]")?.addEventListener("click", () => {
       const active = activeSession();
       if (!active) return;
-      const context = currentTrainingContext();
+      const context = ctxFor();
       const exerciseIndex = Number(active.currentExercise) || 0;
       const exercise = context.session.exercises[exerciseIndex];
       const values = draftSetsFor(context, exercise);
@@ -533,7 +581,7 @@
       }
     });
     root.querySelector("[data-v147-note]")?.addEventListener("input", (event) => {
-      const context = currentTrainingContext();
+      const context = ctxFor();
       const active = activeSession(context);
       if (!active) return;
       const exercise = context.session.exercises[Number(active.currentExercise) || 0];
@@ -551,7 +599,7 @@
       renderTrainingOnly();
     });
     root.querySelector("[data-v147-next]")?.addEventListener("click", () => {
-      const context = currentTrainingContext();
+      const context = ctxFor();
       const active = activeSession(context);
       if (!active) return;
       if (Number(active.currentExercise || 0) >= context.session.exercises.length - 1) {
