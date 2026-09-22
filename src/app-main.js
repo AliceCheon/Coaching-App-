@@ -10,6 +10,7 @@
     const PRE_MERGE_PREV_BACKUP_KEY = `${STORE_KEY}.premerge.prev.v1`;
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
+    const WORKOUT_ACTIVE_RESCUE_KEY = `${STORE_KEY}.workoutActiveRescue.v1`; // v14745
     const WORKOUT_DB_STORE = "sessions";
     const APP_BUILD = window.BarbellDivaV144Config?.build || "v146.1";
     const FIREBASE_CONFIG = window.BarbellDivaV144Config?.firebase || {};
@@ -1102,6 +1103,7 @@ const DATA_SCHEMA_VERSION = 11;
         draft: {},
         noteDraft: {},
         timerRemaining: 0,
+        timerEndsAt: 0,
         activeWorkout: null,
         contextMode: "auto",
         manualWeek: null,
@@ -1227,6 +1229,10 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
     let recoveryBootError = null;
     let recoveryBootPayload = "";
     let state = loadState();
+    // v14745 · se la scheda e' stata riavviata (o i dati locali erano vecchi) il workout
+    // in corso viene recuperato dalla rete di sicurezza dedicata.
+    try { if (restoreActiveWorkoutRescue(state)) persistStateToLocalStorage(state, { touch: false }); } catch (error) {}
+    try { resumeRestTimerIfNeeded(); } catch (error) {} // v14748: il recupero riprende da dove era
 
     try { releaseObsoleteLocalBackups(); } catch (error) {}
 
@@ -3653,6 +3659,125 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       }
     }
 
+    // === v14745-v14748 · rete di sicurezza per workout, serie, RPE/RIR e timer di recupero ===
+    let lastActiveRescueWriteAt = 0;
+    let lastActiveRescueSignature = "";
+
+    // v14748 · digest del CONTENUTO dei log: kg, reps, RPE e RIR
+    function activeWorkoutLogsDigest(active) {
+      const logs = active?.logs || {};
+      const parts = [];
+      Object.keys(logs).sort().forEach((key) => {
+        const entry = logs[key] || {};
+        const fields = ["kg", "reps", "rpe", "rir"].map((field) =>
+          Array.isArray(entry[field]) ? entry[field].map((value) => String(value ?? "")).join(",") : ""
+        ).join("/");
+        if (fields.replace(/[/,]/g, "").length) parts.push(`${key}=${fields}`);
+      });
+      return parts.join(";");
+    }
+
+    function compactHash(text) {
+      let hash = 5381;
+      const source = String(text || "");
+      for (let index = 0; index < source.length; index += 1) hash = ((hash << 5) + hash + source.charCodeAt(index)) | 0;
+      return (hash >>> 0).toString(36);
+    }
+
+    function activeWorkoutSignature(active, sets) {
+      if (!active) return "";
+      const logged = Object.values(active.logs || {}).reduce((total, entry) => total + (Array.isArray(entry?.kg) ? entry.kg.length : 0), 0);
+      const done = Object.values(sets?.setDone || {}).filter(Boolean).length;
+      const typed = Object.values(sets?.draft || {}).reduce((total, entry) => total + Object.keys(entry || {}).length, 0);
+      // v14748 · prima la firma contava solo la LUNGHEZZA degli array di kg: modificare
+      // un RPE non la cambiava, quindi la scrittura poteva restare in attesa del throttle.
+      const content = compactHash(activeWorkoutLogsDigest(active));
+      return `${active.id}|${active.status}|${active.currentExercise}|${active.currentSet}|${logged}|${done}|${typed}|${content}|${active.updatedAt || ""}`;
+    }
+
+    // === v14746/v14748 · serie confermate, RPE/RIR e timer viaggiano nella STESSA istantanea ===
+    function activeWorkoutRescueSets(training = {}) {
+      const draft = training.draft && typeof training.draft === "object" ? training.draft : {};
+      const setDone = training.setDone && typeof training.setDone === "object" ? training.setDone : {};
+      const noteDraft = training.noteDraft && typeof training.noteDraft === "object" ? training.noteDraft : {};
+      const actualRir = training.actualRir && typeof training.actualRir === "object" ? training.actualRir : {};
+      // v14748 · oltre al secondo residuo salviamo la SCADENZA su orologio reale: cosi'
+      // il recupero resta corretto anche se l'istantanea ha qualche secondo di ritardo.
+      return {
+        draft, setDone, noteDraft, actualRir,
+        timerRemaining: Number(training.timerRemaining) || 0,
+        timerEndsAt: Number(training.timerEndsAt) || 0
+      };
+    }
+
+    function persistActiveWorkoutRescue(snapshot = state) {
+      try {
+        // Se non e' uno stato completo (es. un pacchetto di backup) NON tocco la rete di sicurezza,
+        // altrimenti una scrittura accessoria la cancellerebbe.
+        if (!snapshot || !snapshot.training) return false;
+        const active = snapshot.training.activeWorkout;
+        if (!active || !["active", "paused"].includes(active.status)) {
+          if (localStorage.getItem(WORKOUT_ACTIVE_RESCUE_KEY)) localStorage.removeItem(WORKOUT_ACTIVE_RESCUE_KEY);
+          return false;
+        }
+        const sets = activeWorkoutRescueSets(snapshot.training);
+        const signature = activeWorkoutSignature(active, sets);
+        const now = Date.now();
+        if (signature === lastActiveRescueSignature && (now - lastActiveRescueWriteAt) < 4000) return true;
+        localStorage.setItem(WORKOUT_ACTIVE_RESCUE_KEY, JSON.stringify({ schema: 2, savedAt: new Date().toISOString(), workout: active, sets }));
+        lastActiveRescueSignature = signature;
+        lastActiveRescueWriteAt = now;
+        return true;
+      } catch (error) { return false; }
+    }
+
+    function restoreActiveWorkoutRescue(targetState) {
+      try {
+        const raw = localStorage.getItem(WORKOUT_ACTIVE_RESCUE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        const resume = parsed?.workout;
+        if (!resume || !resume.id || !["active", "paused"].includes(resume.status)) return false;
+        const current = targetState.training?.activeWorkout;
+        const currentStamp = Date.parse(current?.updatedAt || "") || 0;
+        const resumeStamp = Date.parse(resume.updatedAt || "") || 0;
+        if (current && current.id && currentStamp >= resumeStamp) return false;
+        // v14746 · tolleranza al vecchio formato: senza "sets" si ripristina solo il workout
+        const sets = (parsed && typeof parsed.sets === "object" && parsed.sets) ? parsed.sets : {};
+        targetState.training = targetState.training || {};
+        targetState.training.activeWorkout = clone(resume);
+        const mergeBag = (local, extra) => ({ ...(local && typeof local === "object" ? local : {}), ...(extra && typeof extra === "object" ? extra : {}) });
+        targetState.training.draft = mergeBag(targetState.training.draft, sets.draft);
+        targetState.training.setDone = mergeBag(targetState.training.setDone, sets.setDone);
+        targetState.training.noteDraft = mergeBag(targetState.training.noteDraft, sets.noteDraft);
+        // v14748 · anche i dati per-serie usati dai suggerimenti (RPE/RIR reali)
+        targetState.training.actualRir = mergeBag(targetState.training.actualRir, sets.actualRir);
+        // v14748 · timer: se c'e' la scadenza, il tempo passato in background viene scalato;
+        // senza scadenza si ricade sul secondo residuo dell'istantanea.
+        const endsAt = Number(sets.timerEndsAt) || 0;
+        const storedRemaining = Number(sets.timerRemaining) || 0;
+        const effectiveRemaining = endsAt > 0 ? Math.max(0, Math.round((endsAt - Date.now()) / 1000)) : storedRemaining;
+        if (effectiveRemaining > 0) {
+          targetState.training.timerRemaining = effectiveRemaining;
+          targetState.training.timerEndsAt = endsAt > 0 ? endsAt : Date.now() + effectiveRemaining * 1000;
+        } else if (endsAt > 0 || storedRemaining > 0) {
+          targetState.training.timerRemaining = 0;
+          targetState.training.timerEndsAt = 0;
+        }
+        return true;
+      } catch (error) { return false; }
+    }
+
+    // v14748 · dopo un riavvio della scheda il countdown va anche RIAVVIATO:
+    // ripristinare il numero senza far ripartire l'intervallo lasciava il timer fermo.
+    function resumeRestTimerIfNeeded() {
+      const remaining = Number(state.training?.timerRemaining) || 0;
+      if (remaining <= 0) return false;
+      if (typeof startRestTimer !== "function") return false; // scope diverso: nessun crash
+      startRestTimer(remaining);
+      return true;
+    }
+
     function openWorkoutJournalDb() {
       return new Promise((resolve, reject) => {
         if (typeof indexedDB === "undefined") { resolve(null); return; }
@@ -3886,6 +4011,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
     }
 
     function persistStateToLocalStorage(snapshot, options = {}) {
+      try { persistActiveWorkoutRescue(snapshot); } catch (error) {} // v14745: salva anche il workout in corso
       // Scrittura EFFETTIVA su localStorage. Usata come store primario solo quando il cloud
       // non è attivo, e come paracadute silenzioso se il cloud fallisce ripetutamente.
       const serialized = JSON.stringify(localStorageSnapshotFor(snapshot));
@@ -3976,6 +4102,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         delete snapshot.training.setDone;
         delete snapshot.training.openExercise;
         delete snapshot.training.timerRemaining;
+        delete snapshot.training.timerEndsAt;
       }
       return snapshot;
     }
@@ -4217,6 +4344,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
     function mergeCloudAndLocalState(localState = {}, cloudState = {}) {
       localState = migrateStateSchema(localState);
       cloudState = migrateStateSchema(cloudState);
+      const localActiveWorkout = localState.training?.activeWorkout || null; // v14745
       const localStamp = Date.parse(localState.meta?.updatedAt || "") || 0;
       const cloudStamp = Date.parse(cloudState.meta?.updatedAt || "") || 0;
       const newer = localStamp >= cloudStamp ? localState : cloudState;
@@ -4224,6 +4352,12 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       const merged = mergeState(mergeState(clone(baseState), clone(older)), clone(newer));
       merged.programs = mergeProgramCollections(older.programs || [], newer.programs || []);
       if (!merged.training) merged.training = {};
+      // v14745 · una copia cloud piu' vecchia non deve cancellare il workout in corso
+      if (localActiveWorkout && ["active", "paused"].includes(localActiveWorkout.status)) {
+        const localActiveStamp = Date.parse(localActiveWorkout.updatedAt || "") || 0;
+        const mergedActiveStamp = Date.parse(merged.training.activeWorkout?.updatedAt || "") || 0;
+        if (localActiveStamp >= mergedActiveStamp) merged.training.activeWorkout = clone(localActiveWorkout);
+      }
       merged.training.sessions = deduplicateWorkoutSessions([
         ...(older.training?.sessions || []),
         ...(newer.training?.sessions || [])
@@ -12923,10 +13057,12 @@ function sanitizeForFirestore(value) {
     function startRestTimer(seconds) {
       clearInterval(timerHandle);
       state.training.timerRemaining = Number(seconds) || 0;
+      state.training.timerEndsAt = state.training.timerRemaining > 0 ? Date.now() + state.training.timerRemaining * 1000 : 0; // v14748
       saveState({ cloud: false });
       renderTimerDisplay();
       timerHandle = setInterval(() => {
         state.training.timerRemaining = Math.max(0, (state.training.timerRemaining || 0) - 1);
+        state.training.timerEndsAt = state.training.timerRemaining > 0 ? Date.now() + state.training.timerRemaining * 1000 : 0; // v14748
         renderTimerDisplay();
         if (state.training.timerRemaining <= 0) {
           clearInterval(timerHandle);
@@ -14387,6 +14523,9 @@ function sanitizeForFirestore(value) {
         clearTimeout(coachMascotController.blinkTimer);
         clearTimeout(coachMascotController.blinkResetTimer);
         document.querySelectorAll(".diva-bot-eyes.is-blinking").forEach((eye) => eye.classList.remove("is-blinking"));
+        // v14747 · ultimo momento affidabile prima del congelamento: l'istantanea
+        // del workout in corso viene aggiornata SUBITO, senza aspettare il debounce.
+        try { persistActiveWorkoutRescue(state); } catch (error) {}
         if (localSaveTimer) flushStateSave();
         return;
       }
@@ -14394,7 +14533,16 @@ function sanitizeForFirestore(value) {
       reliableForegroundSync();
       scheduleChartRedraw();
     });
-    window.addEventListener("pagehide", () => { if (localSaveTimer) flushStateSave(); }, { passive:true });
+    window.addEventListener("pagehide", () => {
+      try { persistActiveWorkoutRescue(state); } catch (error) {} // v14747
+      if (localSaveTimer) flushStateSave();
+    }, { passive:true });
+    // v14747 · la Page Lifecycle API puo' CONGELARE la pagina in background (freeze)
+    // prima di scartarla: da quel momento nessun timer viene piu' eseguito.
+    document.addEventListener("freeze", () => {
+      try { persistActiveWorkoutRescue(state); } catch (error) {}
+      if (localSaveTimer) flushStateSave();
+    }, false);
     initializeDataSafety();
     recoverDurableWorkoutJournal();
     applyCoachStudioDeepLink();
