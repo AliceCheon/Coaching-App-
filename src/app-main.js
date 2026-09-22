@@ -3405,7 +3405,10 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         // locale, mentre gli altri programmi e lo storico restano intatti.
         if (loaded.meta?.intensitaNuovoBuild !== INTENSITA_NUOVO_BUILD) {
           const seeded = seededPrograms.find((program) => program.phase === "Intensità Agosto-Ottobre");
-          if (seeded) {
+          const existingIntensita = (loaded.programs || []).find((program) => program.phase === seeded?.phase);
+          if (seeded && !existingIntensita) {
+            // Prima volta in assoluto su questo dispositivo: nessuna copia
+            // locale del programma, quindi lo iniettiamo per intero.
             const stamp = new Date().toISOString();
             const replacement = clone(seeded);
             replacement.updatedAt = stamp;
@@ -3414,9 +3417,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
               updatedAt: stamp,
               exercises: (sheet.exercises || []).map((exercise) => ({ ...exercise, updatedAt: stamp }))
             }));
-            loaded.programs = (loaded.programs || [])
-              .filter((program) => String(program.phase || program.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() !== "intensita")
-              .map((program) => program.phase === seeded.phase ? replacement : program);
+            loaded.programs = [...(loaded.programs || []), replacement];
             loaded.meta = {
               ...(loaded.meta || {}),
               intensitaNuovoBuild: INTENSITA_NUOVO_BUILD,
@@ -3424,6 +3425,31 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
               programsUpdatedAt: stamp,
               cloudProgramsUpdatedAt: "",
               cloudProgramRevisions: {}
+            };
+          } else if (seeded && existingIntensita) {
+            // Il programma esiste già in locale (magari modificato
+            // dall'utente): FIX - prima qui si sostituiva tutto il programma
+            // con la copia vergine della libreria, ristampata con l'orario
+            // corrente. Questo la faceva vincere per sempre nei merge
+            // successivi (onSnapshot, echo, ecc.) cancellando qualunque
+            // modifica manuale fatta dall'utente a quella scheda, ad ogni
+            // avvio in cui questo blocco veniva rieseguito. Ora ci limitiamo
+            // ad aggiungere le schede NUOVE del workbook (per code) che non
+            // esistono ancora in locale, senza toccare né ristampare quelle
+            // già presenti: le modifiche dell'utente non vengono più perse.
+            const existingCodes = new Set((existingIntensita.sheets || []).map((sheet) => String(sheet.code || "").trim().toLowerCase()));
+            const missingSheets = (seeded.sheets || []).filter((sheet) => !existingCodes.has(String(sheet.code || "").trim().toLowerCase()));
+            if (missingSheets.length) {
+              loaded.programs = (loaded.programs || []).map((program) =>
+                program.phase === seeded.phase
+                  ? { ...program, sheets: [...(program.sheets || []), ...missingSheets] }
+                  : program
+              );
+            }
+            loaded.meta = {
+              ...(loaded.meta || {}),
+              intensitaNuovoBuild: INTENSITA_NUOVO_BUILD,
+              intensitaNuovoSource: "Schede mie.xlsx · intensità nuovo"
             };
           }
         }
@@ -6691,7 +6717,17 @@ function sanitizeForFirestore(value) {
       if (tag !== "INPUT" && tag !== "TEXTAREA" && !el.isContentEditable) return false;
       if (tag === "INPUT" && ["checkbox", "radio", "color", "range", "button", "submit"].includes(el.type)) return false;
       const screen = document.getElementById("screen");
-      return !!(screen && screen.contains(el));
+      // FIX: i modali "a portale" (aggiungi/sostituisci esercizio, editor
+      // esercizio, progressione, ecc.) vengono montati in #coachModalPortalHost,
+      // un contenitore FRATELLO di #screen (vedi index.html), non al suo
+      // interno. Il controllo precedente guardava solo dentro #screen, quindi
+      // digitare nel campo di ricerca esercizi (o in qualsiasi altro campo di
+      // questi modali) non bloccava i render guidati dal cloud: uno snapshot
+      // in arrivo poteva ridisegnare il modale a metà digitazione e "mangiare"
+      // i caratteri appena scritti (es. il trattino spariva). Ora la stessa
+      // protezione copre anche il portale dei modali.
+      const portal = document.getElementById("coachModalPortalHost");
+      return !!((screen && screen.contains(el)) || (portal && portal.contains(el)));
     }
 
     function captureScreenEditingState(screen) {
