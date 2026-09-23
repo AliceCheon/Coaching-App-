@@ -159,7 +159,7 @@
         <div class="v147-manual-controls">
           <label>Fase
             <select data-training-context="phase">
-              ${phases.map((phase) => `<option value="${escapeHtml(phase)}" ${phase === context.phase ? "selected" : ""}>${escapeHtml(displayLabel(phase))}</option>`).join("")}
+              ${phases.map((phase) => `<option value="${escapeHtml(phase)}" ${phase === context.phase ? "selected" : ""}>${escapeHtml(phaseSelectorLabel(phase))}</option>`).join("")}
             </select>
           </label>
           <label>Settimana
