@@ -4903,3 +4903,21 @@
       body { min-height: 100dvh !important; }
       .stage { min-height: 100dvh !important; height: 100dvh !important; }
     }
+
+
+/* v14749 · errore di salvataggio dei modali Coach: visibile e persistente */
+.coach-modal-error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 108, 132, .76);
+  background: linear-gradient(135deg, rgba(255, 78, 112, .16), rgba(255, 78, 112, .06));
+  color: #ffd7de;
+  font-size: .82rem;
+  line-height: 1.4;
+}
+body[data-theme="light"] .coach-modal-error {
+  background: #fff2f5;
+  border-color: rgba(214, 55, 90, .38);
+  color: #7d2038;
+}
