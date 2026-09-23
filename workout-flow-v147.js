@@ -144,9 +144,11 @@
   }
 
   function modeControlsHtml(context) {
-    const phases = availablePhases();
-    const phaseSheets = sessionsForPhase(context.phase);
+    const phaseSheets = context.phaseSessions || sessionsForPhase(context.phase);
     const maxWeek = Math.max(1, Number(state.profile?.phaseLength) || 1, ...phaseSheets.map((item) => Number(item.week) || 0));
+    const groups = (typeof programSheetGroups === "function") ? programSheetGroups() : [];
+    const currentId = String(context.session?.id ?? "");
+    const sheetOptions = groups.map((group) => `<optgroup label="${escapeHtml(group.label)}">${group.sheets.map((sheet) => `<option value="${escapeHtml(String(sheet.id ?? sheet.code ?? ""))}"${String(sheet.id ?? "") === currentId ? " selected" : ""}>${escapeHtml(`${cleanText(sheet.code || "").trim()}${sheet.name || sheet.focus ? ` · ${cleanText(sheet.name || sheet.focus).trim()}` : ""}`)}</option>`).join("")}</optgroup>`).join("");
     return `
       <div class="v147-mode-row" aria-label="Modalità workout">
         <span>Modalità</span>
@@ -157,20 +159,16 @@
       </div>
       ${context.isManual ? `
         <div class="v147-manual-controls">
-          <label>Fase
-            <select data-training-context="phase">
-              ${phases.map((phase) => `<option value="${escapeHtml(phase)}" ${phase === context.phase ? "selected" : ""}>${escapeHtml(phaseSelectorLabel(phase))}</option>`).join("")}
-            </select>
+          <label>Scheda
+            <select data-training-context="session">${sheetOptions}</select>
           </label>
           <label>Settimana
             <select data-training-context="week">
               ${Array.from({ length: maxWeek }, (_, index) => `<option value="${index + 1}" ${Number(context.week) === index + 1 ? "selected" : ""}>Settimana ${index + 1}</option>`).join("")}
             </select>
           </label>
-          <label>Scheda
-            <select data-training-context="session">
-              ${phaseSheets.map((sheet) => `<option value="${escapeHtml(sheet.code)}" ${sheet.code === context.session?.code ? "selected" : ""}>${escapeHtml(sheet.code)} · ${escapeHtml(sheet.name || sheet.focus)}</option>`).join("")}
-            </select>
+          <label>Fase
+            <span class="v147-derived-value" data-training-context-derived="phase">${escapeHtml(displayLabel(context.phase))}</span>
           </label>
         </div>
       ` : ""}
@@ -522,6 +520,12 @@
     });
     root.querySelectorAll("[data-v147-mode]").forEach((button) => button.addEventListener("click", () => {
       state.training.contextMode = button.dataset.v147Mode;
+      if (state.training.contextMode === "manual" && !state.training.manualSessionId && !state.training.manualSessionCode) {
+        const first = allProgramSheets()[0];
+        state.training.manualSessionId = first?.id || "";
+        state.training.manualSessionCode = first?.code || "";
+        state.training.manualPhase = first?.phase || "";
+      }
       state.training.sessionName = button.dataset.v147Mode === "manual" ? (state.training.manualSessionCode || "") : "auto";
       scheduleLocalSave(true);
       renderTrainingOnly();

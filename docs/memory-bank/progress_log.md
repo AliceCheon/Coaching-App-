@@ -85,3 +85,20 @@ Obiettivo:
 - Stato test: **142/142 pass** (`node --test "tests/*.test.mjs"`).
 - Blocco aperto: nessuno. Nota dati: la fase di un programma si corregge dal modal del programma (campo Fase); l'app non riscrive d'ufficio fasi o nomi per non toccare lo storico.
 - Prossimo step consigliato: Fase 2 (estrazione `src/coach-ai/`) e decisione App Check (Fase 0.6).
+
+### 6) 2026-09-23 — Scheda come fonte della scelta, Fase derivata (build v147.51)
+
+- UUID: 0006
+- Commit riferimento: working tree (sopra 21a8ec0)
+- Cosa è cambiato (seguito del fix v147.50):
+  - Diagnosi: il fix precedente mostrava "peaking · Intensità 2 ottobre-dicembre" solo nel selettore Fase. Il problema di fondo è che "Fase" e "Scheda" erano due `select` in concorrenza sulla stessa entità (programma), e i codici scheda (A/B/C…) si ripetono in ogni programma, quindi un elenco piatto di schede sarebbe ambiguo.
+  - Nuovo modello UI (sheet-first): la **Scheda** è la fonte della scelta, raggruppata per programma con `<optgroup label="nome programma">` e con l'**id** della scheda come valore; la **Fase** è un valore derivato (readout sola lettura) che si aggiorna scegliendo la scheda. Risolve alla radice la doppia etichetta "peaking".
+  - Nuove funzioni globali `programSheetGroups()` e `resolveManualSession()`; `currentTrainingContext()` in manuale risolve prima la scheda e ne deriva la fase (fallback su `manualPhase`/`phaseFilter`). Il warning ora è "La scheda selezionata non è più disponibile: scegline un'altra.".
+  - Nuovo campo di stato `training.manualSessionId`; in `hydrateStateModel` gli stati salvati (che hanno solo `manualSessionCode`) risolvono l'id una volta in fase di load — nessuna migrazione distruttiva.
+  - Aggiornati i handler: card "Contesto allenamento" (`data-training-context="session"` = id, `"phase"` resta solo come ripiego se non esistono schede), selettori legacy `#trainingSession`, pulsanti `data-v147-mode` di `workout-flow-v147.js` (imposta la prima scheda al passaggio a Manuale). Aggiornati `trainingContextControlsHtml` e `modeControlsHtml` con `.training-context-derived` / `.v147-derived-value` (CSS in `coach-studio-inline.css` e `workout-flow-v147.css`, temi chiaro/scuro).
+  - Copy del modal programma aggiornata: la Fase è "il valore mostrato nel campo Fase del workout (derivato dalla scheda scelta)".
+  - Release: build/cache `v147.51-scheda-prima-fase-derivata` allineate in `app-config-v144.js`, `index.html` (tutti i `?v=`), `manifest.webmanifest`, `service-worker.js`, `FIREBASE-LOGIN.md` e nei test che pinnavano il token.
+  - Test `v14745-fase-selettore-nome-scheda` esteso: raggruppamento per programma, valore = id, selezione corretta, Fase derivata (non selettore), automatico con selettore scheda disabilitato.
+- Stato test: **143/143 pass** (`node --test "tests/*.test.mjs"`).
+- Blocco aperto: nessuno.
+- Prossimo step consigliato: Fase 2 (estrazione `src/coach-ai/`) e decisione App Check (Fase 0.6).

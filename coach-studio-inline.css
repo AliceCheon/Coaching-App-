@@ -3377,6 +3377,7 @@
     .training-context-card { padding:16px; }
     .training-context-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:12px; }
     .training-context-grid label { display:grid; gap:5px; }
+    .training-context-derived { display:flex; align-items:center; min-height:38px; padding:0 11px; border:1px dashed rgba(201,167,255,.5); border-radius:10px; background:rgba(201,167,255,.10); font-weight:600; }
     .status-badge.warning { color:#ffd166; border-color:#ffd166; }
     @media(max-width:700px){ .training-context-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
     .exercise-analysis { margin-top:16px; padding:14px; border:1px solid rgba(201,167,255,.2); border-radius:14px; background:rgba(23,13,38,.62); }
@@ -4081,6 +4082,11 @@
       background:linear-gradient(145deg,rgba(255,255,255,.92),rgba(251,239,251,.86));
       border-color:rgba(117,57,154,.17);
     }
+    .training-context-derived {
+      color:#2b1739;
+      background:rgba(164,91,226,.08);
+      border-color:rgba(122,48,180,.30);
+    }
     input,select,textarea {
       color:#2b1739;
       background:rgba(255,255,255,.74);
@@ -4256,6 +4262,11 @@
       color:#fff8fd;
       background:linear-gradient(145deg,rgba(29,24,52,.98),rgba(12,14,36,.98));
       border-color:rgba(210,113,231,.20);
+    }
+    body[data-theme="dark"] .training-context-derived {
+      color:#fff8fd;
+      background:rgba(210,113,231,.10);
+      border-color:rgba(210,113,231,.34);
     }
     body[data-theme="dark"] input,
     body[data-theme="dark"] select,
