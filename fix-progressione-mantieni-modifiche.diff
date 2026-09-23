@@ -1,0 +1,13 @@
+diff --git a/src/app-main.js b/src/app-main.js
+index 2e8eb96..60c7acc 100644
+--- a/src/app-main.js
++++ b/src/app-main.js
+@@ -14038,7 +14038,7 @@ function sanitizeForFirestore(value) {
+         const weeks = (coachProgramUi.modalData.weeks || generateProgressionWeeks(current, templateId, duration)).slice(0, duration);
+         const existing=(current.progression?.weeks||[]).slice(0,duration);
+         let generated=weeks;
+-        if(mode==="empty-only") generated=generateProgressionWeeks(current,templateId,duration,{},existing).map((week,index)=>existing[index]?.source==="manual"?existing[index]:week);
++        if(mode==="empty-only") generated=generateProgressionWeeks(current,templateId,duration,{},existing).map((week,index)=>weeks[index]?.source==="manual"?weeks[index]:(existing[index]?.source==="manual"?existing[index]:week));
+         if(mode==="confirm-each") {
+           const confirmation=coachProgramUi.modalData.confirmation,host=document.getElementById("coachModalPortalHost");
+           if(!confirmation&&beginProgressionConfirmation(host,current,weeks,existing))return;
