@@ -3405,10 +3405,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         // locale, mentre gli altri programmi e lo storico restano intatti.
         if (loaded.meta?.intensitaNuovoBuild !== INTENSITA_NUOVO_BUILD) {
           const seeded = seededPrograms.find((program) => program.phase === "Intensità Agosto-Ottobre");
-          const existingIntensita = (loaded.programs || []).find((program) => program.phase === seeded?.phase);
-          if (seeded && !existingIntensita) {
-            // Prima volta in assoluto su questo dispositivo: nessuna copia
-            // locale del programma, quindi lo iniettiamo per intero.
+          if (seeded) {
             const stamp = new Date().toISOString();
             const replacement = clone(seeded);
             replacement.updatedAt = stamp;
@@ -3417,7 +3414,15 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
               updatedAt: stamp,
               exercises: (sheet.exercises || []).map((exercise) => ({ ...exercise, updatedAt: stamp }))
             }));
-            loaded.programs = [...(loaded.programs || []), replacement];
+            // v14749 · CAUSA DEL "SALVO E TORNA INDIETRO": la sostituzione del
+            // seed "Intensità" filtrava per NOME DI FASE, cancellando a ogni
+            // avvio qualunque programma creato dall'utente con fase "intensità";
+            // inoltre, tolta la fase, il replacement non veniva mai inserito.
+            // Ora si sostituisce per ID del seed: i programmi dell'utente restano.
+            const seededIds = new Set([seeded.id].filter(Boolean));
+            const replacedPrograms = (loaded.programs || []).map((program) => (seededIds.has(program.id) ? replacement : program));
+            if (!replacedPrograms.some((program) => program.id === seeded.id)) replacedPrograms.push(replacement);
+            loaded.programs = replacedPrograms;
             loaded.meta = {
               ...(loaded.meta || {}),
               intensitaNuovoBuild: INTENSITA_NUOVO_BUILD,
@@ -3426,34 +3431,20 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
               cloudProgramsUpdatedAt: "",
               cloudProgramRevisions: {}
             };
-          } else if (seeded && existingIntensita) {
-            // Il programma esiste già in locale (magari modificato
-            // dall'utente): FIX - prima qui si sostituiva tutto il programma
-            // con la copia vergine della libreria, ristampata con l'orario
-            // corrente. Questo la faceva vincere per sempre nei merge
-            // successivi (onSnapshot, echo, ecc.) cancellando qualunque
-            // modifica manuale fatta dall'utente a quella scheda, ad ogni
-            // avvio in cui questo blocco veniva rieseguito. Ora ci limitiamo
-            // ad aggiungere le schede NUOVE del workbook (per code) che non
-            // esistono ancora in locale, senza toccare né ristampare quelle
-            // già presenti: le modifiche dell'utente non vengono più perse.
-            const existingCodes = new Set((existingIntensita.sheets || []).map((sheet) => String(sheet.code || "").trim().toLowerCase()));
-            const missingSheets = (seeded.sheets || []).filter((sheet) => !existingCodes.has(String(sheet.code || "").trim().toLowerCase()));
-            if (missingSheets.length) {
-              loaded.programs = (loaded.programs || []).map((program) =>
-                program.phase === seeded.phase
-                  ? { ...program, sheets: [...(program.sheets || []), ...missingSheets] }
-                  : program
-              );
-            }
-            loaded.meta = {
-              ...(loaded.meta || {}),
-              intensitaNuovoBuild: INTENSITA_NUOVO_BUILD,
-              intensitaNuovoSource: "Schede mie.xlsx · intensità nuovo"
-            };
           }
         }
         hydrateStateModel(loaded);
+        // v14749 · "Fase" e "Tipo blocco" erano lo stesso dato duplicato in due
+        // punti. La fase del programma resta la fonte unica: i link atleta che
+        // non avevano ancora un blocco lo ereditano, senza perdere nulla.
+        try {
+          const links = loaded.athleteIntelligence?.programLinks || {};
+          Object.entries(links).forEach(([programId, link]) => {
+            if (!link || typeof link !== "object" || link.blockType) return;
+            const program = (loaded.programs || []).find((item) => item.id === programId);
+            if (program?.phase) link.blockType = program.phase;
+          });
+        } catch (error) { /* migrazione non bloccante */ }
         recoverWorkoutJournal(loaded);
         const postJournalFDateCorrections = correctAliceWorkoutF16Jul2026(loaded);
         loaded.migrations.aliceWorkoutF16Jul2026Corrected = Number(loaded.migrations.aliceWorkoutF16Jul2026Corrected || 0) + postJournalFDateCorrections;
@@ -6717,17 +6708,7 @@ function sanitizeForFirestore(value) {
       if (tag !== "INPUT" && tag !== "TEXTAREA" && !el.isContentEditable) return false;
       if (tag === "INPUT" && ["checkbox", "radio", "color", "range", "button", "submit"].includes(el.type)) return false;
       const screen = document.getElementById("screen");
-      // FIX: i modali "a portale" (aggiungi/sostituisci esercizio, editor
-      // esercizio, progressione, ecc.) vengono montati in #coachModalPortalHost,
-      // un contenitore FRATELLO di #screen (vedi index.html), non al suo
-      // interno. Il controllo precedente guardava solo dentro #screen, quindi
-      // digitare nel campo di ricerca esercizi (o in qualsiasi altro campo di
-      // questi modali) non bloccava i render guidati dal cloud: uno snapshot
-      // in arrivo poteva ridisegnare il modale a metà digitazione e "mangiare"
-      // i caratteri appena scritti (es. il trattino spariva). Ora la stessa
-      // protezione copre anche il portale dei modali.
-      const portal = document.getElementById("coachModalPortalHost");
-      return !!((screen && screen.contains(el)) || (portal && portal.contains(el)));
+      return !!(screen && screen.contains(el));
     }
 
     function captureScreenEditingState(screen) {
@@ -10056,8 +10037,8 @@ function sanitizeForFirestore(value) {
         const heading=type === "program-new" ? "Nuovo programma" : type === "program-save-as" ? "Salva come nuovo programma" : "Modifica programma";
         const defaultName=type === "program-save-as" ? `${item?.name||"Programma"} · copia` : item?.name||"";
         const store=athleteIntelligenceStore(), linked=store.programLinks[item?.id]||{}, athleteId=linked.athleteId||store.activeAthleteId;
-        const contextFields=`<div class="program-setup"><h4>Contesto atleta e strategia</h4><label><input type="checkbox" id="programModalFree" ${linked.freeProgram?"checked":""}> Scheda libera: salta il collegamento</label><div class="form-grid"><label>Atleta<select id="programModalAthlete">${athleteOptionsHtml(athleteId)}</select></label><label>Strategia<select id="programModalStrategy"><option value="">Nessuna / rapida dopo</option>${strategyOptionsHtml(linked.strategyId||"",athleteId)}</select></label><label>Tipo blocco<select id="programModalBlock">${window.BarbellDivaAthleteContext.BLOCK_TYPES.map((v)=>`<option value="${v}" ${linked.blockType===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Fase nutrizionale<select id="programModalNutrition">${window.BarbellDivaAthleteContext.NUTRITION_PHASES.map((v)=>`<option value="${v}" ${linked.nutritionalPhase===v?"selected":""}>${v}</option>`).join("")}</select></label></div></div>`;
-        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${heading}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(defaultName)}" placeholder="Nome programma"></label><label>Fase<input id="programModalPhase" value="${escapeHtml(item?.phase || "")}" placeholder="Volume, intensificazione..."></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Cartella<select id="programModalFolder"><option value="">Nessuna cartella</option>${folders.map((folder)=>`<option value="${escapeHtml(folder)}" ${item?.folder===folder?"selected":""}>${escapeHtml(folder)}</option>`).join("")}</select></label><label>Stato<select id="programModalStatus"><option value="draft" ${type==="program-save-as" || item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${type!=="program-save-as" && item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${type!=="program-save-as" && item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div>${contextFields}<div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type==="program-save-as"?"Crea copia":"Salva programma"}</button></div></section></div>`;
+        const contextFields=`<div class="program-setup"><h4>Contesto atleta e strategia</h4><label><input type="checkbox" id="programModalFree" ${linked.freeProgram?"checked":""}> Scheda libera: salta il collegamento</label><div class="form-grid"><label>Atleta<select id="programModalAthlete">${athleteOptionsHtml(athleteId)}</select></label><label>Strategia<select id="programModalStrategy"><option value="">Nessuna / rapida dopo</option>${strategyOptionsHtml(linked.strategyId||"",athleteId)}</select></label><input type="hidden" id="programModalBlock" value="${escapeHtml(linked.blockType || item?.phase || "")}"><label>Fase nutrizionale<select id="programModalNutrition">${window.BarbellDivaAthleteContext.NUTRITION_PHASES.map((v)=>`<option value="${v}" ${linked.nutritionalPhase===v?"selected":""}>${v}</option>`).join("")}</select></label></div></div>`;
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${heading}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(defaultName)}" placeholder="Nome programma"></label><label>Fase (tipo di blocco)<select id="programModalPhase">${["", ...(window.BarbellDivaAthleteContext?.BLOCK_TYPES || [])].map((value) => `<option value="${escapeHtml(value)}" ${String(item?.phase || "").toLowerCase() === String(value).toLowerCase() ? "selected" : ""}>${value ? escapeHtml(value) : "— scegli la fase —"}</option>`).join("")}</select></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Cartella<select id="programModalFolder"><option value="">Nessuna cartella</option>${folders.map((folder)=>`<option value="${escapeHtml(folder)}" ${item?.folder===folder?"selected":""}>${escapeHtml(folder)}</option>`).join("")}</select></label><label>Stato<select id="programModalStatus"><option value="draft" ${type==="program-save-as" || item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${type!=="program-save-as" && item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${type!=="program-save-as" && item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div>${contextFields}<div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type==="program-save-as"?"Crea copia":"Salva programma"}</button></div></section></div>`;
       }
       if (type === "sheet-new" || type === "sheet-edit" || type === "sheet-rename") {
         const item = type === "sheet-new" ? { name: "", code: suggestedSheetCode(sheets), focus: "", split: "", note: "", color: "" } : targetSheet;
@@ -10531,12 +10512,175 @@ function sanitizeForFirestore(value) {
       return suggestions;
     }
 
+    // v14749 · Coach AI: contesto storico reale. La "robottina" leggeva solo
+    // volume, recuperi e biomeccanica: non vedeva le note scritte sotto gli
+    // esercizi, le serie gia' registrate ne' RPE/RIR effettivi, quindi non
+    // poteva suggerire esercizi o progressioni. Qui si aggiunge quel contesto.
+    let coachAiJournalMemo = { at: 0, rows: null };
+    function coachAiHistoryJournalRows() {
+      const now = Date.now();
+      if (coachAiJournalMemo.rows && now - coachAiJournalMemo.at < 1500) return coachAiJournalMemo.rows;
+      let rows = [];
+      try { rows = readWorkoutJournal(); } catch (error) { rows = []; }
+      coachAiJournalMemo = { at: now, rows };
+      return rows;
+    }
+
+    function coachAiHistoryExercises(ctx) {
+      const out = [];
+      const seen = new Set();
+      (ctx?.rows || []).forEach((row) => {
+        const key = normalizeExerciseName(row.exercise || "");
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        const exercise = programRepository.getExerciseById(ctx.program?.id, row.sheetId, row.id);
+        out.push({ row, exercise: exercise || null, name: (exercise?.name || row.exercise || "").trim(), note: String(exercise?.note || "").trim() });
+      });
+      return out;
+    }
+
+    function coachAiExerciseHistory(exerciseName, journalRows) {
+      const target = normalizeExerciseName(exerciseName || "");
+      if (!target) return { entries: [], last: null, best: null };
+      const entries = [];
+      const collectSets = (container) => {
+        const list = [];
+        if (!container) return list;
+        const candidates = [container.sets, container.logs, container.entries, container.values];
+        candidates.forEach((candidate) => {
+          if (Array.isArray(candidate)) {
+            candidate.forEach((item) => {
+              if (item && typeof item === "object") list.push(item);
+              else if (Number.isFinite(Number(item))) list.push({ kg: Number(item) });
+            });
+          }
+        });
+        return list;
+      };
+      const scan = (session, sourceLabel) => {
+        if (!session || typeof session !== "object") return;
+        [session.exercises, session.entries, session.logs, session.items].forEach((bucket) => {
+          const list = Array.isArray(bucket) ? bucket : (bucket && typeof bucket === "object" ? Object.values(bucket) : []);
+          list.forEach((entry) => {
+            if (!entry || typeof entry !== "object") return;
+            const name = normalizeExerciseName(entry.name || entry.exercise || entry.exerciseName || "");
+            if (name !== target) return;
+            collectSets(entry).forEach((set) => {
+              const kg = Number(set.kg ?? set.load ?? set.weight);
+              const reps = Number(set.reps ?? set.repetitions);
+              const rir = Number(set.rir ?? set.actualRir);
+              const rpe = Number(set.rpe ?? set.actualRpe);
+              if (!Number.isFinite(kg) && !Number.isFinite(reps)) return;
+              entries.push({
+                source: sourceLabel,
+                date: session.dateInput || session.date || "",
+                kg: Number.isFinite(kg) ? kg : null,
+                reps: Number.isFinite(reps) ? reps : null,
+                rir: Number.isFinite(rir) ? rir : null,
+                rpe: Number.isFinite(rpe) ? rpe : null
+              });
+            });
+          });
+        });
+      };
+      (journalRows || []).forEach((session) => scan(session, "journal"));
+      ((state.training && state.training.sessions) || []).forEach((session) => scan(session, "storico"));
+      const dated = entries.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      const best = entries.filter((entry) => Number.isFinite(entry.kg) && entry.kg > 0)
+        .sort((a, b) => (b.kg - a.kg) || ((b.reps || 0) - (a.reps || 0)))[0] || null;
+      return { entries, last: dated[0] || null, best };
+    }
+
+    function coachAiHistorySuggestions(ctx) {
+      if (!ctx?.program || !(ctx.rows || []).length) return [];
+      const journalRows = coachAiHistoryJournalRows();
+      const weekNumber = Math.max(1, Number(ctx.weekNumber) || 1);
+      const suggestions = [];
+      coachAiHistoryExercises(ctx).forEach((item) => {
+        const suggestionId = (kind) => `v14749-${kind}-${normalizeExerciseName(item.name)}`;
+        const where = { sheetId: item.row.sheetId, position: item.row.position || null, exercise: item.name };
+        const prescription = item.exercise?.progression?.weeks?.[Math.min(weekNumber, (item.exercise?.progression?.weeks || []).length) - 1] || null;
+        if (item.note) {
+          suggestions.push({
+            id: suggestionId("note"),
+            category: "exercise-choice",
+            severity: "info",
+            confidence: "nota atleta",
+            title: `Nota da rispettare su ${item.name}`,
+            problem: `Sotto l'esercizio hai scritto: "${item.note}"`,
+            reason: "Questa indicazione e' il primo vincolo da rispettare quando scegli carico, ripetizioni e recupero: la uso per orientare il suggerimento.",
+            actionLabel: `Applica la nota a ${item.name} e, se la tecnica non regge, riduci il carico invece delle ripetizioni.`,
+            dataUsed: ["nota dell'esercizio", `settimana ${weekNumber}`],
+            alternatives: [],
+            ...where
+          });
+        }
+        const history = coachAiExerciseHistory(item.name, journalRows);
+        const last = history.last;
+        const best = history.best;
+        if (last) {
+          const load = Number.isFinite(last.kg) ? `${last.kg} kg` : "carico non registrato";
+          const reps = Number.isFinite(last.reps) ? `${last.reps} rip` : "ripetizioni non registrate";
+          const effort = Number.isFinite(last.rir) ? `RIR ${last.rir}` : (Number.isFinite(last.rpe) ? `RPE ${last.rpe}` : "RPE/RIR non registrati");
+          const closeToFailure = Number.isFinite(last.rir) ? last.rir <= 1 : (Number.isFinite(last.rpe) ? last.rpe >= 9 : false);
+          suggestions.push({
+            id: suggestionId("history"),
+            category: "progressions",
+            severity: closeToFailure ? "improve" : "info",
+            confidence: `ultima esecuzione${last.date ? ` · ${last.date}` : ""}`,
+            title: `Ultima volta su ${item.name}: ${load} × ${reps}`,
+            problem: `Nell'ultima registrazione hai fatto ${load} × ${reps} con ${effort}${best && Number.isFinite(best.kg) && best.kg > (last.kg || 0) ? `; il tuo massimo registrato e' ${best.kg} kg` : ""}.`,
+            reason: closeToFailure
+              ? "Eri vicino al cedimento: prima di alzare il carico conviene consolidare la stessa prestazione con un recupero pieno e tecnica pulita."
+              : "Eri lontano dal cedimento: c'e' margine per chiedere piu' stimolo mantenendo la tecnica.",
+            actionLabel: closeToFailure
+              ? `Ripeti ${item.name} con lo stesso carico (${Number.isFinite(last.kg) ? `${last.kg} kg` : "stesso carico"}) e aggiungi 1-2 ripetizioni solo se il RIR resta sopra 1.`
+              : `Su ${item.name} prova ${Number.isFinite(last.kg) ? `+2,5/5 kg oppure +1-2 ripetizioni rispetto a ${last.kg} kg` : "un carico leggermente piu' alto o 1-2 ripetizioni in piu'"}.`,
+            dataUsed: ["storico allenamenti", "RPE/RIR effettivi", `settimana ${weekNumber}`],
+            prescription: prescription ? { sets: prescription.sets, reps: Array.isArray(prescription.reps) ? prescription.reps.join("-") : (prescription.reps ?? ""), rir: prescription.rir ?? "", rest: prescription.restSeconds ?? "" } : undefined,
+            alternatives: [],
+            ...where
+          });
+        } else if (prescription) {
+          suggestions.push({
+            id: suggestionId("progression"),
+            category: "progressions",
+            severity: "info",
+            confidence: "dal programma",
+            title: `Avvia la progressione di ${item.name}`,
+            problem: `Non trovo ancora registrazioni per questo esercizio, ma la scheda prevede una progressione per la settimana ${weekNumber}.`,
+            reason: "Senza storico la progressione va impostata sulla prescrizione e poi verificata con le prime serie reali.",
+            actionLabel: `Parti da ${prescription.sets ?? "?"} serie × ${Array.isArray(prescription.reps) ? prescription.reps.join("-") : (prescription.reps ?? "?")}${prescription.rir !== undefined && prescription.rir !== "" ? ` a RIR ${prescription.rir}` : ""} e annota carico ed RPE reali.`,
+            dataUsed: ["prescrizione della scheda", `settimana ${weekNumber}`],
+            alternatives: [],
+            ...where
+          });
+        } else {
+          suggestions.push({
+            id: suggestionId("nolog"),
+            category: "data-quality",
+            severity: "info",
+            confidence: "dati mancanti",
+            title: `Nessuno storico su ${item.name}`,
+            problem: "Per questo esercizio non esiste ne' una progressione impostata ne' una serie registrata.",
+            reason: "Senza almeno una serie registrata non posso dirti se il carico e' troppo alto o troppo basso.",
+            actionLabel: `Registra la prima serie reale (carico, ripetizioni, RIR) e torna qui: il suggerimento successivo sara' quantificato.`,
+            dataUsed: ["scheda corrente", "storico allenamenti"],
+            alternatives: [],
+            ...where
+          });
+        }
+      });
+      return suggestions.slice(0, 12);
+    }
+
     function coachAiSuggestions() {
       const ctx = coachAiContext();
       const ignored = new Set(coachAiState().ignored || []);
-      if (ctx.scope !== "day") return coachAiAggregateSuggestions(ctx).filter((suggestion)=>!ignored.has(suggestion.id)).map((suggestion)=>({...suggestion,programId:ctx.program?.id||""}));
+      const historySuggestions = coachAiHistorySuggestions(ctx);
+      if (ctx.scope !== "day") return [...coachAiAggregateSuggestions(ctx), ...historySuggestions].filter((suggestion)=>!ignored.has(suggestion.id)).map((suggestion)=>({...suggestion,programId:ctx.program?.id||""}));
       const ruleSuggestions = COACH_AI_RULES.filter((rule) => rule.enabled !== false && rule.id !== "missing-metadata").slice().sort((a, b) => b.priority - a.priority).flatMap((rule) => rule.when(ctx) ? [{ rule, suggestion: rule.build(ctx) }] : []).map((item) => ({ ...item.suggestion, category: item.suggestion.category || (item.rule.id === "specific-overlap" ? "exercise-choice" : item.rule.category || "validation"), programId: ctx.program?.id || "", involvedExercises: item.suggestion.involvedExercises?.length ? item.suggestion.involvedExercises : item.rule.id === "duplicate-exercise" ? ctx.duplicates.map((row) => coachSuggestionExercise(row, ctx, "ripetuto")) : item.suggestion.exercise ? [coachSuggestionExercise({ id: item.suggestion.action?.exerciseId, exercise: item.suggestion.exercise, group: item.suggestion.action?.muscle }, ctx, "proposto")] : [] }));
-      return [...ruleSuggestions, ...coachAiAdvancedSuggestions(ctx)].filter((suggestion) => !ignored.has(suggestion.id));
+      return [...ruleSuggestions, ...coachAiAdvancedSuggestions(ctx), ...historySuggestions].filter((suggestion) => !ignored.has(suggestion.id));
     }
     function coachAiQualityIssues() {
       const ctx = coachAiContext();
@@ -13713,6 +13857,29 @@ function sanitizeForFirestore(value) {
       }
     }
 
+    // v14749 · l'errore di salvataggio deve restare visibile dentro il modale:
+    // un toast da 2s era indistinguibile da "non succede nulla".
+    function showModalError(message) {
+      const text = String(message || "Operazione non riuscita.").trim();
+      const modal = document.querySelector(".coach-modal");
+      if (!modal) return showToast(text, "error");
+      let box = modal.querySelector("[data-modal-error]");
+      if (!box) {
+        box = document.createElement("p");
+        box.setAttribute("data-modal-error", "");
+        box.className = "coach-modal-error";
+      }
+      box.textContent = text;
+      const actions = modal.querySelector(".coach-modal-actions");
+      if (actions) { if (box.nextElementSibling !== actions) modal.insertBefore(box, actions); }
+      else if (!box.parentNode) modal.appendChild(box);
+      try { box.scrollIntoView({ block: "nearest" }); } catch (error) { /* ambiente senza layout */ }
+    }
+
+    function clearModalError() {
+      document.querySelectorAll("[data-modal-error]").forEach((node) => node.remove());
+    }
+
     function saveCoachUiModal() {
       const type = coachProgramUi.modal;
       const { program, sheets } = ensureCoachProgramSelection();
@@ -13780,11 +13947,17 @@ function sanitizeForFirestore(value) {
           result=programRepository.duplicateProgram(program.id,{immediate:false});
           if(result.ok) result=programRepository.updateProgram(result.value.id,data,{immediate:true});
         } else result = type === "program-new" ? programRepository.createProgram(data, { immediate: true }) : programRepository.updateProgram(program.id, data, { immediate: true });
-        if (!result.ok) return showToast("Controlla nome e durata del programma.");
+        if (!result.ok) {
+          const reason = (result.errors || []).map((issue) => issue?.message).filter(Boolean).slice(0, 3).join(" · ");
+          const message = reason ? `Programma non salvato: ${reason}` : "Controlla nome e durata del programma.";
+          showModalError(message);
+          return showToast(message, "error");
+        }
+        clearModalError();
         state.athleteIntelligence = window.BarbellDivaAthleteContext.linkProgram(athleteIntelligenceStore(), result.value.id, {
           athleteId:document.getElementById("programModalAthlete")?.value,
           strategyId:document.getElementById("programModalStrategy")?.value,
-          blockType:document.getElementById("programModalBlock")?.value,
+          blockType:document.getElementById("programModalPhase")?.value || document.getElementById("programModalBlock")?.value,
           nutritionalPhase:document.getElementById("programModalNutrition")?.value,
           freeProgram:document.getElementById("programModalFree")?.checked
         });
@@ -14026,6 +14199,28 @@ function sanitizeForFirestore(value) {
         return showToast("Scheda eliminata.");
       }
     }
+
+    // v14749 · il pulsante "Salva" dei modali Coach passava da più listener
+    // agganciati per-elemento (document.querySelector + portal): un nodo
+    // sostituito o una doppia registrazione lasciava il click senza effetto.
+    // Qui la gestione è unica, in capture, e ogni errore diventa visibile.
+    document.addEventListener("click", (event) => {
+      const button = event.target.closest?.("[data-coach-modal-save]");
+      if (!button) return;
+      if (button.disabled || button.getAttribute("aria-disabled") === "true") return;
+      event.preventDefault();
+      event.stopPropagation();
+      const label = String(button.textContent || "").trim();
+      try {
+        clearModalError();
+        saveCoachUiModal();
+      } catch (error) {
+        console.error("[v14749] salvataggio modale Coach fallito:", error);
+        showModalError(`${label || "Salvataggio"} non riuscito: ${error?.message || "errore imprevisto"}. Riprova.`);
+        return;
+      }
+      if (!coachProgramUi.modal) refreshCoachAfterLocalModal();
+    }, true);
 
     document.addEventListener("click", (event) => {
       const button = event.target.closest?.("[data-coach-som-save]");
