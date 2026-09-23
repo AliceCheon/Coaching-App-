@@ -70,3 +70,18 @@ Obiettivo:
 - Stato test: 164/164 pass in locale (`node --test`); CI run #175 **success** su GitHub.
 - Blocco aperto: nessuno
 - Prossimo step consigliato: Fase 2 — creare `src/coach-ai/` (rules/state/bridge/ui, ~2.500 righe fuori da app-main.js, stesso pattern IIFE+globali), `coach-ai.css` dedicato con namespace unificato (`.ai2-*` → `.coach-ai-*`), aggiornare `APP_SHELL` del service worker.
+
+### 5) 2026-09-23 — Selettore "Fase": etichetta con il nome della scheda (build v147.50)
+
+- UUID: 0005
+- Commit riferimento: 56cdd03 (working tree)
+- Cosa è cambiato:
+  - Bug segnalato: in "Workout del giorno → Modalità Manuale" l'elenco Fase mostrava solo `program.phase`, quindi la scheda nuova ("Intensità 2 ottobre-dicembre", fase "peaking") risultava irriconoscibile. Diagnosi: `availablePhases()` leggeva la fase di *tutti* i programmi (anche eliminati) e le opzioni stampavano la sola fase.
+  - Fix 1: nuove funzioni globali `phaseProgramNames(phase)` e `phaseSelectorLabel(phase)` — il VALORE dell'opzione resta la fase (nessuna migrazione dei dati), l'etichetta aggiunge il nome del programma quando differisce: "peaking · Intensità 2 ottobre-dicembre". Applicate in `workout-flow-v147.js`, `trainingContextControlsHtml`, `trainingHtml`, filtro fasi in Coach Studio → Programmi e "Fase programmazione" dell'editor schede.
+  - Fix 2: `availablePhases()` esclude ora i programmi eliminati e le fasi vuote (prima una fase restava in elenco anche dopo l'eliminazione del programma).
+  - Fix 3: nel modal Nuovo/Modifica programma il campo Fase ha un placeholder esplicito e una nota che spiega dove compare il valore ("è il valore che compare nel selettore Fase del workout… se lo lasci vuoto viene usato il nome della scheda").
+  - Release: build/cache `v147.50-fase-scheda-label` / `atlas-app-v14750-fase-scheda-label` allineate in `index.html` (37 `?v=`), `manifest.webmanifest`, `service-worker.js`, `FIREBASE-LOGIN.md` e nei 17 test che pinnavano il token.
+  - Nuovo test `tests/v14750-fase-selettore-nome-scheda.test.mjs`: etichetta con nome scheda, nessuna duplicazione quando fase = nome, esclusione programmi eliminati e fasi vuote, valore dell'opzione invariato.
+- Stato test: **142/142 pass** (`node --test "tests/*.test.mjs"`).
+- Blocco aperto: nessuno. Nota dati: la fase di un programma si corregge dal modal del programma (campo Fase); l'app non riscrive d'ufficio fasi o nomi per non toccare lo storico.
+- Prossimo step consigliato: Fase 2 (estrazione `src/coach-ai/`) e decisione App Check (Fase 0.6).

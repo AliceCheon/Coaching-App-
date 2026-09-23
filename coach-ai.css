@@ -1,0 +1,198 @@
+/* Coach AI — stili analisi (AI2) e programmazione (AI3).
+   Estratti da coach-studio.css in Fase 2.13 e rinominati .coach-ai-*/.coach-ai-* -> .coach-ai-*.
+   I .coach-ai-* originali restano in coach-studio-inline.css (pannello/popover/floating). */
+
+.athlete-section,.athlete-missing-card,.athlete-context-strip,.coach-ai-score-card,.coach-ai-insight{border:1px solid var(--line,#e4d4ee);border-radius:18px;background:var(--card,#fff);box-shadow:0 8px 24px rgba(57,24,78,.06)}
+
+.coach-ai-score-card{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;padding:18px}
+
+.coach-ai-score{width:92px;height:92px;display:grid;place-content:center;text-align:center;border-radius:50%;background:conic-gradient(#d332c6 var(--score,75%),#eadcf0 0);border:7px solid rgba(255,255,255,.75)}
+
+.coach-ai-score strong{font-size:2rem;line-height:1}
+
+.coach-ai-score span{font-size:.8rem}
+
+.coach-ai-score-card h3,.coach-ai-score-card p{margin:0 0 5px}
+
+.coach-ai-score-card small{color:var(--muted,#74667e)}
+
+.coach-ai-sections{display:flex;gap:8px;overflow:auto;padding-bottom:4px}
+
+.coach-ai-sections span{white-space:nowrap;padding:8px 11px;border-radius:999px;background:rgba(182,55,218,.09);font-size:.82rem;font-weight:800}
+
+.coach-ai-insights{display:grid;gap:12px}
+
+.coach-ai-insight{padding:17px;border-left:5px solid #a945dd}
+
+.coach-ai-insight.warning{border-left-color:#ec9f31}
+
+.coach-ai-insight h3{margin:12px 0 6px}
+
+.coach-ai-insight p{margin:0 0 10px}
+
+.coach-ai-insight details{padding:10px 0}
+
+.coach-ai-insight summary{cursor:pointer;font-weight:850}
+
+.coach-ai-datum{display:inline-grid;gap:2px;margin:5px;padding:8px 10px;border-radius:10px;background:rgba(176,70,216,.08)}
+
+.coach-ai-datum em{font-size:.7rem;color:var(--muted,#74667e)}
+
+.coach-ai2.is-compact .coach-ai-score-card{grid-template-columns:auto 1fr}
+
+.coach-ai2.is-compact .coach-ai-score{width:68px;height:68px}
+
+.coach-ai2.is-compact .coach-ai-sections{display:none}
+
+@media(max-width:900px){.coach-ai-score-card{grid-template-columns:auto 1fr}}
+
+.coach-ai-score-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+
+.coach-ai-score-details>div{display:grid;grid-template-columns:1fr auto;gap:3px 10px;padding:9px 10px;border-radius:10px;background:rgba(176,70,216,.07)}
+
+.coach-ai-score-details small{grid-column:1/-1}
+
+.coach-ai-context-card{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+
+.coach-ai-context-card>div{padding:17px;border:1px solid var(--line,#e4d4ee);border-radius:16px;background:var(--card,#fff)}
+
+.coach-ai-context-card h3{margin:5px 0}
+
+.coach-ai-context-card p{margin:0 0 7px;color:var(--muted,#74667e)}
+
+.coach-ai-exercise-analysis{padding:18px;border:1px solid var(--line,#e4d4ee);border-radius:18px;background:var(--card,#fff);box-shadow:0 8px 24px rgba(57,24,78,.06)}
+
+.coach-ai-exercise-analysis h3{margin:4px 0}
+
+.coach-ai-exercise-table{display:grid;gap:5px;margin-top:14px;overflow-x:auto}
+
+.coach-ai-exercise-head,.coach-ai-exercise-table>button{min-width:820px;display:grid;grid-template-columns:minmax(220px,1.4fr) minmax(175px,1fr) minmax(120px,.65fr) minmax(180px,1fr);gap:12px;align-items:center}
+
+.coach-ai-exercise-head{padding:8px 12px;color:var(--muted,#74667e);font-size:.74rem;text-transform:uppercase;letter-spacing:.05em}
+
+.coach-ai-exercise-table>button{padding:11px 12px;border:1px solid var(--line,#eadff0);border-radius:12px;background:var(--surface,#fff);color:inherit;text-align:left;transition:transform .15s ease,border-color .15s ease}
+
+.coach-ai-exercise-table>button:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--purple-primary) 50%,var(--line,#eadff0))}
+
+.coach-ai-exercise-table>button span{display:grid;gap:3px}
+
+.coach-ai-exercise-table>button small{color:var(--muted,#74667e)}
+
+@media(max-width:900px){.coach-ai-score-details,.coach-ai-context-card{grid-template-columns:1fr}}
+
+@media(max-width:620px){.coach-ai-exercise-analysis{padding:14px}}
+
+/* Fase 24 — Coach AI 3.0 Intelligent Programming */
+.coach-ai-review{margin:24px 0;padding:22px;border:1px solid color-mix(in srgb,var(--accent,#d52fd0) 32%,transparent);border-radius:24px;background:linear-gradient(145deg,color-mix(in srgb,var(--panel,#fff) 95%,#f7d8ff),var(--panel,#fff));box-shadow:0 16px 42px rgba(78,25,112,.08)}
+
+.coach-ai-review>.row{align-items:flex-start;gap:18px}
+
+.coach-ai-review h2{margin:.25rem 0 .4rem}
+
+.coach-ai-audit-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+
+.coach-ai-audit-grid article{padding:14px;border-radius:16px;background:color-mix(in srgb,var(--panel,#fff) 76%,#e7c9ff);display:grid;gap:5px}
+
+.coach-ai-audit-grid strong{font-size:1.22rem}
+
+.coach-ai-findings{margin:12px 0 20px}
+
+.coach-ai-findings>article{display:grid;grid-template-columns:auto minmax(180px,.7fr) 2fr;gap:10px;align-items:start;padding:11px 0;border-bottom:1px solid color-mix(in srgb,currentColor 10%,transparent)}
+
+.coach-ai-proposals{display:grid;gap:16px}
+
+.coach-ai-proposal{padding:18px;border:1px solid color-mix(in srgb,var(--accent,#d52fd0) 20%,transparent);border-radius:19px;background:color-mix(in srgb,var(--panel,#fff) 94%,#f4dfff)}
+
+.coach-ai-proposal h3{margin:.35rem 0}
+
+.coach-ai-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+
+.coach-ai-options>section{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:15px;background:color-mix(in srgb,var(--panel,#fff) 86%,#e9cff8)}
+
+.coach-ai-options p{margin:0;flex:1}
+
+.coach-ai-options button{width:100%;margin-top:auto}
+
+.coach-ai-procon{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+
+.coach-ai-procon>*{padding:8px;border-radius:10px;background:color-mix(in srgb,var(--panel,#fff) 86%,transparent)}
+
+.coach-ai-preview-modal{width:min(880px,calc(100vw - 28px));max-height:min(88vh,900px);overflow:auto}
+
+.coach-ai-simulation-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}
+
+.coach-ai-simulation-grid article{padding:14px;border-radius:14px;background:color-mix(in srgb,var(--panel,#fff) 84%,#e8cbff)}
+
+.coach-ai-delta{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:1.1rem}
+
+.coach-ai-delta strong{color:var(--accent,#c521c9)}
+
+.coach-ai-muscle-deltas{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+
+.coach-ai-muscle-deltas h3{width:100%}
+
+.coach-ai-muscle-deltas span{padding:7px 10px;border-radius:999px;background:color-mix(in srgb,var(--panel,#fff) 75%,#e6c4ff)}
+
+.coach-ai-history{margin-top:18px}
+
+.coach-ai-history>div{display:grid;grid-template-columns:auto minmax(140px,1fr) minmax(180px,1fr);gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid color-mix(in srgb,currentColor 9%,transparent)}
+
+.coach-ai-history .accepted{background:#d9f7e7}
+
+.coach-ai-history .rejected{background:#ffe2e8}
+
+.coach-ai-history .undone{background:#eee6fa}
+
+@media(max-width:900px){.coach-ai-audit-grid,.coach-ai-simulation-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.coach-ai-options{grid-template-columns:1fr}.coach-ai-findings>article{grid-template-columns:1fr}.coach-ai-history>div{grid-template-columns:auto 1fr}.coach-ai-history small{grid-column:1/-1}.coach-ai-review{padding:15px;border-radius:18px}}
+
+.coach-ai-workspace-proposals .coach-ai-proposal{background:color-mix(in srgb,var(--surface,#fff) 94%,var(--pink-primary) 6%)}
+
+.ai-technical .coach-ai-exercise-analysis{box-shadow:none}
+
+@media(max-width:700px){.coach-ai-audit-grid{grid-template-columns:1fr 1fr}}
+
+/* Release Candidate · chiarezza delle azioni Coach AI */
+#coachModalPortalHost .coach-ai-backdrop{position:fixed;inset:0;z-index:11000;display:grid;place-items:center;padding:20px;background:rgba(20,8,32,.62);backdrop-filter:blur(5px)}
+
+#coachModalPortalHost .coach-ai-preview-modal,#coachModalPortalHost .coach-ai-applied-modal{width:min(900px,calc(100vw - 32px));max-height:min(90vh,920px);overflow:auto;outline:none}
+
+.coach-ai-exact-changes{display:grid;gap:12px;margin:18px 0}
+
+.coach-ai-exact-changes>article{padding:15px;border:1px solid var(--line,#e3d6e9);border-radius:16px;background:var(--card,#fff)}
+
+.coach-ai-exact-changes h3{margin:3px 0 12px}
+
+.coach-ai-change-line{display:grid;grid-template-columns:minmax(110px,.7fr) minmax(110px,1fr) auto minmax(110px,1fr);gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line,#eee4f2)}
+
+.coach-ai-change-line>span{display:grid;gap:2px;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--surface,#fff) 91%,var(--purple-primary) 9%)}
+
+.coach-ai-change-line small{color:var(--muted,#74667e);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}
+
+.coach-ai-change-line i{font-style:normal;color:var(--pink-primary);font-weight:900}
+
+.coach-ai-applied-modal{text-align:center}
+
+.coach-ai-success-mark{width:58px;height:58px;display:grid;place-items:center;margin:0 auto 10px;border-radius:50%;background:#daf6e5;color:#14733c;font-size:1.8rem;font-weight:950}
+
+.coach-ai-applied-modal .ai-simulation-summary{text-align:left}
+
+@media(max-width:700px){#coachModalPortalHost .coach-ai-backdrop{align-items:end;padding:8px}
+.coach-ai-change-line{grid-template-columns:1fr 1fr}
+.coach-ai-change-line>b{grid-column:1/-1}
+.coach-ai-change-line>i{display:none}}
+
+.coach-ai-exercise-filters{display:grid;grid-template-columns:minmax(180px,1.4fr) minmax(150px,1fr) minmax(150px,1fr) auto;gap:10px;align-items:center;margin:14px 0}
+
+.coach-ai-exercise-filters input,.coach-ai-exercise-filters select{min-height:42px;border:1px solid var(--line,#ead8f1);border-radius:12px;background:var(--card,#fff);color:inherit;padding:0 12px}
+
+.coach-ai-exercise-filters label{display:flex;align-items:center;gap:7px;white-space:nowrap}
+
+.coach-ai-sheet-preview{margin:14px 0;padding:14px;border:1px solid var(--line,#ead8f1);border-radius:16px;background:color-mix(in srgb,var(--card,#fff) 92%,#ebc7ff)}
+
+.coach-ai-sheet-preview article{display:grid;grid-template-columns:minmax(160px,1fr) minmax(180px,1.2fr) auto;gap:12px;align-items:center;padding:9px 10px;border-radius:10px}
+
+.coach-ai-sheet-preview article.is-target{background:color-mix(in srgb,var(--accent,#a636e8) 15%,transparent);outline:2px solid color-mix(in srgb,var(--accent,#a636e8) 50%,transparent)}
+
+.coach-ai-sheet-preview em{font-style:normal;font-weight:900;color:var(--accent,#8c28d7)}
+
+@media(max-width:760px){.coach-ai-exercise-filters{grid-template-columns:1fr}.coach-ai-sheet-preview article{grid-template-columns:1fr}.coach-ai-preview-modal{width:min(96vw,760px);max-height:92dvh;overflow:auto}}
