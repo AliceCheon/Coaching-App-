@@ -2845,6 +2845,13 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       target.training.manualWeek = Number(target.training.manualWeek) > 0 ? Number(target.training.manualWeek) : null;
       target.training.manualSessionCode = String(target.training.manualSessionCode || (legacyManual ? target.training.sessionName : ""));
       target.training.manualPhase = String(target.training.manualPhase || target.training.phaseFilter || target.profile?.phase || "");
+      // v14751 · il selettore Scheda ora salva l'id della scheda: gli stati salvati
+      // prima hanno solo il codice, quindi l'id va risolto una volta in fase di load.
+      if (!target.training.manualSessionId && target.training.manualSessionCode) {
+        const sheet = allProgramSheets(target).find((item) => item.code === target.training.manualSessionCode && item.phase === target.training.manualPhase)
+          || allProgramSheets(target).find((item) => item.code === target.training.manualSessionCode);
+        if (sheet) target.training.manualSessionId = sheet.id;
+      }
       target.training.workoutView = "tabs-compact";
       target.training.exerciseTabs = target.training.exerciseTabs && typeof target.training.exerciseTabs === "object" ? target.training.exerciseTabs : {};
       target.training.setDone = target.training.setDone && typeof target.training.setDone === "object" ? target.training.setDone : {};
@@ -5978,6 +5985,37 @@ function sanitizeForFirestore(value) {
       return extras.length ? `${base} · ${extras.slice(0, 2).join(" · ")}` : base;
     }
 
+    // Il selettore "Scheda" è la fonte della scelta: la fase è un attributo del
+    // programma che possiede la scheda, quindi la si deriva da lì. I codici scheda
+    // (A, B, C...) si ripetono in ogni programma, perciò l'opzione usa l'id della
+    // scheda e le schede sono raggruppate per programma.
+    function programSheetGroups() {
+      return (state.programs || [])
+        .filter((program) => !program.deletedAt)
+        .map((program) => ({
+          id: program.id,
+          label: cleanText(program.name || program.phase || "Programma").trim(),
+          sheets: (program.sheets || [])
+            .filter((sheet) => !sheet.deletedAt)
+            .slice()
+            .sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
+            .map((sheet) => ({ ...sheet, phase: program.phase || sheet.phase || "" })),
+        }))
+        .filter((group) => group.sheets.length);
+    }
+
+    function resolveManualSession() {
+      if (state.training.manualSessionId) {
+        const byId = allProgramSheets().find((sheet) => sheet.id === state.training.manualSessionId);
+        if (byId) return byId;
+      }
+      const code = String(state.training.manualSessionCode || "");
+      if (!code) return null;
+      const phase = String(state.training.manualPhase || "");
+      return allProgramSheets().find((sheet) => sheet.code === code && sheet.phase === phase)
+        || allProgramSheets().find((sheet) => sheet.code === code)
+        || null;
+    }
 
     function availablePhases() {
       return Array.from(new Set((state.programs || [])
@@ -6048,13 +6086,20 @@ function sanitizeForFirestore(value) {
       const autoWeek = weekFromLatestWorkout(date);
       const autoCode = autoSessionCodeForDate(date);
       const isManual = state.training.contextMode === "manual";
-      const phase = isManual ? (state.training.manualPhase || state.training.phaseFilter || "Intensificazione") : (state.training.phaseFilter || "Intensificazione");
+      // In manuale la scheda scelta determina la fase; in automatico la fase è
+      // quella attiva (phaseFilter) e la scheda segue data/settimana.
+      const manualSession = isManual ? resolveManualSession() : null;
+      const phase = isManual
+        ? (manualSession?.phase || state.training.manualPhase || state.training.phaseFilter || "Intensificazione")
+        : (state.training.phaseFilter || "Intensificazione");
       const phaseSessions = sessionsForPhase(phase);
-      const selectedCode = isManual ? state.training.manualSessionCode : (state.training.sessionName === "auto" ? autoCode : state.training.sessionName);
-      let session = allProgramSheets().find((item) => item.code === selectedCode && item.phase === phase);
-      const contextWarning = isManual && selectedCode && !session ? `La scheda ${selectedCode} non è disponibile nella fase ${phase}.` : "";
+      const selectedCode = isManual ? (manualSession?.code || "") : (state.training.sessionName === "auto" ? autoCode : state.training.sessionName);
+      let session = isManual ? manualSession : allProgramSheets().find((item) => item.code === selectedCode && item.phase === phase);
+      const contextWarning = isManual && !manualSession && (state.training.manualSessionCode || state.training.manualSessionId)
+        ? "La scheda selezionata non è più disponibile: scegline un'altra."
+        : "";
       if (!session && !isManual) session = phaseSessions.find((item) => item.code === autoCode) || phaseSessions[0] || programByCode(autoCode || "");
-      if (!session) session = phaseSessions[0] || programByCode(autoCode || "");
+      if (!session && !isManual) session = phaseSessions[0] || programByCode(autoCode || "");
       const week = isManual && Number(state.training.manualWeek) > 0 ? Number(state.training.manualWeek) : autoWeek;
       const canonicalSession = session;
       if (canonicalSession) {
@@ -7104,13 +7149,28 @@ function sanitizeForFirestore(value) {
       return { volume, available, estimated, countedSets };
     }
 
+    function sessionSheetSelectHtml(context) {
+      const groups = programSheetGroups();
+      const currentId = String(context.session?.id ?? "");
+      const options = groups.map((group) => `<optgroup label="${escapeHtml(group.label)}">${group.sheets.map((sheet) => {
+        const selected = String(sheet.id ?? "") === currentId ? " selected" : "";
+        return `<option value="${escapeHtml(String(sheet.id ?? sheet.code ?? ""))}"${selected}>${escapeHtml(`${cleanText(sheet.code || "").trim()}${sheet.name || sheet.focus ? ` · ${cleanText(sheet.name || sheet.focus).trim()}` : ""}`)}</option>`;
+      }).join("")}</optgroup>`).join("");
+      return `<select data-training-context="session" ${context.isManual ? "" : "disabled"}>${options}</select>`;
+    }
+
     function trainingContextControlsHtml(context = currentTrainingContext()) {
-      const training = state.training;
-      const phases = availablePhases();
-      const phase = context.phase || phases[0] || "";
-      const phaseSheets = sessionsForPhase(phase);
+      const phaseSheets = context.phaseSessions || sessionsForPhase(context.phase || "");
       const maxWeek = Math.max(1, ...phaseSheets.map((item) => Number(item.week) || 0), Number(state.profile.phaseLength) || 1);
-      return `<section class="training-context-card card"><div class="row"><div><span class="section-eyebrow">Contesto allenamento</span><strong>${context.isManual ? "Selezione manuale" : "Automatico dalla data"}</strong></div>${context.contextWarning ? `<span class="status-badge warning">${escapeHtml(context.contextWarning)}</span>` : ""}</div><div class="training-context-grid"><label>Modalità<select data-training-context="mode"><option value="auto" ${!context.isManual ? "selected" : ""}>Automatica</option><option value="manual" ${context.isManual ? "selected" : ""}>Manuale</option></select></label><label>Fase<select data-training-context="phase">${phases.map((item) => `<option value="${escapeHtml(item)}" ${item === phase ? "selected" : ""}>${escapeHtml(phaseSelectorLabel(item))}</option>`).join("")}</select></label><label>Settimana<select data-training-context="week" ${!context.isManual ? "disabled" : ""}>${Array.from({length:maxWeek},(_,i)=>`<option value="${i+1}" ${Number(context.week) === i+1 ? "selected" : ""}>Settimana ${i+1}</option>`).join("")}</select></label><label>Scheda<select data-training-context="session" ${!context.isManual ? "disabled" : ""}><option value="">Tutte le schede</option>${phaseSheets.map((item) => `<option value="${escapeHtml(item.code)}" ${item.code === context.session?.code ? "selected" : ""}>${escapeHtml(item.code)} · ${escapeHtml(item.name)}</option>`).join("")}</select></label></div><p class="micro-copy">${context.isManual ? `Stai usando ${escapeHtml(context.session?.code || "nessuna scheda")} · settimana ${context.week}.` : `La data ${escapeHtml(context.date)} determina automaticamente scheda e settimana.`}</p></section>`;
+      // La fase non è più un secondo selettore in concorrenza con la scheda:
+      // è il valore derivato dalla scheda programma. L'unica eccezione è la
+      // modalità manuale senza schede disponibili, dove resta un selettore di
+      // ripiego per non lasciare l'utente bloccato.
+      const phaseReadout = `<span class="training-context-derived" data-training-context-derived="phase">${escapeHtml(displayLabel(context.phase || "—"))}</span>`;
+      const phaseControl = context.isManual && !programSheetGroups().length
+        ? `<select data-training-context="phase">${availablePhases().map((item) => `<option value="${escapeHtml(item)}" ${item === context.phase ? "selected" : ""}>${escapeHtml(phaseSelectorLabel(item))}</option>`).join("")}</select>`
+        : phaseReadout;
+      return `<section class="training-context-card card"><div class="row"><div><span class="section-eyebrow">Contesto allenamento</span><strong>${context.isManual ? "Selezione manuale" : "Automatico dalla data"}</strong></div>${context.contextWarning ? `<span class="status-badge warning">${escapeHtml(context.contextWarning)}</span>` : ""}</div><div class="training-context-grid"><label>Modalità<select data-training-context="mode"><option value="auto" ${!context.isManual ? "selected" : ""}>Automatica</option><option value="manual" ${context.isManual ? "selected" : ""}>Manuale</option></select></label><label>Scheda${sessionSheetSelectHtml(context)}</label><label>Settimana<select data-training-context="week" ${!context.isManual ? "disabled" : ""}>${Array.from({length:maxWeek},(_,i)=>`<option value="${i+1}" ${Number(context.week) === i+1 ? "selected" : ""}>Settimana ${i+1}</option>`).join("")}</select></label><label>Fase${phaseControl}</label></div><p class="micro-copy">${context.isManual ? `Stai usando ${escapeHtml(context.session?.code || "nessuna scheda")} · fase ${escapeHtml(displayLabel(context.phase || "—"))} · settimana ${context.week}.` : `La data ${escapeHtml(context.date)} determina automaticamente scheda e settimana.`}</p></section>`;
     }
 
     function dashboardCoachHtml() {
@@ -7374,7 +7434,6 @@ function sanitizeForFirestore(value) {
     function trainingHtml() {
       const context = currentTrainingContext();
       const session = context.session;
-      const phases = availablePhases();
       const phaseSessions = context.phaseSessions;
       const completedExercises = (session.exercises || []).filter((item) => draftSetsFor(context, item).some((value) => String(value || "").trim())).length;
       const completion = session.exercises?.length ? Math.round(completedExercises / session.exercises.length * 100) : 0;
@@ -7408,15 +7467,13 @@ function sanitizeForFirestore(value) {
             <label>Data
               <input type="date" id="trainingDate" value="${context.date}">
             </label>
-            <label>Fase
-              <select id="trainingPhase">
-                ${phases.map((phase) => `<option value="${escapeHtml(phase)}" ${context.phase === phase ? "selected" : ""}>${escapeHtml(phaseSelectorLabel(phase))}</option>`).join("")}
-              </select>
-            </label>
             <label>Scheda
               <select id="trainingSession">
-                ${phaseSessions.map((item) => `<option value="${item.code}" ${session.code === item.code ? "selected" : ""}>${item.code} - ${item.focus}</option>`).join("")}
+                ${phaseSessions.map((item) => `<option value="${escapeHtml(String(item.id ?? item.code ?? ""))}" ${String(item.id ?? "") === String(session.id ?? "") ? "selected" : ""}>${escapeHtml(item.code)} · ${escapeHtml(item.name || item.focus || "")}</option>`).join("")}
               </select>
+            </label>
+            <label>Fase
+              <span class="training-context-derived">${escapeHtml(displayLabel(context.phase))}</span>
             </label>
           </div>
           <div class="session-note">${context.isRestDay ? "Giorno senza scheda automatica: resta su recupero/check oppure scegli una scheda manualmente." : escapeHtml(sessionNote)} ${context.phase === "Intensita" ? "Fase futura: importata, ma non ancora attiva nel percorso." : ""}</div>
@@ -10063,7 +10120,7 @@ function sanitizeForFirestore(value) {
         const defaultName=type === "program-save-as" ? `${item?.name||"Programma"} · copia` : item?.name||"";
         const store=athleteIntelligenceStore(), linked=store.programLinks[item?.id]||{}, athleteId=linked.athleteId||store.activeAthleteId;
         const contextFields=`<div class="program-setup"><h4>Contesto atleta e strategia</h4><label><input type="checkbox" id="programModalFree" ${linked.freeProgram?"checked":""}> Scheda libera: salta il collegamento</label><div class="form-grid"><label>Atleta<select id="programModalAthlete">${athleteOptionsHtml(athleteId)}</select></label><label>Strategia<select id="programModalStrategy"><option value="">Nessuna / rapida dopo</option>${strategyOptionsHtml(linked.strategyId||"",athleteId)}</select></label><label>Tipo blocco<select id="programModalBlock"><option value="" ${linked.blockType?"":"selected"}>— eredita dalla fase —</option>${window.BarbellDivaAthleteContext.BLOCK_TYPES.map((v)=>`<option value="${v}" ${linked.blockType===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Fase nutrizionale<select id="programModalNutrition">${window.BarbellDivaAthleteContext.NUTRITION_PHASES.map((v)=>`<option value="${v}" ${linked.nutritionalPhase===v?"selected":""}>${v}</option>`).join("")}</select></label></div></div>`;
-        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${heading}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(defaultName)}" placeholder="Nome programma"></label><label>Fase<input id="programModalPhase" value="${escapeHtml(item?.phase || "")}" placeholder="es. Intensità 2 ottobre-dicembre"><small class="micro-copy" style="margin:6px 0 0">È il valore che compare nel selettore Fase del workout e negli elenchi schede. Se lo lasci vuoto viene usato il nome della scheda.</small></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Cartella<select id="programModalFolder"><option value="">Nessuna cartella</option>${folders.map((folder)=>`<option value="${escapeHtml(folder)}" ${item?.folder===folder?"selected":""}>${escapeHtml(folder)}</option>`).join("")}</select></label><label>Stato<select id="programModalStatus"><option value="draft" ${type==="program-save-as" || item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${type!=="program-save-as" && item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${type!=="program-save-as" && item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div>${contextFields}<div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type==="program-save-as"?"Crea copia":"Salva programma"}</button></div></section></div>`;
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${heading}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(defaultName)}" placeholder="Nome programma"></label><label>Fase<input id="programModalPhase" value="${escapeHtml(item?.phase || "")}" placeholder="es. Intensità 2 ottobre-dicembre"><small class="micro-copy" style="margin:6px 0 0">È il valore mostrato nel campo Fase del workout (derivato dalla scheda scelta) e negli elenchi schede. Se lo lasci vuoto viene usato il nome della scheda.</small></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Cartella<select id="programModalFolder"><option value="">Nessuna cartella</option>${folders.map((folder)=>`<option value="${escapeHtml(folder)}" ${item?.folder===folder?"selected":""}>${escapeHtml(folder)}</option>`).join("")}</select></label><label>Stato<select id="programModalStatus"><option value="draft" ${type==="program-save-as" || item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${type!=="program-save-as" && item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${type!=="program-save-as" && item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div>${contextFields}<div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type==="program-save-as"?"Crea copia":"Salva programma"}</button></div></section></div>`;
       }
       if (type === "sheet-new" || type === "sheet-edit" || type === "sheet-rename") {
         const item = type === "sheet-new" ? { name: "", code: suggestedSheetCode(sheets), focus: "", split: "", note: "", color: "" } : targetSheet;
@@ -11958,10 +12015,10 @@ function sanitizeForFirestore(value) {
       document.querySelectorAll("[data-training-context]").forEach((input) => input.addEventListener("change", () => {
         const field = input.dataset.trainingContext;
         state.training = state.training || {};
-        if (field === "mode") state.training.contextMode = input.value;
-        if (field === "phase") { state.training.manualPhase = input.value; state.training.phaseFilter = input.value; state.training.manualSessionCode = ""; }
+        if (field === "mode") { state.training.contextMode = input.value; if (state.training.contextMode === "manual" && !state.training.manualSessionId && !state.training.manualSessionCode) { const first = allProgramSheets()[0]; state.training.manualSessionId = first?.id || ""; state.training.manualSessionCode = first?.code || ""; state.training.manualPhase = first?.phase || ""; } }
+        if (field === "phase") { state.training.manualPhase = input.value; state.training.phaseFilter = input.value; state.training.manualSessionId = ""; state.training.manualSessionCode = ""; }
         if (field === "week") state.training.manualWeek = Number(input.value) || null;
-        if (field === "session") state.training.manualSessionCode = input.value;
+        if (field === "session") { const sheet = allProgramSheets().find((item) => item.id === input.value); state.training.manualSessionId = input.value; state.training.manualSessionCode = sheet?.code || ""; state.training.manualPhase = sheet?.phase || state.training.manualPhase || ""; }
         state.training.sessionName = state.training.contextMode === "manual" ? (state.training.manualSessionCode || "") : "auto";
         saveState({ immediate: true });
         render();
@@ -12235,20 +12292,15 @@ function sanitizeForFirestore(value) {
           render();
         });
       }
-      const trainingPhase = document.getElementById("trainingPhase");
-      if (trainingPhase) {
-        trainingPhase.addEventListener("change", () => {
-          state.training.phaseFilter = trainingPhase.value;
-          const phaseSessions = sessionsForPhase(trainingPhase.value);
-          state.training.sessionName = phaseSessions[0]?.code || "E5";
-          saveState();
-          render();
-        });
-      }
       const trainingSession = document.getElementById("trainingSession");
       if (trainingSession) {
         trainingSession.addEventListener("change", () => {
-          state.training.sessionName = trainingSession.value;
+          const sheet = allProgramSheets().find((item) => item.id === trainingSession.value);
+          state.training.contextMode = "manual";
+          state.training.manualSessionId = trainingSession.value;
+          state.training.manualSessionCode = sheet?.code || "";
+          state.training.manualPhase = sheet?.phase || "";
+          state.training.sessionName = sheet?.code || "";
           saveState();
           render();
         });

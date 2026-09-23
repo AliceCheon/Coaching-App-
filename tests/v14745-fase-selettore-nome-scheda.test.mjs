@@ -1,9 +1,11 @@
-// v147.50 — Selettore "Fase": etichetta con il nome della scheda (bug "peaking").
+// v147.51 — Selettore "Scheda" (sheet-first) e Fase derivata (bug "peaking").
 // Storia: in "Workout del giorno → Modalità Manuale" l'elenco Fase mostrava solo
 // program.phase, quindi una scheda con nome diverso dalla fase (es. fase
 // "peaking" per il programma "Intensità 2 ottobre-dicembre") restava
-// irriconoscibile. Il VALORE dell'opzione resta la fase (nessuna migrazione dei
-// dati): cambia solo l'etichetta, che aggiunge il nome del programma.
+// irriconoscibile, e "peaking" compariva accanto al nome.
+// Soluzione: la SCHEDA è la fonte della scelta (raggruppata per programma, con
+// l'id come valore perché i codici A/B si ripetono tra i programmi) e la FASE è
+// un valore derivato dalla scheda scelta: niente più doppia etichetta.
 // Qui si verifica anche che i programmi eliminati e le fasi vuote non entrino
 // più nell'elenco delle fasi disponibili.
 import fs from "node:fs/promises";
@@ -46,9 +48,16 @@ const testResult = vm.runInContext(`(() => {
 
   state = clone(baseState);
   state.programs = [
-    { id: "p-peaking", name: "Intensità 2 ottobre-dicembre", phase: "peaking", status: "active", source: "custom", sheets: [] },
-    { id: "p-b1", name: "B program 1", phase: "B program 1", status: "available", sheets: [] },
-    { id: "p-deleted", name: "Scheda eliminata", phase: "fase fantasma", deletedAt: "2026-09-22T10:00:00.000Z", sheets: [] },
+    { id: "p-peaking", name: "Intensità 2 ottobre-dicembre", phase: "peaking", status: "active", source: "custom", sheets: [
+      { id: "sh-peak-a", code: "A", name: "Scheda A", week: 1, order: 0, exercises: [] },
+      { id: "sh-peak-b", code: "B", name: "Scheda B", week: 1, order: 1, exercises: [] }
+    ] },
+    { id: "p-b1", name: "B program 1", phase: "B program 1", status: "available", sheets: [
+      { id: "sh-b1-a", code: "A", name: "Scheda A", week: 1, order: 0, exercises: [] }
+    ] },
+    { id: "p-deleted", name: "Scheda eliminata", phase: "fase fantasma", deletedAt: "2026-09-22T10:00:00.000Z", sheets: [
+      { id: "sh-del-a", code: "A", name: "Scheda fantasma", week: 1, order: 0, exercises: [] }
+    ] },
     { id: "p-empty", name: "Senza fase", phase: "", sheets: [] }
   ];
 
@@ -64,15 +73,35 @@ const testResult = vm.runInContext(`(() => {
   check("nomi programma collegati alla fase", JSON.stringify(phaseProgramNames("peaking")) === JSON.stringify(["Intensità 2 ottobre-dicembre"]));
   check("programma eliminato non contribuisce al nome", phaseProgramNames("fase fantasma").length === 0);
 
-  const controls = trainingContextControlsHtml({ isManual: true, phase: "peaking", week: 1, date: "02/10/2026", session: null, contextWarning: "" });
-  check("selettore Fase leggibile nel contesto allenamento", controls.includes("peaking · Intensità 2 ottobre-dicembre"));
-  check("valore dell'opzione resta la fase", controls.includes('value="peaking"'));
+  // Sheet-first: la scheda è la fonte della scelta, raggruppata per programma,
+  // con l'id come valore (i codici A/B si ripetono tra i programmi).
+  const groups = programSheetGroups();
+  check("schede raggruppate per programma", groups.length === 2 && groups.map((g) => g.label).join("|") === "Intensità 2 ottobre-dicembre|B program 1");
+  check("programma eliminato escluso dai gruppi", groups.every((g) => g.id !== "p-deleted"));
+  check("le schede del gruppo portano la fase del programma", groups[0].sheets.every((s) => s.phase === "peaking"));
+  check("valore opzione = id scheda", groups[0].sheets[0].id === "sh-peak-a");
+
+  const manualContext = { isManual: true, phase: "peaking", week: 1, date: "02/10/2026", session: { id: "sh-peak-b", code: "B", name: "Scheda B" }, contextWarning: "", phaseSessions: sessionsForPhase("peaking") };
+  const controls = trainingContextControlsHtml(manualContext);
+  check("selettore Scheda presente nel contesto allenamento", controls.includes('data-training-context="session"'));
+  check("opzioni raggruppate per programma (optgroup)", controls.includes("<optgroup"));
+  check("scheda selezionata usa l'id", controls.includes('value="sh-peak-b"') && controls.includes("selected"));
+  check("Fase è un valore derivato, non un selettore", controls.includes('data-training-context-derived="phase"') && !controls.includes('data-training-context="phase"'));
+  check("Fase derivata mostra la fase della scheda", controls.includes('data-training-context-derived="phase">peaking<'));
+  check("nessuna etichetta sporca 'peaking · ...' nel selettore scheda", !controls.includes("peaking · Intensità"));
+
+  // In automatico la fase resta quella attiva e la scheda segue data/settimana.
+  const autoControls = trainingContextControlsHtml({ isManual: false, phase: "B program 1", week: 1, date: "02/10/2026", session: { id: "sh-b1-a", code: "A", name: "Scheda A" }, contextWarning: "", phaseSessions: sessionsForPhase("B program 1") });
+  check("in automatico il selettore scheda è disabilitato", autoControls.includes('data-training-context="session" disabled'));
+  check("in automatico la fase è quella attiva", autoControls.includes('data-training-context-derived="phase">B program 1<'));
 
   return { assertions, phases };
 })()`, context);
 
-if (!workoutFlow.includes("phaseSelectorLabel(phase)")) throw new Error("workout-flow-v147.js: il selettore Fase non usa phaseSelectorLabel");
-if (!appMain.includes("phaseSelectorLabel(item)")) throw new Error("app-main.js: gli elenchi Fase non usano phaseSelectorLabel");
-if (!appMain.includes("selettore Fase del workout")) throw new Error("app-main.js: il modal programma non spiega il campo Fase");
+if (!workoutFlow.includes('data-training-context="session"')) throw new Error("workout-flow-v147.js: manca il selettore Scheda sheet-first");
+if (!workoutFlow.includes('data-training-context-derived="phase"')) throw new Error("workout-flow-v147.js: la Fase non è un valore derivato");
+if (!appMain.includes("programSheetGroups")) throw new Error("app-main.js: manca programSheetGroups (sheet-first)");
+if (!appMain.includes("resolveManualSession")) throw new Error("app-main.js: manca resolveManualSession (scheda -> fase)");
+if (!appMain.includes("campo Fase del workout")) throw new Error("app-main.js: il modal programma non spiega il campo Fase");
 
 console.log(JSON.stringify({ ok: true, ...testResult }, null, 2));

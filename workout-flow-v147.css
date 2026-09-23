@@ -120,6 +120,20 @@
 
 .v147-manual-controls label { display: grid; gap: 6px; color: var(--v147-muted); font-size: .75rem; font-weight: 900; }
 .v147-manual-controls select { width: 100%; padding: 0 11px; }
+.v147-manual-controls .v147-derived-value {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 11px;
+  overflow: hidden;
+  border: 1px dashed var(--v147-line);
+  border-radius: 13px;
+  color: var(--v147-ink);
+  background: rgba(255, 255, 255, .5);
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .v147-preview-card {
   display: grid;

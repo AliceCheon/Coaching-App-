@@ -24,7 +24,7 @@ for (const marker of ["function logbookHtml", "saveWorkoutSession", "function ex
 }
 
 // Sync: locale prima, coda, cloud dopo conferma.
-for (const marker of ["queueReliableWorkoutSession", "reliableSyncQueue.enqueue", "flushReliableSync", "reconcileSessionVersions", "sync-reliability.js?v=v14750"]) {
+for (const marker of ["queueReliableWorkoutSession", "reliableSyncQueue.enqueue", "flushReliableSync", "reconcileSessionVersions", "sync-reliability.js?v=v14751"]) {
   check(html.includes(marker) || sync.includes(marker), `sync marker mancante: ${marker}`);
 }
 
@@ -36,9 +36,9 @@ for (const marker of ["function createBackupEnvelope", "function verifyBackupEnv
 // Firebase e cache PWA.
 for (const marker of ["function initFirebase", "saveCloudState", "FIREBASE_CONFIG"]) check(html.includes(marker), `Firebase marker mancante: ${marker}`);
 check(html.includes("const APP_BUILD = window.BarbellDivaV144Config?.build || \"v146.1\""), "build v146.1 non uniforme nell'app");
-check(config.includes('build: "v147.50-fase-scheda-label"') && config.includes('cache: "atlas-app-v14750-fase-scheda-label"'), "configurazione v147.1 non caricata correttamente");
-check(sw.includes('const CACHE_NAME = "atlas-app-v14750-fase-scheda-label"'), "cache service worker non allineata alla build v147.1");
-check(manifest.includes("index.html?v=v14750"), "manifest non allineato alla build v147.22-sync-pwa-forced");
+check(config.includes('build: "v147.51-scheda-prima-fase-derivata"') && config.includes('cache: "atlas-app-v14751-scheda-prima-fase-derivata"'), "configurazione v147.1 non caricata correttamente");
+check(sw.includes('const CACHE_NAME = "atlas-app-v14751-scheda-prima-fase-derivata"'), "cache service worker non allineata alla build v147.1");
+check(manifest.includes("index.html?v=v14751"), "manifest non allineato alla build v147.22-sync-pwa-forced");
 
 // I moduli esclusi non devono più essere caricati o consegnati.
 for (const removed of ["./nutrizione/", "workout-pro.js", "workout-pro.css", "food-backup.js", "photo-store.js"]) {
