@@ -175,6 +175,31 @@
 
     * { box-sizing: border-box; }
 
+    /* === v14757 · il canvas della pagina non deve MAI essere bianco ===
+       Sui browser mobile il colore di sfondo non dipinto appartiene al canvas
+       radice, che di default e' BIANCO. Sul FlexWindow della Z Flip 7 il
+       viewport CSS (100dvh) risulta piu' basso dell'area realmente visibile
+       (barre di sistema Samsung): la striscia sotto l'altezza del documento
+       non veniva dipinta e mostrava il canvas bianco -> la "banda bianca".
+       Dipingere lo sfondo su html, oltre che su body, rende quella striscia
+       del colore del tema. */
+    html {
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 12% 5%, rgba(143,53,236,.16), transparent 27%),
+        radial-gradient(circle at 88% 16%, rgba(247,37,133,.12), transparent 27%),
+        linear-gradient(145deg, #050612 0%, #0b0b20 52%, #080719 100%);
+      background-attachment: fixed;
+    }
+
+    html[data-theme="light"] {
+      background:
+        radial-gradient(circle at 8% 4%, rgba(104,49,174,.34), transparent 28%),
+        radial-gradient(circle at 88% 14%, rgba(255,162,213,.42), transparent 30%),
+        linear-gradient(135deg, #a985d4 0%, #cfafe8 42%, #e7c9e8 72%, #b897db 100%);
+      background-attachment: fixed;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
@@ -4916,7 +4941,7 @@
       .stage { min-height: 100dvh !important; height: 100dvh !important; }
     }
 
-    /* === v14756 · mobile/FlexWindow: niente altezza fantasma in fondo ===
+    /* === v14757 · mobile/FlexWindow: niente altezza fantasma in fondo ===
        Due elementi non navigabili creavano altezza oltre il viewport (misurato
        su 400x365: documento 407px su 365px), spingendo la scena sotto la piega
        sullo schermo di copertina:

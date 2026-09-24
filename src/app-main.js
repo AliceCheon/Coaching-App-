@@ -7252,6 +7252,9 @@ function sanitizeForFirestore(value) {
     function syncThemeUi() {
       const theme = state.profile.theme === "light" ? "light" : "dark";
       document.body.dataset.theme = theme; // applica il tema subito: il render successivo può essere bloccato dall'anti-loop guard
+      // Il canvas della pagina (html) segue il tema: l'area non dipinta sotto
+      // il documento non deve mai mostrare il bianco del browser (FlexWindow).
+      if (document.documentElement) document.documentElement.dataset.theme = theme;
       const button = document.getElementById("themeButton");
       const themeMeta = document.querySelector('meta[name="theme-color"]');
       if (themeMeta) themeMeta.setAttribute("content", theme === "light" ? "#c9a7ef" : "#090918");
@@ -7412,6 +7415,8 @@ function sanitizeForFirestore(value) {
       const coachViewport = captureCoachViewport();
       const enteringWorkout = activeScreen === "training" && lastRenderedScreen !== "training";
       document.body.dataset.theme = state.profile.theme || "dark";
+      // v14757 · il canvas (html) segue il tema corrente: vedi syncThemeUi.
+      if (document.documentElement) document.documentElement.dataset.theme = document.body.dataset.theme;
       document.body.classList.toggle("nav-collapsed", !!state.ui?.mainNavCollapsed);
       const coachEditorRoute = activeScreen === "coach" && coachStudioState().route === "program";
       const coachEditorNavHidden = coachEditorRoute && state.ui?.coachEditorNavVisible !== true;
