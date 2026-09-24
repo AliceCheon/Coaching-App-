@@ -4916,6 +4916,23 @@
       .stage { min-height: 100dvh !important; height: 100dvh !important; }
     }
 
+    /* === v14756 · mobile/FlexWindow: niente altezza fantasma in fondo ===
+       Due elementi non navigabili creavano altezza oltre il viewport (misurato
+       su 400x365: documento 407px su 365px), spingendo la scena sotto la piega
+       sullo schermo di copertina:
+       - .coach-editor-nav-restore non ha un posizionamento definito fuori da
+         min-width:981px (serve solo alla rail coach da desktop) e resta in
+         flusso anche da mobile;
+       - #globalDivaBotHost e' forzato a position:static dalla regola mobile di
+         coach-studio.css, quindi aggiungeva la sua altezza dopo la scena anche
+         se il bot al suo interno e' position:fixed.
+       Li togliamo dal flusso su tutto il mobile: dropdown della Diva e overlay
+       restano invariati perche' i loro figli sono gia' fixed/absolute. */
+    @media (max-width: 980px) {
+      .coach-editor-nav-restore { display: none !important; }
+      #globalDivaBotHost { position: fixed !important; left: 0; bottom: 0; width: 0; height: 0; }
+    }
+
 
 /* v14749 · errore di salvataggio dei modali Coach: visibile e persistente */
 .coach-modal-error {
