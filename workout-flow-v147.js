@@ -161,11 +161,11 @@
       </div>
       ${context.isManual ? `
         <div class="v147-manual-controls">
-          <label>Fase
-            <span class="v147-derived-value" data-training-context-derived="phase">${escapeHtml(displayLabel(context.phase) || "—")}</span>
-          </label>
           <label>Programma
             <select data-training-context="program">${programOptions}</select>
+          </label>
+          <label>Fase
+            <span class="v147-derived-value" data-training-context-derived="phase">${escapeHtml((typeof phaseDisplayLabel === "function" ? phaseDisplayLabel(context.phase) : displayLabel(context.phase)) || "—")}</span>
           </label>
           <label>Scheda
             <select data-training-context="session">${sheetOptions}</select>
@@ -531,7 +531,7 @@
         state.training.manualProgramId = program?.id || "";
         state.training.manualSessionId = first?.id || "";
         state.training.manualSessionCode = first?.code || "";
-        state.training.manualPhase = first?.phase || "";
+        state.training.manualPhase = typeof phaseFromProgramData === "function" ? (phaseFromProgramData(program, first, 1).phase || "") : (first?.phase || "");
       }
       state.training.sessionName = button.dataset.v147Mode === "manual" ? (state.training.manualSessionCode || "") : "auto";
       scheduleLocalSave(true);

@@ -3378,6 +3378,7 @@
     .training-context-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-top:12px; }
     .training-context-grid label { display:grid; gap:5px; }
     .training-context-derived { display:flex; align-items:center; min-height:38px; padding:0 11px; border:1px dashed rgba(201,167,255,.5); border-radius:10px; background:rgba(201,167,255,.10); font-weight:600; }
+    .program-week-phases { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
     .status-badge.warning { color:#ffd166; border-color:#ffd166; }
     @media(max-width:700px){ .training-context-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
     .exercise-analysis { margin-top:16px; padding:14px; border:1px solid rgba(201,167,255,.2); border-radius:14px; background:rgba(23,13,38,.62); }

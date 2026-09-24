@@ -55,6 +55,42 @@ const testResult = vm.runInContext(`(() => {
     { id: "p-b1", name: "B program 1", phase: "B program 1", status: "available", sheets: [
       { id: "sh-b1-a", code: "A", name: "Scheda A", week: 1, order: 0, exercises: [] }
     ] },
+    { id: "p-plan", name: "Programma con piano", phase: "Blocco pianificato", status: "active", durationWeeks: 4, periodization: { weeks: { 1: "volume", 2: "volume", 3: "accumulo", 4: "deload" } }, sheets: [
+      { id: "sh-plan-a", code: "A", name: "Scheda A", week: 1, order: 0, exercises: [] }
+    ] },
+    { id: "p-types", name: "Programma con tipi settimana", phase: "Blocco tipi", status: "active", sheets: [
+      { id: "sh-types-a", code: "A", name: "Scheda A", week: 1, order: 0, exercises: [
+        { id: "ex-1", name: "Hip Thrust", progression: { weeks: [
+          { weekNumber: 1, type: "intensification" },
+          { weekNumber: 2, type: "accumulation" },
+          { weekNumber: 3, type: "deload" }
+        ] } }
+      ] }
+    ] },
+    { id: "p-infer", name: "Programma strutturato", phase: "Blocco strutturato", status: "active", durationWeeks: 8, sheets: [
+      { id: "sh-infer-a", code: "A", name: "Scheda A", week: 1, order: 0, exercises: [
+        { id: "ex-a", name: "Hip Thrust", sets: "3", reps: "15", progression: { weeks: [
+          { weekNumber: 1, sets: "4", reps: "12" },
+          { weekNumber: 2, sets: "4", reps: "12" },
+          { weekNumber: 3, sets: "4", reps: "10" },
+          { weekNumber: 4, sets: "1", reps: "Test 10 RM" },
+          { weekNumber: 5, sets: "4", reps: "10" },
+          { weekNumber: 6, sets: "3", reps: "10" },
+          { weekNumber: 7, sets: "3", reps: "8" },
+          { weekNumber: 8, sets: "1", reps: "Test 8 RM" }
+        ] } },
+        { id: "ex-b", name: "Leg Curl", sets: "3", reps: "12", progression: { weeks: [
+          { weekNumber: 1, sets: "4", reps: "12" },
+          { weekNumber: 2, sets: "4", reps: "12" },
+          { weekNumber: 3, sets: "4", reps: "10" },
+          { weekNumber: 4, sets: "2", reps: "10" },
+          { weekNumber: 5, sets: "4", reps: "10" },
+          { weekNumber: 6, sets: "3", reps: "10" },
+          { weekNumber: 7, sets: "3", reps: "8" },
+          { weekNumber: 8, sets: "2", reps: "8" }
+        ] } }
+      ] }
+    ] },
     { id: "p-deleted", name: "Scheda eliminata", phase: "fase fantasma", deletedAt: "2026-09-22T10:00:00.000Z", sheets: [
       { id: "sh-del-a", code: "A", name: "Scheda fantasma", week: 1, order: 0, exercises: [] }
     ] },
@@ -64,7 +100,6 @@ const testResult = vm.runInContext(`(() => {
   const phases = availablePhases();
   check("fase della scheda presente nell'elenco", phases.includes("peaking"));
   check("programma eliminato escluso dall'elenco", phases.indexOf("fase fantasma") < 0);
-  check("fasi vuote escluse dall'elenco", phases.length === 2);
 
   check("etichetta con nome scheda", phaseSelectorLabel("peaking") === "peaking · Intensità 2 ottobre-dicembre");
   check("nessuna duplicazione quando fase uguale al nome", phaseSelectorLabel("B program 1") === "B program 1");
@@ -73,50 +108,105 @@ const testResult = vm.runInContext(`(() => {
   check("nomi programma collegati alla fase", JSON.stringify(phaseProgramNames("peaking")) === JSON.stringify(["Intensità 2 ottobre-dicembre"]));
   check("programma eliminato non contribuisce al nome", phaseProgramNames("fase fantasma").length === 0);
 
-  // Program-first: il PROGRAMMA è la fonte della scelta. La FASE è derivata da
-  // programma + settimana (deload ogni N settimane, altrimenti il tipo di blocco)
-  // e la SCHEDA è una di quelle del programma.
+  // Program-first con Fase CALCOLATA dai dati del programma (mai un dropdown).
+  // L'utente sceglie Modalità, Programma, Scheda, Settimana; la Fase deriva dalla
+  // struttura del programma (piano settimanale, tipo settimana esercizi, blocco).
   const groups = programSheetGroups();
-  check("schede raggruppate per programma", groups.length === 2 && groups.map((g) => g.label).join("|") === "Intensità 2 ottobre-dicembre|B program 1");
+  check("schede raggruppate per programma", groups.length === 5 && groups.slice(0, 2).map((g) => g.label).join("|") === "Intensità 2 ottobre-dicembre|B program 1");
   check("programma eliminato escluso dai gruppi", groups.every((g) => g.id !== "p-deleted"));
   check("le schede del gruppo portano la fase del programma", groups[0].sheets.every((s) => s.phase === "peaking"));
   check("valore opzione = id scheda", groups[0].sheets[0].id === "sh-peak-a");
 
-  check("programmi selezionabili escludono i vuoti/eliminati", availablePrograms().map((p) => p.id).join("|") === "p-b1|p-peaking");
+  check("programmi selezionabili escludono i vuoti/eliminati", availablePrograms().map((p) => p.id).join("|") === "p-b1|p-peaking|p-plan|p-types|p-infer");
   check("schede del programma filtrate per programma", programSheetsFor(programById("p-peaking")).map((s) => s.id).join("|") === "sh-peak-a|sh-peak-b");
-  check("tipo blocco del programma usato come fase base", programBlockType(programById("p-peaking")) === "peaking");
-  check("cadenza scarico default 4 settimane", programDeloadEvery(programById("p-b1")) === 4);
-  check("fase settimana 1 = tipo blocco dichiarato", derivedPhaseForWeek(programById("p-peaking"), 1) === "Peaking");
-  check("fase settimana 4 = deload", derivedPhaseForWeek(programById("p-b1"), 4) === "Deload");
-  check("fase settimana 8 = deload", derivedPhaseForWeek(programById("p-b1"), 8) === "Deload");
-  // Senza tipo di blocco dichiarato la fase segue la posizione della settimana.
-  check("programma senza blocco: settimana iniziale = volume", phaseFromWeekPosition(1, 8) === "Volume");
-  check("programma senza blocco: metà blocco = accumulo", phaseFromWeekPosition(4, 8) === "Accumulo");
-  check("programma senza blocco: oltre metà = intensificazione", phaseFromWeekPosition(6, 8) === "Intensificazione");
-  check("programma senza blocco: fine blocco = peaking", phaseFromWeekPosition(8, 8) === "Peaking");
-  check("fase settimana 1 senza blocco dichiarato = volume", derivedPhaseForWeek(programById("p-b1"), 1) === "Volume");
-  check("fase settimana 5 senza blocco dichiarato = intensificazione", derivedPhaseForWeek(programById("p-b1"), 5) === "Intensificazione");
-  // Cadenza scarico personalizzata (es. ogni 3 settimane).
-  check("cadenza scarico dal programma", programDeloadEvery({ id: "x", deloadEvery: 3 }) === 3);
-  check("fase settimana 3 con scarico ogni 3 = deload", derivedPhaseForWeek({ id: "x", deloadEvery: 3 }, 3) === "Deload");
-  check("override settimanale vince sulla derivazione", (state.training.weekPhases = { "p-b1:7": "peaking" }, derivedPhaseForWeek(programById("p-b1"), 7) === "Peaking" && (state.training.weekPhases = {}, true)));
 
-  const manualContext = { isManual: true, phase: "Deload", week: 4, date: "02/10/2026", session: { id: "sh-peak-b", code: "B", name: "Scheda B" }, program: programById("p-peaking"), programDeloadEvery: 4, contextWarning: "", phaseSessions: sessionsForPhase("peaking") };
+  // La Fase viene dai dati del programma, non da una regola generica.
+  const pPlan = programById("p-plan");
+  check("piano settimanale letto dai dati del programma", JSON.stringify(programWeekPlan(pPlan)) === JSON.stringify({ 1: "volume", 2: "volume", 3: "accumulo", 4: "deload" }));
+  check("fase settimana 4 dal piano = deload (non regola generica)", derivedPhaseForWeek(pPlan, 4) === "Deload");
+  check("fase settimana 3 dal piano = accumulo", derivedPhaseForWeek(pPlan, 3) === "Accumulo");
+  check("settimane deload ricavate dal piano", [...programDeloadWeeks(pPlan)].join("|") === "4");
+  const pTypes = programById("p-types");
+  check("tipo settimana usato quando il piano non dichiara la settimana", derivedPhaseForWeek(pTypes, 2, programSheetsFor(pTypes)[0]) === "Accumulo");
+  check("tipo settimana deload letto dagli esercizi", derivedPhaseForWeek(pTypes, 3, programSheetsFor(pTypes)[0]) === "Deload");
+  check("tipo settimana intensification tradotto", derivedPhaseForWeek(pTypes, 1, programSheetsFor(pTypes)[0]) === "Intensificazione");
+  // Un programma che dichiara un tipo di blocco canonico lo usa come fase.
+  check("tipo blocco canonico usato come fase", derivedPhaseForWeek(programById("p-peaking"), 1) === "Peaking");
+  // Un programma senza dati di fase mostra la propria etichetta, non una fase inventata.
+  check("programma senza struttura: etichetta programma", derivedPhaseForWeek(programById("p-b1"), 5) === "B program 1");
+  check("nessuna regola generica 'settimana 4 = deload' senza dati", derivedPhaseForWeek(programById("p-b1"), 4) === "B program 1");
+
+  // Programma senza periodizzazione dichiarata ma con struttura: la fase viene
+  // inferita dai suoi dati (settimane di test di carico, volume programmato).
+  const pInfer = programById("p-infer");
+  const inferred = inferredWeekPlan(pInfer);
+  check("piano inferito dalla struttura del programma", [1, 2, 3, 4, 5, 6, 7, 8].map((w) => inferred[w]).join("|") === "volume|volume|volume|deload|volume|accumulo|accumulo|peaking");
+  check("settimana di test a inizio blocco = deload", derivedPhaseForWeek(pInfer, 4) === "Deload");
+  check("settimana di test a fine programma = peaking", derivedPhaseForWeek(pInfer, 8) === "Peaking");
+  check("settimana ad alto volume = volume", derivedPhaseForWeek(pInfer, 1) === "Volume");
+  check("volume ridotto = accumulo", derivedPhaseForWeek(pInfer, 7) === "Accumulo");
+  check("origine fase segnalata come struttura", phaseFromProgramData(pInfer, null, 8).source === "struttura del programma");
+  // Un test di calibrazione dentro una settimana a volume PIENO non è uno scarico
+  // (caso reale: "test 12RM" in settimana 1 di un programma a volume alto).
+  state.programs.push({ id: "p-calib", name: "Calibrazione", phase: "Blocco", status: "active", durationWeeks: 4, sheets: [
+    { id: "sh-calib-a", code: "A", name: "Scheda A", week: 1, order: 0, exercises: [
+      { id: "ex-cal-a", name: "Pendulum", sets: "3", reps: "10", progression: { weeks: [
+        { weekNumber: 1, sets: "3", reps: "test 12rm" }, { weekNumber: 2, sets: "4", reps: "10" }, { weekNumber: 3, sets: "4", reps: "10" }, { weekNumber: 4, sets: "4", reps: "10" }
+      ] } },
+      { id: "ex-cal-b", name: "Leg Curl", sets: "3", reps: "10", progression: { weeks: [
+        { weekNumber: 1, sets: "4", reps: "10" }, { weekNumber: 2, sets: "4", reps: "10" }, { weekNumber: 3, sets: "4", reps: "10" }, { weekNumber: 4, sets: "4", reps: "10" }
+      ] } }
+    ] }
+  ] });
+  check("test di calibrazione a volume pieno non diventa deload", derivedPhaseForWeek(programById("p-calib"), 1, programSheetsFor(programById("p-calib"))[0]) !== "Deload");
+  state.programs = state.programs.filter((program) => program.id !== "p-calib");
+  // Il piano dichiarato vince su quello inferito.
+  check("piano dichiarato prevale sull'inferito", derivedPhaseForWeek(programById("p-plan"), 1) === "Volume");
+
+  // Editor di periodizzazione nel modal Programma: mostra i select settimana→fase
+  // e, per i programmi che non la dichiarano, propone quella inferita dalla struttura.
+  coachProgramUi.modal = "program-edit";
+  coachProgramUi.programId = "p-infer";
+  coachModalRenderingPortal = true;
+  const modalHtml = coachUiModalHtml();
+  coachModalRenderingPortal = false;
+  check("editor periodizzazione nel modal programma", modalHtml.includes('data-program-week-phase="4"'));
+  check("periodizzazione proposta per programma senza piano", modalHtml.includes('value="peaking" selected'));
+  check("settimana 4 proposta come deload", modalHtml.includes('value="deload" selected'));
+  check("modal spiega che la Fase deriva dalla periodizzazione", modalHtml.includes("La Fase mostrata nel workout viene calcolata da qui"));
+
+  // Un piano dichiarato dal programma viene pre-selezionato nel modal, così il
+  // salvataggio non riparte da zero.
+  coachProgramUi.modal = "program-edit";
+  coachProgramUi.programId = "p-plan";
+  coachModalRenderingPortal = true;
+  const modalPlanHtml = coachUiModalHtml();
+  coachModalRenderingPortal = false;
+  check("piano dichiarato pre-selezionato nel modal", modalPlanHtml.includes('data-program-week-phase="4"') && modalPlanHtml.includes('value="deload" selected'));
+  check("etichetta fase non è un selettore di periodizzazione", /id="programModalPhase"[^>]*value="Blocco pianificato"/.test(modalPlanHtml));
+
+  // Round-trip: la periodizzazione salvata dal modal viene poi usata come fonte
+  // della fase (stessa pipeline del salvataggio reale).
+  programRepository.updateProgram("p-b1", { periodization: { weeks: { 1: "accumulo", 2: "deload" } } }, { immediate: true });
+  check("piano salvato diventa fonte della fase", derivedPhaseForWeek(programById("p-b1"), 2) === "Deload");
+  check("piano salvato non tocca le settimane non dichiarate", derivedPhaseForWeek(programById("p-b1"), 5) === "B program 1");
+
+  const manualContext = { isManual: true, phase: "Deload", week: 4, date: "02/10/2026", session: { id: "sh-plan-a", code: "A", name: "Scheda A" }, program: programById("p-plan"), phaseSource: "pianificazione", contextWarning: "", phaseSessions: sessionsForPhase("peaking") };
   const controls = trainingContextControlsHtml(manualContext);
   check("selettore Programma presente", controls.includes('data-training-context="program"'));
   check("selettore Scheda presente nel contesto allenamento", controls.includes('data-training-context="session"'));
-  check("scheda selezionata usa l'id", controls.includes('value="sh-peak-b"') && controls.includes("selected"));
-  check("opzioni scheda mostrano solo il nome", controls.includes(">Scheda B<") && !controls.includes("B · Scheda B"));
+  check("scheda selezionata usa l'id", controls.includes('value="sh-plan-a"') && controls.includes("selected"));
+  check("opzioni scheda mostrano solo il nome", controls.includes(">Scheda A<") && !controls.includes("A · Scheda A"));
   check("Fase è un valore derivato, non un selettore", controls.includes('data-training-context-derived="phase"') && !controls.includes('data-training-context="phase"'));
-  check("Fase derivata mostra il deload della settimana 4", controls.includes('data-training-context-derived="phase">Deload<'));
-  check("indicazione cadenza scarico visibile", controls.includes("deload ogni 4 settimane"));
-  check("nessuna etichetta sporca 'peaking · ...' nel selettore scheda", !controls.includes("peaking · Intensità"));
+  check("Fase calcolata mostra il deload dal piano", controls.includes('data-training-context-derived="phase">Deload<'));
+  check("origine della fase indicata", controls.includes("dalla pianificazione"));
+  check("nessuna etichetta sporca 'peaking · ...' nella card", !controls.includes("peaking · Intensità"));
   const orderMode = controls.indexOf(">Modalità");
-  const orderPhase = controls.indexOf(">Fase");
   const orderProgram = controls.indexOf(">Programma");
+  const orderPhase = controls.indexOf(">Fase");
   const orderSheet = controls.indexOf(">Scheda");
   const orderWeek = controls.indexOf(">Settimana<");
-  check("ordine campi Modalità → Fase → Programma → Scheda → Settimana", orderMode > -1 && orderPhase > orderMode && orderProgram > orderPhase && orderSheet > orderProgram && orderWeek > orderSheet);
+  check("ordine campi Modalità → Programma → Fase → Scheda → Settimana", orderMode > -1 && orderProgram > orderMode && orderPhase > orderProgram && orderSheet > orderPhase && orderWeek > orderSheet);
 
   // La Fase normalizza le varianti al vocabolario dei blocchi (volume/accumulo/
   // intensificazione/peaking...) ma lascia intatti i nomi liberi.

@@ -117,3 +117,18 @@ Obiettivo:
   - Aggiornati resolveManualSession/resolveManualProgram, currentTrainingContext (context.program, context.programDeloadEvery), handler, selettore legacy #trainingSession, modeControlsHtml e griglie CSS.
 - Stato test: 143/143 pass, incluso v14745 esteso.
 - Blocco aperto: nessuno.
+
+### 8) 2026-09-23 — Fase dai DATI del programma (stessa build v147.52, fix di logica)
+
+- UUID: 0008
+- Commit riferimento: working tree (sopra 135a00e)
+- Cosa è cambiato (raffinamento della UX precedente):
+  - La Fase non usa più alcuna regola generica ("ogni 4 settimane deload", "inizio=volume, fine=peaking"). Ora è derivata dai **dati del programma**, in quest'ordine: 1) piano esplicito `program.periodization.weeks`; 2) tipo settimana negli esercizi (`progression.weeks[].type`); 3) struttura ricavata dalla progressione (settimane di test di carico/RM e volume relativo); 4) tipo di blocco canonico; 5) etichetta fase del programma come ultima risorsa.
+  - Rimosse `programDeloadEvery` e `phaseFromWeekPosition`: la cadenza di scarico si legge dai dati, non da una costante.
+  - Nuove `programWeekProfile()` (serie programmate + marker test/RM per settimana), `inferredWeekPlan()` e `programWeekPlan()`; `phaseFromProgramData()` sostituisce la vecchia derivazione e riporta anche l'origine (`pianificazione del programma`, `struttura del programma`, `settimana della scheda`, `blocco del programma`, `programma`).
+  - Editor "Periodizzazione (settimana → fase)" nel modal Programma: la tabella settimana→fase è precompilata con il piano dichiarato o quello inferito; il salvataggio scrive `program.periodization.weeks` (round-trip verificato nei test).
+  - `manualPhase` ora è sincronizzato dal contesto reale (programma+scheda+settimana) in tutti i punti che lo scrivevano dalla sola scheda (`syncManualPhase`, selettore legacy `#trainingSession`, pulsanti modalità `data-v147-mode`).
+  - Corretto un bug di inferenza sui dati reali: un test di calibrazione ("test 12RM") dentro una settimana a volume PIENO non è più classificato come deload; la tacca finale è peaking sull'ultima settimana con dati (non sulla durata dichiarata).
+- Stato test: **143/143 pass** (`node --test "tests/*.test.mjs"`), incluso `v14745` con il nuovo caso di calibrazione.
+- Blocco aperto: nessuno.
+
