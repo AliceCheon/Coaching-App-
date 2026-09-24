@@ -21,7 +21,7 @@ assert.match(html, /prefers-reduced-motion:reduce/);
 assert.match(html, /data-dashboard-coach-open/);
 assert.match(html, /openCoachModal\("coach-ai-confirm", \{ suggestion:first \}\)/);
 assert.match(html, /serviceWorker\.register\(`\.\/service-worker\.js\?v=\$\{APP_BUILD\}`/);
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14751-scheda-fase-settimana"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14752-fase-da-dati-programma"/);
 assert.doesNotMatch(html, /6e2fab5e-6659-403b-9ac6-4c9ac2083406/);
 assert.doesNotMatch(html, /C:\/Users\/AliceClemente\/Downloads/);
 console.log(JSON.stringify({ ok:true, mascot:"Diva Bot", states:8, mobile:true, cache:"v106" }));

@@ -125,11 +125,15 @@ const testResult = vm.runInContext(`(() => {
   check("piano settimanale letto dai dati del programma", JSON.stringify(programWeekPlan(pPlan)) === JSON.stringify({ 1: "volume", 2: "volume", 3: "accumulo", 4: "deload" }));
   check("fase settimana 4 dal piano = deload (non regola generica)", derivedPhaseForWeek(pPlan, 4) === "Deload");
   check("fase settimana 3 dal piano = accumulo", derivedPhaseForWeek(pPlan, 3) === "Accumulo");
-  check("settimane deload ricavate dal piano", [...programDeloadWeeks(pPlan)].join("|") === "4");
+  check("settimane deload ricavate dal piano esplicito", Object.entries(pPlan.periodization.weeks).filter(([, v]) => v === "deload").map(([k]) => k).join("|") === "4");
+  // v147.52 · Il type del singolo esercizio NON determina più la Fase: la fase
+  // viene solo dalla mappatura del programma o, in mancanza, dall'inferenza
+  // strutturale marcata come "stimata".
   const pTypes = programById("p-types");
-  check("tipo settimana usato quando il piano non dichiara la settimana", derivedPhaseForWeek(pTypes, 2, programSheetsFor(pTypes)[0]) === "Accumulo");
-  check("tipo settimana deload letto dagli esercizi", derivedPhaseForWeek(pTypes, 3, programSheetsFor(pTypes)[0]) === "Deload");
-  check("tipo settimana intensification tradotto", derivedPhaseForWeek(pTypes, 1, programSheetsFor(pTypes)[0]) === "Intensificazione");
+  check("tipo esercizio non determina più la fase del programma", derivedPhaseForWeek(pTypes, 2, programSheetsFor(pTypes)[0]) !== "Accumulo");
+  check("type esercizio deload non diventa fase del programma", derivedPhaseForWeek(pTypes, 3, programSheetsFor(pTypes)[0]) !== "Deload");
+  check("type esercizio a fine blocco non diventa peaking", derivedPhaseForWeek(pTypes, 3, programSheetsFor(pTypes)[0]) !== "Peaking");
+  check("senza mappatura né struttura resta l'etichetta del programma", derivedPhaseForWeek(pTypes, 2, programSheetsFor(pTypes)[0]) === "Blocco tipi");
   // Un programma che dichiara un tipo di blocco canonico lo usa come fase.
   check("tipo blocco canonico usato come fase", derivedPhaseForWeek(programById("p-peaking"), 1) === "Peaking");
   // Un programma senza dati di fase mostra la propria etichetta, non una fase inventata.
@@ -145,7 +149,9 @@ const testResult = vm.runInContext(`(() => {
   check("settimana di test a fine programma = peaking", derivedPhaseForWeek(pInfer, 8) === "Peaking");
   check("settimana ad alto volume = volume", derivedPhaseForWeek(pInfer, 1) === "Volume");
   check("volume ridotto = accumulo", derivedPhaseForWeek(pInfer, 7) === "Accumulo");
-  check("origine fase segnalata come struttura", phaseFromProgramData(pInfer, null, 8).source === "struttura del programma");
+  check("origine fase segnalata come struttura stimata", phaseFromProgramData(pInfer, null, 8).source === "struttura del programma (stimata)");
+  check("inferenza marcata come stimata", phaseFromProgramData(pInfer, null, 8).estimated === true);
+  check("mappatura esplicita non marcata come stimata", phaseFromProgramData(pPlan, 1).estimated === false);
   // Un test di calibrazione dentro una settimana a volume PIENO non è uno scarico
   // (caso reale: "test 12RM" in settimana 1 di un programma a volume alto).
   state.programs.push({ id: "p-calib", name: "Calibrazione", phase: "Blocco", status: "active", durationWeeks: 4, sheets: [
@@ -173,7 +179,7 @@ const testResult = vm.runInContext(`(() => {
   check("editor periodizzazione nel modal programma", modalHtml.includes('data-program-week-phase="4"'));
   check("periodizzazione proposta per programma senza piano", modalHtml.includes('value="peaking" selected'));
   check("settimana 4 proposta come deload", modalHtml.includes('value="deload" selected'));
-  check("modal spiega che la Fase deriva dalla periodizzazione", modalHtml.includes("La Fase mostrata nel workout viene calcolata da qui"));
+  check("modal spiega che la Fase deriva dalla periodizzazione", modalHtml.includes("La Fase del programma è definita qui"));
 
   // Un piano dichiarato dal programma viene pre-selezionato nel modal, così il
   // salvataggio non riparte da zero.

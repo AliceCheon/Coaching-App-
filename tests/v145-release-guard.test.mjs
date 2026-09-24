@@ -11,8 +11,8 @@ const config = read("app-config-v144.js");
 const failures = [];
 const check = (condition, message) => { if (!condition) failures.push(message); };
 
-check(config.includes('build: "v147.51-scheda-fase-settimana"'), "La build non corrisponde alla v147.1.");
-check(serviceWorker.includes('const CACHE_NAME = "atlas-app-v14751-scheda-fase-settimana"'), "La cache PWA non è allineata alla build v147.1.");
+check(config.includes('build: "v147.52-fase-da-dati-programma"'), "La build non corrisponde alla v147.1.");
+check(serviceWorker.includes('const CACHE_NAME = "atlas-app-v14752-fase-da-dati-programma"'), "La cache PWA non è allineata alla build v147.1.");
 check(html.includes("data-unified-training-toggle"), "Allenamento non è più un menu espandibile nella barra principale.");
 for (const unwanted of ["Completato", "Workout", "Pacchetti", "Abbonamenti"]) {
   check(!html.includes(`["${unwanted}"`), `Voce Coach indesiderata reintrodotta: ${unwanted}.`);
