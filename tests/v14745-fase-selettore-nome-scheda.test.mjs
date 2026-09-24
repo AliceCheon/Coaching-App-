@@ -145,8 +145,11 @@ const testResult = vm.runInContext(`(() => {
   const pInfer = programById("p-infer");
   const inferred = inferredWeekPlan(pInfer);
   // Il piano ora lo produce il motore di classificazione (non una tabella):
-  // settimana di scarico a calo di volume, settimana finale di test = peaking.
-  check("piano inferito dal motore", [1, 2, 3, 4, 5, 6, 7, 8].map((w) => inferred[w]).join("|") === "volume|volume|volume|deload|volume|ipertrofia|deload|peaking");
+  // il taper (serie ridotte) verso il test finale diventa scarico, la settimana
+  // di test conclusiva diventa peaking. Il blocco non ha una metodologia
+  // riconoscibile (nessuna discendenza/ascendenza ricorrente), quindi le settimane
+  // di lavoro sono lette dal volume: massimo => volume.
+  check("piano inferito dal motore", [1, 2, 3, 4, 5, 6, 7, 8].map((w) => inferred[w]).join("|") === "volume|volume|volume|deload|volume|deload|deload|peaking");
   check("settimana di scarico a volume ridotto = deload", derivedPhaseForWeek(pInfer, 4) === "Deload");
   check("settimana di test finale = peaking", derivedPhaseForWeek(pInfer, 8) === "Peaking");
   check("settimana ad alto volume = volume", derivedPhaseForWeek(pInfer, 1) === "Volume");
