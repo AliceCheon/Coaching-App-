@@ -23,7 +23,7 @@ for (const marker of [
 ]) check(html.includes(marker), `strumento Coach mancante: ${marker}`);
 
 check(html.includes('class="coach-exercise-name-text" data-inline-replace='), "il nome esercizio non apre la sostituzione");
-check(html.includes("coach-tools-v1451.css?v=v14753"), "foglio stile strumenti non caricato");
+check(html.includes("coach-tools-v1451.css?v=v14754"), "foglio stile strumenti non caricato");
 check(sw.includes('"./coach-tools-v1451.css"'), "foglio stile strumenti non precaricato");
 check(css.includes("@media (prefers-reduced-motion: reduce)"), "manca la riduzione animazioni");
 check(css.includes("color: var(--text, #2a1638)"), "contrasto testo strumenti non collegato al tema");

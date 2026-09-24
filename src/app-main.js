@@ -2836,40 +2836,46 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         {name:"Calf_machine",kg:60,maxKg:60,value:"60 / 60 kg",setValues:["60","60"],userNote:"",date:"14/07/2026",sets:"2",reps:"15-20",sessionCode:"E6"},{name:"Adductor",kg:90,maxKg:95,value:"85 / 95 kg",setValues:["85","95"],userNote:"",date:"14/07/2026",sets:"2",reps:"15-20",sessionCode:"E6"},{name:"Stacco_RDL",kg:75,maxKg:78,value:"78 / 72 kg",setValues:["78","72"],userNote:"Ho fatto due serie con 76 e 78 tutte e due 7 Rep 💪🏻 💪🏻💪🏻   volendo prossima volta aumento a 80 direttamente minimo 5 ce le ho.\nPoi ho fatto 1 con 72 ne ho fatte 9",date:"14/07/2026",sets:"2",reps:"1x5-8 1x9-12",sessionCode:"E6"},{name:"Stacco_mono_gamba",kg:16.25,maxKg:20,value:"12.5 / 15 / 17.5 / 20 kg",setValues:["12.5","15","17.5","20"],userNote:"Ho usato i pesi giù",date:"14/07/2026",sets:"4",reps:"15, 12, 10, 8",sessionCode:"E6"},{name:"Pendulum",kg:44,maxKg:44,value:"44 / 44 / 44 kg",setValues:["44","44","44"],userNote:"Continuo con 44 finché non arrivo a 10 rep",date:"14/07/2026",sets:"3",reps:"6-10",sessionCode:"E6"},{name:"Leg_curls_singolo",kg:30,maxKg:30,value:"30 / 30 / 30 kg",setValues:["30","30","30"],userNote:"Prox volta aumenta 35",date:"14/07/2026",sets:"3",reps:"5-8",sessionCode:"E6"},{name:"Abductor",kg:35,maxKg:35,value:"35 / 35 / 35 / 35 kg",setValues:["35","35","35","35"],userNote:"",date:"14/07/2026",sets:"4",reps:"30+40\" iso",sessionCode:"E6"},{name:"Leg_Extension",kg:55,maxKg:55,value:"55 / 55 / 55 kg",setValues:["55","55","55"],userNote:"",date:"14/07/2026",sets:"3",reps:"10-12",sessionCode:"E6"}],cloudSyncedAt:"2026-07-14T17:35:31.799Z"}
     ]; }
 
-    // v147.52 · La Fase di un programma è un DATO del programma, non una regola
-    // globale: qui fissiamo nei dati la mappatura PROGRAMMA → SETTIMANA → FASE
-    // verificata sui 4 programmi reali. È una migrazione una tantum: da qui in
-    // poi la mappatura vive in `program.periodization.weeks` ed è modificabile
-    // a mano dall'editor del programma.
-    function migrateConfirmedWeekPlans(target = state) {
-      const plans = {
+    // v147.53 · La v147.52 scriveva nei dati una tabella settimana→fase PER NOME
+    // DI PROGRAMMA ("b program 1", "intensità agosto-ottobre", ...). Era la
+    // scorciatoia che il requisito vieta: classificava i 4 programmi esistenti
+    // perché erano elencati, non perché il motore li leggesse. Ora la Fase la
+    // deduce il motore dalla struttura; la tabella resta solo come OVERRIDE
+    // OPZIONALE che l'autore compila a mano dall'editor del programma.
+    // Questa migrazione rimuove le tabelle seminate automaticamente (riconosciute
+    // perché identiche ai semi originali) così il motore torna a decidere.
+    function migrateRemoveSeededWeekPlans(target = state) {
+      const seeded = {
         "b program 1": { 1: "volume", 2: "volume", 3: "volume", 4: "deload", 5: "volume", 6: "volume", 7: "deload", 8: "peaking" },
         "b program 2": { 1: "volume", 2: "volume", 3: "volume", 4: "deload", 5: "volume", 6: "volume", 7: "deload", 8: "peaking" },
         "intensificazione": { 1: "intensificazione", 2: "intensificazione", 3: "intensificazione", 4: "intensificazione", 5: "intensificazione", 6: "intensificazione", 7: "peaking" },
         "intensità agosto-ottobre": { 1: "volume", 2: "volume", 3: "volume", 4: "deload", 5: "volume", 6: "volume", 7: "volume", 8: "deload" }
       };
       target.migrations = target.migrations || {};
-      if (Number(target.migrations.confirmedWeekPlansV14752 || 0) >= 1) return false;
-      // Il flag si fissa solo quando ci sono programmi da esaminare: se lo stato
-      // arriva prima vuoto (sync cloud in ritardo) la migrazione riproverà.
+      if (Number(target.migrations.confirmedWeekPlansRemovedV14753 || 0) >= 1) return false;
       if (!(target.programs || []).length) return false;
-      let applied = 0;
+      let removed = 0;
       (target.programs || []).forEach((program) => {
         const key = String(program?.name || "").trim().toLowerCase().replace(/\s+/g, " ");
-        const plan = plans[key];
-        if (!plan) return;
-        if (program.periodization?.weeks && Object.keys(program.periodization.weeks).length) return;
-        program.periodization = { ...(program.periodization || {}), weeks: { ...plan } };
-        applied += 1;
+        const seed = seeded[key];
+        const weeks = program?.periodization?.weeks;
+        if (!seed || !weeks) return;
+        const same = Object.keys(weeks).length === Object.keys(seed).length
+          && Object.entries(seed).every(([week, phase]) => String(weeks[week] || weeks[String(week)] || "").trim() === phase);
+        if (!same) return;
+        const rest = { ...(program.periodization || {}) };
+        delete rest.weeks;
+        program.periodization = rest;
+        removed += 1;
       });
-      target.migrations.confirmedWeekPlansV14752 = 1;
-      target.migrations.confirmedWeekPlansV14752Applied = applied;
-      return applied > 0;
+      target.migrations.confirmedWeekPlansRemovedV14753 = 1;
+      target.migrations.confirmedWeekPlansRemovedV14753Applied = removed;
+      return removed > 0;
     }
 
     function hydrateStateModel(target = state) {
       target.programs = (target.programs || []).map(normalizeProgramModel);
-      migrateConfirmedWeekPlans(target);
+      migrateRemoveSeededWeekPlans(target);
       target.athleteIntelligence = window.BarbellDivaAthleteContext.normalizeStore(target.athleteIntelligence, target);
       target.masterExerciseLibrary = window.BarbellDivaMasterLibrary.bootstrapStore(target.masterExerciseLibrary || {}, { names:window.BARBELL_DIVA_EXERCISE_NAMES_19_8 || [], profiles:[...Object.entries(COACH_EXERCISE_LIBRARY||{}).flatMap(([group,rows])=>(rows||[]).map(row=>({...row,muscle:row.som||group,origin:"system"}))),...(target.coach?.exerciseLibrary || [])], programs:target.programs });
       target.programs = window.BarbellDivaMasterLibrary.migratePrograms(target.programs,target.masterExerciseLibrary).map(normalizeProgramModel);
@@ -6104,108 +6110,337 @@ function sanitizeForFirestore(value) {
       return match ? Number(match[0]) : 0;
     }
 
-    // Profilo strutturale del programma settimana per settimana, letto dai suoi
-    // stessi dati: serie programmate e presenza di un test di carico (RM).
-    function programWeekProfile(program) {
-      const profile = new Map();
-      const bump = (week, sets, test) => {
-        const current = profile.get(week) || { sets: 0, count: 0, test: false };
-        current.sets += sets;
-        current.count += 1;
-        current.test = current.test || test;
-        profile.set(week, current);
-      };
-      (program?.sheets || []).forEach((sheet) => (sheet.exercises || []).forEach((exercise) => {
-        const weeks = exercise.progression?.weeks || [];
-        if (weeks.length) {
-          weeks.forEach((entry, index) => {
-            const week = Number(entry?.weekNumber || entry?.week || index + 1);
-            if (!Number.isFinite(week) || week <= 0) return;
-            const reps = String((entry?.reps?.label) || (entry?.reps) || (entry?.legacyLabel) || "");
-            bump(week, parseSetCount(entry?.sets), /test|\brm\b/i.test(reps));
-          });
-        } else {
-          const week = Number(sheet.week) || 1;
-          bump(week, parseSetCount(exercise.sets), /test|\brm\b/i.test(String(exercise.reps ?? "")));
-        }
-      }));
-      return profile;
+    // ==========================================================================
+    // MOTORE DI CLASSIFICAZIONE DELLE FASI (3 strati)
+    //
+    // A — estrazione segnali   : legge la struttura reale delle prescrizioni.
+    // B — classificazione      : confronto RELATIVO dentro il blocco (percentili),
+    //                            nessun nome di programma, nessun numero di
+    //                            settimana cablato.
+    // C — confidenza + segnali : ogni esito è ispezionabile.
+    //
+    // Distinzione fondante, che il vecchio codice confondeva:
+    //   segnale INTRA-settimana = forma della prescrizione dentro la seduta
+    //                             (es. "12-8" = discendente nella serie);
+    //   segnale INTER-settimana = variazione fra settimane del blocco
+    //                             (es. reps 15 → 12 → 10 fra w1/w2/w3).
+    // Confonderli faceva leggere "12-8" come "calo di volume" → Deload/Volume.
+    // ==========================================================================
+
+    const PHASE_ENGINE = ["accumulo", "volume", "ipertrofia", "intensificazione", "forza", "peaking", "tecnica", "specializzazione", "intensità", "deload", "mantenimento", "ricondizionamento"];
+
+    // Le fasi hanno bisogno di livelli di evidenza diversi: alcune si leggono
+    // direttamente dalla prescrizione della settimana, altre richiedono segnali
+    // temporali o di blocco. Qui dichiariamo cosa il motore NON può dedurre dai
+    // dati disponibili, invece di inventare una regola: sotto soglia l'esito
+    // resta a bassa confidenza e segnala il dato mancante.
+    const PHASE_ENGINE_REQUIREMENTS = {
+      ricondizionamento: "durate e densità di lavoro molto ridotte e dichiarate; richiede storico del blocco precedente o un campo esplicito di ripresa",
+      tecnica: "intento dichiarato (note/campo tecnica) perché tecniche come il tempo non distinguono la finalità",
+      mantenimento: "confronto con il blocco precedente per distinguere 'mantiene' da 'introduce'",
+      specializzazione: "indicazione di focus su un distretto, non presente nei dati di settimana",
+      forza: "carico o RPE assenti: la zona di reps da sola è un indizio debole"
+    };
+
+    // --- Strato A: estrazione segnali -----------------------------------------
+
+    function phaseRepsLabel(entry) {
+      const reps = entry?.reps;
+      if (reps && typeof reps === "object") return cleanText(reps.label || "").trim();
+      if (typeof reps === "string") return cleanText(reps).trim();
+      return cleanText(entry?.legacyLabel || "").trim();
     }
 
-    // Periodizzazione inferita DALLA STRUTTURA di quel programma: le settimane di
-    // test di carico e quelle a volume ridotto sono deload/peaking, le altre si
-    // distribuiscono per volume relativo. Programmi diversi danno piani diversi.
-    function inferredWeekPlan(program) {
-      const duration = programDurationWeeks(program);
-      const profile = programWeekProfile(program);
-      const weeks = Array.from({ length: duration }, (_, index) => index + 1);
-      const known = weeks.map((week) => ({ week, ...(profile.get(week) || { sets: 0, count: 0, test: false }) }));
-      const planned = known.filter((item) => item.count > 0);
-      if (!planned.length) return {};
-      const maxSets = Math.max(...planned.map((item) => item.sets), 0);
-      if (maxSets <= 0) return {};
-      const byWeek = new Map(planned.map((item) => [item.week, item]));
-      // L'ultima settimana CON DATI chiude il blocco: la sua tacca è peaking/taper,
-      // non uno scarico intermedio (un programma può dichiarare 8 settimane e
-      // averne registrate 7).
-      const lastWeek = Math.max(...planned.map((item) => item.week));
-      const plan = {};
-      const rest = [];
-      planned.forEach((item) => {
-        const ratio = item.sets / maxSets;
-        // Una settimana è scarico/peaking solo se il volume è DAVVERO ridotto:
-        // un test di calibrazione isolato dentro una settimana a volume pieno
-        // (es. "test 12RM" in settimana 1) non è uno scarico.
-        const reduced = ratio <= 0.8;
-        const neighbors = [byWeek.get(item.week - 1), byWeek.get(item.week + 1)].filter(Boolean);
-        const isLocalMin = neighbors.length > 0 && neighbors.every((entry) => item.sets < entry.sets);
-        const peakNeighbor = Math.max(...neighbors.map((entry) => entry.sets), 0);
-        const isDip = item.week > 1 && isLocalMin && peakNeighbor > 0 && reduced;
-        if ((item.test && reduced) || isDip) {
-          plan[item.week] = item.week >= lastWeek ? "peaking" : "deload";
-          return;
+    // Legge la prescrizione dentro la seduta e restituisce la forma del pattern.
+    // "12-8"          → discendente (intensità intra-serie)
+    // "8-12"          → range (accumulo/ipertrofia)
+    // "2x6-9 1x12-15" → multi-gruppo a blocchi
+    // "Test 8 RM"     → test di calibrazione/verifica
+    function phaseRepsShape(label) {
+      const raw = cleanText(label);
+      const norm = raw.toLowerCase().replace(/\s+/g, " ");
+      const shape = {
+        label: raw,
+        segments: 0, descPairs: 0, ascPairs: 0, flatSegments: 0,
+        min: null, max: null, mid: null, groups: 0, test: false, intensityBias: 0
+      };
+      if (!raw) return shape;
+      shape.test = /test|\brm\b|\d+\s*rm/i.test(norm);
+      // Tocchi di prescrizione: "3x12-8", "12-8", "10", "x max", "12-8-x".
+      const tokens = norm.match(/(?:^|\s)(?:\d+\s*x\s*)?\d+(?:\s*-\s*(?:\d+|x))*(?:\s*x\s*max)?/g) || [];
+      const numbers = [];
+      let groupMarker = (norm.match(/\d+\s*x/g) || []).length;
+      shape.groups = Math.max(groupMarker, 1);
+      tokens.map((token) => token.trim()).filter(Boolean).forEach((token) => {
+        const parts = token.split("-").map((part) => part.trim()).filter(Boolean);
+        const values = parts.map((part) => Number((part.match(/\d+/) || [])[0])).filter((value) => Number.isFinite(value));
+        if (!values.length) return;
+        shape.segments += 1;
+        values.forEach((value) => numbers.push(value));
+        if (values.length === 2) {
+          if (values[0] > values[1]) shape.descPairs += 1;
+          else if (values[0] < values[1]) shape.ascPairs += 1;
+          else shape.flatSegments += 1;
+        } else if (values.length > 2) {
+          // Catene lunghe ("8-10-15", "12.5-15-17.5-20"): contano le inversioni.
+          for (let index = 1; index < values.length; index += 1) {
+            if (values[index] < values[index - 1]) shape.descPairs += 1;
+            else if (values[index] > values[index - 1]) shape.ascPairs += 1;
+            else shape.flatSegments += 1;
+          }
         }
-        rest.push(item);
       });
-      // Le restanti settimane si ordinano per volume programmato: più serie =
-      // fase di volume/accumulo, meno serie = intensificazione.
-      rest.forEach((item) => {
-        const ratio = item.sets / maxSets;
-        plan[item.week] = ratio >= 0.9 ? "volume" : ratio >= 0.75 ? "accumulo" : "intensificazione";
+      if (numbers.length) {
+        shape.min = Math.min(...numbers);
+        shape.max = Math.max(...numbers);
+        shape.mid = (shape.min + shape.max) / 2;
+      }
+      return shape;
+    }
+
+    // Strato A · segnali della settimana dentro il blocco.
+    function phaseWeekSignals(program) {
+      const byWeek = new Map();
+      const bucket = (week) => {
+        if (!byWeek.has(week)) {
+          byWeek.set(week, {
+            week, prescribedSets: 0, prescriptions: 0, tests: 0,
+            descPairs: 0, ascPairs: 0, flatPairs: 0, rirCount: 0, rirSum: 0,
+            tempoCount: 0, lowReps: 0, highReps: 0, bodybuildingReps: 0,
+            intensityTechniques: 0, exerciseNames: new Set(), volumenIndex: 0, repMids: [], hasData: false
+          });
+        }
+        return byWeek.get(week);
+      };
+      (program?.sheets || []).forEach((sheet) => (sheet.exercises || []).forEach((exercise) => {
+        const weeks = Array.isArray(exercise.progression?.weeks) ? exercise.progression.weeks : [];
+        const push = (entry, fallbackWeek) => {
+          const week = Number(entry?.weekNumber || entry?.week || fallbackWeek) || 0;
+          if (!week) return;
+          const bucketForWeek = bucket(week);
+          const sets = parseSetCount(entry?.sets) || parseSetCount(exercise.sets);
+          const shape = phaseRepsShape(phaseRepsLabel(entry));
+          if (sets > 0 || shape.mid !== null) bucketForWeek.hasData = true;
+          bucketForWeek.prescribedSets += sets;
+          bucketForWeek.prescriptions += 1;
+          bucketForWeek.descPairs += shape.descPairs;
+          bucketForWeek.ascPairs += shape.ascPairs;
+          bucketForWeek.flatPairs += shape.flatSegments;
+          bucketForWeek.volumenIndex += sets * (shape.mid || 0);
+          if (shape.mid) bucketForWeek.repMids.push(shape.mid);
+          if (shape.test) bucketForWeek.tests += 1;
+          if (shape.max !== null && shape.max <= 5) bucketForWeek.lowReps += 1;
+          if (shape.min !== null && shape.min >= 15) bucketForWeek.highReps += 1;
+          if (shape.min !== null && shape.min >= 8 && shape.max <= 12) bucketForWeek.bodybuildingReps += 1;
+          if ((shape.descPairs > 0 || shape.groups > 1) && !shape.test) bucketForWeek.intensityTechniques += 1;
+          const rirEntry = entry?.rir;
+          const rirValue = typeof rirEntry === "object" ? (rirEntry?.min ?? rirEntry?.max) : Number(rirEntry);
+          if (Number.isFinite(Number(rirValue))) { bucketForWeek.rirCount += 1; bucketForWeek.rirSum += Number(rirValue); }
+          if (entry?.tempo?.label || entry?.tempo?.phases?.length) bucketForWeek.tempoCount += 1;
+          if (exercise.name) bucketForWeek.exerciseNames.add(String(exercise.name));
+        };
+        if (weeks.length) weeks.forEach((entry, index) => push(entry, index + 1));
+        else push({ sets: exercise.sets, reps: exercise.reps }, Number(sheet.week) || 1);
+      }));
+      const weeks = Array.from(byWeek.values()).sort((a, b) => a.week - b.week);
+      const maxVolume = Math.max(...weeks.map((item) => item.volumenIndex), 0);
+      const maxSets = Math.max(...weeks.map((item) => item.prescribedSets), 0);
+      weeks.forEach((item) => {
+        const count = item.prescriptions || 1;
+        item.volumeRatio = maxVolume > 0 ? item.volumenIndex / maxVolume : 0;
+        item.setsRatio = maxSets > 0 ? item.prescribedSets / maxSets : 0;
+        item.descPairRatio = item.descPairs / count;
+        item.ascPairRatio = item.ascPairs / count;
+        item.avgReps = item.repMids.length ? item.repMids.reduce((sum, value) => sum + value, 0) / item.repMids.length : null;
+        item.avgRir = item.rirCount ? item.rirSum / item.rirCount : null;
+        item.volumePerExercise = item.exerciseNames.size ? item.volumenIndex / item.exerciseNames.size : 0;
       });
+      return weeks;
+    }
+
+    // Posizione relativa nel blocco (0 = inizio, 1 = fine), indipendente dal
+    // numero assoluto di settimane: un blocco da 7 o da 12 settimane funziona.
+    function phasePositionInBlock(week, weeks) {
+      const ordered = weeks.map((item) => item.week).sort((a, b) => a - b);
+      if (ordered.length <= 1) return 1;
+      const index = ordered.indexOf(week);
+      if (index < 0) return 0.5;
+      return index / (ordered.length - 1);
+    }
+
+    // --- Strato B: classificazione relativa -----------------------------------
+
+    // Accumula evidenze per fase. Tutto e RELATIVO al blocco esaminato: nessuna
+    // soglia dipende dal numero della settimana e nessun nome di programma entra
+    // nel calcolo. Le due famiglie di segnali restano separate:
+    //   intra-settimana (forma della prescrizione) e inter-settimana (variazione).
+    function phaseWeekScores(signals, weekSignals, weeks) {
+      const scores = {};
+      const evidence = [];
+      const bump = (phase, amount, reason) => {
+        scores[phase] = (scores[phase] || 0) + amount;
+        if (reason) evidence.push({ phase, weight: Number(amount.toFixed(2)), reason });
+      };
+      const count = weekSignals.prescriptions || 1;
+      const position = phasePositionInBlock(weekSignals.week, weeks);
+
+      const nonTest = weeks.filter((item) => item.tests === 0);
+      const avgVolume = nonTest.length ? nonTest.reduce((sum, item) => sum + item.volumeRatio, 0) / nonTest.length : 0;
+      const volumeDrop = avgVolume > 0 ? 1 - weekSignals.volumeRatio / avgVolume : 0;
+      const desc = weekSignals.descPairRatio;
+      const asc = weekSignals.ascPairRatio;
+      const volumeRatio = weekSignals.volumeRatio;
+      const highRepShare = weekSignals.highReps / count;
+      const lowRepShare = weekSignals.lowReps / count;
+      const bodyShare = weekSignals.bodybuildingReps / count;
+
+      // 1. Test di carico: conta solo se DOMINANTE nella settimana. Un test
+      //    isolato dentro una settimana a volume pieno (calibrazione) non sposta
+      //    la fase. Il significato dipende poi dalla POSIZIONE nel blocco.
+      const testShare = weekSignals.tests / count;
+      if (testShare >= 0.3) {
+        if (position >= 0.85) {
+          bump("peaking", 2.2, "test dominanti nell'ultima settimana del blocco: verifica di picco");
+        } else if (position >= 0.6 && volumeRatio <= avgVolume + 0.05) {
+          bump("peaking", 1.2, "test dominanti in posizione avanzata con volume contenuto");
+        } else if (position <= 0.3) {
+          bump("tecnica", 0.9, "test dominanti in apertura di blocco: probabile calibrazione");
+        }
+        // Test dominanti a meta blocco: segnale ambiguo, non basta per una fase.
+      }
+
+      // 2. Struttura a gruppi multipli ("2x6-9 1x12-15"): lavoro a blocchi,
+      //    tipico di tecniche di intensificazione dentro la seduta.
+      const clusterShare = weekSignals.intensityTechniques / count;
+      if (clusterShare >= 0.4) bump("intensificazione", 0.9, "prescrizioni multi-gruppo nella seduta");
+      // 2. Schema discendente INTRA-serie ("12-8", "10-6"): tecnica di intensita.
+      //    Il range ascendente ("8-12") e invece lavoro a volume/accumulo.
+      if (desc >= 0.4) bump("intensità", 1.6 + desc * 2, "prescrizioni discendenti nella serie");
+      else if (desc >= 0.25 && asc < 0.25) bump("intensità", 0.8 + desc, "discendenza intra-serie moderata");
+      if (asc >= 0.6) bump("accumulo", 1.2 + asc, "range di reps ascendenti dominanti");
+      else if (asc >= 0.35) bump("accumulo", 0.5, "range ascendenti presenti");
+
+      // 3. Zona di ripetizioni dominante.
+      const avgReps = weekSignals.avgReps;
+      if (avgReps !== null) {
+        if (avgReps <= 5) bump("forza", 1.1, "media reps in zona di forza (indizio debole senza carico)");
+        else if (avgReps <= 8) bump("intensificazione", 0.9, "media reps in zona di intensificazione");
+        else if (avgReps <= 12) bump("ipertrofia", 0.9, "media reps in zona ipertrofica");
+        else bump("volume", 0.6, "media reps in zona di volume alto");
+      }
+      if (lowRepShare >= 0.25) bump("forza", 0.5, "prescrizioni a rep basse");
+      if (bodyShare >= 0.5) bump("ipertrofia", 0.5, "zona 8-12 dominante");
+      if (highRepShare >= 0.2) bump("volume", 0.4, "prescrizioni ad alte reps");
+
+      // 4. Volume relativo nel blocco.
+      if (volumeRatio >= 0.75) bump("volume", 1.5, "volume vicino al massimo del blocco");
+      else if (volumeRatio >= 0.6) bump("ipertrofia", 0.4, "volume medio-alto");
+
+      // 5. Deload: calo reale di volume, senza test di carico.
+      if (volumeDrop >= 0.15 && volumeRatio <= 0.72 && position < 0.9) {
+        bump("deload", 1.4 + Math.min(0.5, volumeDrop), "volume sotto la media del blocco");
+      }
+
+      // 6. Ripresa: densita bassa su tutto il blocco, nessuna fase la spiega.
+      if (signals.length && signals.every((item) => item.volumeRatio <= 0.4)) {
+        bump("ricondizionamento", 1.4, "blocco interamente a volume molto ridotto");
+      }
+
+      return { scores, evidence, position, volumeDrop, bodyShare, avgVolume };
+    }
+
+    // --- Strato C: fase settimanale con confidenza e segnali -------------------
+
+    function classifyProgramWeeks(program) {
+      const signals = phaseWeekSignals(program);
+      const result = {};
+      if (!signals.length) return result;
+      // Blocco interamente a volume molto basso: la lettura per-settimana non e
+      // affidabile, il motore lo dichiara invece di inventare una fase.
+      const blockLowVolume = signals.every((item) => item.volumeRatio <= 0.4);
+      signals.forEach((weekSignals) => {
+        if (!weekSignals.hasData) return; // settimana senza prescrizioni: nessuna fase inventata
+        const analysis = phaseWeekScores(signals, weekSignals, signals);
+        const ranked = Object.entries(analysis.scores)
+          .filter(([, value]) => value > 0)
+          .sort((a, b) => b[1] - a[1]);
+        const [phase, best] = ranked[0] || ["", 0];
+        const second = ranked[1] ? ranked[1][1] : 0;
+        // Confidenza = margine sul secondo candidato + forza dell'evidenza.
+        const margin = best > 0 ? (best - second) / best : 0;
+        const strength = Math.min(1, best / 3.5);
+        let confidence = Math.max(0.15, Math.min(0.95, 0.55 * margin + 0.45 * strength));
+        if (blockLowVolume) confidence = Math.min(confidence, 0.35);
+        // Se la fase vincente richiede dati che i segnali non contengono, non
+        // gonfiamo la confidenza: dichiariamo quale segnale manca.
+        const requirement = PHASE_ENGINE_REQUIREMENTS[phase] || "";
+        if (requirement) confidence = Math.min(confidence, 0.4);
+        result[weekSignals.week] = {
+          phase: phase || "volume",
+          confidence: Number(confidence.toFixed(2)),
+          source: "inferred",
+          candidate: ranked[1] ? ranked[1][0] : null,
+          evidence: analysis.evidence,
+          requiredSignal: confidence <= 0.4 && requirement ? requirement : "",
+          signals: {
+            volumeRatio: Number(weekSignals.volumeRatio.toFixed(2)),
+            setsRatio: Number(weekSignals.setsRatio.toFixed(2)),
+            prescribedSets: weekSignals.prescribedSets,
+            descPairRatio: Number(weekSignals.descPairRatio.toFixed(2)),
+            ascPairRatio: Number(weekSignals.ascPairRatio.toFixed(2)),
+            avgReps: weekSignals.avgReps === null ? null : Number(weekSignals.avgReps.toFixed(1)),
+            tests: weekSignals.tests,
+            position: Number(phasePositionInBlock(weekSignals.week, signals).toFixed(2)),
+            avgRir: weekSignals.avgRir === null ? null : Number(weekSignals.avgRir.toFixed(1))
+          }
+        };
+      });
+      return result;
+    }
+
+    // Compatibilità: il vecchio nome restituiva { settimana: fase }.
+    function inferredWeekPlan(program) {
+      const classified = classifyProgramWeeks(program);
+      const plan = {};
+      Object.entries(classified).forEach(([week, entry]) => { plan[Number(week)] = entry.phase; });
       return plan;
     }
 
-    // Tipo settimana registrato nei dati della scheda (esercizi -> progression.weeks).
-    // NON usato per calcolare la Fase: il tipo del singolo esercizio non deve
-    // determinare né sovrascrivere la fase del programma. Resta disponibile per
-    // altre analisi. Restituisce "" se la scheda non dichiara nulla.
-    function sheetWeekType(sheet, weekNumber) {
-      const week = Number(weekNumber) || 0;
-      for (const exercise of (sheet?.exercises || [])) {
-        const match = (exercise.progression?.weeks || []).find((item, index) => Number(item?.weekNumber || item?.week || index + 1) === week);
-        const type = String(match?.type || "").toLowerCase();
-        if (["deload", "accumulation", "intensification", "recovery", "test"].includes(type)) return type;
-      }
-      return "";
+    // Profilo settimanale (serie, test): resta per gli usi diagnostici.
+    function programWeekProfile(program) {
+      const profile = new Map();
+      phaseWeekSignals(program).forEach((item) => {
+        profile.set(item.week, { sets: item.prescribedSets, count: item.prescriptions, test: item.tests > 0 });
+      });
+      return profile;
     }
 
-    // La Fase è ricavata dalla MAPPATURA ESPLICITA del programma
-    // (`program.periodization.weeks`): PROGRAMMA → SETTIMANA → FASE.
-    // Solo se la mappatura manca si ricorre all'inferenza strutturale, che viene
-    // sempre segnalata come "stimata" e non è mai definitiva.
-    // Il `type` dei singoli esercizi NON entra nel calcolo della fase.
+    // Gerarchia della Fase (in quest'ordine):
+    //   1. override esplicito dell'autore (`program.periodization.weeks`) → "explicit";
+    //   2. motore di classificazione dalla struttura della settimana → "inferred";
+    //   3. etichetta canonica del blocco o etichetta del programma (ultima spiaggia).
+    // `sheetWeekType` (rimosso) non è mai fonte primaria: il `type` del singolo
+    // non determina né sovrascrive la fase.
     function phaseFromProgramData(program, sheet, weekNumber) {
       const week = Math.max(1, Number(weekNumber) || 1);
       const explicit = program?.periodization?.weeks || {};
       const declared = cleanText(explicit[week] || explicit[String(week)]).trim();
-      if (declared) return { phase: declared, source: "mappatura del programma", estimated: false };
-      const inferred = inferredWeekPlan(program)[week];
-      if (inferred) return { phase: inferred, source: "struttura del programma (stimata)", estimated: true };
+      if (declared) return { phase: declared, source: "explicit", estimated: false, confidence: 1, signals: [] };
+      const classified = classifyProgramWeeks(program)[week];
+      if (classified) {
+        return {
+          phase: classified.phase,
+          source: "inferred",
+          estimated: true,
+          confidence: classified.confidence,
+          candidate: classified.candidate,
+          signals: classified.signals
+        };
+      }
       const block = canonicalPhase(programBlockType(program));
-      if (block) return { phase: block, source: "blocco del programma (stimata)", estimated: true };
+      if (block) return { phase: block, source: "inferred", estimated: true, confidence: 0.3, signals: [] };
       const fallback = cleanText(program?.phase || program?.name || "").trim();
-      return { phase: fallback, source: fallback ? "programma" : "", estimated: false };
+      return { phase: fallback, source: fallback ? "program" : "", estimated: false, confidence: 0, signals: [] };
     }
 
     function derivedPhaseForWeek(program, weekNumber, sheet = null) {
@@ -10387,8 +10622,8 @@ function sanitizeForFirestore(value) {
           const current = String(effectivePlan[week] || "");
           return `<label>Settimana ${week}<select data-program-week-phase="${week}"><option value="" ${current?"":"selected"}>— non dichiarata —</option>${window.BarbellDivaAthleteContext.BLOCK_TYPES.map((value)=>`<option value="${escapeHtml(value)}" ${current===value?"selected":""}>${escapeHtml(value)}</option>`).join("")}</select></label>`;
         }).join("");
-        const periodizationFields=`<div class="program-setup"><h4>Periodizzazione (settimana → fase)</h4><p class="micro-copy">La Fase del programma è definita qui, settimana per settimana: è il dato che l'app usa per il workout. Compila ogni settimana. Se lasci una settimana non dichiarata, l'app mostra una fase <strong>stimata</strong> dalla struttura del programma (volume, test di carico), chiaramente segnalata come tale.</p><div class="form-grid program-week-phases">${periodizationRows}</div></div>`;
-        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${heading}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(defaultName)}" placeholder="Nome programma"></label><label>Etichetta fase<input id="programModalPhase" value="${escapeHtml(item?.phase || "")}" placeholder="es. Intensità 2 ottobre-dicembre"><small class="micro-copy" style="margin:6px 0 0">Solo un'etichetta descrittiva del programma. La Fase vera (Volume, Accumulo, Deload...) viene calcolata dalla periodizzazione qui sotto.</small></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Cartella<select id="programModalFolder"><option value="">Nessuna cartella</option>${folders.map((folder)=>`<option value="${escapeHtml(folder)}" ${item?.folder===folder?"selected":""}>${escapeHtml(folder)}</option>`).join("")}</select></label><label>Stato<select id="programModalStatus"><option value="draft" ${type==="program-save-as" || item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${type!=="program-save-as" && item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${type!=="program-save-as" && item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div>${periodizationFields}${contextFields}<div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type==="program-save-as"?"Crea copia":"Salva programma"}</button></div></section></div>`;
+        const periodizationFields=`<div class="program-setup"><h4>Periodizzazione (override settimana → fase)</h4><p class="micro-copy">La Fase la deduce il motore dalla struttura del programma (volume, schema delle ripetizioni, test di carico a fine blocco) e la indica come <strong>stimata</strong>. Qui puoi <strong>sovrascrivere</strong> una settimana quando conosci la fase vera: l'override ha la precedenza sulla stima ed è marcato come esplicito. Lascia vuoto dove la stima va bene.</p><div class="form-grid program-week-phases">${periodizationRows}</div></div>`;
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${heading}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(defaultName)}" placeholder="Nome programma"></label><label>Etichetta fase<input id="programModalPhase" value="${escapeHtml(item?.phase || "")}" placeholder="es. Intensità 2 ottobre-dicembre"><small class="micro-copy" style="margin:6px 0 0">Solo un'etichetta descrittiva del programma. La Fase vera (Volume, Accumulo, Deload...) la deduce il motore dalla struttura, o l'override che imposti qui sotto.</small></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Cartella<select id="programModalFolder"><option value="">Nessuna cartella</option>${folders.map((folder)=>`<option value="${escapeHtml(folder)}" ${item?.folder===folder?"selected":""}>${escapeHtml(folder)}</option>`).join("")}</select></label><label>Stato<select id="programModalStatus"><option value="draft" ${type==="program-save-as" || item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${type!=="program-save-as" && item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${type!=="program-save-as" && item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div>${periodizationFields}${contextFields}<div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type==="program-save-as"?"Crea copia":"Salva programma"}</button></div></section></div>`;
       }
       if (type === "sheet-new" || type === "sheet-edit" || type === "sheet-rename") {
         const item = type === "sheet-new" ? { name: "", code: suggestedSheetCode(sheets), focus: "", split: "", note: "", color: "" } : targetSheet;

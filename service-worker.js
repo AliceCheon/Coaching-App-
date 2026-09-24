@@ -1,5 +1,5 @@
 /* Barbell Diva - Service Worker
-   v147.53-fase-in-fondo
+   v147.54-motore-fasi
    - HTML + JS/CSS: NETWORK-FIRST con timeout (3s) + fallback cache → dopo un
      deploy i dispositivi eseguono SEMPRE la versione pubblicata quando sono
      online (il vecchio stale-while-revalidate serviva la copia vecchia alla
@@ -8,7 +8,7 @@
    - Match con ignoreSearch: resiste ai bump di versione (?v=...) e ai doppioni in cache
    - Cache key normalizzate per pathname (niente duplicati per ogni ?v=)
 */
-const CACHE_NAME = "atlas-app-v14753-fase-in-fondo";
+const CACHE_NAME = "atlas-app-v14754-motore-fasi";
 const APP_SHELL = [
   "./",
   "./index.html",
