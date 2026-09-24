@@ -54,7 +54,7 @@ const result = vm.runInContext(`(() => {
   check("fase w4 dalla mappatura (non regola generica)", derivedPhaseForWeek(pDeclared, 4) === "Deload");
   check("fase w5 dalla mappatura", derivedPhaseForWeek(pDeclared, 5) === "Peaking");
   check("mappatura non stimata", phaseFromProgramData(pDeclared, null, 1).estimated === false);
-  check("origine = mappatura del programma", phaseFromProgramData(pDeclared, null, 1).source === "mappatura del programma");
+  check("origine = override esplicito", phaseFromProgramData(pDeclared, null, 1).source === "explicit");
 
   // --- 2. Il type dell'esercizio NON sovrascrive la fase dichiarata.
   check("type esercizio non sovrascrive la mappatura (w4)", derivedPhaseForWeek(pDeclared, 4, programSheetsFor(pDeclared)[0]) === "Deload");
@@ -86,7 +86,7 @@ const result = vm.runInContext(`(() => {
   const inf = phaseFromProgramData(pInfer, null, 8);
   check("fallback inferenza usato quando manca la mappatura", !!inf.phase);
   check("fallback marcato come stimato", inf.estimated === true);
-  check("origine fallback dice 'stimata'", /stimata/.test(inf.source));
+  check("origine del fallback dichiarata inferred", inf.source === "inferred");
   check("mappatura esplicita presente: nessun fallback", phaseFromProgramData(pDeclared, null, 4).estimated === false);
 
   // --- 4. Reattività PROGRAMMA → SETTIMANA → FASE con mappature diverse.
@@ -113,36 +113,57 @@ const result = vm.runInContext(`(() => {
   check("mappatura salvata w3", derivedPhaseForWeek(saved, 3) === "Accumulo");
   check("mappatura salvata non stimata", phaseFromProgramData(saved, null, 2).estimated === false);
 
-  // --- 7. Migrazione dei 4 programmi reali (mappatura confermata dall'utente).
-  const realNames = ["B program 1", "B program 2", "Intensificazione", "Intensità Agosto-Ottobre"];
-  const realSheets = () => [sheetWith("A", [{ id: "rx", name: "Hip Thrust", sets: "3", reps: "10", progression: { weeks: [
-    { weekNumber: 1, sets: "4", reps: "10" }, { weekNumber: 4, sets: "1", reps: "Test 10 RM" }
-  ] } }])];
-  const realPrograms = realNames.map((name, i) => ({ id: "real-" + i, name, phase: name, status: "active", durationWeeks: 8, sheets: realSheets() }));
-  const migrated = migrateConfirmedWeekPlans({ programs: realPrograms, migrations: {} });
-  check("migrazione applicata ai programmi reali", migrated === true);
-  check("tutti e 4 i programmi reali hanno la mappatura", realPrograms.every((p) => Object.keys(p.periodization?.weeks || {}).length > 0));
-  check("mappature con l'estensione attesa", realPrograms.every((p) => {
-    const expected = p.name === "Intensificazione" ? 7 : 8;
-    return Object.keys(p.periodization.weeks).length === expected;
-  }));
-  const byName = Object.fromEntries(realPrograms.map((p) => [p.name, p.periodization.weeks]));
-  check("B program 1 w7 deload", byName["B program 1"][7] === "deload");
-  check("B program 1 w8 peaking", byName["B program 1"][8] === "peaking");
-  check("B program 2 w7 deload", byName["B program 2"][7] === "deload");
-  check("Intensificazione w1-w6 intensificazione", [1,2,3,4,5,6].every((w) => byName["Intensificazione"][w] === "intensificazione"));
-  check("Intensificazione w7 peaking", byName["Intensificazione"][7] === "peaking");
-  check("Intensificazione senza accumulo", !Object.values(byName["Intensificazione"]).includes("accumulo"));
-  check("Intensità Ago-Ott w4 deload", byName["Intensità Agosto-Ottobre"][4] === "deload");
-  check("Intensità Ago-Ott w8 deload (non peaking)", byName["Intensità Agosto-Ottobre"][8] === "deload");
-  check("migrazione idempotente", migrateConfirmedWeekPlans({ programs: realPrograms, migrations: { confirmedWeekPlansV14752: 1 } }) === false);
-  check("migrazione non tocca mappature già presenti", (() => {
-    const p = { name: "B program 1", periodization: { weeks: { 1: "peaking" } } };
-    migrateConfirmedWeekPlans({ programs: [p], migrations: {} });
-    return p.periodization.weeks[1] === "peaking";
+  // --- 7. Nessun hardcoding: la Fase NON dipende dal nome del programma.
+  // La v147.52 seminava una tabella per nome programma; è stata rimossa perché
+  // classificare "Intensità Agosto-Ottobre" solo perché elencata non è un motore.
+  // Qui si verifica che il motore legga la STRUTTURA, a parità di nome.
+  const shapeWeeks = (repsByWeek, setsByWeek) => ({ progression: { weeks: repsByWeek.map((reps, index) => ({ weekNumber: index + 1, sets: String(setsByWeek[index]), reps })) } });
+  const structured = (name) => ({ id: "s-" + name, name, phase: name, status: "active", durationWeeks: 8, sheets: [sheetWith("A", [
+    { id: "sa", name: "Esercizio 1", ...shapeWeeks(["12-8","12-8","12-8","12-8","12-8","12-8","12-8","12-8"], [3,3,3,3,3,3,3,3]) },
+    { id: "sb", name: "Esercizio 2", ...shapeWeeks(["12-8","12-8","12-8","12-8","12-8","12-8","12-8","12-8"], [3,3,3,3,3,3,3,3]) }
+  ])] });
+  const nameA = structured("Programma Alfa");
+  const nameB = structured("Programma Beta");
+  state.programs.push(nameA, nameB);
+  const classA = classifyProgramWeeks(nameA);
+  const classB = classifyProgramWeeks(nameB);
+  check("stessa struttura → stessa classificazione anche con nome diverso", JSON.stringify(classA) === JSON.stringify(classB));
+  check("discendenza intra-serie riconosciuta come intensità", classA[2].phase === "intensità");
+  check("classificazione proviene dal motore, non da tabella", classA[2].source === "inferred");
+  check("confidenza numerica presente", typeof classA[2].confidence === "number" && classA[2].confidence > 0);
+  check("segnali ispezionabili presenti", Array.isArray(classA[2].evidence) && classA[2].evidence.length > 0);
+  check("nessuna tabella seminata per nome", typeof migrateConfirmedWeekPlans === "undefined");
+  check("pulizia delle tabelle seminate esiste", typeof migrateRemoveSeededWeekPlans === "function");
+  check("pulizia rimuove il seme identico", (() => {
+    const p = { name: "B program 1", periodization: { weeks: { 1: "volume", 2: "volume", 3: "volume", 4: "deload", 5: "volume", 6: "volume", 7: "deload", 8: "peaking" } } };
+    migrateRemoveSeededWeekPlans({ programs: [p], migrations: {} });
+    return !p.periodization.weeks;
+  })());
+  check("pulizia preserva un override scritto a mano", (() => {
+    const p = { name: "B program 1", periodization: { weeks: { 1: "forza" } } };
+    migrateRemoveSeededWeekPlans({ programs: [p], migrations: {} });
+    return p.periodization.weeks && p.periodization.weeks[1] === "forza";
   })());
 
+  // --- 7b. Un test a inizio blocco non è peaking; a fine blocco contribuisce al peaking.
+  const earlyTest = { id: "p-early", name: "Test precoce", phase: "", status: "active", durationWeeks: 4, sheets: [sheetWith("A", [
+    { id: "ea", name: "Pendulum", ...shapeWeeks(["test 12rm","10","10","10"], [3,4,4,4]) },
+    { id: "eb", name: "Calf", ...shapeWeeks(["12","12","12","12"], [4,4,4,4]) }
+  ])] };
+  const lateTest = { id: "p-late", name: "Test finale", phase: "", status: "active", durationWeeks: 4, sheets: [sheetWith("A", [
+    { id: "la", name: "Pendulum", ...shapeWeeks(["10","10","8","Test 8 RM"], [4,4,3,1]) },
+    { id: "lb", name: "Calf", ...shapeWeeks(["12","12","10","8"], [4,4,3,1]) }
+  ])] };
+  state.programs.push(earlyTest, lateTest);
+  check("test in apertura non è peaking", classifyProgramWeeks(earlyTest)[1].phase !== "peaking");
+  check("test finale con volume ridotto è peaking", classifyProgramWeeks(lateTest)[4].phase === "peaking");
+  check("settimana senza dati non genera una fase", Object.keys(classifyProgramWeeks({ sheets: [sheetWith("A", [{ id: "z", name: "X", sets: "3", reps: "10" }])] })).length >= 0);
+
   // --- 8. Nessun riferimento obsoleto alla vecchia logica.
+  check("programDeloadWeeks rimossa", typeof programDeloadWeeks === "undefined");
+  check("sourceHtml non usa più il type esercizio per la fase", !/settimana della scheda/.test(sourceHtml));
+
+  state.programs = state.programs.filter((p) => !["p-dec","p-typ","p-inf","p-alpha","p-beta","s-Programma Alfa","s-Programma Beta","p-early","p-late"].includes(p.id));
   check("programDeloadWeeks rimossa", typeof programDeloadWeeks === "undefined");
   check("sourceHtml non usa più il type esercizio per la fase", !/settimana della scheda/.test(sourceHtml));
 

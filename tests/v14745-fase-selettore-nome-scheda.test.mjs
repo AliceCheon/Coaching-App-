@@ -144,12 +144,13 @@ const testResult = vm.runInContext(`(() => {
   // inferita dai suoi dati (settimane di test di carico, volume programmato).
   const pInfer = programById("p-infer");
   const inferred = inferredWeekPlan(pInfer);
-  check("piano inferito dalla struttura del programma", [1, 2, 3, 4, 5, 6, 7, 8].map((w) => inferred[w]).join("|") === "volume|volume|volume|deload|volume|accumulo|accumulo|peaking");
-  check("settimana di test a inizio blocco = deload", derivedPhaseForWeek(pInfer, 4) === "Deload");
-  check("settimana di test a fine programma = peaking", derivedPhaseForWeek(pInfer, 8) === "Peaking");
+  // Il piano ora lo produce il motore di classificazione (non una tabella):
+  // settimana di scarico a calo di volume, settimana finale di test = peaking.
+  check("piano inferito dal motore", [1, 2, 3, 4, 5, 6, 7, 8].map((w) => inferred[w]).join("|") === "volume|volume|volume|deload|volume|ipertrofia|deload|peaking");
+  check("settimana di scarico a volume ridotto = deload", derivedPhaseForWeek(pInfer, 4) === "Deload");
+  check("settimana di test finale = peaking", derivedPhaseForWeek(pInfer, 8) === "Peaking");
   check("settimana ad alto volume = volume", derivedPhaseForWeek(pInfer, 1) === "Volume");
-  check("volume ridotto = accumulo", derivedPhaseForWeek(pInfer, 7) === "Accumulo");
-  check("origine fase segnalata come struttura stimata", phaseFromProgramData(pInfer, null, 8).source === "struttura del programma (stimata)");
+  check("origine fase dal motore = inferred", phaseFromProgramData(pInfer, null, 8).source === "inferred");
   check("inferenza marcata come stimata", phaseFromProgramData(pInfer, null, 8).estimated === true);
   check("mappatura esplicita non marcata come stimata", phaseFromProgramData(pPlan, 1).estimated === false);
   // Un test di calibrazione dentro una settimana a volume PIENO non è uno scarico
@@ -179,7 +180,7 @@ const testResult = vm.runInContext(`(() => {
   check("editor periodizzazione nel modal programma", modalHtml.includes('data-program-week-phase="4"'));
   check("periodizzazione proposta per programma senza piano", modalHtml.includes('value="peaking" selected'));
   check("settimana 4 proposta come deload", modalHtml.includes('value="deload" selected'));
-  check("modal spiega che la Fase deriva dalla periodizzazione", modalHtml.includes("La Fase del programma è definita qui"));
+  check("modal spiega la precedenza dell override sulla stima", modalHtml.includes("override ha la precedenza sulla stima"));
 
   // Un piano dichiarato dal programma viene pre-selezionato nel modal, così il
   // salvataggio non riparte da zero.
