@@ -13,7 +13,7 @@ const checks = [
   [css.includes("min-height: 30px !important"), "campi ancora troppo bassi"],
   [css.includes("font-size: 12px !important"), "testo dei campi ancora troppo piccolo"],
   [html.includes("coach-schede-restyle-v146.css?v=v14751"), "cache bust CSS c10 mancante"],
-  [sw.includes('const CACHE_NAME = "atlas-app-v14751-scheda-prima-fase-derivata"'), "cache PWA c10 mancante"]
+  [sw.includes('const CACHE_NAME = "atlas-app-v14751-scheda-fase-settimana"'), "cache PWA c10 mancante"]
 ];
 
 for (const [passed, message] of checks) {

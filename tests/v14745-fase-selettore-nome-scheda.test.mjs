@@ -86,9 +86,22 @@ const testResult = vm.runInContext(`(() => {
   check("selettore Scheda presente nel contesto allenamento", controls.includes('data-training-context="session"'));
   check("opzioni raggruppate per programma (optgroup)", controls.includes("<optgroup"));
   check("scheda selezionata usa l'id", controls.includes('value="sh-peak-b"') && controls.includes("selected"));
+  check("opzioni scheda mostrano solo il nome", controls.includes(">Scheda B<") && !controls.includes("B · Scheda B"));
   check("Fase è un valore derivato, non un selettore", controls.includes('data-training-context-derived="phase"') && !controls.includes('data-training-context="phase"'));
-  check("Fase derivata mostra la fase della scheda", controls.includes('data-training-context-derived="phase">peaking<'));
+  check("Fase derivata normalizzata al vocabolario blocchi", controls.includes('data-training-context-derived="phase">Peaking<'));
   check("nessuna etichetta sporca 'peaking · ...' nel selettore scheda", !controls.includes("peaking · Intensità"));
+  const orderSheet = controls.indexOf(">Scheda");
+  const orderPhase = controls.indexOf(">Fase");
+  const orderWeek = controls.indexOf(">Settimana<");
+  check("ordine campi Scheda → Fase → Settimana", orderSheet > -1 && orderPhase > orderSheet && orderWeek > orderPhase);
+
+  // La Fase normalizza le varianti al vocabolario dei blocchi (volume/accumulo/
+  // intensificazione/peaking...) ma lascia intatti i nomi liberi.
+  check("fase canonica minuscola → titolo", phaseDisplayLabel("volume") === "Volume");
+  check("fase con prefisso numerico → canonica", phaseDisplayLabel("2.Intensificazione") === "Intensificazione");
+  check("fase canonica composta riconosciuta", phaseDisplayLabel("adattamento anatomico") === "Adattamento Anatomico");
+  check("fase libera lasciata invariata", phaseDisplayLabel("Intensità Agosto-Ottobre") === "Intensità Agosto-Ottobre");
+  check("fase vuota senza etichetta sporca", phaseDisplayLabel("") === "");
 
   // In automatico la fase resta quella attiva e la scheda segue data/settimana.
   const autoControls = trainingContextControlsHtml({ isManual: false, phase: "B program 1", week: 1, date: "02/10/2026", session: { id: "sh-b1-a", code: "A", name: "Scheda A" }, contextWarning: "", phaseSessions: sessionsForPhase("B program 1") });

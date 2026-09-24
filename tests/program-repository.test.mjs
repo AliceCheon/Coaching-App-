@@ -100,7 +100,9 @@ const testResult = vm.runInContext(`(() => {
   check("assenza sovrascritture", new Set(programRepository.getSheets(program.value.id, { includeDeleted: true }).map((sheet) => sheet.id)).size === 31);
 
   const rendered = trainingHtml();
-  check("rendering con molte schede", typeof rendered === "string" && rendered.includes("GLUTE-DIVA") && rendered.length > 1000);
+  // Il selettore Scheda mostra solo il nome: verifichiamo che la scheda
+  // personalizzata compaia e che il rendering regga con molte schede.
+  check("rendering con molte schede", typeof rendered === "string" && rendered.includes("Glutei personalizzata") && rendered.length > 1000);
   check("modello valido", programRepository.validate().valid);
 
   return { assertions, activeSheets: reopened.length, storedSheets: programRepository.getSheets(program.value.id, { includeDeleted: true }).length };
