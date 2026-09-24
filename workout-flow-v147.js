@@ -148,7 +148,7 @@
     const maxWeek = Math.max(1, Number(state.profile?.phaseLength) || 1, ...phaseSheets.map((item) => Number(item.week) || 0));
     const groups = (typeof programSheetGroups === "function") ? programSheetGroups() : [];
     const currentId = String(context.session?.id ?? "");
-    const sheetOptions = groups.map((group) => `<optgroup label="${escapeHtml(group.label)}">${group.sheets.map((sheet) => `<option value="${escapeHtml(String(sheet.id ?? sheet.code ?? ""))}"${String(sheet.id ?? "") === currentId ? " selected" : ""}>${escapeHtml(`${cleanText(sheet.code || "").trim()}${sheet.name || sheet.focus ? ` · ${cleanText(sheet.name || sheet.focus).trim()}` : ""}`)}</option>`).join("")}</optgroup>`).join("");
+    const sheetOptions = groups.map((group) => `<optgroup label="${escapeHtml(group.label)}">${group.sheets.map((sheet) => `<option value="${escapeHtml(String(sheet.id ?? sheet.code ?? ""))}"${String(sheet.id ?? "") === currentId ? " selected" : ""}>${escapeHtml(cleanText(sheet.name || sheet.code || "").trim())}</option>`).join("")}</optgroup>`).join("");
     return `
       <div class="v147-mode-row" aria-label="Modalità workout">
         <span>Modalità</span>
@@ -162,13 +162,13 @@
           <label>Scheda
             <select data-training-context="session">${sheetOptions}</select>
           </label>
+          <label>Fase
+            <span class="v147-derived-value" data-training-context-derived="phase">${escapeHtml(displayLabel(context.phase) || "—")}</span>
+          </label>
           <label>Settimana
             <select data-training-context="week">
               ${Array.from({ length: maxWeek }, (_, index) => `<option value="${index + 1}" ${Number(context.week) === index + 1 ? "selected" : ""}>Settimana ${index + 1}</option>`).join("")}
             </select>
-          </label>
-          <label>Fase
-            <span class="v147-derived-value" data-training-context-derived="phase">${escapeHtml(displayLabel(context.phase))}</span>
           </label>
         </div>
       ` : ""}

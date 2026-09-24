@@ -1,5 +1,5 @@
 /* Barbell Diva - Service Worker
-   v147.51-scheda-prima-fase-derivata
+   v147.51-scheda-fase-settimana
    - HTML + JS/CSS: NETWORK-FIRST con timeout (3s) + fallback cache → dopo un
      deploy i dispositivi eseguono SEMPRE la versione pubblicata quando sono
      online (il vecchio stale-while-revalidate serviva la copia vecchia alla
@@ -8,7 +8,7 @@
    - Match con ignoreSearch: resiste ai bump di versione (?v=...) e ai doppioni in cache
    - Cache key normalizzate per pathname (niente duplicati per ogni ?v=)
 */
-const CACHE_NAME = "atlas-app-v14751-scheda-prima-fase-derivata";
+const CACHE_NAME = "atlas-app-v14751-scheda-fase-settimana";
 const APP_SHELL = [
   "./",
   "./index.html",

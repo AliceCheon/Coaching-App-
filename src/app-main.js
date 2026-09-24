@@ -5985,6 +5985,22 @@ function sanitizeForFirestore(value) {
       return extras.length ? `${base} · ${extras.slice(0, 2).join(" · ")}` : base;
     }
 
+    // La "Fase" mostrata accanto alla scheda è il tipo di blocco del programma.
+    // Il vocabolario di riferimento è BLOCK_TYPES (volume, accumulo,
+    // intensificazione, peaking...): normalizziamo per riconoscere anche varianti
+    // con prefissi/numeri ("2.Intensificazione") o case diverso, lasciando
+    // invariati i nomi liberi (es. "Intensità Agosto-Ottobre").
+    const PHASE_CANONICAL = ["adattamento anatomico", "accumulo", "volume", "ipertrofia", "intensificazione", "forza massimale", "forza", "peaking", "tecnica", "specializzazione", "realizzazione", "deload", "taper", "mantenimento", "ricondizionamento", "personalizzato"];
+    function phaseDisplayLabel(phase) {
+      const raw = cleanText(phase).trim();
+      if (!raw) return "";
+      const folded = raw.toLowerCase().replace(/^\d+\s*[.)\-]?\s*/, "").trim();
+      const exact = PHASE_CANONICAL.find((item) => item === folded);
+      const prefixed = exact || PHASE_CANONICAL.find((item) => folded.startsWith(item) && (folded.length === item.length || /[\s/(]/.test(folded[item.length]))) || PHASE_CANONICAL.find((item) => folded.includes(item));
+      if (prefixed) return prefixed.replace(/\b\w/g, (char) => char.toUpperCase());
+      return displayLabel(raw);
+    }
+
     // Il selettore "Scheda" è la fonte della scelta: la fase è un attributo del
     // programma che possiede la scheda, quindi la si deriva da lì. I codici scheda
     // (A, B, C...) si ripetono in ogni programma, perciò l'opzione usa l'id della
@@ -7154,7 +7170,7 @@ function sanitizeForFirestore(value) {
       const currentId = String(context.session?.id ?? "");
       const options = groups.map((group) => `<optgroup label="${escapeHtml(group.label)}">${group.sheets.map((sheet) => {
         const selected = String(sheet.id ?? "") === currentId ? " selected" : "";
-        return `<option value="${escapeHtml(String(sheet.id ?? sheet.code ?? ""))}"${selected}>${escapeHtml(`${cleanText(sheet.code || "").trim()}${sheet.name || sheet.focus ? ` · ${cleanText(sheet.name || sheet.focus).trim()}` : ""}`)}</option>`;
+        return `<option value="${escapeHtml(String(sheet.id ?? sheet.code ?? ""))}"${selected}>${escapeHtml(cleanText(sheet.name || sheet.code || "").trim())}</option>`;
       }).join("")}</optgroup>`).join("");
       return `<select data-training-context="session" ${context.isManual ? "" : "disabled"}>${options}</select>`;
     }
@@ -7166,11 +7182,11 @@ function sanitizeForFirestore(value) {
       // è il valore derivato dalla scheda programma. L'unica eccezione è la
       // modalità manuale senza schede disponibili, dove resta un selettore di
       // ripiego per non lasciare l'utente bloccato.
-      const phaseReadout = `<span class="training-context-derived" data-training-context-derived="phase">${escapeHtml(displayLabel(context.phase || "—"))}</span>`;
+      const phaseReadout = `<span class="training-context-derived" data-training-context-derived="phase">${escapeHtml(phaseDisplayLabel(context.phase) || "—")}</span>`;
       const phaseControl = context.isManual && !programSheetGroups().length
         ? `<select data-training-context="phase">${availablePhases().map((item) => `<option value="${escapeHtml(item)}" ${item === context.phase ? "selected" : ""}>${escapeHtml(phaseSelectorLabel(item))}</option>`).join("")}</select>`
         : phaseReadout;
-      return `<section class="training-context-card card"><div class="row"><div><span class="section-eyebrow">Contesto allenamento</span><strong>${context.isManual ? "Selezione manuale" : "Automatico dalla data"}</strong></div>${context.contextWarning ? `<span class="status-badge warning">${escapeHtml(context.contextWarning)}</span>` : ""}</div><div class="training-context-grid"><label>Modalità<select data-training-context="mode"><option value="auto" ${!context.isManual ? "selected" : ""}>Automatica</option><option value="manual" ${context.isManual ? "selected" : ""}>Manuale</option></select></label><label>Scheda${sessionSheetSelectHtml(context)}</label><label>Settimana<select data-training-context="week" ${!context.isManual ? "disabled" : ""}>${Array.from({length:maxWeek},(_,i)=>`<option value="${i+1}" ${Number(context.week) === i+1 ? "selected" : ""}>Settimana ${i+1}</option>`).join("")}</select></label><label>Fase${phaseControl}</label></div><p class="micro-copy">${context.isManual ? `Stai usando ${escapeHtml(context.session?.code || "nessuna scheda")} · fase ${escapeHtml(displayLabel(context.phase || "—"))} · settimana ${context.week}.` : `La data ${escapeHtml(context.date)} determina automaticamente scheda e settimana.`}</p></section>`;
+      return `<section class="training-context-card card"><div class="row"><div><span class="section-eyebrow">Contesto allenamento</span><strong>${context.isManual ? "Selezione manuale" : "Automatico dalla data"}</strong></div>${context.contextWarning ? `<span class="status-badge warning">${escapeHtml(context.contextWarning)}</span>` : ""}</div><div class="training-context-grid"><label>Modalità<select data-training-context="mode"><option value="auto" ${!context.isManual ? "selected" : ""}>Automatica</option><option value="manual" ${context.isManual ? "selected" : ""}>Manuale</option></select></label><label>Scheda${sessionSheetSelectHtml(context)}</label><label>Fase${phaseControl}</label><label>Settimana<select data-training-context="week" ${!context.isManual ? "disabled" : ""}>${Array.from({length:maxWeek},(_,i)=>`<option value="${i+1}" ${Number(context.week) === i+1 ? "selected" : ""}>Settimana ${i+1}</option>`).join("")}</select></label></div><p class="micro-copy">${context.isManual ? `Stai usando ${escapeHtml(context.session?.name || context.session?.code || "nessuna scheda")} · fase ${escapeHtml(phaseDisplayLabel(context.phase) || "—")} · settimana ${context.week}.` : `La data ${escapeHtml(context.date)} determina automaticamente scheda e settimana.`}</p></section>`;
     }
 
     function dashboardCoachHtml() {
@@ -7451,7 +7467,7 @@ function sanitizeForFirestore(value) {
         ${trainingContextControlsHtml(context)}
         <div class="hero-title">
           <h2>Allenamento <span>${session.code}</span></h2>
-          <p>${formatDateLabel(context.date)} - ${session.phase}, settimana ${context.week}.</p>
+          <p>${formatDateLabel(context.date)} - ${escapeHtml(phaseDisplayLabel(session.phase) || session.phase)}, settimana ${context.week}.</p>
         </div>
         ${workoutMascotLayer}
         <section class="card session-panel">
@@ -7469,11 +7485,11 @@ function sanitizeForFirestore(value) {
             </label>
             <label>Scheda
               <select id="trainingSession">
-                ${phaseSessions.map((item) => `<option value="${escapeHtml(String(item.id ?? item.code ?? ""))}" ${String(item.id ?? "") === String(session.id ?? "") ? "selected" : ""}>${escapeHtml(item.code)} · ${escapeHtml(item.name || item.focus || "")}</option>`).join("")}
+                ${phaseSessions.map((item) => `<option value="${escapeHtml(String(item.id ?? item.code ?? ""))}" ${String(item.id ?? "") === String(session.id ?? "") ? "selected" : ""}>${escapeHtml(cleanText(item.name || item.code || "").trim())}</option>`).join("")}
               </select>
             </label>
             <label>Fase
-              <span class="training-context-derived">${escapeHtml(displayLabel(context.phase))}</span>
+              <span class="training-context-derived">${escapeHtml(phaseDisplayLabel(context.phase))}</span>
             </label>
           </div>
           <div class="session-note">${context.isRestDay ? "Giorno senza scheda automatica: resta su recupero/check oppure scegli una scheda manualmente." : escapeHtml(sessionNote)} ${context.phase === "Intensita" ? "Fase futura: importata, ma non ancora attiva nel percorso." : ""}</div>
