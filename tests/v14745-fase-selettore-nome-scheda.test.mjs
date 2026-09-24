@@ -73,27 +73,50 @@ const testResult = vm.runInContext(`(() => {
   check("nomi programma collegati alla fase", JSON.stringify(phaseProgramNames("peaking")) === JSON.stringify(["Intensità 2 ottobre-dicembre"]));
   check("programma eliminato non contribuisce al nome", phaseProgramNames("fase fantasma").length === 0);
 
-  // Sheet-first: la scheda è la fonte della scelta, raggruppata per programma,
-  // con l'id come valore (i codici A/B si ripetono tra i programmi).
+  // Program-first: il PROGRAMMA è la fonte della scelta. La FASE è derivata da
+  // programma + settimana (deload ogni N settimane, altrimenti il tipo di blocco)
+  // e la SCHEDA è una di quelle del programma.
   const groups = programSheetGroups();
   check("schede raggruppate per programma", groups.length === 2 && groups.map((g) => g.label).join("|") === "Intensità 2 ottobre-dicembre|B program 1");
   check("programma eliminato escluso dai gruppi", groups.every((g) => g.id !== "p-deleted"));
   check("le schede del gruppo portano la fase del programma", groups[0].sheets.every((s) => s.phase === "peaking"));
   check("valore opzione = id scheda", groups[0].sheets[0].id === "sh-peak-a");
 
-  const manualContext = { isManual: true, phase: "peaking", week: 1, date: "02/10/2026", session: { id: "sh-peak-b", code: "B", name: "Scheda B" }, contextWarning: "", phaseSessions: sessionsForPhase("peaking") };
+  check("programmi selezionabili escludono i vuoti/eliminati", availablePrograms().map((p) => p.id).join("|") === "p-b1|p-peaking");
+  check("schede del programma filtrate per programma", programSheetsFor(programById("p-peaking")).map((s) => s.id).join("|") === "sh-peak-a|sh-peak-b");
+  check("tipo blocco del programma usato come fase base", programBlockType(programById("p-peaking")) === "peaking");
+  check("cadenza scarico default 4 settimane", programDeloadEvery(programById("p-b1")) === 4);
+  check("fase settimana 1 = tipo blocco dichiarato", derivedPhaseForWeek(programById("p-peaking"), 1) === "Peaking");
+  check("fase settimana 4 = deload", derivedPhaseForWeek(programById("p-b1"), 4) === "Deload");
+  check("fase settimana 8 = deload", derivedPhaseForWeek(programById("p-b1"), 8) === "Deload");
+  // Senza tipo di blocco dichiarato la fase segue la posizione della settimana.
+  check("programma senza blocco: settimana iniziale = volume", phaseFromWeekPosition(1, 8) === "Volume");
+  check("programma senza blocco: metà blocco = accumulo", phaseFromWeekPosition(4, 8) === "Accumulo");
+  check("programma senza blocco: oltre metà = intensificazione", phaseFromWeekPosition(6, 8) === "Intensificazione");
+  check("programma senza blocco: fine blocco = peaking", phaseFromWeekPosition(8, 8) === "Peaking");
+  check("fase settimana 1 senza blocco dichiarato = volume", derivedPhaseForWeek(programById("p-b1"), 1) === "Volume");
+  check("fase settimana 5 senza blocco dichiarato = intensificazione", derivedPhaseForWeek(programById("p-b1"), 5) === "Intensificazione");
+  // Cadenza scarico personalizzata (es. ogni 3 settimane).
+  check("cadenza scarico dal programma", programDeloadEvery({ id: "x", deloadEvery: 3 }) === 3);
+  check("fase settimana 3 con scarico ogni 3 = deload", derivedPhaseForWeek({ id: "x", deloadEvery: 3 }, 3) === "Deload");
+  check("override settimanale vince sulla derivazione", (state.training.weekPhases = { "p-b1:7": "peaking" }, derivedPhaseForWeek(programById("p-b1"), 7) === "Peaking" && (state.training.weekPhases = {}, true)));
+
+  const manualContext = { isManual: true, phase: "Deload", week: 4, date: "02/10/2026", session: { id: "sh-peak-b", code: "B", name: "Scheda B" }, program: programById("p-peaking"), programDeloadEvery: 4, contextWarning: "", phaseSessions: sessionsForPhase("peaking") };
   const controls = trainingContextControlsHtml(manualContext);
+  check("selettore Programma presente", controls.includes('data-training-context="program"'));
   check("selettore Scheda presente nel contesto allenamento", controls.includes('data-training-context="session"'));
-  check("opzioni raggruppate per programma (optgroup)", controls.includes("<optgroup"));
   check("scheda selezionata usa l'id", controls.includes('value="sh-peak-b"') && controls.includes("selected"));
   check("opzioni scheda mostrano solo il nome", controls.includes(">Scheda B<") && !controls.includes("B · Scheda B"));
   check("Fase è un valore derivato, non un selettore", controls.includes('data-training-context-derived="phase"') && !controls.includes('data-training-context="phase"'));
-  check("Fase derivata normalizzata al vocabolario blocchi", controls.includes('data-training-context-derived="phase">Peaking<'));
+  check("Fase derivata mostra il deload della settimana 4", controls.includes('data-training-context-derived="phase">Deload<'));
+  check("indicazione cadenza scarico visibile", controls.includes("deload ogni 4 settimane"));
   check("nessuna etichetta sporca 'peaking · ...' nel selettore scheda", !controls.includes("peaking · Intensità"));
-  const orderSheet = controls.indexOf(">Scheda");
+  const orderMode = controls.indexOf(">Modalità");
   const orderPhase = controls.indexOf(">Fase");
+  const orderProgram = controls.indexOf(">Programma");
+  const orderSheet = controls.indexOf(">Scheda");
   const orderWeek = controls.indexOf(">Settimana<");
-  check("ordine campi Scheda → Fase → Settimana", orderSheet > -1 && orderPhase > orderSheet && orderWeek > orderPhase);
+  check("ordine campi Modalità → Fase → Programma → Scheda → Settimana", orderMode > -1 && orderPhase > orderMode && orderProgram > orderPhase && orderSheet > orderProgram && orderWeek > orderSheet);
 
   // La Fase normalizza le varianti al vocabolario dei blocchi (volume/accumulo/
   // intensificazione/peaking...) ma lascia intatti i nomi liberi.
@@ -106,15 +129,18 @@ const testResult = vm.runInContext(`(() => {
   // In automatico la fase resta quella attiva e la scheda segue data/settimana.
   const autoControls = trainingContextControlsHtml({ isManual: false, phase: "B program 1", week: 1, date: "02/10/2026", session: { id: "sh-b1-a", code: "A", name: "Scheda A" }, contextWarning: "", phaseSessions: sessionsForPhase("B program 1") });
   check("in automatico il selettore scheda è disabilitato", autoControls.includes('data-training-context="session" disabled'));
+  check("in automatico il selettore programma è disabilitato", autoControls.includes('data-training-context="program" disabled'));
   check("in automatico la fase è quella attiva", autoControls.includes('data-training-context-derived="phase">B program 1<'));
 
   return { assertions, phases };
 })()`, context);
 
-if (!workoutFlow.includes('data-training-context="session"')) throw new Error("workout-flow-v147.js: manca il selettore Scheda sheet-first");
+if (!workoutFlow.includes('data-training-context="session"')) throw new Error("workout-flow-v147.js: manca il selettore Scheda");
+if (!workoutFlow.includes('data-training-context="program"')) throw new Error("workout-flow-v147.js: manca il selettore Programma");
 if (!workoutFlow.includes('data-training-context-derived="phase"')) throw new Error("workout-flow-v147.js: la Fase non è un valore derivato");
-if (!appMain.includes("programSheetGroups")) throw new Error("app-main.js: manca programSheetGroups (sheet-first)");
-if (!appMain.includes("resolveManualSession")) throw new Error("app-main.js: manca resolveManualSession (scheda -> fase)");
-if (!appMain.includes("campo Fase del workout")) throw new Error("app-main.js: il modal programma non spiega il campo Fase");
+if (!appMain.includes("programSheetGroups")) throw new Error("app-main.js: manca programSheetGroups");
+if (!appMain.includes("resolveManualSession")) throw new Error("app-main.js: manca resolveManualSession");
+if (!appMain.includes("derivedPhaseForWeek")) throw new Error("app-main.js: manca la derivazione della Fase da programma + settimana");
+if (!appMain.includes("availablePrograms")) throw new Error("app-main.js: manca l'elenco dei programmi selezionabili");
 
 console.log(JSON.stringify({ ok: true, ...testResult }, null, 2));

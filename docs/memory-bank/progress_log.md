@@ -103,3 +103,17 @@ Obiettivo:
 - Stato test: **143/143 pass** (`node --test "tests/*.test.mjs"`).
 - Blocco aperto: nessuno.
 - Prossimo step consigliato: Fase 2 (estrazione `src/coach-ai/`) e decisione App Check (Fase 0.6).
+
+### 7) 2026-09-23 — Programma-first: Fase calcolata da programma + settimana (build v147.52)
+
+- UUID: 0007
+- Commit riferimento: working tree (sopra il commit scheda-first)
+- Cosa è cambiato (correzione della UX precedente):
+  - Feedback utente: la Fase era rimasta identica a prima e coincideva con il nome del programma. Ordine richiesto: Modalità → Fase → Programma → Scheda → Settimana, con la Fase calcolata dall app.
+  - Nuovo selettore Programma in manuale (data-training-context="program", stato training.manualProgramId) con availablePrograms().
+  - La Scheda è filtrata al solo programma scelto (programSheetsFor) e mostra solo i nomi.
+  - La Fase è derivata (derivedPhaseForWeek): override settimanale, poi deload ogni N settimane (programDeloadEvery, default 4), poi tipo di blocco canonico, altrimenti periodizzazione di ripiego (phaseFromWeekPosition: Volume→Accumulo→Intensificazione→Peaking).
+  - Nuovo campo "Scarico ogni N settimane" nel modal Programma e programDurationWeeks() per l elenco Settimana.
+  - Aggiornati resolveManualSession/resolveManualProgram, currentTrainingContext (context.program, context.programDeloadEvery), handler, selettore legacy #trainingSession, modeControlsHtml e griglie CSS.
+- Stato test: 143/143 pass, incluso v14745 esteso.
+- Blocco aperto: nessuno.
