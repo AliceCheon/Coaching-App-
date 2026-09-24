@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v147.55-blocco-settimana` |
-| `cache` | `atlas-app-v14755-blocco-settimana` |
+| `build` | `v147.56-flexwindow-fullbleed` |
+| `cache` | `atlas-app-v14756-flexwindow-fullbleed` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

@@ -16,10 +16,21 @@ I test caricano `src/app-main.js` in una VM Node con stub di `window`/`document`
 e un prologo per `matchMedia`, `setInterval`, `performance`, `history`. Vedi
 `tests/v14753-motore-fasi-inferenza.test.mjs` come modello pulito.
 
+## Verifica layout su viewport piccoli (FlexWindow / cover screen)
+Chromium headless ignora `--window-size` sotto ~500px di larghezza, quindi per
+misurare davvero 400x365 si usa una pagina con `<iframe width=400 height=365>`
+e si legge `contentDocument.title` (misure) via `--dump-dom`. Vedi
+`tests/v14756-flexwindow-fullbleed.test.mjs` (motore di cascata CSS in Node).
+
+**Trappola nota**: elementi "fantasma" fuori dai `<media>` di `min-width:981px`
+restano in flusso su mobile e allungano il documento oltre `100dvh`
+(`.coach-editor-nav-restore`, `#globalDivaBotHost` reso `position:static` da
+`coach-studio.css`). Bastano pochi px per far scivolare la scena sotto la piega.
+
 ## Fonte unica di versione
 1. `app-config-v144.js` → `build: "v147.X-suffisso"` e `cache: "atlas-app-v147X-suffisso"`.
 2. Allinea i `?v=v147X` in `index.html`, `manifest.webmanifest` e `CACHE_NAME` in `service-worker.js`.
-3. Il token deriva da `vMAJOR.MINOR` → `vMAJOR+MINOR` (es. `v147.54` → `v14755`).
+3. Il token deriva da `vMAJOR.MINOR` → `vMAJOR+MINOR` (es. `v147.56` → `v14756`).
 4. `tests/version-single-source.test.mjs` e molti altri test hardcodano build/cache: aggiornali tutti con un `sed` globale.
 
 ## Fase dell'allenamento — architettura (v147.55)
