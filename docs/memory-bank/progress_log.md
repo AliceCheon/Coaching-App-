@@ -150,3 +150,16 @@ Obiettivo:
 - Stato test: **144/144 pass** (`node --test "tests/*.test.mjs"`), incluso il nuovo `tests/v14752-fase-da-dati-programma.test.mjs` (40 verifiche: priorità della mappatura, type esercizio ignorato, fallback marcato stimato, reattività Programma→Settimana, indipendenza della Scheda, migrazione idempotente, assenza di riferimenti obsoleti).
 - Blocco aperto: nessuno.
 
+### 10) 2026-09-23 — Fase in fondo e dicitura rimossa (v147.53)
+
+- UUID: 0010
+- Commit riferimento: working tree (sopra 52bfd30)
+- Richiesta utente dopo l'anteprima: la scritta di origine sotto la Fase ("dalla mappatura del programma" / "stimata dalla struttura del programma") creava disordine; e la Fase va spostata in fondo, dopo la Settimana.
+- Cosa è cambiato:
+  - Ordine dei controlli ora **Modalità → Programma → Scheda → Settimana → Fase** in `trainingContextControlsHtml` (dashboard) e `modeControlsHtml` (workout-flow-v147).
+  - Rimossa la dicitura di origine dalla card: la Fase è solo il valore, senza spiegazione a schermo.
+  - `phaseSource`/`phaseEstimated` restano nel modello del contesto (`currentTrainingContext`): il dato non si perde, serve ai test e a eventuali usi futuri. Sparisce solo la resa a schermo.
+  - L'editor Programma (modal) mantiene la spiegazione estesa della periodizzazione: è il posto giusto per il "perché", non la card.
+- Stato test: **144/144 pass**; in `v14745` l'asserzione d'ordine è aggiornata al nuovo ordine e ne aggiunge una che vieta il ritorno delle diciture.
+- Blocco aperto: nessuno.
+
