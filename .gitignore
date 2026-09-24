@@ -18,3 +18,8 @@ desktop.ini
 
 # Snapshot di sviluppo: restano solo in locale, mai nel repository
 backup/
+
+# Dipendenze
+node_modules/
+
+package-lock.json

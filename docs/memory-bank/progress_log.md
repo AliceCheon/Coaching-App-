@@ -132,3 +132,21 @@ Obiettivo:
 - Stato test: **143/143 pass** (`node --test "tests/*.test.mjs"`), incluso `v14745` con il nuovo caso di calibrazione.
 - Blocco aperto: nessuno.
 
+### 9) 2026-09-23 — Fase = mappatura esplicita del programma (v147.52)
+
+- UUID: 0009
+- Commit riferimento: working tree (sopra 6649831)
+- Cosa è cambiato (decisione dell'utente dopo verifica sui dati reali):
+  - La Fase di un programma è un **dato del programma**, non una regola: `program.periodization.weeks` è la **fonte primaria** (`PROGRAMMA → SETTIMANA → FASE`). L'inferenza strutturale resta **solo come fallback** ed è sempre marcata `estimated: true` con origine `"struttura del programma (stimata)"` / `"blocco del programma (stimata)"`.
+  - Il `type` dei singoli esercizi **non entra più nel calcolo della Fase**: `sheetWeekType()` resta disponibile per altre analisi ma non è più usata da `phaseFromProgramData()`. Eliminata la costante `WEEK_TYPE_PHASE`.
+  - Rimossa la funzione morta `programDeloadWeeks()`.
+  - Migrazione una tantum `migrateConfirmedWeekPlans()`: fissa nei dati dei 4 programmi reali la mappatura verificata settimana per settimana. Idempotente (flag `migrations.confirmedWeekPlansV14752`), non sovrascrive mappature già dichiarate, e non si "brucia" se lo stato arriva vuoto (sync cloud in ritardo).
+    - `B program 1`: 1-3 volume, 4 deload, 5-6 volume, 7 deload, 8 peaking
+    - `B program 2`: 1-3 volume, 4 deload, 5-6 volume, 7 deload, 8 peaking
+    - `Intensificazione`: 1-6 intensificazione, 7 peaking (7 settimane; nessun accumulo)
+    - `Intensità Agosto-Ottobre`: 1-3 volume, 4 deload, 5-7 volume, 8 deload
+  - UI invariata nell'aspetto: la Fase resta un valore derivato. Solo due diciture aggiornate per distinguere il dato dichiarato dall'inferenza ("dalla mappatura del programma" vs "stimata dalla struttura del programma"); l'editor Programma spiega che la periodizzazione è il dato usato.
+- Metodo di verifica sui dati reali: i campi RIR/RPE/carico sono vuoti in app, quindi la classificazione è stata ricostruita da serie, ripetizioni prescritte, presenza di test RM e uniformità della riduzione di volume rispetto alla settimana precedente.
+- Stato test: **144/144 pass** (`node --test "tests/*.test.mjs"`), incluso il nuovo `tests/v14752-fase-da-dati-programma.test.mjs` (40 verifiche: priorità della mappatura, type esercizio ignorato, fallback marcato stimato, reattività Programma→Settimana, indipendenza della Scheda, migrazione idempotente, assenza di riferimenti obsoleti).
+- Blocco aperto: nessuno.
+

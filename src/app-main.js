@@ -2836,8 +2836,40 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         {name:"Calf_machine",kg:60,maxKg:60,value:"60 / 60 kg",setValues:["60","60"],userNote:"",date:"14/07/2026",sets:"2",reps:"15-20",sessionCode:"E6"},{name:"Adductor",kg:90,maxKg:95,value:"85 / 95 kg",setValues:["85","95"],userNote:"",date:"14/07/2026",sets:"2",reps:"15-20",sessionCode:"E6"},{name:"Stacco_RDL",kg:75,maxKg:78,value:"78 / 72 kg",setValues:["78","72"],userNote:"Ho fatto due serie con 76 e 78 tutte e due 7 Rep 💪🏻 💪🏻💪🏻   volendo prossima volta aumento a 80 direttamente minimo 5 ce le ho.\nPoi ho fatto 1 con 72 ne ho fatte 9",date:"14/07/2026",sets:"2",reps:"1x5-8 1x9-12",sessionCode:"E6"},{name:"Stacco_mono_gamba",kg:16.25,maxKg:20,value:"12.5 / 15 / 17.5 / 20 kg",setValues:["12.5","15","17.5","20"],userNote:"Ho usato i pesi giù",date:"14/07/2026",sets:"4",reps:"15, 12, 10, 8",sessionCode:"E6"},{name:"Pendulum",kg:44,maxKg:44,value:"44 / 44 / 44 kg",setValues:["44","44","44"],userNote:"Continuo con 44 finché non arrivo a 10 rep",date:"14/07/2026",sets:"3",reps:"6-10",sessionCode:"E6"},{name:"Leg_curls_singolo",kg:30,maxKg:30,value:"30 / 30 / 30 kg",setValues:["30","30","30"],userNote:"Prox volta aumenta 35",date:"14/07/2026",sets:"3",reps:"5-8",sessionCode:"E6"},{name:"Abductor",kg:35,maxKg:35,value:"35 / 35 / 35 / 35 kg",setValues:["35","35","35","35"],userNote:"",date:"14/07/2026",sets:"4",reps:"30+40\" iso",sessionCode:"E6"},{name:"Leg_Extension",kg:55,maxKg:55,value:"55 / 55 / 55 kg",setValues:["55","55","55"],userNote:"",date:"14/07/2026",sets:"3",reps:"10-12",sessionCode:"E6"}],cloudSyncedAt:"2026-07-14T17:35:31.799Z"}
     ]; }
 
+    // v147.52 · La Fase di un programma è un DATO del programma, non una regola
+    // globale: qui fissiamo nei dati la mappatura PROGRAMMA → SETTIMANA → FASE
+    // verificata sui 4 programmi reali. È una migrazione una tantum: da qui in
+    // poi la mappatura vive in `program.periodization.weeks` ed è modificabile
+    // a mano dall'editor del programma.
+    function migrateConfirmedWeekPlans(target = state) {
+      const plans = {
+        "b program 1": { 1: "volume", 2: "volume", 3: "volume", 4: "deload", 5: "volume", 6: "volume", 7: "deload", 8: "peaking" },
+        "b program 2": { 1: "volume", 2: "volume", 3: "volume", 4: "deload", 5: "volume", 6: "volume", 7: "deload", 8: "peaking" },
+        "intensificazione": { 1: "intensificazione", 2: "intensificazione", 3: "intensificazione", 4: "intensificazione", 5: "intensificazione", 6: "intensificazione", 7: "peaking" },
+        "intensità agosto-ottobre": { 1: "volume", 2: "volume", 3: "volume", 4: "deload", 5: "volume", 6: "volume", 7: "volume", 8: "deload" }
+      };
+      target.migrations = target.migrations || {};
+      if (Number(target.migrations.confirmedWeekPlansV14752 || 0) >= 1) return false;
+      // Il flag si fissa solo quando ci sono programmi da esaminare: se lo stato
+      // arriva prima vuoto (sync cloud in ritardo) la migrazione riproverà.
+      if (!(target.programs || []).length) return false;
+      let applied = 0;
+      (target.programs || []).forEach((program) => {
+        const key = String(program?.name || "").trim().toLowerCase().replace(/\s+/g, " ");
+        const plan = plans[key];
+        if (!plan) return;
+        if (program.periodization?.weeks && Object.keys(program.periodization.weeks).length) return;
+        program.periodization = { ...(program.periodization || {}), weeks: { ...plan } };
+        applied += 1;
+      });
+      target.migrations.confirmedWeekPlansV14752 = 1;
+      target.migrations.confirmedWeekPlansV14752Applied = applied;
+      return applied > 0;
+    }
+
     function hydrateStateModel(target = state) {
       target.programs = (target.programs || []).map(normalizeProgramModel);
+      migrateConfirmedWeekPlans(target);
       target.athleteIntelligence = window.BarbellDivaAthleteContext.normalizeStore(target.athleteIntelligence, target);
       target.masterExerciseLibrary = window.BarbellDivaMasterLibrary.bootstrapStore(target.masterExerciseLibrary || {}, { names:window.BARBELL_DIVA_EXERCISE_NAMES_19_8 || [], profiles:[...Object.entries(COACH_EXERCISE_LIBRARY||{}).flatMap(([group,rows])=>(rows||[]).map(row=>({...row,muscle:row.som||group,origin:"system"}))),...(target.coach?.exerciseLibrary || [])], programs:target.programs });
       target.programs = window.BarbellDivaMasterLibrary.migratePrograms(target.programs,target.masterExerciseLibrary).map(normalizeProgramModel);
@@ -2847,7 +2879,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       target.training.manualWeek = Number(target.training.manualWeek) > 0 ? Number(target.training.manualWeek) : null;
       target.training.manualSessionCode = String(target.training.manualSessionCode || (legacyManual ? target.training.sessionName : ""));
       target.training.manualPhase = String(target.training.manualPhase || target.training.phaseFilter || target.profile?.phase || "");
-      // v14751 · il selettore Scheda ora salva l'id della scheda: gli stati salvati
+      // v147.51 · il selettore Scheda ora salva l'id della scheda: gli stati salvati
       // prima hanno solo il codice, quindi l'id va risolto una volta in fase di load.
       if (!target.training.manualSessionId && target.training.manualSessionCode) {
         const sheet = allProgramSheets(target).find((item) => item.code === target.training.manualSessionCode && item.phase === target.training.manualPhase)
@@ -6144,24 +6176,10 @@ function sanitizeForFirestore(value) {
       return plan;
     }
 
-    // Settimane marcate "deload" nei dati del programma: lo `type` del tipo
-    // settimana negli esercizi (generato dalla progressione) e il piano esplicito.
-    function programDeloadWeeks(program) {
-      const weeks = new Set();
-      Object.entries(program?.periodization?.weeks || {}).forEach(([week, phase]) => {
-        const number = Number(week);
-        if (Number.isFinite(number) && /deload|scarico/i.test(String(phase || ""))) weeks.add(number);
-      });
-      (program?.sheets || []).forEach((sheet) => (sheet.exercises || []).forEach((exercise) => {
-        (exercise.progression?.weeks || []).forEach((week, index) => {
-          if (String(week?.type || "").toLowerCase() === "deload") weeks.add(Number(week.weekNumber || week.week || index + 1));
-        });
-      }));
-      return weeks;
-    }
-
     // Tipo settimana registrato nei dati della scheda (esercizi -> progression.weeks).
-    // Restituisce "" se la scheda non dichiara nulla per quella settimana.
+    // NON usato per calcolare la Fase: il tipo del singolo esercizio non deve
+    // determinare né sovrascrivere la fase del programma. Resta disponibile per
+    // altre analisi. Restituisce "" se la scheda non dichiara nulla.
     function sheetWeekType(sheet, weekNumber) {
       const week = Number(weekNumber) || 0;
       for (const exercise of (sheet?.exercises || [])) {
@@ -6172,27 +6190,22 @@ function sanitizeForFirestore(value) {
       return "";
     }
 
-    // Il tipo settimana del generatore di progressione viene tradotto nel
-    // vocabolario dei blocchi mostrato all'utente.
-    const WEEK_TYPE_PHASE = { deload: "deload", accumulation: "accumulo", intensification: "intensificazione", recovery: "ricondizionamento", test: "test" };
-
-    // La Fase è ricavata dalla STRUTTURA del programma, non da una regola
-    // generica: 1) piano settimanale esplicito, 2) tipo settimana negli esercizi
-    // della scheda, 3) tipo di blocco del programma se canonico, 4) altrimenti
-    // l'etichetta di fase dichiarata dal programma (nome libero).
+    // La Fase è ricavata dalla MAPPATURA ESPLICITA del programma
+    // (`program.periodization.weeks`): PROGRAMMA → SETTIMANA → FASE.
+    // Solo se la mappatura manca si ricorre all'inferenza strutturale, che viene
+    // sempre segnalata come "stimata" e non è mai definitiva.
+    // Il `type` dei singoli esercizi NON entra nel calcolo della fase.
     function phaseFromProgramData(program, sheet, weekNumber) {
       const week = Math.max(1, Number(weekNumber) || 1);
       const explicit = program?.periodization?.weeks || {};
       const declared = cleanText(explicit[week] || explicit[String(week)]).trim();
-      if (declared) return { phase: declared, source: "pianificazione del programma" };
+      if (declared) return { phase: declared, source: "mappatura del programma", estimated: false };
       const inferred = inferredWeekPlan(program)[week];
-      if (inferred) return { phase: inferred, source: "struttura del programma" };
-      const type = sheetWeekType(sheet, week);
-      if (type) return { phase: WEEK_TYPE_PHASE[type] || type, source: "settimana della scheda" };
+      if (inferred) return { phase: inferred, source: "struttura del programma (stimata)", estimated: true };
       const block = canonicalPhase(programBlockType(program));
-      if (block) return { phase: block, source: "blocco del programma" };
+      if (block) return { phase: block, source: "blocco del programma (stimata)", estimated: true };
       const fallback = cleanText(program?.phase || program?.name || "").trim();
-      return { phase: fallback, source: fallback ? "programma" : "" };
+      return { phase: fallback, source: fallback ? "programma" : "", estimated: false };
     }
 
     function derivedPhaseForWeek(program, weekNumber, sheet = null) {
@@ -6356,6 +6369,7 @@ function sanitizeForFirestore(value) {
         canonicalSession,
         phase,
         phaseSource: phaseInfo.source,
+        phaseEstimated: !!phaseInfo.estimated,
         program: manualProgram,
         phaseSessions,
         contextMode: state.training.contextMode || "auto",
@@ -7414,7 +7428,7 @@ function sanitizeForFirestore(value) {
       // SEMPRE un valore calcolato dalla struttura del programma, mai un dropdown.
       const phaseReadout = `<span class="training-context-derived" data-training-context-derived="phase">${escapeHtml(phaseDisplayLabel(context.phase) || "—")}</span>`;
       const phaseHint = context.isManual && context.phaseSource
-        ? ` <small class="micro-copy">dalla ${escapeHtml(context.phaseSource)}</small>`
+        ? ` <small class="micro-copy">${context.phaseEstimated ? `stimata dalla ${escapeHtml(context.phaseSource.replace(/ \(stimata\)$/, ""))}` : `dalla ${escapeHtml(context.phaseSource)}`}</small>`
         : "";
       return `<section class="training-context-card card"><div class="row"><div><span class="section-eyebrow">Contesto allenamento</span><strong>${context.isManual ? "Selezione manuale" : "Automatico dalla data"}</strong></div>${context.contextWarning ? `<span class="status-badge warning">${escapeHtml(context.contextWarning)}</span>` : ""}</div><div class="training-context-grid"><label>Modalità<select data-training-context="mode"><option value="auto" ${!context.isManual ? "selected" : ""}>Automatica</option><option value="manual" ${context.isManual ? "selected" : ""}>Manuale</option></select></label><label>Programma${programSelectHtml(context)}</label><label>Fase${phaseReadout}${phaseHint}</label><label>Scheda${sessionSheetSelectHtml(context)}</label><label>Settimana<select data-training-context="week" ${!context.isManual ? "disabled" : ""}>${Array.from({length:maxWeek},(_,i)=>`<option value="${i+1}" ${Number(context.week) === i+1 ? "selected" : ""}>Settimana ${i+1}</option>`).join("")}</select></label></div><p class="micro-copy">${context.isManual ? `Stai usando ${escapeHtml(context.session?.name || context.session?.code || "nessuna scheda")} · fase ${escapeHtml(phaseDisplayLabel(context.phase) || "—")} · settimana ${context.week}${program ? ` · ${escapeHtml(cleanText(program.name || ""))}` : ""}.` : `La data ${escapeHtml(context.date)} determina automaticamente scheda e settimana.`}</p></section>`;
     }
@@ -10376,7 +10390,7 @@ function sanitizeForFirestore(value) {
           const current = String(effectivePlan[week] || "");
           return `<label>Settimana ${week}<select data-program-week-phase="${week}"><option value="" ${current?"":"selected"}>— non dichiarata —</option>${window.BarbellDivaAthleteContext.BLOCK_TYPES.map((value)=>`<option value="${escapeHtml(value)}" ${current===value?"selected":""}>${escapeHtml(value)}</option>`).join("")}</select></label>`;
         }).join("");
-        const periodizationFields=`<div class="program-setup"><h4>Periodizzazione (settimana → fase)</h4><p class="micro-copy">La Fase mostrata nel workout viene calcolata da qui. Se il programma non la dichiara, l'app la ricava dalla struttura (test di carico, volume, tipo settimana degli esercizi): qui la trovi già proposta, correggila se serve.</p><div class="form-grid program-week-phases">${periodizationRows}</div></div>`;
+        const periodizationFields=`<div class="program-setup"><h4>Periodizzazione (settimana → fase)</h4><p class="micro-copy">La Fase del programma è definita qui, settimana per settimana: è il dato che l'app usa per il workout. Compila ogni settimana. Se lasci una settimana non dichiarata, l'app mostra una fase <strong>stimata</strong> dalla struttura del programma (volume, test di carico), chiaramente segnalata come tale.</p><div class="form-grid program-week-phases">${periodizationRows}</div></div>`;
         return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${heading}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(defaultName)}" placeholder="Nome programma"></label><label>Etichetta fase<input id="programModalPhase" value="${escapeHtml(item?.phase || "")}" placeholder="es. Intensità 2 ottobre-dicembre"><small class="micro-copy" style="margin:6px 0 0">Solo un'etichetta descrittiva del programma. La Fase vera (Volume, Accumulo, Deload...) viene calcolata dalla periodizzazione qui sotto.</small></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Cartella<select id="programModalFolder"><option value="">Nessuna cartella</option>${folders.map((folder)=>`<option value="${escapeHtml(folder)}" ${item?.folder===folder?"selected":""}>${escapeHtml(folder)}</option>`).join("")}</select></label><label>Stato<select id="programModalStatus"><option value="draft" ${type==="program-save-as" || item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${type!=="program-save-as" && item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${type!=="program-save-as" && item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div>${periodizationFields}${contextFields}<div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type==="program-save-as"?"Crea copia":"Salva programma"}</button></div></section></div>`;
       }
       if (type === "sheet-new" || type === "sheet-edit" || type === "sheet-rename") {
