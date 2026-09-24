@@ -20,7 +20,7 @@ e un prologo per `matchMedia`, `setInterval`, `performance`, `history`. Vedi
 Chromium headless ignora `--window-size` sotto ~500px di larghezza, quindi per
 misurare davvero 400x365 si usa una pagina con `<iframe width=400 height=365>`
 e si legge `contentDocument.title` (misure) via `--dump-dom`. Vedi
-`tests/v14756-flexwindow-fullbleed.test.mjs` (motore di cascata CSS in Node).
+`tests/v14757-canvas-not-white.test.mjs` (motore di cascata CSS in Node).
 
 **Trappola nota**: elementi "fantasma" fuori dai `<media>` di `min-width:981px`
 restano in flusso su mobile e allungano il documento oltre `100dvh`
@@ -30,7 +30,7 @@ restano in flusso su mobile e allungano il documento oltre `100dvh`
 ## Fonte unica di versione
 1. `app-config-v144.js` → `build: "v147.X-suffisso"` e `cache: "atlas-app-v147X-suffisso"`.
 2. Allinea i `?v=v147X` in `index.html`, `manifest.webmanifest` e `CACHE_NAME` in `service-worker.js`.
-3. Il token deriva da `vMAJOR.MINOR` → `vMAJOR+MINOR` (es. `v147.56` → `v14756`).
+3. Il token deriva da `vMAJOR.MINOR` → `vMAJOR+MINOR` (es. `v147.57` → `v14757`).
 4. `tests/version-single-source.test.mjs` e molti altri test hardcodano build/cache: aggiornali tutti con un `sed` globale.
 
 ## Fase dell'allenamento — architettura (v147.55)
@@ -86,3 +86,19 @@ range ascendenti `15-20`).
 - Le fasi che i dati non bastano a dedurre (forza, tecnica, mantenimento,
   ricondizionamento, specializzazione) restano a bassa confidenza e dichiarano
   il segnale mancante via `requiredSignal` invece di inventare una fase.
+
+## FlexWindow (schermo esterno Galaxy Z Flip) — v147.57
+- Il FlexWindow è 948×1048 px fisici ≈ **400×365 CSS px** (entra in
+  `max-height:430px` + `max-width:560px`), quindi il tema di default è quello
+  scuro: la barra in basso è scura, non chiara.
+- **La banda bianca in fondo non era più un overflow** (a 400×365 il documento
+  riempie il viewport). Era l'**area non dipinta sotto il documento**: `html` e
+  `body` avevano sfondo trasparente (solo gradienti con bordi trasparenti), e il
+  canvas radice del browser è **bianco** di default.
+- Fix: `html` dipinge lo sfondo del tema (`html` scuro di default,
+  `html[data-theme="light"]` lavender), con `background-attachment: fixed`, e
+  `render`/`syncThemeUi` rispecchiano `data-theme` su `documentElement`. Uno
+  script inline in `<head>` imposta il tema su `<html>` **prima del primo
+  paint** leggendo `alice-method-app.v8`.
+- Test: `tests/v14757-canvas-not-white.test.mjs` (fallisce se lo sfondo su
+  `html` o la sincronizzazione di `data-theme` spariscono).
