@@ -19,17 +19,36 @@ e un prologo per `matchMedia`, `setInterval`, `performance`, `history`. Vedi
 ## Fonte unica di versione
 1. `app-config-v144.js` → `build: "v147.X-suffisso"` e `cache: "atlas-app-v147X-suffisso"`.
 2. Allinea i `?v=v147X` in `index.html`, `manifest.webmanifest` e `CACHE_NAME` in `service-worker.js`.
-3. Il token deriva da `vMAJOR.MINOR` → `vMAJOR+MINOR` (es. `v147.54` → `v14754`).
+3. Il token deriva da `vMAJOR.MINOR` → `vMAJOR+MINOR` (es. `v147.54` → `v14755`).
 4. `tests/version-single-source.test.mjs` e molti altri test hardcodano build/cache: aggiornali tutti con un `sed` globale.
 
-## Fase dell'allenamento — architettura (v147.54)
+## Fase dell'allenamento — architettura (v147.55)
 Motore a 3 strati in `src/app-main.js`:
 - **Strato A** `phaseWeekSignals(program)`: estrae segnali per settimana dalle
   prescrizioni reali (serie, forma delle reps, test, RIR, tempo).
 - **Strato B** `phaseWeekScores(...)`: assegna punteggi per fase con evidenze
   pesate, in modo **relativo al blocco** (volume vs massimo, posizione nel blocco).
 - **Strato C** `classifyProgramWeeks(program)`: sceglie la fase, calcola la
-  confidenza ed espone `evidence`/`signals`/`requiredSignal`.
+  confidenza ed espone `evidence`/`signals`/`requiredSignal`/`blockPhase`.
+
+### Due livelli distinti (non confonderli)
+- **Fase/obiettivo del BLOCCO** (`phaseBlockMethodology`): la metodologia
+  dominante dell'intero blocco, dedotta dalla forma di prescrizione ricorrente.
+  `"12-8"` discendente ricorrente → `intensità`; range ascendente `"8-12"` → `accumulo`.
+  Esposta come `blockPhase` (non come `phase`).
+- **Tipo della SETTIMANA** (`phase`): deciso **relativamente alle altre settimane**,
+  con questa scala:
+  1. test dominanti a fine blocco → `peaking`;
+  2. calo di volume rispetto alla mediana del blocco (`volumeDrop >= 0.15` o
+     `setsDrop >= 0.15`, con `volumeRatio <= 0.72`) → `deload`;
+  3. test dominanti a inizio blocco → `tecnica`;
+  4. altrimenti settimana di lavoro → `blockPhase` (o segnali locali se il blocco
+     non ha metodologia riconoscibile).
+
+**Regola d'oro**: un segnale stabile nel blocco (es. `"12-8"` in tutte le settimane)
+NON può provare il tipo di una singola settimana. Un calo di volume è uno scarico
+anche dentro un blocco di intensità. Mai far vincere la fase del blocco sul tipo
+della settimana, né viceversa.
 
 Gerarchia in `phaseFromProgramData`:
 1. override esplicito `program.periodization.weeks` → `source: "explicit"`;

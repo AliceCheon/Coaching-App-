@@ -118,8 +118,37 @@ const result = vm.runInContext(`(() => {
   check("Ago-Ottobre mai 'volume' nonostante il nome", !Object.values(agoClass).some((e) => e.phase === "volume"));
   check("Ago-Ottobre classificata come intensità", Object.values(agoClass).every((e) => e.phase === "intensità"));
 
-  // 8. Reset dei programmi di prova per non sporcare altre verifiche.
-  state.programs = state.programs.filter((p) => !["e-alfa","e-beta","e-typeless","e-typed","e-override","e-block","e-empty","e-forza","e-ago"].includes(p.id));
+  // 8. Deload dentro un blocco di INTENSITÀ (requisito esplicito).
+  //    Il blocco ha "12-8" in TUTTE le settimane: è la metodologia del blocco,
+  //    non la prova che la singola settimana sia di intensità. La settimana 4
+  //    taglia le serie (3 -> 1): è uno scarico strutturale e deve restare Deload.
+  const repsFor = (week, sets, reps) => ({ weekNumber: week, sets, reps });
+  const blockOf = (id, name, repsByWeek, setsByWeek) => ({
+    id, name, phase: name, status: "active", durationWeeks: repsByWeek.length, sheets: [
+      sheetWith("A", [{ id: id + "-a", name: "Pendulum", progression: { weeks: repsByWeek.map((reps, index) => repsFor(index + 1, setsByWeek[index], reps)) } }]),
+      sheetWith("B", [{ id: id + "-b", name: "Calf", progression: { weeks: repsByWeek.map((reps, index) => repsFor(index + 1, setsByWeek[index], reps)) } }])
+    ]
+  });
+  const intensita = blockOf("e-intensita-block", "Blocco intensità",
+    ["12-8","12-8","12-8","12-8","12-8","12-8","12-8","12-8"],
+    [3,3,3,1,3,3,3,1]);
+  state.programs.push(intensita);
+  const intClass = classifyProgramWeeks(intensita);
+  check("blocco con 12-8 costante riconosciuto come intensità", Object.values(intClass).every((e) => e.blockPhase === "intensità"));
+  check("la settimana di calo serie dentro il blocco di intensità resta deload", intClass[4].phase === "deload");
+  check("anche la seconda settimana di scarico resta deload", intClass[8].phase === "deload");
+  check("le altre settimane restano intensità", [1,2,3,5,6,7].every((w) => intClass[w].phase === "intensità"));
+  check("il deload è spiegato dal calo di volume, non dal nome", intClass[4].evidence.some((e) => e.phase === "deload"));
+  check("la fase del blocco è esposta separata dal tipo settimana", intClass[4].blockPhase === "intensità" && intClass[4].phase === "deload");
+
+  // 8b. La sola intensità NON deve cancellare un deload: variante con 3->2 serie.
+  const intensita2 = blockOf("e-intensita-2", "Blocco intensità 2",
+    ["12-8","12-8","12-8","12-8","12-8","12-8"], [4,4,4,2,4,4]);
+  state.programs.push(intensita2);
+  check("calo serie 4->2 dentro blocco intensità = deload", classifyProgramWeeks(intensita2)[4].phase === "deload");
+
+  // 9. Reset dei programmi di prova per non sporcare altre verifiche.
+  state.programs = state.programs.filter((p) => !["e-alfa","e-beta","e-typeless","e-typed","e-override","e-block","e-empty","e-forza","e-ago","e-intensita-block","e-intensita-2"].includes(p.id));
 
   return { assertions };
 })()`, context);

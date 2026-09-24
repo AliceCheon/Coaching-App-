@@ -6268,6 +6268,23 @@ function sanitizeForFirestore(value) {
       return index / (ordered.length - 1);
     }
 
+    // Metodologia del BLOCCO (il suo obiettivo), distinta dal tipo della singola
+    // settimana. Si basa sulla forma di prescrizione DOMINANTE in tutto il blocco:
+    //   - "12-8" discendente intra-serie ricorrente → intensità;
+    //   - range ascendente ("8-12") ricorrente → accumulo.
+    // Essendo un segnale stabile, NON può da solo provare che una singola settimana
+    // sia di intensità: una settimana di calo di volume dentro un blocco di intensità
+    // resta un deload. Per questo vive qui e non è una voce di punteggio per-settimana.
+    function phaseBlockMethodology(signals) {
+      const valid = (signals || []).filter((item) => item.prescriptions > 0);
+      if (valid.length < 2) return null;
+      const desc = valid.reduce((sum, item) => sum + item.descPairRatio, 0) / valid.length;
+      const asc = valid.reduce((sum, item) => sum + item.ascPairRatio, 0) / valid.length;
+      if (desc >= 0.4 && desc >= asc) return "intensità";
+      if (asc >= 0.6 && asc > desc) return "accumulo";
+      return null;
+    }
+
     // --- Strato B: classificazione relativa -----------------------------------
 
     // Accumula evidenze per fase. Tutto e RELATIVO al blocco esaminato: nessuna
@@ -6294,52 +6311,69 @@ function sanitizeForFirestore(value) {
       const lowRepShare = weekSignals.lowReps / count;
       const bodyShare = weekSignals.bodybuildingReps / count;
 
-      // 1. Test di carico: conta solo se DOMINANTE nella settimana. Un test
-      //    isolato dentro una settimana a volume pieno (calibrazione) non sposta
-      //    la fase. Il significato dipende poi dalla POSIZIONE nel blocco.
-      const testShare = weekSignals.tests / count;
-      if (testShare >= 0.3) {
-        if (position >= 0.85) {
-          bump("peaking", 2.2, "test dominanti nell'ultima settimana del blocco: verifica di picco");
-        } else if (position >= 0.6 && volumeRatio <= avgVolume + 0.05) {
-          bump("peaking", 1.2, "test dominanti in posizione avanzata con volume contenuto");
-        } else if (position <= 0.3) {
-          bump("tecnica", 0.9, "test dominanti in apertura di blocco: probabile calibrazione");
-        }
-        // Test dominanti a meta blocco: segnale ambiguo, non basta per una fase.
-      }
-
-      // 2. Struttura a gruppi multipli ("2x6-9 1x12-15"): lavoro a blocchi,
-      //    tipico di tecniche di intensificazione dentro la seduta.
+      // 1. Struttura a gruppi multipli ("2x6-9 1x12-15"): lavoro a blocchi.
       const clusterShare = weekSignals.intensityTechniques / count;
       if (clusterShare >= 0.4) bump("intensificazione", 0.9, "prescrizioni multi-gruppo nella seduta");
-      // 2. Schema discendente INTRA-serie ("12-8", "10-6"): tecnica di intensita.
-      //    Il range ascendente ("8-12") e invece lavoro a volume/accumulo.
-      if (desc >= 0.4) bump("intensità", 1.6 + desc * 2, "prescrizioni discendenti nella serie");
-      else if (desc >= 0.25 && asc < 0.25) bump("intensità", 0.8 + desc, "discendenza intra-serie moderata");
-      if (asc >= 0.6) bump("accumulo", 1.2 + asc, "range di reps ascendenti dominanti");
-      else if (asc >= 0.35) bump("accumulo", 0.5, "range ascendenti presenti");
 
-      // 3. Zona di ripetizioni dominante.
-      const avgReps = weekSignals.avgReps;
-      if (avgReps !== null) {
-        if (avgReps <= 5) bump("forza", 1.1, "media reps in zona di forza (indizio debole senza carico)");
-        else if (avgReps <= 8) bump("intensificazione", 0.9, "media reps in zona di intensificazione");
-        else if (avgReps <= 12) bump("ipertrofia", 0.9, "media reps in zona ipertrofica");
-        else bump("volume", 0.6, "media reps in zona di volume alto");
+      // 2. Due livelli distinti, per non far vincere la fase del blocco sul tipo
+      //    della settimana (e viceversa):
+      //      a) TIPO DELLA SETTIMANA: deciso in modo RELATIVO alle altre settimane
+      //         (scarico = calo di volume rispetto alla mediana del blocco; picco =
+      //         test dominanti a fine blocco). Vale anche quando la forma della
+      //         prescrizione è identica in tutte le settimane: "12-8" costante è
+      //         la metodologia del BLOCCO, non la prova che ogni settimana è di
+      //         intensità. Un blocco di intensità può contenere una settimana di
+      //         deload. La calibrazione a volume PIENO non è uno scarico.
+      //      b) FASE DEL BLOCCO: solo se la settimana non è scarico/tecnica/picco.
+      //         La decisione di tipo viene prima, così nessun segnale di blocco
+      //         (intensità, volume...) può cancellare un deload.
+      const blockSets = signals.filter((item) => item.tests === 0).map((item) => item.setsRatio).sort((a, b) => a - b);
+      const medianSets = blockSets.length ? blockSets[Math.floor(blockSets.length / 2)] : 0;
+      const setsDrop = medianSets > 0 ? 1 - weekSignals.setsRatio / medianSets : 0;
+      const testShare = weekSignals.tests / count;
+      const testDominant = testShare >= 0.3;
+      // Scala di decisione del TIPO della settimana, dalla più specifica:
+      //   1. test dominanti a fine blocco → peaking (verifica di picco);
+      //   2. calo di volume rispetto al blocco → deload (vale anche con test,
+      //      e vale per l'ultima settimana quando NON ci sono test: es. un blocco
+      //      che chiude con una settimana di scarico);
+      //   3. test dominanti a inizio blocco → tecnica (calibrazione);
+      //   4. altrimenti la settimana è una settimana di lavoro del blocco.
+      const deloadCondition = volumeRatio <= 0.72 && (volumeDrop >= 0.15 || setsDrop >= 0.15);
+
+      if (testDominant && position >= 0.85) {
+        bump("peaking", 2.2, "test dominanti nell'ultima settimana del blocco: verifica di picco");
+      } else if (deloadCondition) {
+        const drop = Math.max(volumeDrop, setsDrop);
+        bump("deload", 1.4 + Math.min(0.5, drop), "calo di volume rispetto al resto del blocco: scarico della settimana");
+      } else if (testDominant && position <= 0.3) {
+        bump("tecnica", 0.9, "test dominanti in apertura di blocco: probabile calibrazione");
+      } else {
+        const blockPhase = phaseBlockMethodology(signals);
+        if (blockPhase) {
+          bump(blockPhase, 2.4, "settimana di lavoro dentro un blocco a " + blockPhase);
+        } else {
+          // Nessuna metodologia di blocco riconoscibile: valgono i segnali locali.
+          // Rep molto basse = indizio specifico di forza, che prevale sulla lettura
+          // generica del volume (che in un blocco uniforme è massimo ovunque).
+          const avgReps = weekSignals.avgReps;
+          if (avgReps !== null && avgReps <= 5) {
+            bump("forza", 1.6, "media reps in zona di forza (indizio debole senza carico)");
+          } else {
+            if (volumeRatio >= 0.75) bump("volume", 1.5, "volume vicino al massimo del blocco");
+            else if (volumeRatio >= 0.6) bump("ipertrofia", 0.5, "volume medio-alto");
+            if (avgReps !== null) {
+              if (avgReps <= 8) bump("intensificazione", 0.9, "media reps in zona di intensificazione");
+              else if (avgReps <= 12) bump("ipertrofia", 0.9, "media reps in zona ipertrofica");
+              else bump("volume", 0.6, "media reps in zona di volume alto");
+            }
+            if (bodyShare >= 0.5) bump("ipertrofia", 0.5, "zona 8-12 dominante");
+            if (highRepShare >= 0.25) bump("volume", 0.4, "prescrizioni ad alte reps");
+            if (lowRepShare >= 0.25) bump("forza", 0.5, "prescrizioni a rep basse");
+          }
+        }
       }
-      if (lowRepShare >= 0.25) bump("forza", 0.5, "prescrizioni a rep basse");
-      if (bodyShare >= 0.5) bump("ipertrofia", 0.5, "zona 8-12 dominante");
-      if (highRepShare >= 0.2) bump("volume", 0.4, "prescrizioni ad alte reps");
 
-      // 4. Volume relativo nel blocco.
-      if (volumeRatio >= 0.75) bump("volume", 1.5, "volume vicino al massimo del blocco");
-      else if (volumeRatio >= 0.6) bump("ipertrofia", 0.4, "volume medio-alto");
-
-      // 5. Deload: calo reale di volume, senza test di carico.
-      if (volumeDrop >= 0.15 && volumeRatio <= 0.72 && position < 0.9) {
-        bump("deload", 1.4 + Math.min(0.5, volumeDrop), "volume sotto la media del blocco");
-      }
 
       // 6. Ripresa: densita bassa su tutto il blocco, nessuna fase la spiega.
       if (signals.length && signals.every((item) => item.volumeRatio <= 0.4)) {
@@ -6382,6 +6416,8 @@ function sanitizeForFirestore(value) {
           candidate: ranked[1] ? ranked[1][0] : null,
           evidence: analysis.evidence,
           requiredSignal: confidence <= 0.4 && requirement ? requirement : "",
+          // Fase/obiettivo del blocco (metodologia), distinta dal tipo della settimana.
+          blockPhase: phaseBlockMethodology(signals),
           signals: {
             volumeRatio: Number(weekSignals.volumeRatio.toFixed(2)),
             setsRatio: Number(weekSignals.setsRatio.toFixed(2)),
@@ -6434,6 +6470,7 @@ function sanitizeForFirestore(value) {
           estimated: true,
           confidence: classified.confidence,
           candidate: classified.candidate,
+          blockPhase: classified.blockPhase,
           signals: classified.signals
         };
       }
