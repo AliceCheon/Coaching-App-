@@ -1,12 +1,12 @@
 // FONTE UNICA della versione (Fase 0.5): build + cache vivono SOLO qui.
 // Per rilasciare: aggiorna i due campi qui sotto, poi allinea i ?v= di
 // index.html, manifest.webmanifest e CACHE_NAME di service-worker.js al nuovo
-// token (v147.52 → "v14752"). Il test tests/version-single-source.test.mjs
+// token (v147.53 → "v14753"). Il test tests/version-single-source.test.mjs
 // fallisce se anche un solo punto resta indietro.
 (function (root) {
   root.BarbellDivaV144Config = Object.freeze({
-    build: "v147.52-fase-da-dati-programma",
-    cache: "atlas-app-v14752-fase-da-dati-programma",
+    build: "v147.53-fase-in-fondo",
+    cache: "atlas-app-v14753-fase-in-fondo",
     backupAutomaticLimit: 5,
     legacyModulesRemoved: ["nutrizione", "workout-pro"],
     firebase: Object.freeze({

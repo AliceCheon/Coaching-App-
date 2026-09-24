@@ -29,7 +29,7 @@ assert.match(html, /data-diva-bot-setting="visible"/);
 assert.match(html, /data-diva-bot-setting="personality"/);
 assert.match(html, /function updateDivaBotPreference/);
 assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14752-fase-da-dati-programma"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14753-fase-in-fondo"/);
 
 console.log(JSON.stringify({ ok:true, partialSave:true, strictCompletion:true, distinctPr:true, rirGuarded:true, settingsSynced:true }));
 

@@ -164,9 +164,6 @@
           <label>Programma
             <select data-training-context="program">${programOptions}</select>
           </label>
-          <label>Fase
-            <span class="v147-derived-value" data-training-context-derived="phase">${escapeHtml((typeof phaseDisplayLabel === "function" ? phaseDisplayLabel(context.phase) : displayLabel(context.phase)) || "—")}</span>
-          </label>
           <label>Scheda
             <select data-training-context="session">${sheetOptions}</select>
           </label>
@@ -174,6 +171,9 @@
             <select data-training-context="week">
               ${Array.from({ length: maxWeek }, (_, index) => `<option value="${index + 1}" ${Number(context.week) === index + 1 ? "selected" : ""}>Settimana ${index + 1}</option>`).join("")}
             </select>
+          </label>
+          <label>Fase
+            <span class="v147-derived-value" data-training-context-derived="phase">${escapeHtml((typeof phaseDisplayLabel === "function" ? phaseDisplayLabel(context.phase) : displayLabel(context.phase)) || "—")}</span>
           </label>
         </div>
       ` : ""}

@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v147.52-fase-da-dati-programma` |
-| `cache` | `atlas-app-v14752-fase-da-dati-programma` |
+| `build` | `v147.53-fase-in-fondo` |
+| `cache` | `atlas-app-v14753-fase-in-fondo` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

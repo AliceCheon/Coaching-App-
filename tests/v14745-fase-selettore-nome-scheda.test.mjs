@@ -205,14 +205,14 @@ const testResult = vm.runInContext(`(() => {
   check("opzioni scheda mostrano solo il nome", controls.includes(">Scheda A<") && !controls.includes("A · Scheda A"));
   check("Fase è un valore derivato, non un selettore", controls.includes('data-training-context-derived="phase"') && !controls.includes('data-training-context="phase"'));
   check("Fase calcolata mostra il deload dal piano", controls.includes('data-training-context-derived="phase">Deload<'));
-  check("origine della fase indicata", controls.includes("dalla pianificazione"));
   check("nessuna etichetta sporca 'peaking · ...' nella card", !controls.includes("peaking · Intensità"));
   const orderMode = controls.indexOf(">Modalità");
   const orderProgram = controls.indexOf(">Programma");
   const orderPhase = controls.indexOf(">Fase");
   const orderSheet = controls.indexOf(">Scheda");
   const orderWeek = controls.indexOf(">Settimana<");
-  check("ordine campi Modalità → Programma → Fase → Scheda → Settimana", orderMode > -1 && orderProgram > orderMode && orderPhase > orderProgram && orderSheet > orderPhase && orderWeek > orderSheet);
+  check("ordine campi Modalità → Programma → Scheda → Settimana → Fase", orderMode > -1 && orderProgram > orderMode && orderSheet > orderProgram && orderWeek > orderSheet && orderPhase > orderWeek);
+  check("nessuna dicitura di origine sotto la Fase", !controls.includes("mappatura del programma") && !controls.includes("stimata dalla") && !controls.includes("dalla struttura del programma"));
 
   // La Fase normalizza le varianti al vocabolario dei blocchi (volume/accumulo/
   // intensificazione/peaking...) ma lascia intatti i nomi liberi.
