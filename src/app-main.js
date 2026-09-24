@@ -1108,7 +1108,9 @@ const DATA_SCHEMA_VERSION = 11;
         contextMode: "auto",
         manualWeek: null,
         manualSessionCode: "",
-        manualPhase: ""
+        manualPhase: "",
+        manualProgramId: "",
+        weekPhases: {}
       },
       programming: {
         engineVersion: "20A.1",
@@ -2852,6 +2854,16 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
           || allProgramSheets(target).find((item) => item.code === target.training.manualSessionCode);
         if (sheet) target.training.manualSessionId = sheet.id;
       }
+      // v147.51 · il "Programma" è la nuova fonte della scelta in manuale: se
+      // manca, lo si deduce dalla scheda già selezionata per non cambiare vista.
+      target.training.manualProgramId = String(target.training.manualProgramId || "");
+      if (!target.training.manualProgramId) {
+        const sheetId = target.training.manualSessionId;
+        const program = (target.programs || []).find((item) => (item.sheets || []).some((sheet) => sheet.id === sheetId))
+          || (target.training.manualSessionCode ? (target.programs || []).find((item) => item.phase === target.training.manualPhase) : null);
+        if (program) target.training.manualProgramId = program.id;
+      }
+      target.training.weekPhases = target.training.weekPhases && typeof target.training.weekPhases === "object" ? target.training.weekPhases : {};
       target.training.workoutView = "tabs-compact";
       target.training.exerciseTabs = target.training.exerciseTabs && typeof target.training.exerciseTabs === "object" ? target.training.exerciseTabs : {};
       target.training.setDone = target.training.setDone && typeof target.training.setDone === "object" ? target.training.setDone : {};
@@ -6001,6 +6013,106 @@ function sanitizeForFirestore(value) {
       return displayLabel(raw);
     }
 
+    // Elenco dei programmi selezionabili in manuale (solo quelli con schede).
+    function availablePrograms() {
+      return (state.programs || [])
+        .filter((program) => !program.deletedAt && (program.sheets || []).some((sheet) => !sheet.deletedAt))
+        .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "it"));
+    }
+
+    function programById(programId) {
+      return (state.programs || []).find((program) => program.id === programId && !program.deletedAt) || null;
+    }
+
+    // "Tipo blocco" del programma: il campo esplicito del link atleta se c'è,
+    // altrimenti la fase del programma. È il valore base su cui si innesta la
+    // periodizzazione settimanale.
+    function programBlockType(program) {
+      if (!program) return "";
+      const link = state.athleteIntelligence?.programLinks?.[program.id];
+      return cleanText(link?.blockType || program.blockType || program.phase || "").trim();
+    }
+
+    // Cadenza dello scarico: ogni quante settimane il programma prevede un
+    // deload. Default 4 (blocco classico 3+1). Il valore può arrivare dal
+    // parametro di progressione `deloadEvery` degli esercizi del programma.
+    function programDeloadEvery(program) {
+      const explicit = Number(program?.deloadEvery);
+      if (Number.isFinite(explicit) && explicit > 0) return Math.round(explicit);
+      const weeks = [];
+      (program?.sheets || []).forEach((sheet) => (sheet.exercises || []).forEach((exercise) => {
+        (exercise.progression?.weeks || []).forEach((week, index) => {
+          if (String(week?.type || "").toLowerCase() === "deload") weeks.push(Number(week.weekNumber || week.week || index + 1));
+        });
+      }));
+      if (weeks.length >= 2) {
+        const gaps = weeks.slice(1).map((weekNumber, index) => weekNumber - weeks[index]).filter((gap) => gap > 0);
+        if (gaps.length) return Math.round(gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length);
+      }
+      return 4;
+    }
+
+    // Riconosce una fase canonica (volume, accumulo, peaking...) anche con
+    // prefissi/numeri o case diverso: serve per capire se il testo è già un
+    // tipo di blocco o è solo il nome del programma.
+    function canonicalPhase(phase) {
+      const raw = cleanText(phase).trim();
+      if (!raw) return "";
+      const folded = raw.toLowerCase().replace(/^\d+\s*[.)\-]?\s*/, "").trim();
+      return PHASE_CANONICAL.find((item) => item === folded)
+        || PHASE_CANONICAL.find((item) => folded.startsWith(item) && (folded.length === item.length || /[\s/(]/.test(folded[item.length])))
+        || "";
+    }
+
+    function programDurationWeeks(program) {
+      const explicit = Number(program?.durationWeeks);
+      if (Number.isFinite(explicit) && explicit > 0) return Math.round(explicit);
+      const weeks = (program?.sheets || []).map((sheet) => Number(sheet.week) || 0);
+      return Math.max(1, ...weeks, Number(state.profile?.phaseLength) || 1);
+    }
+
+    // Periodizzazione di ripiego quando il programma non dichiara un tipo di
+    // blocco: la posizione della settimana dentro la durata del programma decide
+    // la fase (prime settimane volume, poi accumulo, poi intensificazione, poi
+    // peaking). È così che l'app "capisce da sola" dove sei.
+    function phaseFromWeekPosition(weekNumber, durationWeeks) {
+      const total = Math.max(1, Number(durationWeeks) || 8);
+      const week = Math.min(Math.max(1, Number(weekNumber) || 1), total);
+      const ratio = week / total;
+      if (ratio <= 0.25) return "Volume";
+      if (ratio <= 0.5) return "Accumulo";
+      if (ratio <= 0.75) return "Intensificazione";
+      return "Peaking";
+    }
+
+    // La Fase è derivata: la decidono il programma scelto e la settimana.
+    // 1) un override esplicito per quella settimana vince sempre;
+    // 2) la cadenza di scarico marca la settimana di deload;
+    // 3) se il programma dichiara un tipo di blocco canonico, si usa quello;
+    // 4) altrimenti la si deduce dalla posizione della settimana nel programma.
+    function derivedPhaseForWeek(program, weekNumber) {
+      const week = Math.max(1, Number(weekNumber) || 1);
+      const override = (state.training?.weekPhases || {})[`${program?.id || "program"}:${week}`];
+      if (override) return phaseDisplayLabel(override) || override;
+      const deloadEvery = programDeloadEvery(program);
+      if (deloadEvery > 0 && week % deloadEvery === 0) return "Deload";
+      const declared = canonicalPhase(programBlockType(program));
+      if (declared) return phaseDisplayLabel(declared);
+      return phaseFromWeekPosition(week, programDurationWeeks(program));
+    }
+
+    // Il programma possiede le schede: le opzioni del selettore Scheda sono i
+    // nomi delle schede del solo programma scelto (i codici A/B/C si ripetono
+    // tra programmi, quindi serve comunque l'id come valore).
+    function programSheetsFor(program) {
+      if (!program) return [];
+      return (program.sheets || [])
+        .filter((sheet) => !sheet.deletedAt)
+        .slice()
+        .sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
+        .map((sheet) => ({ ...sheet, phase: program.phase || sheet.phase || "" }));
+    }
+
     // Il selettore "Scheda" è la fonte della scelta: la fase è un attributo del
     // programma che possiede la scheda, quindi la si deriva da lì. I codici scheda
     // (A, B, C...) si ripetono in ogni programma, perciò l'opzione usa l'id della
@@ -6021,16 +6133,25 @@ function sanitizeForFirestore(value) {
     }
 
     function resolveManualSession() {
+      const program = programById(state.training.manualProgramId) || null;
+      const pool = program ? programSheetsFor(program) : allProgramSheets();
       if (state.training.manualSessionId) {
-        const byId = allProgramSheets().find((sheet) => sheet.id === state.training.manualSessionId);
+        const byId = pool.find((sheet) => sheet.id === state.training.manualSessionId);
         if (byId) return byId;
       }
       const code = String(state.training.manualSessionCode || "");
       if (!code) return null;
-      const phase = String(state.training.manualPhase || "");
-      return allProgramSheets().find((sheet) => sheet.code === code && sheet.phase === phase)
-        || allProgramSheets().find((sheet) => sheet.code === code)
-        || null;
+      return pool.find((sheet) => sheet.code === code) || null;
+    }
+
+    // Programma attivo in manuale: quello scelto esplicitamente, altrimenti
+    // quello che possiede la scheda selezionata, altrimenti il primo disponibile.
+    function resolveManualProgram() {
+      const explicit = programById(state.training.manualProgramId);
+      if (explicit) return explicit;
+      const sheet = allProgramSheets().find((item) => item.id === state.training.manualSessionId)
+        || allProgramSheets().find((item) => item.code === state.training.manualSessionCode);
+      return (sheet && findProgramForSheet(sheet.id)) || availablePrograms()[0] || null;
     }
 
     function availablePhases() {
@@ -6102,11 +6223,15 @@ function sanitizeForFirestore(value) {
       const autoWeek = weekFromLatestWorkout(date);
       const autoCode = autoSessionCodeForDate(date);
       const isManual = state.training.contextMode === "manual";
-      // In manuale la scheda scelta determina la fase; in automatico la fase è
+      // In manuale il PROGRAMMA è la fonte della scelta: la settimana determina
+      // la FASE (derivata: scarico ogni N settimane, altrimenti il tipo di blocco)
+      // e la scheda è una di quelle del programma. In automatico la fase resta
       // quella attiva (phaseFilter) e la scheda segue data/settimana.
+      const manualProgram = isManual ? resolveManualProgram() : null;
       const manualSession = isManual ? resolveManualSession() : null;
+      const week = isManual && Number(state.training.manualWeek) > 0 ? Number(state.training.manualWeek) : autoWeek;
       const phase = isManual
-        ? (manualSession?.phase || state.training.manualPhase || state.training.phaseFilter || "Intensificazione")
+        ? (derivedPhaseForWeek(manualProgram, week) || state.training.phaseFilter || "Intensificazione")
         : (state.training.phaseFilter || "Intensificazione");
       const phaseSessions = sessionsForPhase(phase);
       const selectedCode = isManual ? (manualSession?.code || "") : (state.training.sessionName === "auto" ? autoCode : state.training.sessionName);
@@ -6116,7 +6241,6 @@ function sanitizeForFirestore(value) {
         : "";
       if (!session && !isManual) session = phaseSessions.find((item) => item.code === autoCode) || phaseSessions[0] || programByCode(autoCode || "");
       if (!session && !isManual) session = phaseSessions[0] || programByCode(autoCode || "");
-      const week = isManual && Number(state.training.manualWeek) > 0 ? Number(state.training.manualWeek) : autoWeek;
       const canonicalSession = session;
       if (canonicalSession) {
         session = {
@@ -6133,6 +6257,8 @@ function sanitizeForFirestore(value) {
         session,
         canonicalSession,
         phase,
+        program: manualProgram,
+        programDeloadEvery: manualProgram ? programDeloadEvery(manualProgram) : 0,
         phaseSessions,
         contextMode: state.training.contextMode || "auto",
         isManual,
@@ -7166,27 +7292,37 @@ function sanitizeForFirestore(value) {
     }
 
     function sessionSheetSelectHtml(context) {
-      const groups = programSheetGroups();
+      const program = context.program || resolveManualProgram();
+      const sheets = programSheetsFor(program);
       const currentId = String(context.session?.id ?? "");
-      const options = groups.map((group) => `<optgroup label="${escapeHtml(group.label)}">${group.sheets.map((sheet) => {
+      const options = sheets.map((sheet) => {
         const selected = String(sheet.id ?? "") === currentId ? " selected" : "";
         return `<option value="${escapeHtml(String(sheet.id ?? sheet.code ?? ""))}"${selected}>${escapeHtml(cleanText(sheet.name || sheet.code || "").trim())}</option>`;
-      }).join("")}</optgroup>`).join("");
+      }).join("");
       return `<select data-training-context="session" ${context.isManual ? "" : "disabled"}>${options}</select>`;
     }
 
+    function programSelectHtml(context) {
+      const current = context.program?.id || "";
+      const options = availablePrograms().map((program) => `<option value="${escapeHtml(program.id)}" ${program.id === current ? "selected" : ""}>${escapeHtml(cleanText(program.name || program.phase || "").trim())}</option>`).join("");
+      return `<select data-training-context="program" ${context.isManual ? "" : "disabled"}>${options}</select>`;
+    }
+
     function trainingContextControlsHtml(context = currentTrainingContext()) {
-      const phaseSheets = context.phaseSessions || sessionsForPhase(context.phase || "");
-      const maxWeek = Math.max(1, ...phaseSheets.map((item) => Number(item.week) || 0), Number(state.profile.phaseLength) || 1);
-      // La fase non è più un secondo selettore in concorrenza con la scheda:
-      // è il valore derivato dalla scheda programma. L'unica eccezione è la
-      // modalità manuale senza schede disponibili, dove resta un selettore di
-      // ripiego per non lasciare l'utente bloccato.
+      const program = context.program || (context.isManual ? resolveManualProgram() : null);
+      const maxWeek = Math.max(1, programDurationWeeks(program), ...(context.phaseSessions || []).map((item) => Number(item.week) || 0), Number(state.profile.phaseLength) || 1);
+      // Ordine richiesto: Modalità → Fase → Programma → Scheda → Settimana.
+      // La Fase è un valore derivato (programma + settimana), non un selettore:
+      // l'unica eccezione è la modalità manuale senza programmi disponibili, dove
+      // resta un selettore di ripiego per non lasciare l'utente bloccato.
       const phaseReadout = `<span class="training-context-derived" data-training-context-derived="phase">${escapeHtml(phaseDisplayLabel(context.phase) || "—")}</span>`;
-      const phaseControl = context.isManual && !programSheetGroups().length
+      const phaseControl = context.isManual && !availablePrograms().length
         ? `<select data-training-context="phase">${availablePhases().map((item) => `<option value="${escapeHtml(item)}" ${item === context.phase ? "selected" : ""}>${escapeHtml(phaseSelectorLabel(item))}</option>`).join("")}</select>`
         : phaseReadout;
-      return `<section class="training-context-card card"><div class="row"><div><span class="section-eyebrow">Contesto allenamento</span><strong>${context.isManual ? "Selezione manuale" : "Automatico dalla data"}</strong></div>${context.contextWarning ? `<span class="status-badge warning">${escapeHtml(context.contextWarning)}</span>` : ""}</div><div class="training-context-grid"><label>Modalità<select data-training-context="mode"><option value="auto" ${!context.isManual ? "selected" : ""}>Automatica</option><option value="manual" ${context.isManual ? "selected" : ""}>Manuale</option></select></label><label>Scheda${sessionSheetSelectHtml(context)}</label><label>Fase${phaseControl}</label><label>Settimana<select data-training-context="week" ${!context.isManual ? "disabled" : ""}>${Array.from({length:maxWeek},(_,i)=>`<option value="${i+1}" ${Number(context.week) === i+1 ? "selected" : ""}>Settimana ${i+1}</option>`).join("")}</select></label></div><p class="micro-copy">${context.isManual ? `Stai usando ${escapeHtml(context.session?.name || context.session?.code || "nessuna scheda")} · fase ${escapeHtml(phaseDisplayLabel(context.phase) || "—")} · settimana ${context.week}.` : `La data ${escapeHtml(context.date)} determina automaticamente scheda e settimana.`}</p></section>`;
+      const phaseHint = context.isManual && program
+        ? ` <small class="micro-copy">deload ogni ${context.programDeloadEvery || programDeloadEvery(program)} settimane</small>`
+        : "";
+      return `<section class="training-context-card card"><div class="row"><div><span class="section-eyebrow">Contesto allenamento</span><strong>${context.isManual ? "Selezione manuale" : "Automatico dalla data"}</strong></div>${context.contextWarning ? `<span class="status-badge warning">${escapeHtml(context.contextWarning)}</span>` : ""}</div><div class="training-context-grid"><label>Modalità<select data-training-context="mode"><option value="auto" ${!context.isManual ? "selected" : ""}>Automatica</option><option value="manual" ${context.isManual ? "selected" : ""}>Manuale</option></select></label><label>Fase${phaseControl}${phaseHint}</label><label>Programma${programSelectHtml(context)}</label><label>Scheda${sessionSheetSelectHtml(context)}</label><label>Settimana<select data-training-context="week" ${!context.isManual ? "disabled" : ""}>${Array.from({length:maxWeek},(_,i)=>`<option value="${i+1}" ${Number(context.week) === i+1 ? "selected" : ""}>Settimana ${i+1}</option>`).join("")}</select></label></div><p class="micro-copy">${context.isManual ? `Stai usando ${escapeHtml(context.session?.name || context.session?.code || "nessuna scheda")} · fase ${escapeHtml(phaseDisplayLabel(context.phase) || "—")} · settimana ${context.week}${program ? ` · ${escapeHtml(cleanText(program.name || ""))}` : ""}.` : `La data ${escapeHtml(context.date)} determina automaticamente scheda e settimana.`}</p></section>`;
     }
 
     function dashboardCoachHtml() {
@@ -10136,7 +10272,7 @@ function sanitizeForFirestore(value) {
         const defaultName=type === "program-save-as" ? `${item?.name||"Programma"} · copia` : item?.name||"";
         const store=athleteIntelligenceStore(), linked=store.programLinks[item?.id]||{}, athleteId=linked.athleteId||store.activeAthleteId;
         const contextFields=`<div class="program-setup"><h4>Contesto atleta e strategia</h4><label><input type="checkbox" id="programModalFree" ${linked.freeProgram?"checked":""}> Scheda libera: salta il collegamento</label><div class="form-grid"><label>Atleta<select id="programModalAthlete">${athleteOptionsHtml(athleteId)}</select></label><label>Strategia<select id="programModalStrategy"><option value="">Nessuna / rapida dopo</option>${strategyOptionsHtml(linked.strategyId||"",athleteId)}</select></label><label>Tipo blocco<select id="programModalBlock"><option value="" ${linked.blockType?"":"selected"}>— eredita dalla fase —</option>${window.BarbellDivaAthleteContext.BLOCK_TYPES.map((v)=>`<option value="${v}" ${linked.blockType===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Fase nutrizionale<select id="programModalNutrition">${window.BarbellDivaAthleteContext.NUTRITION_PHASES.map((v)=>`<option value="${v}" ${linked.nutritionalPhase===v?"selected":""}>${v}</option>`).join("")}</select></label></div></div>`;
-        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${heading}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(defaultName)}" placeholder="Nome programma"></label><label>Fase<input id="programModalPhase" value="${escapeHtml(item?.phase || "")}" placeholder="es. Intensità 2 ottobre-dicembre"><small class="micro-copy" style="margin:6px 0 0">È il valore mostrato nel campo Fase del workout (derivato dalla scheda scelta) e negli elenchi schede. Se lo lasci vuoto viene usato il nome della scheda.</small></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Cartella<select id="programModalFolder"><option value="">Nessuna cartella</option>${folders.map((folder)=>`<option value="${escapeHtml(folder)}" ${item?.folder===folder?"selected":""}>${escapeHtml(folder)}</option>`).join("")}</select></label><label>Stato<select id="programModalStatus"><option value="draft" ${type==="program-save-as" || item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${type!=="program-save-as" && item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${type!=="program-save-as" && item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div>${contextFields}<div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type==="program-save-as"?"Crea copia":"Salva programma"}</button></div></section></div>`;
+        return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${heading}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(defaultName)}" placeholder="Nome programma"></label><label>Fase<input id="programModalPhase" value="${escapeHtml(item?.phase || "")}" placeholder="es. Intensità 2 ottobre-dicembre"><small class="micro-copy" style="margin:6px 0 0">È il nome mostrato nel campo Programma del workout. La Fase vera (Volume, Accumulo, Deload...) viene dedotta dalla settimana.</small></label><label>Scarico ogni N settimane<input id="programModalDeload" type="number" min="0" value="${escapeHtml(item?.deloadEvery || 4)}"><small class="micro-copy" style="margin:6px 0 0">Ogni quante settimane cade il deload: con 4, la settimana 4 e la 8 diventano Deload.</small></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Cartella<select id="programModalFolder"><option value="">Nessuna cartella</option>${folders.map((folder)=>`<option value="${escapeHtml(folder)}" ${item?.folder===folder?"selected":""}>${escapeHtml(folder)}</option>`).join("")}</select></label><label>Stato<select id="programModalStatus"><option value="draft" ${type==="program-save-as" || item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${type!=="program-save-as" && item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${type!=="program-save-as" && item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div>${contextFields}<div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type==="program-save-as"?"Crea copia":"Salva programma"}</button></div></section></div>`;
       }
       if (type === "sheet-new" || type === "sheet-edit" || type === "sheet-rename") {
         const item = type === "sheet-new" ? { name: "", code: suggestedSheetCode(sheets), focus: "", split: "", note: "", color: "" } : targetSheet;
@@ -12031,10 +12167,11 @@ function sanitizeForFirestore(value) {
       document.querySelectorAll("[data-training-context]").forEach((input) => input.addEventListener("change", () => {
         const field = input.dataset.trainingContext;
         state.training = state.training || {};
-        if (field === "mode") { state.training.contextMode = input.value; if (state.training.contextMode === "manual" && !state.training.manualSessionId && !state.training.manualSessionCode) { const first = allProgramSheets()[0]; state.training.manualSessionId = first?.id || ""; state.training.manualSessionCode = first?.code || ""; state.training.manualPhase = first?.phase || ""; } }
+        if (field === "mode") { state.training.contextMode = input.value; if (state.training.contextMode === "manual" && !state.training.manualProgramId && !state.training.manualSessionId && !state.training.manualSessionCode) { const program = availablePrograms()[0]; const first = programSheetsFor(program)[0]; state.training.manualProgramId = program?.id || ""; state.training.manualSessionId = first?.id || ""; state.training.manualSessionCode = first?.code || ""; state.training.manualPhase = first?.phase || ""; } }
         if (field === "phase") { state.training.manualPhase = input.value; state.training.phaseFilter = input.value; state.training.manualSessionId = ""; state.training.manualSessionCode = ""; }
+        if (field === "program") { const program = programById(input.value); state.training.manualProgramId = input.value; const first = programSheetsFor(program)[0]; state.training.manualSessionId = first?.id || ""; state.training.manualSessionCode = first?.code || ""; state.training.manualPhase = first?.phase || ""; }
         if (field === "week") state.training.manualWeek = Number(input.value) || null;
-        if (field === "session") { const sheet = allProgramSheets().find((item) => item.id === input.value); state.training.manualSessionId = input.value; state.training.manualSessionCode = sheet?.code || ""; state.training.manualPhase = sheet?.phase || state.training.manualPhase || ""; }
+        if (field === "session") { const sheet = allProgramSheets().find((item) => item.id === input.value); state.training.manualSessionId = input.value; state.training.manualSessionCode = sheet?.code || ""; state.training.manualPhase = sheet?.phase || state.training.manualPhase || ""; if (sheet) state.training.manualProgramId = findProgramForSheet(sheet.id, state)?.id || state.training.manualProgramId; }
         state.training.sessionName = state.training.contextMode === "manual" ? (state.training.manualSessionCode || "") : "auto";
         saveState({ immediate: true });
         render();
@@ -12316,6 +12453,7 @@ function sanitizeForFirestore(value) {
           state.training.manualSessionId = trainingSession.value;
           state.training.manualSessionCode = sheet?.code || "";
           state.training.manualPhase = sheet?.phase || "";
+          if (sheet) state.training.manualProgramId = findProgramForSheet(sheet.id, state)?.id || state.training.manualProgramId;
           state.training.sessionName = sheet?.code || "";
           saveState();
           render();
@@ -14029,6 +14167,7 @@ function sanitizeForFirestore(value) {
         const data = {
           name: document.getElementById("programModalName")?.value.trim(),
           phase: document.getElementById("programModalPhase")?.value.trim(),
+          deloadEvery: Number(document.getElementById("programModalDeload")?.value || 0),
           durationWeeks: Number(document.getElementById("programModalDuration")?.value || 0),
           status: document.getElementById("programModalStatus")?.value || "draft",
           folder: document.getElementById("programModalFolder")?.value || "",

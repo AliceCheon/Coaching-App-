@@ -144,11 +144,13 @@
   }
 
   function modeControlsHtml(context) {
-    const phaseSheets = context.phaseSessions || sessionsForPhase(context.phase);
-    const maxWeek = Math.max(1, Number(state.profile?.phaseLength) || 1, ...phaseSheets.map((item) => Number(item.week) || 0));
-    const groups = (typeof programSheetGroups === "function") ? programSheetGroups() : [];
+    const program = context.program || (typeof resolveManualProgram === "function" ? resolveManualProgram() : null);
+    const sheets = (typeof programSheetsFor === "function") ? programSheetsFor(program) : (context.phaseSessions || []);
+    const maxWeek = Math.max(1, (typeof programDurationWeeks === "function" ? programDurationWeeks(program) : Number(program?.durationWeeks) || 0), Number(state.profile?.phaseLength) || 1, ...sheets.map((item) => Number(item.week) || 0));
     const currentId = String(context.session?.id ?? "");
-    const sheetOptions = groups.map((group) => `<optgroup label="${escapeHtml(group.label)}">${group.sheets.map((sheet) => `<option value="${escapeHtml(String(sheet.id ?? sheet.code ?? ""))}"${String(sheet.id ?? "") === currentId ? " selected" : ""}>${escapeHtml(cleanText(sheet.name || sheet.code || "").trim())}</option>`).join("")}</optgroup>`).join("");
+    const sheetOptions = sheets.map((sheet) => `<option value="${escapeHtml(String(sheet.id ?? sheet.code ?? ""))}"${String(sheet.id ?? "") === currentId ? " selected" : ""}>${escapeHtml(cleanText(sheet.name || sheet.code || "").trim())}</option>`).join("");
+    const programs = (typeof availablePrograms === "function") ? availablePrograms() : [];
+    const programOptions = programs.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === program?.id ? "selected" : ""}>${escapeHtml(cleanText(item.name || item.phase || "").trim())}</option>`).join("");
     return `
       <div class="v147-mode-row" aria-label="Modalità workout">
         <span>Modalità</span>
@@ -159,11 +161,14 @@
       </div>
       ${context.isManual ? `
         <div class="v147-manual-controls">
-          <label>Scheda
-            <select data-training-context="session">${sheetOptions}</select>
-          </label>
           <label>Fase
             <span class="v147-derived-value" data-training-context-derived="phase">${escapeHtml(displayLabel(context.phase) || "—")}</span>
+          </label>
+          <label>Programma
+            <select data-training-context="program">${programOptions}</select>
+          </label>
+          <label>Scheda
+            <select data-training-context="session">${sheetOptions}</select>
           </label>
           <label>Settimana
             <select data-training-context="week">
@@ -520,8 +525,10 @@
     });
     root.querySelectorAll("[data-v147-mode]").forEach((button) => button.addEventListener("click", () => {
       state.training.contextMode = button.dataset.v147Mode;
-      if (state.training.contextMode === "manual" && !state.training.manualSessionId && !state.training.manualSessionCode) {
-        const first = allProgramSheets()[0];
+      if (state.training.contextMode === "manual" && !state.training.manualProgramId && !state.training.manualSessionId && !state.training.manualSessionCode) {
+        const program = (typeof availablePrograms === "function" ? availablePrograms() : [])[0];
+        const first = (typeof programSheetsFor === "function" ? programSheetsFor(program) : allProgramSheets())[0];
+        state.training.manualProgramId = program?.id || "";
         state.training.manualSessionId = first?.id || "";
         state.training.manualSessionCode = first?.code || "";
         state.training.manualPhase = first?.phase || "";
