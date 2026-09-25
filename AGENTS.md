@@ -207,3 +207,34 @@ Fix (v147.62), tutto web, nessun packaging Android:
 **Perche' non complica la repo**: nessun progetto Android, nessuna build, nessun
 APK. Restano i soli file web gia' deployati da GitHub Pages; le modifiche
 future si fanno come sempre su `main`.
+
+## Tema chiaro "Lavender Diva 2026" — NON forzare lo scuro (v147.63)
+Regressione: gli upload "Add files via upload"/"genspark" hanno riportato il
+progetto a uno snapshot v147.51, sovrascrivendo il sistema di temi v147.62.
+Nello snapshot c'erano forzature scure che cancellavano il tema chiaro su TUTTA
+l'app (html/body/sidebar/header/card), esattamente il look indesiderato:
+- `:root { color-scheme: dark; }` con `--bg-main: #17101F`;
+- `html { background: #090918 !important }` (e variante nella fascia cover);
+- `body, .phone-shell, .phone, .stage, .screen { background-color: #090918 }`;
+- rimozione di `body[data-theme="light"]` come gestione sfondo;
+- `manifest` con `orientation: portrait` + `display_override: ["fullscreen"]`.
+
+Fix: ripristinati i file del tema all'ultimo stato sano (v147.62) —
+`coach-studio-inline.css`, `index.html`, `manifest.webmanifest`,
+`service-worker.js`, `app-config-v144.js`, `FIREBASE-LOGIN.md` — e le due righe
+di sincronizzazione `document.documentElement.dataset.theme` in `src/app-main.js`
+(`syncThemeUi` + `render`). Il canvas segue il tema via `html[data-theme]`
+(scuro di default, chiaro = gradiente lavender + `background-color` opaco).
+
+**Regola**: il canvas si dipinge col COLORE DEL TEMA, mai con un `#090918`
+forzato/`!important`. `:root`/`html` non devono forzare `color-scheme: dark`
+in modo che il tema chiaro resti possibile. Test di guardia:
+`tests/lavender-diva-theme.test.mjs`, `tests/theme-toggle.test.mjs`,
+`tests/v14757-canvas-not-white.test.mjs`,
+`tests/v14759-flexwindow-edge-to-edge.test.mjs`,
+`tests/v14760-flexwindow-cutout-edge-to-edge.test.mjs`,
+`tests/v14762-flexwindow-request-fullscreen.test.mjs`.
+
+Nota: gli stessi commit hanno anche revertito logica (motore Fasi v147.53,
+`classifyProgramWeeks`/`programWeekPlan`, contesto workout appuntato v147.58).
+Quei test restano rossi e sono fuori dallo scope di questa correzione visiva.
