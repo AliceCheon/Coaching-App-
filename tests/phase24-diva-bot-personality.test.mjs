@@ -29,7 +29,7 @@ assert.match(html, /if \(canBubble\) showWorkoutMascotBubble/);
 assert.match(html, /else if \(highOrCritical\) showToast/);
 assert.match(html, /divaBotPreferences\(\)\.celebrations/);
 assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14758-workout-context"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14759-edge-to-edge"/);
 assert.doesNotMatch(html, /https:\/\/cdn\./);
 
 console.log(JSON.stringify({ ok:true, personality:"balanced", eventLibrary:17, limits:[3,8,14], cooldowns:true, strictPr:true }));
