@@ -177,3 +177,33 @@ Fix (v147.61), hardening indipendente dal container:
 **Limite noto**: se One UI/Chrome dipingono la banda o confinano la finestra,
 non e' superabile dal solo web. Mitigazioni lato utente: Chrome aggiornato,
 flag `EdgeToEdgeEverywhere`, GoodLock/MultiStar per l'aspect del cover screen.
+
+## FlexWindow — edge-to-edge via `requestFullscreen()`, NIENTE TWA (v147.62)
+Il limite precedente e' superabile **senza** TWA. Un bug report Chromium
+documentato (`chromium-pwa-cutout-bug`) mostra la differenza:
+
+| Metodo | Renderizza dietro il cutout? |
+| --- | --- |
+| `requestFullscreen()` su primo gesto utente | **si** |
+| `display: "fullscreen"` nel manifest | no (fascia bianca/nera) |
+
+Causa: `requestFullscreen()` imposta sull'Activity Android
+`LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES` (superficie del cutout sbloccata),
+mentre il manifest `fullscreen` resta sul cutout mode DEFAULT/NEVER. Stesso
+problema nei TWA generati con Bubblewrap senza `shortEdges` (issue #1035).
+
+Fix (v147.62), tutto web, nessun packaging Android:
+- **rimosso `"fullscreen"` da `display_override`** (resta `display: standalone`):
+  e' proprio il fullscreen del manifest a causare la fascia;
+- `index.html` chiede `documentElement.requestFullscreen()` **al primo gesto
+  utente** (`pointerdown`/`keydown`, `{ once: true }`, `catch` silenzioso, guardia
+  su `requestFullscreen`). Se il browser rifiuta, l'app resta come prima.
+- Il canvas (fuori dalla safe area) arriva ai bordi fisici, dietro il cutout;
+  l'UI resta dentro `env(safe-area-inset-*)`.
+- Test: `tests/v14762-flexwindow-request-fullscreen.test.mjs`; aggiornato
+  `tests/v14760-flexwindow-cutout-edge-to-edge.test.mjs` (niente fullscreen nel
+  manifest). Suite 151/151. Boot smoke: nessun errore, layout intatto.
+
+**Perche' non complica la repo**: nessun progetto Android, nessuna build, nessun
+APK. Restano i soli file web gia' deployati da GitHub Pages; le modifiche
+future si fanno come sempre su `main`.

@@ -17,7 +17,7 @@ assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
 
 // Test service worker
 const serviceWorker = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14761-canvas-no-fixed-bg"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14762-short-edges-fullscreen"/);
 
 console.log(JSON.stringify({ ok:true, fontPreload:true, versioning:true }));
 
