@@ -16,19 +16,12 @@
      settimana (repairSequentialWorkoutWeeks) per far tornare la schermata
      "Inizia allenamento" con il workout ancora integro in memoria. */
   function activeSessionLoose() {
-    // v147.58 · unica fonte di verita' condivisa con app-main.js: cosi' UI e
-    // salvataggio non possono piu' divergere sull'identita' del workout in corso.
-    if (typeof activeWorkoutSession === "function") return activeWorkoutSession();
     const active = state.training?.activeWorkout;
     if (!active) return null;
     return ["active", "paused"].includes(active.status) ? active : null;
   }
 
   function pinnedContext(base, active) {
-    // v147.58 · delega al resolver canonico di app-main.js (stessa logica).
-    if (typeof pinnedTrainingContext === "function") {
-      return active ? pinnedTrainingContext(base, active) : base;
-    }
     if (!active) return base;
     try {
       const phase = active.phase || base.phase;
@@ -151,13 +144,9 @@
   }
 
   function modeControlsHtml(context) {
-    const program = context.program || (typeof resolveManualProgram === "function" ? resolveManualProgram() : null);
-    const sheets = (typeof programSheetsFor === "function") ? programSheetsFor(program) : (context.phaseSessions || []);
-    const maxWeek = Math.max(1, (typeof programDurationWeeks === "function" ? programDurationWeeks(program) : Number(program?.durationWeeks) || 0), Number(state.profile?.phaseLength) || 1, ...sheets.map((item) => Number(item.week) || 0));
-    const currentId = String(context.session?.id ?? "");
-    const sheetOptions = sheets.map((sheet) => `<option value="${escapeHtml(String(sheet.id ?? sheet.code ?? ""))}"${String(sheet.id ?? "") === currentId ? " selected" : ""}>${escapeHtml(cleanText(sheet.name || sheet.code || "").trim())}</option>`).join("");
-    const programs = (typeof availablePrograms === "function") ? availablePrograms() : [];
-    const programOptions = programs.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === program?.id ? "selected" : ""}>${escapeHtml(cleanText(item.name || item.phase || "").trim())}</option>`).join("");
+    const phases = availablePhases();
+    const phaseSheets = sessionsForPhase(context.phase);
+    const maxWeek = Math.max(1, Number(state.profile?.phaseLength) || 1, ...phaseSheets.map((item) => Number(item.week) || 0));
     return `
       <div class="v147-mode-row" aria-label="Modalità workout">
         <span>Modalità</span>
@@ -168,19 +157,20 @@
       </div>
       ${context.isManual ? `
         <div class="v147-manual-controls">
-          <label>Programma
-            <select data-training-context="program">${programOptions}</select>
-          </label>
-          <label>Scheda
-            <select data-training-context="session">${sheetOptions}</select>
+          <label>Fase
+            <select data-training-context="phase">
+              ${phases.map((phase) => `<option value="${escapeHtml(phase)}" ${phase === context.phase ? "selected" : ""}>${escapeHtml(displayLabel(phase))}</option>`).join("")}
+            </select>
           </label>
           <label>Settimana
             <select data-training-context="week">
               ${Array.from({ length: maxWeek }, (_, index) => `<option value="${index + 1}" ${Number(context.week) === index + 1 ? "selected" : ""}>Settimana ${index + 1}</option>`).join("")}
             </select>
           </label>
-          <label>Fase
-            <span class="v147-derived-value" data-training-context-derived="phase">${escapeHtml((typeof phaseDisplayLabel === "function" ? phaseDisplayLabel(context.phase) : displayLabel(context.phase)) || "—")}</span>
+          <label>Scheda
+            <select data-training-context="session">
+              ${phaseSheets.map((sheet) => `<option value="${escapeHtml(sheet.code)}" ${sheet.code === context.session?.code ? "selected" : ""}>${escapeHtml(sheet.code)} · ${escapeHtml(sheet.name || sheet.focus)}</option>`).join("")}
+            </select>
           </label>
         </div>
       ` : ""}
@@ -532,14 +522,6 @@
     });
     root.querySelectorAll("[data-v147-mode]").forEach((button) => button.addEventListener("click", () => {
       state.training.contextMode = button.dataset.v147Mode;
-      if (state.training.contextMode === "manual" && !state.training.manualProgramId && !state.training.manualSessionId && !state.training.manualSessionCode) {
-        const program = (typeof availablePrograms === "function" ? availablePrograms() : [])[0];
-        const first = (typeof programSheetsFor === "function" ? programSheetsFor(program) : allProgramSheets())[0];
-        state.training.manualProgramId = program?.id || "";
-        state.training.manualSessionId = first?.id || "";
-        state.training.manualSessionCode = first?.code || "";
-        state.training.manualPhase = typeof phaseFromProgramData === "function" ? (phaseFromProgramData(program, first, 1).phase || "") : (first?.phase || "");
-      }
       state.training.sessionName = button.dataset.v147Mode === "manual" ? (state.training.manualSessionCode || "") : "auto";
       scheduleLocalSave(true);
       renderTrainingOnly();
