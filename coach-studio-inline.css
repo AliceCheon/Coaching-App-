@@ -180,15 +180,21 @@
        radice, che di default e' BIANCO. Sul FlexWindow della Z Flip 7 il
        viewport CSS (100dvh) risulta piu' basso dell'area realmente visibile
        (barre di sistema Samsung): la striscia sotto l'altezza del documento
-       non veniva dipinta e mostrava il canvas bianco -> la "banda bianca".
-       Dipingere lo sfondo su html, oltre che su body, rende quella striscia
-       del colore del tema. */
+       non veniva dipinta e mostrava il canvas bianco -> la "banda bianca". */
+    /* === v14759 · edge-to-edge: il COLORE del canvas deve arrivare al bordo ===
+       Il gradiente e' una background-IMAGE: viene disegnato entro il layout
+       viewport (che sul cover screen e' piu' basso dello schermo fisico). Con
+       `viewport-fit=cover` il browser estende al bordo solo il background-COLOR
+       del root: se resta trasparente (come con la sola immagine v14757) l'area
+       sotto il layout viewport torna bianca. Serve quindi un background-color
+       opaco del tema, accanto al gradiente. */
     html {
       min-height: 100%;
       background:
         radial-gradient(circle at 12% 5%, rgba(143,53,236,.16), transparent 27%),
         radial-gradient(circle at 88% 16%, rgba(247,37,133,.12), transparent 27%),
         linear-gradient(145deg, #050612 0%, #0b0b20 52%, #080719 100%);
+      background-color: #080719;
       background-attachment: fixed;
     }
 
@@ -197,13 +203,18 @@
         radial-gradient(circle at 8% 4%, rgba(104,49,174,.34), transparent 28%),
         radial-gradient(circle at 88% 14%, rgba(255,162,213,.42), transparent 30%),
         linear-gradient(135deg, #a985d4 0%, #cfafe8 42%, #e7c9e8 72%, #b897db 100%);
+      background-color: #b897db;
       background-attachment: fixed;
     }
 
     body {
       margin: 0;
       min-height: 100vh;
-      padding-bottom: env(safe-area-inset-bottom);
+      /* v14759 · niente padding-bottom qui: sommato a .stage/100dvh allungava
+         il documento OLTRE il layout viewport (misurato col CDP: 397px su
+         365px), creando la fascia in cui il canvas trasparente si vedeva.
+         Il fondo schermo e' gia' gestito da .screen e .bottom-nav (entrambi
+         usano env(safe-area-inset-bottom)), quindi qui e' ridondante. */
       background:
         linear-gradient(135deg, rgba(255,111,203,.16), transparent 34%),
         linear-gradient(225deg, rgba(169,144,255,.16), transparent 42%),

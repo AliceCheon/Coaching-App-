@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v147.58-workout-context` |
-| `cache` | `atlas-app-v14758-workout-context` |
+| `build` | `v147.59-edge-to-edge` |
+| `cache` | `atlas-app-v14759-edge-to-edge` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

@@ -95,10 +95,29 @@ range ascendenti `15-20`).
   riempie il viewport). Era l'**area non dipinta sotto il documento**: `html` e
   `body` avevano sfondo trasparente (solo gradienti con bordi trasparenti), e il
   canvas radice del browser è **bianco** di default.
-- Fix: `html` dipinge lo sfondo del tema (`html` scuro di default,
+- Fix (v147.57): `html` dipinge lo sfondo del tema (`html` scuro di default,
   `html[data-theme="light"]` lavender), con `background-attachment: fixed`, e
   `render`/`syncThemeUi` rispecchiano `data-theme` su `documentElement`. Uno
   script inline in `<head>` imposta il tema su `<html>` **prima del primo
   paint** leggendo `alice-method-app.v8`.
 - Test: `tests/v14757-canvas-not-white.test.mjs` (fallisce se lo sfondo su
   `html` o la sincronizzazione di `data-theme` spariscono).
+
+## FlexWindow — edge-to-edge del canvas (v147.59)
+- La v147.57 dipingeva su `html` una **background-image** ma il
+  **background-color** restava trasparente. Con `viewport-fit=cover` il browser
+  estende al bordo fisico **solo il colore** del root: il gradiente resta dentro
+  il layout viewport, che sul cover screen e' **piu' basso dello schermo fisico**
+  (100dvh esclude la system navigation). L'area sotto tornava quindi al canvas
+  BIANCO, generando la fascia chiara.
+- In piu' `body { padding-bottom: env(safe-area-inset-bottom) }` sommava l'inset
+  all'altezza del documento, che superava il layout viewport (misurato col CDP a
+  400x365 + inset 32px: **397px su 365px**), allargando la fascia scoperta.
+- Fix (v147.59): `background-color` opaco su `html` (e su `html[data-theme=light]`),
+  dichiarato **dopo** la shorthand `background`; rimosso il `padding-bottom` dal
+  `body` (il fondo schermo e' gia' gestito da `.screen` e `.bottom-nav`).
+- Test: `tests/v14759-flexwindow-edge-to-edge.test.mjs`.
+- Verifica col CDP (Chromium headless + `Emulation.setSafeAreaInsetsOverride`):
+  `html` deve riportare `background-color: rgb(8,7,25)` e il documento non deve
+  superare il layout viewport. Dopo il fix, a 300px di layout viewport su 365px
+  di schermo, la fascia sotto e' del colore del tema, non bianca.
