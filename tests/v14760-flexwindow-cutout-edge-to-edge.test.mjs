@@ -28,7 +28,11 @@ assert.ok(
   `manifest non deve forzare l'orientamento (trovato "${manifest.orientation}"): su Z Flip confina la PWA nell'area sopra le fotocamere`
 );
 assert.equal(manifest.display, "standalone");
-assert.deepEqual(manifest.display_override, ["standalone", "fullscreen"], "serve display_override fullscreen per il cover screen");
+// v147.62: NON usare `display: fullscreen` nel manifest. Su Android mappa sul
+// cutout mode DEFAULT/NEVER e lascia una fascia nel foro fotocamere; il
+// fullscreen lo chiediamo via JS (requestFullscreen -> SHORT_EDGES). Vedi
+// tests/v14762-flexwindow-request-fullscreen.test.mjs.
+assert.ok(!manifest.display_override?.includes("fullscreen"), "niente display_override fullscreen: usa requestFullscreen() via JS");
 
 // --- 2) Il viewport deve optare per il cover (canvas a filo). ----------------
 assert.match(raw("index.html"), /<meta\s+name="viewport"[^>]*viewport-fit=cover/, "index.html deve dichiarare viewport-fit=cover");
@@ -59,7 +63,7 @@ for (const sel of [".app-header", ".phone-status", ".top-tabs"]) {
   assert.match(rule[1], /env\(safe-area-inset-top/, `${sel} deve rispettare safe-area-inset-top (foro fotocamere)`);
 }
 
-// --- Mini-motore di cascata (stesso approccio di v14757/v14761). -------------
+// --- Mini-motore di cascata (stesso approccio di v14757/v14762). -------------
 const html = raw("index.html");
 const sheetOrder = [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map((m) => m[1].split("?")[0]);
 function parseRules(css, media = [], out = []) {
