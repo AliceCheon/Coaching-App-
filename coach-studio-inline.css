@@ -4986,3 +4986,29 @@ body[data-theme="light"] .coach-modal-error {
   border-color: rgba(214, 55, 90, .38);
   color: #7d2038;
 }
+
+/* === v14760 · Cover screen (FlexWindow): edge-to-edge + display cutout ===
+   Requisito di prodotto (non confondere i due livelli):
+   - CANVAS/SFONDO: deve arrivare ai bordi fisici, anche dietro/attorno al foro
+     delle fotocamere. Lo fanno il manifest (nessun orientamento forzato +
+     display_override fullscreen) e `viewport-fit=cover` col background-color
+     opaco del root (v14759). Qui non serve altro: il canvas e' gia' a filo.
+   - UI INTERATTIVA: header, tab, card e bottom-nav NON devono finire sotto il
+     cutout ne' sotto la gesture bar. Applichiamo gli inset del cutout SOLO agli
+     elementi di interfaccia, mai al contenitore/sfondo. */
+@media (max-height: 520px) {
+  /* UI in alto: lascia libero il foro fotocamere (safe-area-inset-top). */
+  .app-header { padding-top: calc(4px + env(safe-area-inset-top, 0px)); }
+  .phone-status {
+    height: calc(44px + env(safe-area-inset-top, 0px));
+    padding-top: calc(14px + env(safe-area-inset-top, 0px));
+  }
+  .top-tabs { padding-top: calc(14px + env(safe-area-inset-top, 0px)); }
+
+  /* UI in basso e ai lati: dentro la safe area (nav + gesture bar). */
+  .bottom-nav {
+    padding-left: max(5px, env(safe-area-inset-left, 0px));
+    padding-right: max(5px, env(safe-area-inset-right, 0px));
+    bottom: calc(5px + env(safe-area-inset-bottom, 0px));
+  }
+}
