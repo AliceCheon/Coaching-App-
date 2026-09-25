@@ -40,13 +40,16 @@ assert.match(
   /linear-gradient\(145deg,\s*#050612 0%,\s*#0b0b20 52%,\s*#080719 100%\)/,
   "html deve dipingere il gradiente scuro del tema (canvas mai bianco)"
 );
-assert.match(htmlRule[1], /background-attachment\s*:\s*fixed/, "lo sfondo del canvas deve essere fixed");
+assert.ok(!/background-attachment\s*:\s*fixed/.test(htmlRule[1]), "html non deve usare background-attachment: fixed (v147.60)");
+assert.match(htmlRule[1], /height\s*:\s*100%/, "html deve essere alto quanto il viewport (canvas su tutta la finestra)");
+assert.match(htmlRule[1], /background-color\s*:\s*#080719/, "html deve avere il colore di canvas opaco del tema scuro");
 
 // --- 3) Il canvas segue anche il tema chiaro. ------------------------------
 const lightRule = css.match(/html\[data-theme="light"\]\s*\{([^}]*)\}/);
 assert.ok(lightRule, "serve una variante html[data-theme=light] per il canvas");
 assert.match(lightRule[1], /linear-gradient\(135deg,\s*#a985d4/, "canvas chiaro = gradiente lavender");
-assert.match(lightRule[1], /background-attachment\s*:\s*fixed/, "anche il canvas chiaro è fixed");
+assert.ok(!/background-attachment\s*:\s*fixed/.test(lightRule[1]), "anche il canvas chiaro non deve essere fixed (v147.60)");
+assert.match(lightRule[1], /background-color\s*:\s*#b897db/, "canvas chiaro con colore opaco");
 
 // --- 4) Il canvas è corretto già al primo paint (script inline in <head>). --
 assert.match(

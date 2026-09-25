@@ -189,13 +189,13 @@
        sotto il layout viewport torna bianca. Serve quindi un background-color
        opaco del tema, accanto al gradiente. */
     html {
+      height: 100%;
       min-height: 100%;
       background:
         radial-gradient(circle at 12% 5%, rgba(143,53,236,.16), transparent 27%),
         radial-gradient(circle at 88% 16%, rgba(247,37,133,.12), transparent 27%),
         linear-gradient(145deg, #050612 0%, #0b0b20 52%, #080719 100%);
       background-color: #080719;
-      background-attachment: fixed;
     }
 
     html[data-theme="light"] {
@@ -204,7 +204,6 @@
         radial-gradient(circle at 88% 14%, rgba(255,162,213,.42), transparent 30%),
         linear-gradient(135deg, #a985d4 0%, #cfafe8 42%, #e7c9e8 72%, #b897db 100%);
       background-color: #b897db;
-      background-attachment: fixed;
     }
 
     body {

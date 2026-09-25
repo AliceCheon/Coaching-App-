@@ -40,6 +40,15 @@ assert.ok(
   "html non deve avere inset del cutout: il canvas/sfondo deve arrivare ai bordi fisici"
 );
 
+// Il canvas deve coprire TUTTA la finestra: alto quanto il viewport e con un
+// COLORE opaco, senza `background-attachment: fixed` (su Chrome/Android il
+// fixed non ridipinge l'area scoperta quando il viewport cambia -> resta bianca).
+const htmlBase = inlineCss.match(/(?:^|\})\s*html\s*\{([^}]*)\}/);
+assert.ok(htmlBase, "serve la regola html {...}");
+assert.match(htmlBase[1], /height\s*:\s*100%/, "html deve essere alto quanto il viewport");
+assert.match(htmlBase[1], /background-color\s*:\s*#080719/, "html deve avere un colore di canvas opaco");
+assert.ok(!/background-attachment\s*:\s*fixed/.test(inlineCss), "niente background-attachment: fixed sul canvas (Chrome/Android)");
+
 // --- 4) La UI in alto deve rispettare il cutout. ----------------------------
 const cutoutBlock = inlineCss.match(/@media\s*\(max-height:\s*520px\)\s*\{([\s\S]*?)\n\}\s*$/);
 assert.ok(cutoutBlock, "serve un blocco @media (max-height: 520px) con gli inset per la UI del cover screen");
@@ -50,7 +59,7 @@ for (const sel of [".app-header", ".phone-status", ".top-tabs"]) {
   assert.match(rule[1], /env\(safe-area-inset-top/, `${sel} deve rispettare safe-area-inset-top (foro fotocamere)`);
 }
 
-// --- Mini-motore di cascata (stesso approccio di v14757/v14760). -------------
+// --- Mini-motore di cascata (stesso approccio di v14757/v14761). -------------
 const html = raw("index.html");
 const sheetOrder = [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map((m) => m[1].split("?")[0]);
 function parseRules(css, media = [], out = []) {

@@ -14,7 +14,7 @@ assert.match(html, /effectiveAnimationMode\(\) !== "full"/);
 assert.match(html, /const remaining = Math\.max\(0, 600 - \(Date\.now\(\) - premiumBootStartedAt\)\)/);
 assert.match(html, /setTimeout\(\(\) => \{ premiumBootReady = true; finishPremiumBoot\(\); \}, 1800\)/);
 assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14760-cutout-edge-to-edge"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14761-canvas-no-fixed-bg"/);
 console.log(JSON.stringify({ok:true,modes:true,glow:true,haptic:true,bootManaged:true}));
 
 
