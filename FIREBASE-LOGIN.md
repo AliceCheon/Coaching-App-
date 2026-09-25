@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v147.57-canvas-not-white` |
-| `cache` | `atlas-app-v14757-canvas-not-white` |
+| `build` | `v147.58-workout-context` |
+| `cache` | `atlas-app-v14758-workout-context` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |
