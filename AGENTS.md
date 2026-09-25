@@ -121,3 +121,29 @@ range ascendenti `15-20`).
   `html` deve riportare `background-color: rgb(8,7,25)` e il documento non deve
   superare il layout viewport. Dopo il fix, a 300px di layout viewport su 365px
   di schermo, la fascia sotto e' del colore del tema, non bianca.
+
+## FlexWindow — display cutout e due livelli (v147.60)
+Il bug vero non era il colore: la PWA veniva **confinata nell'area sopra il foro
+fotocamere** e non usava tutta la superficie fisica. Leva trovata nel manifest:
+`"orientation": "portrait"` segnala un'app a orientamento/aspect **fisso**, che
+One UI sul cover screen (finestra ~400x365, landscape) letterboxa nell'area
+"sicura" sopra le fotocamere. Da li' la scena in alto e la versione "piu'
+piccola" quando si cambia formato col tasto Samsung.
+
+- **Non confondere i due livelli**:
+  1. **LAYOUT/CANVAS** edge-to-edge su tutta la superficie, anche dietro/attorno
+     al cutout. Leve: manifest **senza** `orientation` forzato +
+     `display_override: ["standalone","fullscreen"]`; `viewport-fit=cover`;
+     `background-color` opaco del root (v14759). Il canvas non deve avere inset.
+  2. **UI INTERATTIVA** (header, tab, card, bottom-nav) dentro la safe area:
+     inset del cutout applicati **solo** agli elementi di interfaccia.
+- `index.html` non forzava `orientation` via JS: nessuna modifica necessaria.
+- Fix (v147.60): rimosso `"orientation": "portrait"` dal manifest; aggiunti
+  `.app-header`/`.phone-status`/`.top-tabs` con `env(safe-area-inset-top)` e
+  `.bottom-nav` con gli inset laterali/basso, in `@media (max-height: 520px)`.
+- **Verifica in landscape** (fondamentale, perche' senza l'orientamento fisso il
+  display interno puo' ruotare): a 915x412 e 844x390 il layout non ha overflow
+  (`.phone` riempie `100dvh`, `scrollWidth == clientWidth`).
+- Test: `tests/v14760-flexwindow-cutout-edge-to-edge.test.mjs`.
+- CDP con cutout in alto (28px) + gesture bar (20px) a 400x365: header a 32px
+  (4+28), nav a 25px (5+20); telefono aperto e desktop invariati.
