@@ -147,3 +147,33 @@ piccola" quando si cambia formato col tasto Samsung.
 - Test: `tests/v14760-flexwindow-cutout-edge-to-edge.test.mjs`.
 - CDP con cutout in alto (28px) + gesture bar (20px) a 400x365: header a 32px
   (4+28), nav a 25px (5+20); telefono aperto e desktop invariati.
+
+## FlexWindow — canvas senza `background-attachment: fixed` (v147.61)
+Sul dispositivo la banda chiara **restava** e, in modalita' "schermo intero"
+Samsung, copriva **anche la bottom nav**. Ricerca autorevole (Chrome/Android
+edge-to-edge, layoutInDisplayCutoutMode, WebView insets, segnalazioni One UI 8):
+
+- L'estensione della finestra dietro/attorno al cutout e' decisa dal **container
+  Android / One UI**, non dal CSS: `viewport-fit=cover` ed `env(safe-area-inset-*)`
+  dispongono solo dentro la superficie che il sistema espone. Una PWA con
+  `display: standalone/fullscreen` puo' non ricevere la modalita' cutout che
+  invece ottiene `requestFullscreen()`, e One UI puo' letterboxare in base
+  all'aspect/aspect-override per-app.
+- E' inoltre **bug noto di Chrome su One UI 8**: barra vuota in fondo su *tutti*
+  i siti (Chrome 140+); workaround segnalato: `chrome://flags` →
+  `EdgeToEdgeEverywhere` disabilitato. Non dipende dal sito.
+- `background-attachment: fixed` e' **inaffidabile** su Chrome/Android: non
+  ridipinge l'area scoperta quando il viewport cambia (es. al toggle di
+  modalita'), lasciandola bianca.
+
+Fix (v147.61), hardening indipendente dal container:
+- rimuovere `background-attachment: fixed` dal canvas (`html`);
+- `html { height: 100% }` + `background-color` opaco del tema, cosi' il canvas
+  copre l'intera finestra e il colore arriva fino ai bordi.
+- Verificato: FlexWindow 365/365, Z Flip aperto 915/915, desktop invariato.
+- Test: `tests/v14760-flexwindow-cutout-edge-to-edge.test.mjs` (esteso) e
+  `tests/v14757-canvas-not-white.test.mjs` (aggiornato al nuovo meccanismo).
+
+**Limite noto**: se One UI/Chrome dipingono la banda o confinano la finestra,
+non e' superabile dal solo web. Mitigazioni lato utente: Chrome aggiornato,
+flag `EdgeToEdgeEverywhere`, GoodLock/MultiStar per l'aspect del cover screen.
