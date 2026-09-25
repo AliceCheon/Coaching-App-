@@ -235,6 +235,12 @@ in modo che il tema chiaro resti possibile. Test di guardia:
 `tests/v14760-flexwindow-cutout-edge-to-edge.test.mjs`,
 `tests/v14762-flexwindow-request-fullscreen.test.mjs`.
 
-Nota: gli stessi commit hanno anche revertito logica (motore Fasi v147.53,
-`classifyProgramWeeks`/`programWeekPlan`, contesto workout appuntato v147.58).
-Quei test restano rossi e sono fuori dallo scope di questa correzione visiva.
+Lo stesso revert aveva toccato anche la **logica**: `src/app-main.js` e
+`workout-flow-v147.js` erano tornati a v147.51, perdendo ~768 righe (motore
+Fasi v147.53, override `periodization.weeks`, contesto workout appuntato v147.58,
+selettore Scheda/Programma manuale). Ripristinati all'ultimo stato sano nella
+stessa tornata di fix (v147.63), insieme alla rimozione di
+`tests/v14750-cover-and-reference.test.mjs` — test introdotto dal revert per una
+riscrittura mai esistita nello stato sano.
+
+**Stato**: suite **151/151** verde, `main` e GitHub Pages allineati.
