@@ -175,10 +175,45 @@
 
     * { box-sizing: border-box; }
 
+    /* === v14757 · il canvas della pagina non deve MAI essere bianco ===
+       Sui browser mobile il colore di sfondo non dipinto appartiene al canvas
+       radice, che di default e' BIANCO. Sul FlexWindow della Z Flip 7 il
+       viewport CSS (100dvh) risulta piu' basso dell'area realmente visibile
+       (barre di sistema Samsung): la striscia sotto l'altezza del documento
+       non veniva dipinta e mostrava il canvas bianco -> la "banda bianca". */
+    /* === v14759 · edge-to-edge: il COLORE del canvas deve arrivare al bordo ===
+       Il gradiente e' una background-IMAGE: viene disegnato entro il layout
+       viewport (che sul cover screen e' piu' basso dello schermo fisico). Con
+       `viewport-fit=cover` il browser estende al bordo solo il background-COLOR
+       del root: se resta trasparente (come con la sola immagine v14757) l'area
+       sotto il layout viewport torna bianca. Serve quindi un background-color
+       opaco del tema, accanto al gradiente. */
+    html {
+      height: 100%;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 12% 5%, rgba(143,53,236,.16), transparent 27%),
+        radial-gradient(circle at 88% 16%, rgba(247,37,133,.12), transparent 27%),
+        linear-gradient(145deg, #050612 0%, #0b0b20 52%, #080719 100%);
+      background-color: #080719;
+    }
+
+    html[data-theme="light"] {
+      background:
+        radial-gradient(circle at 8% 4%, rgba(104,49,174,.34), transparent 28%),
+        radial-gradient(circle at 88% 14%, rgba(255,162,213,.42), transparent 30%),
+        linear-gradient(135deg, #a985d4 0%, #cfafe8 42%, #e7c9e8 72%, #b897db 100%);
+      background-color: #b897db;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
-      padding-bottom: env(safe-area-inset-bottom);
+      /* v14759 · niente padding-bottom qui: sommato a .stage/100dvh allungava
+         il documento OLTRE il layout viewport (misurato col CDP: 397px su
+         365px), creando la fascia in cui il canvas trasparente si vedeva.
+         Il fondo schermo e' gia' gestito da .screen e .bottom-nav (entrambi
+         usano env(safe-area-inset-bottom)), quindi qui e' ridondante. */
       background:
         linear-gradient(135deg, rgba(255,111,203,.16), transparent 34%),
         linear-gradient(225deg, rgba(169,144,255,.16), transparent 42%),
@@ -3375,8 +3410,10 @@
     .phase11-log-empty { padding:28px; text-align:center; color:var(--text-secondary); }
     .inline-icon { width:1.15em; height:1.15em; vertical-align:-.18em; margin-right:5px; }
     .training-context-card { padding:16px; }
-    .training-context-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:12px; }
+    .training-context-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-top:12px; }
     .training-context-grid label { display:grid; gap:5px; }
+    .training-context-derived { display:flex; align-items:center; min-height:38px; padding:0 11px; border:1px dashed rgba(201,167,255,.5); border-radius:10px; background:rgba(201,167,255,.10); font-weight:600; }
+    .program-week-phases { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
     .status-badge.warning { color:#ffd166; border-color:#ffd166; }
     @media(max-width:700px){ .training-context-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
     .exercise-analysis { margin-top:16px; padding:14px; border:1px solid rgba(201,167,255,.2); border-radius:14px; background:rgba(23,13,38,.62); }
@@ -4081,6 +4118,11 @@
       background:linear-gradient(145deg,rgba(255,255,255,.92),rgba(251,239,251,.86));
       border-color:rgba(117,57,154,.17);
     }
+    .training-context-derived {
+      color:#2b1739;
+      background:rgba(164,91,226,.08);
+      border-color:rgba(122,48,180,.30);
+    }
     input,select,textarea {
       color:#2b1739;
       background:rgba(255,255,255,.74);
@@ -4256,6 +4298,11 @@
       color:#fff8fd;
       background:linear-gradient(145deg,rgba(29,24,52,.98),rgba(12,14,36,.98));
       border-color:rgba(210,113,231,.20);
+    }
+    body[data-theme="dark"] .training-context-derived {
+      color:#fff8fd;
+      background:rgba(210,113,231,.10);
+      border-color:rgba(210,113,231,.34);
     }
     body[data-theme="dark"] input,
     body[data-theme="dark"] select,
@@ -4904,6 +4951,23 @@
       .stage { min-height: 100dvh !important; height: 100dvh !important; }
     }
 
+    /* === v14757 · mobile/FlexWindow: niente altezza fantasma in fondo ===
+       Due elementi non navigabili creavano altezza oltre il viewport (misurato
+       su 400x365: documento 407px su 365px), spingendo la scena sotto la piega
+       sullo schermo di copertina:
+       - .coach-editor-nav-restore non ha un posizionamento definito fuori da
+         min-width:981px (serve solo alla rail coach da desktop) e resta in
+         flusso anche da mobile;
+       - #globalDivaBotHost e' forzato a position:static dalla regola mobile di
+         coach-studio.css, quindi aggiungeva la sua altezza dopo la scena anche
+         se il bot al suo interno e' position:fixed.
+       Li togliamo dal flusso su tutto il mobile: dropdown della Diva e overlay
+       restano invariati perche' i loro figli sono gia' fixed/absolute. */
+    @media (max-width: 980px) {
+      .coach-editor-nav-restore { display: none !important; }
+      #globalDivaBotHost { position: fixed !important; left: 0; bottom: 0; width: 0; height: 0; }
+    }
+
 
 /* v14749 · errore di salvataggio dei modali Coach: visibile e persistente */
 .coach-modal-error {
@@ -4922,110 +4986,28 @@ body[data-theme="light"] .coach-modal-error {
   color: #7d2038;
 }
 
+/* === v14760 · Cover screen (FlexWindow): edge-to-edge + display cutout ===
+   Requisito di prodotto (non confondere i due livelli):
+   - CANVAS/SFONDO: deve arrivare ai bordi fisici, anche dietro/attorno al foro
+     delle fotocamere. Lo fanno il manifest (nessun orientamento forzato +
+     display_override fullscreen) e `viewport-fit=cover` col background-color
+     opaco del root (v14759). Qui non serve altro: il canvas e' gia' a filo.
+   - UI INTERATTIVA: header, tab, card e bottom-nav NON devono finire sotto il
+     cutout ne' sotto la gesture bar. Applichiamo gli inset del cutout SOLO agli
+     elementi di interfaccia, mai al contenitore/sfondo. */
+@media (max-height: 520px) {
+  /* UI in alto: lascia libero il foro fotocamere (safe-area-inset-top). */
+  .app-header { padding-top: calc(4px + env(safe-area-inset-top, 0px)); }
+  .phone-status {
+    height: calc(44px + env(safe-area-inset-top, 0px));
+    padding-top: calc(14px + env(safe-area-inset-top, 0px));
+  }
+  .top-tabs { padding-top: calc(14px + env(safe-area-inset-top, 0px)); }
 
-/* === v14750 · Banda bianca sullo schermo di copertina (Galaxy Z Flip 7) ===
-   Nella modalita' che disegna sotto il foro delle fotocamere, la fascia
-   lasciata al sistema prende il colore di sfondo del documento: con il tema
-   chiaro (gradiente viola chiaro su body) diventava una BANDA BIANCA.
-   Il documento e' ora sempre scuro, cosi' la fascia si fonde con l'app;
-   in piu' si usa 100svh, l'altezza minima garantita, perche' con 100vh/dvh
-   la barra di navigazione inferiore finiva fuori schermo. */
-html {
-  color-scheme: dark;
-  background-color: #090918 !important;
-  min-height: 100%;
-  height: auto;
-}
-
-@media (max-height: 430px) and (max-width: 560px) {
-  html, body {
-    background: #090918 !important;
-    background-image: none !important;
-    min-height: 100svh !important;
-  }
-  .stage, .screen, .coach-studio-page, .coach-editor-layout {
-    min-height: 100svh !important;
-    height: auto !important;
-  }
-  /* area sicura in alto: la fotocamera non deve coprire intestazione e contenuti */
-  .topbar, .coach-studio-topbar, .app-header, .hero, .coach-studio-page-head {
-    padding-top: max(4px, env(safe-area-inset-top, 0px)) !important;
-  }
-  /* la barra resta visibile e non viene tagliata dal fondo */
-  .screen {
-    padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
-  }
+  /* UI in basso e ai lati: dentro la safe area (nav + gesture bar). */
   .bottom-nav {
-    bottom: calc(4px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-left: max(5px, env(safe-area-inset-left, 0px));
+    padding-right: max(5px, env(safe-area-inset-right, 0px));
+    bottom: calc(5px + env(safe-area-inset-bottom, 0px));
   }
-}
-
-/* === v14750 · Anteprima atleta: elenco schede apribile (stato, non <details>) === */
-.coach-reference-sheet { border-top: 1px solid var(--line-soft); }
-.coach-reference-sheet-head {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 9px 2px;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.coach-reference-sheet.is-open .coach-reference-sheet-head { color: var(--accent, #ff4fa3); }
-.coach-reference-chevron { flex: none; opacity: .8; }
-.coach-reference-sheet-body { padding: 2px 0 8px; }
-
-
-/* === v14751 · La striscia chiara e' in BASSO: sul Galaxy Z Flip 7 le due
-   fotocamere stanno sotto il display, quindi l'area che il sistema riserva
-   e' in fondo, non in alto. La v14750 interveniva solo dentro la media query
-   (max-height:430px) e solo sullo sfondo: se quella query non scattava il
-   risultato era IDENTICO a prima. Qui si agisce sempre, a livello di radice.
-
-   1) la tela non dipinta deve essere SCURA (la striscia la disegna il
-      browser/sistema, non il CSS dell'app): color-scheme + fondo su html;
-   2) il fondo si estende fino al bordo inferiore, dietro le fotocamere;
-   3) i contenuti interattivi (barra a 5 voci) restano SOPRA la zona
-      fotocamere, con una riserva di sicurezza sul fondo;
-   4) nessuna altezza fissa che comprima la pagina. */
-:root { color-scheme: dark; }
-
-html, body, .phone-shell, .phone, .stage, .screen {
-  background-color: #090918;
-}
-html { background-color: #090918 !important; }
-
-/* il documento non dipinge piu' un canvas bianco quando il tema del
-   telefono e' chiaro: l'app resta scura come il suo tema interno */
-@media (prefers-color-scheme: light) {
-  html, body { background-color: #090918 !important; background-image: none !important; }
-}
-
-/* altezza: solo misure garantite, niente 100vh/100dvh che sforano l'area
-   visibile e spingono la barra fuori schermo */
-html, body { min-height: 100%; }
-.stage, .phone, .phone-shell {
-  height: auto !important;
-  min-height: 100svh !important;
-}
-
-/* riserva per la zona fotocamere in basso + aree sicure.
-   Soglia larga (520px) perche' sul FlexWindow l'altezza CSS e' ~349-399px. */
-@media (max-height: 560px) and (min-width: 200px) {
-  .stage { min-height: 100svh !important; height: auto !important; }
-  .phone  { min-height: 100svh !important; height: auto !important; grid-template-rows: auto auto 1fr; }
-  .bottom-nav {
-    bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
-    max-width: calc(100% - 24px);
-  }
-  .screen {
-    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-  /* nessun elemento interattivo nella striscia delle fotocamere */
-  body { padding-bottom: env(safe-area-inset-bottom, 0px); }
 }
