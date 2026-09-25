@@ -6651,6 +6651,41 @@ function sanitizeForFirestore(value) {
       };
     }
 
+    // v147.58 · Il workout in corso appartiene a UNA sessione, non a "oggi".
+    // La UI (workout-flow-v147.js) disegna sempre il contesto APPUNTATO
+    // all'activeWorkout: data, scheda e settimana del momento in cui e' iniziato.
+    // Ma `saveWorkoutSession()` ricalcolava il contesto con
+    // `currentTrainingContext()`: riaprendo l'app il giorno dopo, la data torna a
+    // oggi e la scheda viene dedotta dallo storico. Poiche' le serie (draft) sono
+    // salvate con chiave `data|scheda|esercizio`, la lookup non trovava piu' nulla
+    // e la validazione mostrava "Inserisci almeno un carico o una nota" mentre in
+    // UI le serie erano presenti e compilate.
+    // Questo resolver e' l'UNICA fonte per il contesto del workout attivo: se c'e'
+    // una sessione in corso, la sua identita' vince sulla deriva di data/scheda.
+    function activeWorkoutSession(target = state) {
+      const active = target?.training?.activeWorkout;
+      if (!active) return null;
+      return ["active", "paused"].includes(active.status) ? active : null;
+    }
+
+    function pinnedTrainingContext(base = currentTrainingContext(), active = activeWorkoutSession()) {
+      if (!active) return base;
+      try {
+        const phase = active.phase || base.phase;
+        const code = String(active.sessionCode || base.session?.code || "");
+        const sheets = sessionsForPhase(phase);
+        const sheet = sheets.find((item) => String(item.code) === code && item.phase === phase)
+          || sheets.find((item) => String(item.code) === code)
+          || base.session;
+        if (!sheet) return base;
+        const week = Number(active.week) || base.week;
+        const exercises = (sheet.exercises || []).map((exercise) => exercisePrescriptionForTrainingWeek(exercise, week));
+        return { ...base, date: active.date || base.date, week, phase, session: { ...sheet, week, exercises }, pinnedToActive: true };
+      } catch (error) {
+        return base;
+      }
+    }
+
     function draftKey(context, exercise) {
       return `${context.date}|${context.session.code}|${exercise.name}`;
     }
@@ -13690,7 +13725,11 @@ function sanitizeForFirestore(value) {
         saveButton.textContent = "Salvataggio...";
         await new Promise((resolve) => requestAnimationFrame(resolve));
       }
-      const context = currentTrainingContext();
+      // v147.58 · la validazione e la persistenza devono leggere lo STESSO
+      // contesto che la UI sta mostrando (appuntato all'activeWorkout). Se il
+      // workout e' stato iniziato ieri, `currentTrainingContext()` ricalcolerebbe
+      // data/scheda di oggi e la validazione non troverebbe piu' le serie.
+      const context = pinnedTrainingContext();
       const exercises = context.session.exercises
         .map((exercise) => {
           const setValues = draftSetsFor(context, exercise).map((value) => String(value || "").trim());

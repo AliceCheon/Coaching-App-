@@ -16,12 +16,19 @@
      settimana (repairSequentialWorkoutWeeks) per far tornare la schermata
      "Inizia allenamento" con il workout ancora integro in memoria. */
   function activeSessionLoose() {
+    // v147.58 · unica fonte di verita' condivisa con app-main.js: cosi' UI e
+    // salvataggio non possono piu' divergere sull'identita' del workout in corso.
+    if (typeof activeWorkoutSession === "function") return activeWorkoutSession();
     const active = state.training?.activeWorkout;
     if (!active) return null;
     return ["active", "paused"].includes(active.status) ? active : null;
   }
 
   function pinnedContext(base, active) {
+    // v147.58 · delega al resolver canonico di app-main.js (stessa logica).
+    if (typeof pinnedTrainingContext === "function") {
+      return active ? pinnedTrainingContext(base, active) : base;
+    }
     if (!active) return base;
     try {
       const phase = active.phase || base.phase;
