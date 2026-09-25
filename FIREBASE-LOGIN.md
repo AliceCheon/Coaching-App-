@@ -13,7 +13,7 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v147.50-cover-reference` |
+| `build` | `v147.51-cover-bottom` |
 | `cache` | `atlas-app-v14744-coach-ai-sync` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |

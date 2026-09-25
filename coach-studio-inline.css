@@ -4931,7 +4931,8 @@ body[data-theme="light"] .coach-modal-error {
    in piu' si usa 100svh, l'altezza minima garantita, perche' con 100vh/dvh
    la barra di navigazione inferiore finiva fuori schermo. */
 html {
-  background: #090918 !important;
+  color-scheme: dark;
+  background-color: #090918 !important;
   min-height: 100%;
   height: auto;
 }
@@ -4978,3 +4979,53 @@ html {
 .coach-reference-sheet.is-open .coach-reference-sheet-head { color: var(--accent, #ff4fa3); }
 .coach-reference-chevron { flex: none; opacity: .8; }
 .coach-reference-sheet-body { padding: 2px 0 8px; }
+
+
+/* === v14751 · La striscia chiara e' in BASSO: sul Galaxy Z Flip 7 le due
+   fotocamere stanno sotto il display, quindi l'area che il sistema riserva
+   e' in fondo, non in alto. La v14750 interveniva solo dentro la media query
+   (max-height:430px) e solo sullo sfondo: se quella query non scattava il
+   risultato era IDENTICO a prima. Qui si agisce sempre, a livello di radice.
+
+   1) la tela non dipinta deve essere SCURA (la striscia la disegna il
+      browser/sistema, non il CSS dell'app): color-scheme + fondo su html;
+   2) il fondo si estende fino al bordo inferiore, dietro le fotocamere;
+   3) i contenuti interattivi (barra a 5 voci) restano SOPRA la zona
+      fotocamere, con una riserva di sicurezza sul fondo;
+   4) nessuna altezza fissa che comprima la pagina. */
+:root { color-scheme: dark; }
+
+html, body, .phone-shell, .phone, .stage, .screen {
+  background-color: #090918;
+}
+html { background-color: #090918 !important; }
+
+/* il documento non dipinge piu' un canvas bianco quando il tema del
+   telefono e' chiaro: l'app resta scura come il suo tema interno */
+@media (prefers-color-scheme: light) {
+  html, body { background-color: #090918 !important; background-image: none !important; }
+}
+
+/* altezza: solo misure garantite, niente 100vh/100dvh che sforano l'area
+   visibile e spingono la barra fuori schermo */
+html, body { min-height: 100%; }
+.stage, .phone, .phone-shell {
+  height: auto !important;
+  min-height: 100svh !important;
+}
+
+/* riserva per la zona fotocamere in basso + aree sicure.
+   Soglia larga (520px) perche' sul FlexWindow l'altezza CSS e' ~349-399px. */
+@media (max-height: 560px) and (min-width: 200px) {
+  .stage { min-height: 100svh !important; height: auto !important; }
+  .phone  { min-height: 100svh !important; height: auto !important; grid-template-rows: auto auto 1fr; }
+  .bottom-nav {
+    bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+    max-width: calc(100% - 24px);
+  }
+  .screen {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  /* nessun elemento interattivo nella striscia delle fotocamere */
+  body { padding-bottom: env(safe-area-inset-bottom, 0px); }
+}
