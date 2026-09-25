@@ -1,5 +1,5 @@
 /* Barbell Diva - Service Worker
-   v14744-coach-ai-sync
+   v147.62-short-edges-fullscreen
    - HTML + JS/CSS: NETWORK-FIRST con timeout (3s) + fallback cache → dopo un
      deploy i dispositivi eseguono SEMPRE la versione pubblicata quando sono
      online (il vecchio stale-while-revalidate serviva la copia vecchia alla
@@ -8,7 +8,7 @@
    - Match con ignoreSearch: resiste ai bump di versione (?v=...) e ai doppioni in cache
    - Cache key normalizzate per pathname (niente duplicati per ogni ?v=)
 */
-const CACHE_NAME = "atlas-app-v14751-cover-bottom";
+const CACHE_NAME = "atlas-app-v14762-short-edges-fullscreen";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -19,6 +19,7 @@ const APP_SHELL = [
   "./coach-mascot.svg",
   "./atlas-nunito-sans.ttf",
   "./coach-studio.css",
+  "./coach-ai.css",
   "./coach-program-editor-19.8.css",
   "./coach-tools-v1451.css",
   "./unified-sidebar-v1452.css",
