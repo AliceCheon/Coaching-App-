@@ -6010,8 +6010,10 @@ function sanitizeForFirestore(value) {
       const tempo = String(exercise.metadata?.note2 || formatTempo(week.tempo) || exercise.tempo || "").trim();
       return {
         ...exercise,
-        sets: week.sets != null ? String(week.sets) : exercise.sets,
-        reps: reps || exercise.reps,
+        // Una settimana presente è la fonte di verità per serie e ripetizioni:
+        // non riempire i suoi campi vuoti con i default dell'esercizio.
+        sets: isClearedValue(week.sets) ? "" : (week.sets != null ? String(week.sets) : ""),
+        reps: isClearedValue(week.reps) ? "" : reps,
         rir: rir || exercise.rir,
         rest: rest || exercise.rest,
         tempo,
@@ -7835,10 +7837,13 @@ function sanitizeForFirestore(value) {
     function coachWeekPrescription(exercise, weekNumber) {
       const base=exercise?.prescription||{};
       const week=(exercise?.progression?.weeks||[]).find((item)=>Number(item.weekNumber||item.week)===Number(weekNumber))||{};
+      const hasProgressionWeek=(exercise?.progression?.weeks||[]).some((item)=>Number(item.weekNumber||item.week)===Number(weekNumber));
       const som=coachExerciseSom(exercise);
       return {
-        sets:isClearedValue(week.sets)?"":(week.sets??base.sets??""),
-        reps:isClearedValue(week.reps)?"":formatReps(week.reps||base.reps),
+        // I default restano salvati sul modello, ma non devono prevalere né
+        // riapparire al posto della prescrizione della settimana selezionata.
+        sets:hasProgressionWeek?(isClearedValue(week.sets)?"":(week.sets??"")):(base.sets??""),
+        reps:hasProgressionWeek?(isClearedValue(week.reps)?"":formatReps(week.reps)):(formatReps(base.reps)),
         restSeconds:isClearedValue(week.restSeconds)?"":(week.restSeconds??week.rest?.seconds??base.rest?.seconds??""),
         loadValue:isClearedValue(week.prescribedLoad)?"":(week.prescribedLoad?.value??base.prescribedLoad?.value??""),
         loadUnit:week.prescribedLoad?.unit||base.prescribedLoad?.unit||"kg",
