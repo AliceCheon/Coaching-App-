@@ -2076,10 +2076,11 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       return aliases[0]||normalizeExerciseName(name);
     }
 
-    function technicalExerciseLibrary() {
-      if (technicalLibraryCache.stateRef === state && technicalLibraryCache.revision === technicalLibraryRevision && technicalLibraryCache.profiles) return technicalLibraryCache.profiles;
-      const profiles = window.BarbellDivaMasterLibrary.normalizeStore(state.masterExerciseLibrary || {}).records.filter((record)=>record.status!=="archived").map(window.BarbellDivaMasterLibrary.toTechnicalProfile).map((profile)=>technicalExerciseProfile(profile,{origin:profile.origin})).sort((a,b) => Number(b.isCustom) - Number(a.isCustom) || a.name.localeCompare(b.name, "it"));
-      technicalLibraryCache = { stateRef:state, revision:technicalLibraryRevision, profiles, counts:null };
+    function technicalExerciseLibrary(includeArchived = false) {
+      const cacheKey=includeArchived?"all":"active";
+      if (technicalLibraryCache.stateRef === state && technicalLibraryCache.revision === technicalLibraryRevision && technicalLibraryCache.profiles?.[cacheKey]) return technicalLibraryCache.profiles[cacheKey];
+      const profiles = window.BarbellDivaMasterLibrary.normalizeStore(state.masterExerciseLibrary || {}).records.filter((record)=>includeArchived||record.status!=="archived").map(window.BarbellDivaMasterLibrary.toTechnicalProfile).map((profile)=>({...technicalExerciseProfile(profile,{origin:profile.origin}),status:profile.status||"active"})).sort((a,b) => Number(b.isCustom) - Number(a.isCustom) || a.name.localeCompare(b.name, "it"));
+      technicalLibraryCache = { stateRef:state, revision:technicalLibraryRevision, profiles:{...(technicalLibraryCache.stateRef===state&&technicalLibraryCache.revision===technicalLibraryRevision?technicalLibraryCache.profiles:{}),[cacheKey]:profiles}, counts:null };
       return profiles;
     }
 
@@ -6719,6 +6720,7 @@ function sanitizeForFirestore(value) {
         if (el.id) selector = `#${CSS.escape(el.id)}`;
         else if (el.dataset.editExercise !== undefined && el.dataset.editKey) selector = `[data-edit-exercise="${CSS.escape(el.dataset.editExercise)}"][data-edit-key="${CSS.escape(el.dataset.editKey)}"]`;
         else if (el.dataset.coachSheetField) selector = `[data-coach-sheet-field="${CSS.escape(el.dataset.coachSheetField)}"]`;
+        else if (el.dataset.builderRowField !== undefined && el.dataset.builderIndex !== undefined) selector = `[data-builder-row-field="${CSS.escape(el.dataset.builderRowField)}"][data-builder-index="${CSS.escape(el.dataset.builderIndex)}"]`;
       } catch (_) { return null; }
       if (!selector) return null;
       return { selector, value: el.value, start: el.selectionStart, end: el.selectionEnd, scrollTop: el.scrollTop };
@@ -6796,15 +6798,31 @@ function sanitizeForFirestore(value) {
     // Previene re-render ravvicinati che causano loop infinito (es. nella sezione programmi)
     let __renderGuardAt = 0;
     let __renderGuardCount = 0;
+    let __renderTrailingTimer = null;
+    let __renderIsTrailing = false;
     const RENDER_GUARD_MS = 250; // min tempo tra render consecutivi
-    function render() {
+    function render(fromTrailing = false) {
       const __now = Date.now();
       if (__now - __renderGuardAt < RENDER_GUARD_MS) {
         __renderGuardCount++;
         if (__renderGuardCount <= 5 || __renderGuardCount % 50 === 0) {
           console.warn(`[render-guard] Render bloccato (${__renderGuardCount}x) — chiamato troppo rapidamente. Stack:`, new Error().stack?.split('\n').slice(1, 4).join(' → '));
         }
-        return; // BLOCCA il render se troppo ravvicinato
+        // Coalesciamo le richieste ravvicinate in un solo aggiornamento finale.
+        // Un render trailing non ne accoda un altro: interrompe quindi i loop.
+        if (!fromTrailing && !__renderIsTrailing && __renderTrailingTimer === null) {
+          const delay = Math.max(0, RENDER_GUARD_MS - (__now - __renderGuardAt));
+          __renderTrailingTimer = setTimeout(() => {
+            __renderTrailingTimer = null;
+            __renderIsTrailing = true;
+            try { render(true); } finally { __renderIsTrailing = false; }
+          }, delay);
+        }
+        return;
+      }
+      if (!fromTrailing && __renderTrailingTimer !== null) {
+        clearTimeout(__renderTrailingTimer);
+        __renderTrailingTimer = null;
       }
       __renderGuardAt = __now;
       if (__renderGuardCount > 0) {
@@ -8843,6 +8861,22 @@ function sanitizeForFirestore(value) {
       return { progression:{ ...(exercise.progression||{}), weeks:weeks.sort((a,b)=>Number(a.weekNumber||a.week)-Number(b.weekNumber||b.week)), manualWeeks } };
     }
 
+    function sharedExerciseNotePatch(exercise, value, duration) {
+      const note=String(value||"");
+      const byWeek=new Map((exercise?.progression?.weeks||[]).map((week,index)=>[Number(week.weekNumber||week.week)||index+1,clone(week)]));
+      const count=Math.max(1,Number(duration)||1);
+      for(let weekNumber=1;weekNumber<=count;weekNumber+=1){
+        const week=byWeek.get(weekNumber)||parseWeekPrescription({},weekNumber,exercise?.prescription||{});
+        week.week=weekNumber;
+        week.weekNumber=weekNumber;
+        week.notes=note;
+        week.note=note;
+        if(!byWeek.has(weekNumber))week.source="auto";
+        byWeek.set(weekNumber,week);
+      }
+      return {note,progression:{...(exercise?.progression||{}),weeks:[...byWeek.values()].sort((a,b)=>Number(a.weekNumber||a.week)-Number(b.weekNumber||b.week))}};
+    }
+
     function updateInlineExerciseField(input, immediate=false) {
       const programId=input.dataset.programId, sheetId=input.dataset.sheetId, exerciseId=input.dataset.exerciseId;
       const exercise=programRepository.getExerciseById(programId,sheetId,exerciseId); if(!exercise)return false;
@@ -9871,7 +9905,8 @@ function sanitizeForFirestore(value) {
       const query = normalizeExerciseName(coachProgramUi.labQuery || "");
       const cacheKey = JSON.stringify([query, filters]);
       if (exerciseLabFilterCache.stateRef === state && exerciseLabFilterCache.revision === technicalLibraryRevision && exerciseLabFilterCache.key === cacheKey && exerciseLabFilterCache.profiles) return exerciseLabFilterCache.profiles;
-      const profiles = technicalExerciseLibrary().filter((item) => {
+      const includeArchived=filters.status==="archived"||filters.status==="all";
+      const profiles = technicalExerciseLibrary(includeArchived).filter((item) => {
          const muscleText = normalizeExerciseName(coachExerciseMuscleTokens(item).join(" "));
         const stimulus = item.stimulusProfile.lengthened >= item.stimulusProfile.midRange && item.stimulusProfile.lengthened >= item.stimulusProfile.shortened ? "lengthened" : item.stimulusProfile.shortened >= item.stimulusProfile.midRange ? "shortened" : "mid";
         const level = item.ratings.technicalDifficulty >= 4 ? "advanced" : item.ratings.technicalDifficulty >= 2 ? "intermediate" : "beginner";
@@ -9887,7 +9922,8 @@ function sanitizeForFirestore(value) {
           && (!filters.stability || item.ratings.stability >= Number(filters.stability))
           && (!filters.fatigue || item.ratings.systemicFatigue <= Number(filters.fatigue))
           && (!filters.progression || item.ratings.progressionEase >= Number(filters.progression))
-          && (!filters.origin || (filters.origin === "custom" ? item.isCustom : !item.isCustom));
+           && (!filters.origin || (filters.origin === "custom" ? item.isCustom : !item.isCustom))
+           && (filters.status==="all" || (filters.status==="archived" ? item.status==="archived" : item.status!=="archived"));
       });
       exerciseLabFilterCache = { stateRef:state, revision:technicalLibraryRevision, key:cacheKey, profiles };
       return profiles;
@@ -9909,10 +9945,10 @@ function sanitizeForFirestore(value) {
     }
 
     function exerciseLabHtml() {
-      const profiles = exerciseLabFilteredProfiles();
-      const all = technicalExerciseLibrary();
-      const counts = technicalProfileCounts();
       const filters = coachProgramUi.labFilters || {};
+      const profiles = exerciseLabFilteredProfiles();
+      const all = technicalExerciseLibrary(filters.status==="archived"||filters.status==="all");
+      const counts = technicalProfileCounts();
       const equipments = [...new Set(all.map((item) => item.equipment).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"it"));
       const muscles = [...new Set(all.flatMap((item) => item.primaryMuscles || []).filter(Boolean).map(normalizeMuscleCategory))].sort((a,b)=>a.localeCompare(b,"it"));
       const pageSize = 48; const visible = profiles.slice(0, Math.max(pageSize, Number(coachProgramUi.labPage || 1) * pageSize));
@@ -9935,6 +9971,7 @@ function sanitizeForFirestore(value) {
           <label>Fatica<select data-lab-filter="fatigue"><option value="">Tutte</option>${option("2","Massimo 2/5",filters.fatigue)}${option("3","Massimo 3/5",filters.fatigue)}</select></label>
           <label>Progressione<select data-lab-filter="progression"><option value="">Tutte</option>${option("3","Almeno 3/5",filters.progression)}${option("4","Almeno 4/5",filters.progression)}</select></label>
           <label>Origine<select data-lab-filter="origin"><option value="">Tutti</option>${option("system","Sistema/importati",filters.origin)}${option("custom","Custom",filters.origin)}</select></label>
+          <label>Stato<select data-lab-filter="status">${option("active","Attivi",filters.status||"active")}${option("archived","Archiviati",filters.status||"active")}${option("all","Tutti",filters.status||"active")}</select></label>
           <button type="button" class="ghost-button" data-lab-reset>Reset filtri</button>
         </div>
         <div class="exercise-lab-result-row"><strong>${profiles.length} risultati</strong><span>CRUD centrale · ricerca e filtri scalabili · archiviazione non distruttiva.</span></div>
@@ -9951,7 +9988,7 @@ function sanitizeForFirestore(value) {
       const evidence = (item.evidenceSources || []).map((source) => `<li><a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.title)}</a><span>${escapeHtml(source.organization || "Fonte tecnica")} · ${escapeHtml(source.use || "riferimento generale")}</span></li>`).join("");
       const provenance = `${Object.keys(item.aiAnalysis?.generated || {}).length ? '<span class="chip">Stimato AI</span>' : ""}${item.manualOverrides?.confirmedByCoach ? '<span class="chip">Confermato dal coach</span>' : ""}${Object.keys(item.manualOverrides || {}).filter((key)=>!['confirmedByCoach','updatedAt'].includes(key)).length ? '<span class="chip">Modificato manualmente</span>' : ""}`;
       return `<div class="coach-modal-backdrop" data-coach-portal-modal><section class="coach-modal technical-profile-modal">
-        <div class="row"><div><span class="section-eyebrow">Profilo tecnico</span><h2>${escapeHtml(displayExerciseName(item.name))}</h2><p>${escapeHtml(item.variant || item.category)} · ${escapeHtml(item.equipment)}</p></div><button class="ghost-button" data-coach-modal-close>Chiudi</button></div>
+        <div class="row"><div><span class="section-eyebrow">Profilo tecnico</span><h2>${escapeHtml(displayExerciseName(item.name))}</h2><p>${escapeHtml(item.variant || item.category)} · ${escapeHtml(item.equipment)}${item.status==="archived"?" · ARCHIVIATO":""}</p></div><button class="ghost-button" data-coach-modal-close>Chiudi</button></div>
         <div class="lab-badges">${provenance}</div><div class="technical-confidence ${item.aiAnalysis.confidence}"><strong>Affidabilità: ${confidenceLabel}</strong><span>${escapeHtml(item.aiAnalysis.reasoning || item.evidenceMethod || item.resistanceProfile.explanation)}</span></div>
         <div class="technical-profile-grid"><section><h3>Identità e muscoli</h3><p><b>Principali:</b> ${list(item.primaryMuscles)}</p><p><b>Secondari:</b> ${list(item.secondaryMuscles)}</p><p><b>Stabilizzatori:</b> ${list(item.stabilizers)}</p><p><b>Categoria:</b> ${escapeHtml(item.category)} · ${item.unilateral ? "unilaterale" : "bilaterale"} · ${item.compound ? "multiarticolare" : "monoarticolare"}</p><p>${escapeHtml(item.description || item.movementDescription || "Descrizione da completare.")}</p></section>
         <section><h3>Biomeccanica</h3><p><b>Articolazioni:</b> ${list(item.joints)}</p><p><b>Azioni:</b> ${list(item.jointActions)}</p><p><b>Piano:</b> ${escapeHtml(item.movementPlane || "non disponibile")} · <b>Catena:</b> ${escapeHtml(item.kineticChain || "non disponibile")}</p><p><b>Traiettoria:</b> ${escapeHtml(item.trajectory || "non disponibile")} · <b>ROM:</b> ${escapeHtml(item.rangeOfMotion || "non disponibile")}</p><p><b>Punto più difficile:</b> ${escapeHtml(hardest)}</p></section></div>
@@ -9959,7 +9996,7 @@ function sanitizeForFirestore(value) {
         <div class="technical-rating-grid">${[["Stabilità",item.ratings.stability],["Fatica sistemica",item.ratings.systemicFatigue],["Progressione",item.ratings.progressionEase],["Difficoltà tecnica",item.ratings.technicalDifficulty],["Stimolo allungamento",item.stimulusProfile.lengthened],["Stimolo accorciamento",item.stimulusProfile.shortened],["Comfort articolare*",item.ratings.jointComfort],["Adattabilità",item.ratings.adaptability]].map(([label,value])=>`<span><b>${escapeHtml(label)}</b><em>${value || "—"}/5</em></span>`).join("")}</div><p class="micro-copy">* Il comfort articolare è una valutazione pratica modificabile, non una garanzia medica.</p>
         <section class="technical-programming"><h3>Programmazione</h3><p><b>Obiettivi:</b> ${list(item.programming.goals)}</p><p><b>Ripetizioni:</b> ${list(item.programming.repRanges)} · <b>Serie:</b> ${escapeHtml(item.programming.recommendedSets || "da definire")}</p><p><b>Quando usarlo:</b> ${escapeHtml(item.programming.whenToUse || "da definire")}</p><p><b>Posizione nella seduta:</b> ${escapeHtml(item.programming.bestPlacement || "da definire")}</p><p><b>Limiti:</b> ${escapeHtml(item.programming.limitations || "Stima qualitativa basata sui dati disponibili.")}</p></section>
         <section class="technical-programming technical-evidence"><h3>Fonti consultate</h3><p>${escapeHtml(item.evidenceMethod || "Profilo costruito dai dati tecnici disponibili.")}</p>${evidence ? `<ul>${evidence}</ul><small>Aggiornamento fonti: ${escapeHtml(item.evidenceUpdatedAt || "non indicato")}. Le fonti generali guidano la classificazione; non sostituiscono una misurazione specifica della macchina.</small>` : `<p class="micro-copy">Nessuna fonte online associata: profilo manuale o ancora da completare.</p>`}</section>
-        <div class="coach-modal-actions"><button type="button" class="ghost-button" data-lab-analyze="${escapeHtml(item.id)}">Analizza metadati</button><button type="button" class="ghost-button" data-lab-edit="${escapeHtml(item.id)}">Modifica</button><button type="button" class="gold-button" data-lab-add-sheet="${escapeHtml(item.id)}">Aggiungi alla scheda</button><button type="button" class="ghost-button" data-lab-duplicate="${escapeHtml(item.id)}">Duplica</button><button type="button" class="danger-button" data-lab-delete="${escapeHtml(item.id)}">Archivia</button></div>
+        <div class="coach-modal-actions"><button type="button" class="ghost-button" data-lab-analyze="${escapeHtml(item.id)}">Analizza metadati</button><button type="button" class="ghost-button" data-lab-edit="${escapeHtml(item.id)}">Modifica</button>${item.status==="archived"?`<button type="button" class="gold-button" data-lab-restore="${escapeHtml(item.id)}">Ripristina</button>`:`<button type="button" class="gold-button" data-lab-add-sheet="${escapeHtml(item.id)}">Aggiungi alla scheda</button><button type="button" class="ghost-button" data-lab-duplicate="${escapeHtml(item.id)}">Duplica</button><button type="button" class="danger-button" data-lab-delete="${escapeHtml(item.id)}">Archivia</button>`}</div>
       </section></div>`;
     }
 
@@ -10017,11 +10054,11 @@ function sanitizeForFirestore(value) {
         return profile ? technicalProfileDetailHtml(profile) : `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>Profilo non trovato</h3>${close}</section></div>`;
       }
       if (type === "technical-exercise-edit") {
-        const profile = technicalExerciseLibrary().find((item) => item.id === coachProgramUi.modalData.exerciseId) || null;
+        const profile = technicalExerciseLibrary(true).find((item) => item.id === coachProgramUi.modalData.exerciseId) || null;
         return technicalExerciseEditorHtml(profile);
       }
       if (type === "technical-exercise-delete") {
-        const profile = technicalExerciseLibrary().find((item) => item.id === coachProgramUi.modalData.exerciseId);
+        const profile = technicalExerciseLibrary(true).find((item) => item.id === coachProgramUi.modalData.exerciseId);
         const usage = technicalProfileUsage(coachProgramUi.modalData.exerciseId);
         const message = usage.length
           ? `Questo esercizio è collegato a ${usage.length} ${usage.length === 1 ? "scheda" : "schede"}. Verrà nascosto dai nuovi inserimenti, mentre i riferimenti storici resteranno validi.`
@@ -10105,7 +10142,7 @@ function sanitizeForFirestore(value) {
       }
       if (type === "exercise-note") {
         const program=programRepository.getProgramById(coachProgramUi.programId), sheetId=coachProgramUi.modalData.sheetId||coachProgramUi.sheetId, exercise=programRepository.getExerciseById(program?.id,sheetId,coachProgramUi.modalData.exerciseId), weekNumber=Number(coachProgramUi.modalData.weekNumber)||1, prescription=exercise?coachWeekPrescription(exercise,weekNumber):{};
-        return `<div class="coach-modal-backdrop"><section class="coach-modal coach-note-modal"><div class="row"><h3>${escapeHtml(displayExerciseName(exercise?.name||"Nota esercizio"))}</h3>${close}</div><label>Aggiungi nota all’atleta<textarea id="coachExerciseNote" rows="7" placeholder="Tecnica, indicazioni e dettagli per l’atleta…">${escapeHtml(prescription.note||"")}</textarea></label><div class="coach-modal-actions"><button class="gold-button" data-coach-modal-save>✓ Conferma</button></div></section></div>`;
+        return `<div class="coach-modal-backdrop"><section class="coach-modal coach-note-modal"><div class="row"><h3>${escapeHtml(displayExerciseName(exercise?.name||"Nota esercizio"))}</h3>${close}</div><label>Aggiungi nota all’atleta<textarea id="coachExerciseNote" rows="7" placeholder="Tecnica, indicazioni e dettagli per l’atleta…">${escapeHtml(prescription.note||"")}</textarea></label><p class="micro-copy">La nota viene sincronizzata su tutte le settimane del programma.</p><div class="coach-modal-actions"><button class="gold-button" data-coach-modal-save>✓ Conferma</button></div></section></div>`;
       }
       if (type === "exercise-som") {
         const program=programRepository.getProgramById(coachProgramUi.programId), sheetId=coachProgramUi.modalData.sheetId||coachProgramUi.sheetId, exercise=programRepository.getExerciseById(program?.id,sheetId,coachProgramUi.modalData.exerciseId);
@@ -10516,13 +10553,19 @@ function sanitizeForFirestore(value) {
     // volume, recuperi e biomeccanica: non vedeva le note scritte sotto gli
     // esercizi, le serie gia' registrate ne' RPE/RIR effettivi, quindi non
     // poteva suggerire esercizi o progressioni. Qui si aggiunge quel contesto.
-    let coachAiJournalMemo = { at: 0, rows: null };
+    let coachAiJournalMemo = { at: 0, userId: "", rows: null };
     function coachAiHistoryJournalRows() {
       const now = Date.now();
-      if (coachAiJournalMemo.rows && now - coachAiJournalMemo.at < 1500) return coachAiJournalMemo.rows;
+      const userId=String(cloudUser?.uid||state.profile.account?.uid||"");
+      if (coachAiJournalMemo.rows && coachAiJournalMemo.userId===userId && now - coachAiJournalMemo.at < 1500) return coachAiJournalMemo.rows;
       let rows = [];
-      try { rows = readWorkoutJournal(); } catch (error) { rows = []; }
-      coachAiJournalMemo = { at: now, rows };
+       try {
+         rows = readWorkoutJournal().filter((session)=>{
+           if(!session||session.deletedAt||session.status==="draft")return false;
+           return !userId||!session.userId||String(session.userId)===userId;
+         });
+       } catch (error) { rows = []; }
+      coachAiJournalMemo = { at: now, userId, rows };
       return rows;
     }
 
@@ -10584,7 +10627,8 @@ function sanitizeForFirestore(value) {
         });
       };
       (journalRows || []).forEach((session) => scan(session, "journal"));
-      ((state.training && state.training.sessions) || []).forEach((session) => scan(session, "storico"));
+      const userId=String(cloudUser?.uid||state.profile.account?.uid||"");
+      ((state.training && state.training.sessions) || []).filter((session)=>session&&!session.deletedAt&&session.status!=="draft"&&(!userId||!session.userId||String(session.userId)===userId)).forEach((session) => scan(session, "storico"));
       const dated = entries.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
       const best = entries.filter((entry) => Number.isFinite(entry.kg) && entry.kg > 0)
         .sort((a, b) => (b.kg - a.kg) || ((b.reps || 0) - (a.reps || 0)))[0] || null;
@@ -12600,7 +12644,7 @@ function sanitizeForFirestore(value) {
       document.querySelectorAll("[data-lab-create]").forEach((button) => button.addEventListener("click", () => openCoachModalLocally("technical-exercise-edit", { exerciseId:"" })));
       const labSection=document.querySelector(".exercise-lab");
       if(labSection&&!labSection.dataset.openDelegated){labSection.dataset.openDelegated="1";labSection.addEventListener("click",(event)=>{const open=event.target.closest("[data-lab-open]");if(open)openCoachModalLocally("technical-profile",{exerciseId:open.dataset.labOpen});});}
-      document.querySelectorAll("[data-lab-edit]").forEach((button) => button.addEventListener("click", () => { openCoachModal("technical-exercise-edit", { exerciseId:button.dataset.labEdit }); render(); }));
+      document.querySelectorAll("[data-lab-edit]").forEach((button) => button.addEventListener("click", () => openCoachModalLocally("technical-exercise-edit", { exerciseId:button.dataset.labEdit })));
       document.querySelectorAll("[data-lab-analyze]").forEach((button) => button.addEventListener("click", () => {
         const profile = technicalExerciseLibrary().find((item) => item.id === button.dataset.labAnalyze);
         if (!profile) return;
@@ -12622,8 +12666,14 @@ function sanitizeForFirestore(value) {
         openCoachModal("technical-profile", { exerciseId:copy.id }); render(); showToast("Esercizio custom duplicato.");
       }));
       document.querySelectorAll("[data-lab-delete]").forEach((button) => button.addEventListener("click", () => {
-        openCoachModal("technical-exercise-delete", { exerciseId:button.dataset.labDelete });
-        render();
+        openCoachModalLocally("technical-exercise-delete", { exerciseId:button.dataset.labDelete });
+      }));
+      document.querySelectorAll("[data-lab-restore]").forEach((button)=>button.addEventListener("click",()=>{
+        const id=button.dataset.labRestore,record=window.BarbellDivaMasterLibrary.resolve(state.masterExerciseLibrary,id);
+        if(!record)return showToast("Esercizio non trovato.","error");
+        state.masterExerciseLibrary=window.BarbellDivaMasterLibrary.upsert(state.masterExerciseLibrary,{...record,status:"active"});
+        invalidateTechnicalLibraryCache();saveState({immediate:true});
+        closeCoachModal();render();showToast("Esercizio ripristinato nella libreria.");
       }));
       document.querySelectorAll("[data-toggle-athlete-view]").forEach((button) => {
         button.addEventListener("click", () => {
@@ -12839,24 +12889,27 @@ function sanitizeForFirestore(value) {
       const libraryMuscle = document.getElementById("exerciseLibraryMuscle");
       if (libraryMuscle) libraryMuscle.addEventListener("change", () => { coachProgramUi.libraryMuscle = libraryMuscle.value; render(); });
       document.querySelectorAll("[data-library-add]").forEach((button) => button.addEventListener("click", () => {
+        if (!claimLibraryAddAction(button)) return;
         const { program, sheet } = ensureCoachProgramSelection();
         rememberExerciseState(program.id, sheet.id);
         const replacementId=coachProgramUi.modalData?.replaceExerciseId||""; const current=replacementId?programRepository.getExerciseById(program.id,sheet.id,replacementId):null;
         const data={ name: button.dataset.libraryAdd, muscle: button.dataset.libraryGroup, som: button.dataset.libraryGroup, prescription: current?.prescription || { sets: null, reps: parseReps(""), rir: parseRir(""), rest: parseRest({ seconds: 90 }), tempo: parseTempo(""), technique: parseTechnique("normal"), prescribedLoad: parsePrescribedLoad(null) }, progression:current?.progression, note:current?.note||"", metadata: { ...(current?.metadata||{}), custom: false } };
         const created = current ? programRepository.updateExercise(program.id,sheet.id,replacementId,data,{immediate:true,forceLocked:true}) : programRepository.createExercise(program.id, sheet.id, data, { immediate: true });
         if (created.ok) { closeCoachModal(); discardCoachDraft(program.id, sheet.id); showToast(current?"Esercizio sostituito; prescrizione e progressione conservate.":"Esercizio aggiunto."); }
+        else { button.dataset.adding = "0"; button.disabled = false; }
         render();
       }));
       document.querySelectorAll("[data-library-profile]").forEach((button) => button.addEventListener("click", () => {
+        if (!claimLibraryAddAction(button)) return;
         const profile = technicalExerciseLibrary().find((item) => item.id === button.dataset.libraryProfile);
         const kind=coachProgramUi.pendingAddKind||"exercise";
         const result = profile ? addTechnicalExerciseToActiveSheet(profile) : {ok:false};
         const kindLabel={superset:"Superserie",multiset:"Multiserie",alternative:"Alternativa",circuit:"Circuito"}[kind];
         if (result.ok) { closeCoachModal(); render(); showToast(kind==="exercise"?"Esercizio aggiunto dalla Libreria.":`${kindLabel} aggiunta alla scheda.`); }
-        else showToast("Esercizio non aggiunto.");
+        else { button.dataset.adding = "0"; button.disabled = false; showToast("Esercizio non aggiunto."); }
       }));
       const customExerciseButton = document.querySelector("[data-exercise-custom]");
-      if (customExerciseButton) customExerciseButton.addEventListener("click", () => { openCoachModal("technical-exercise-edit", { exerciseId:"", addToSheet:true }); render(); });
+      if (customExerciseButton) customExerciseButton.addEventListener("click", () => openCoachModalLocally("technical-exercise-edit", { exerciseId:"", addToSheet:true }));
       document.querySelectorAll("[data-coach-sheet-field]").forEach((field) => {
         // DEDUP: evita handler duplicati se bindScreen() viene chiamato più volte
         if (field.dataset.coachSheetBound) return;
@@ -13509,15 +13562,22 @@ function sanitizeForFirestore(value) {
       if (activeScreen !== "coach" || !coachProgramUi.modal) {
         if (host.childElementCount) coachProgramUi.modalDiagnostics.unmounts += 1;
         host.replaceChildren();
+        host.dataset.coachModalType = "";
         return;
       }
-      if (host.childElementCount > 0 && host.querySelector(".coach-modal")) return;
+      if (host.childElementCount > 0 && (host.dataset.coachModalType === coachProgramUi.modal || (!host.dataset.coachModalType && host.querySelector(".coach-modal")))) return;
+      if (host.childElementCount > 0) {
+        coachProgramUi.modalDiagnostics.unmounts += 1;
+        host.replaceChildren();
+      }
       coachModalRenderingPortal = true;
       const html = coachUiModalHtml();
       coachModalRenderingPortal = false;
       host.innerHTML = html;
+      host.dataset.coachModalType = coachProgramUi.modal;
       coachProgramUi.modalDiagnostics.mounts += 1;
       const elapsed=Number((performance.now()-started).toFixed(2));coachProgramUi.modalDiagnostics.operationDurations.modalMount=elapsed;host.dataset.lastMountMs=String(elapsed);
+      bindLocallyRenderedCoachModal();
     }
 
     function updateProgressionWeekFromInput(input) {
@@ -13533,6 +13593,8 @@ function sanitizeForFirestore(value) {
       if(field==="type")week.type=input.value;
       if(field==="notes")week.notes=input.value;
       week.source="manual";
+      week.weekNumber=Number(week.weekNumber||week.week||index+1);
+      coachProgramUi.modalData.editedWeekIndexes=[...new Set([...(coachProgramUi.modalData.editedWeekIndexes||[]),index])];
       coachProgramUi.modalData.weeks=weeks;
       input.closest("tr")?.querySelector(".phase4-badge")?.replaceChildren("Manuale");
     }
@@ -13545,6 +13607,13 @@ function sanitizeForFirestore(value) {
       });
     }
 
+    function claimLibraryAddAction(button) {
+      if (!button || button.dataset.adding === "1") return false;
+      button.dataset.adding = "1";
+      button.disabled = true;
+      return true;
+    }
+
     function updateProgressionPreviewInPlace(host) {
       const started=performance.now();
       const {program}=ensureCoachProgramSelection();
@@ -13552,7 +13621,13 @@ function sanitizeForFirestore(value) {
       const exercise=programRepository.getExerciseById(program?.id,sheet?.id,coachProgramUi.modalData.exerciseId);
       const templateId=host.querySelector("#progressionTemplateId")?.value||"maintenance";
       const duration=Math.max(1,Number(host.querySelector("#progressionDuration")?.value||programWeekCount(program,sheet)));
-      const weeks=generateProgressionWeeks(exercise,templateId,duration);
+      const persistedWeeks=exercise?.progression?.weeks||[];
+      const draftWeeks=coachProgramUi.modalData.weeks||[];
+      const existing=Array.from({length:Math.max(persistedWeeks.length,draftWeeks.length)},(_,index)=>{
+        const persisted=persistedWeeks[index],draft=draftWeeks[index];
+        return draft?.source==="manual"?draft:(persisted?.source==="manual"?persisted:(draft||persisted));
+      });
+      const weeks=generateProgressionWeeks(exercise,templateId,duration,{},existing);
       coachProgramUi.modalData.weeks=weeks;
       coachProgramUi.modalData.templateId=templateId;
       const body=host.querySelector("[data-progression-weeks-body]");
@@ -13619,14 +13694,24 @@ function sanitizeForFirestore(value) {
       host.querySelector("[data-lab-add-sheet]")?.addEventListener("click",(event)=>{const profile=technicalExerciseLibrary().find((item)=>item.id===event.currentTarget.dataset.labAddSheet),result=profile?addTechnicalExerciseToActiveSheet(profile):{ok:false};if(result.ok){closeCoachModal();render();showToast("Esercizio aggiunto alla scheda.");}});
       host.querySelector("[data-lab-duplicate]")?.addEventListener("click",(event)=>{const profile=technicalExerciseLibrary().find((item)=>item.id===event.currentTarget.dataset.labDuplicate);if(!profile)return;const copy=upsertTechnicalExercise({...clone(profile),id:stableId("technical-custom",profile.name,Date.now()),name:`${profile.name} copia`,isCustom:true,origin:"custom"});openCoachModalLocally("technical-exercise-edit",{exerciseId:copy.id});});
       host.querySelector("[data-lab-delete]")?.addEventListener("click",(event)=>openCoachModalLocally("technical-exercise-delete",{exerciseId:event.currentTarget.dataset.labDelete}));
+      if(host.dataset.localClickBound!=="1"){
+       host.dataset.localClickBound="1";
       host.addEventListener("click",(event)=>{
+        const restore=event.target.closest("[data-lab-restore]");
+        if(restore){
+          const id=restore.dataset.labRestore,record=window.BarbellDivaMasterLibrary.resolve(state.masterExerciseLibrary,id);
+          if(!record)return showToast("Esercizio non trovato.","error");
+          state.masterExerciseLibrary=window.BarbellDivaMasterLibrary.upsert(state.masterExerciseLibrary,{...record,status:"active"});
+          invalidateTechnicalLibraryCache();saveState({immediate:true});closeCoachModal();render();showToast("Esercizio ripristinato nella libreria.");return;
+        }
         const choice=event.target.closest("[data-progression-confirm-choice]");if(!choice)return;
         const confirmation=coachProgramUi.modalData.confirmation;if(!confirmation)return;
         const weekIndex=confirmation.indices[confirmation.cursor];confirmation.decisions[weekIndex]=choice.dataset.progressionConfirmChoice;confirmation.cursor+=1;
         if(confirmation.cursor<confirmation.indices.length)return renderProgressionConfirmation(host);
         host.querySelector("[data-progression-confirm-panel]").hidden=true;
          saveCoachUiModal();if(!coachProgramUi.modal)refreshCoachAfterLocalModal();
-      });
+       });
+      }
       const updateLibraryResults=()=>{
         const list=host.querySelector(".technical-picker-list");if(!list)return;
         const replacing=!!coachProgramUi.modalData?.replaceExerciseId;
@@ -13636,9 +13721,9 @@ function sanitizeForFirestore(value) {
       search?.addEventListener("input",()=>{coachProgramUi.libraryQuery=search.value;clearTimeout(coachProgramUi.librarySearchTimer);coachProgramUi.librarySearchTimer=setTimeout(updateLibraryResults,120);});
       host.querySelector("#exerciseLibraryMuscle")?.addEventListener("change",(event)=>{coachProgramUi.libraryMuscle=event.target.value;updateLibraryResults();});
       host.querySelector("#exerciseLibrarySpecific")?.addEventListener("change",(event)=>{coachProgramUi.librarySpecific=event.target.value;updateLibraryResults();});
-      host.querySelector(".technical-picker-list")?.addEventListener("click",(event)=>{
-        const profileButton=event.target.closest("[data-library-profile]");
-         if(profileButton){const profile=technicalExerciseLibrary().find((item)=>item.id===profileButton.dataset.libraryProfile),result=profile?addTechnicalExerciseToActiveSheet(profile):{ok:false};if(result.ok){const replacing=!!coachProgramUi.modalData?.replaceExerciseId;closeCoachModal();showToast(replacing?"Esercizio sostituito; dati conservati.":"Esercizio aggiunto.");refreshCoachAfterLocalModal();}return;}
+       host.querySelector(".technical-picker-list")?.addEventListener("click",(event)=>{
+         const profileButton=event.target.closest("[data-library-profile]");
+          if(profileButton){if(!claimLibraryAddAction(profileButton))return;const profile=technicalExerciseLibrary().find((item)=>item.id===profileButton.dataset.libraryProfile),result=profile?addTechnicalExerciseToActiveSheet(profile):{ok:false};if(result.ok){const replacing=!!coachProgramUi.modalData?.replaceExerciseId;closeCoachModal();showToast(replacing?"Esercizio sostituito; dati conservati.":"Esercizio aggiunto.");refreshCoachAfterLocalModal();}else{profileButton.dataset.adding="0";profileButton.disabled=false;}return;}
         const info=event.target.closest("[data-lab-open]");if(info)openCoachModalLocally("technical-profile",{exerciseId:info.dataset.labOpen});
       });
     }
@@ -13921,9 +14006,11 @@ function sanitizeForFirestore(value) {
         data.manualOverrides = { ...(existing?.manualOverrides || {}), primaryMuscles:data.primaryMuscles, secondaryMuscles:data.secondaryMuscles, stabilizers:data.stabilizers, equipment:data.equipment, category:data.category, bodyPosition:data.bodyPosition, trajectory:data.trajectory, rangeOfMotion:data.rangeOfMotion, forceDirection:data.forceDirection, loadApplication:data.loadApplication, cablePosition:data.cablePosition, jointActions:data.jointActions, cues:data.cues, commonErrors:data.commonErrors, resistanceProfile, stimulusProfile, ratings, programming, updatedAt:data.updatedAt, confirmedByCoach:true };
         data.manualOverrides.perceivedHardestRom = data.perceivedHardestRom;
         const saved = upsertTechnicalExercise(data);
-        if (coachProgramUi.modalData.addToSheet && program && coachProgramUi.sheetId) addTechnicalExerciseToActiveSheet(saved);
+        let addedToSheet=true;
+        if (coachProgramUi.modalData.addToSheet && program && coachProgramUi.sheetId) addedToSheet=!!addTechnicalExerciseToActiveSheet(saved).ok;
         closeCoachModal();
         updateCoachSaveIndicator("saved");
+        if(!addedToSheet)return showToast("Profilo salvato, ma non è stato aggiunto alla scheda: riaprilo dalla libreria.","error");
         return showToast(existing ? "✓ Profilo tecnico salvato e finestra chiusa." : "✓ Esercizio custom salvato e finestra chiusa.");
       }
       if (type === "folder-new") {
@@ -14034,15 +14121,20 @@ function sanitizeForFirestore(value) {
         if (!current || !targetSheet) return showToast("Esercizio non trovato.");
         const templateId = document.getElementById("progressionTemplateId")?.value || coachProgramUi.modalData.templateId || "maintenance";
         const duration = Math.max(1, Number(document.getElementById("progressionDuration")?.value || programWeekCount(program, targetSheet)));
-        const mode = document.getElementById("progressionApplyMode")?.value || "replace";
-        const weeks = (coachProgramUi.modalData.weeks || generateProgressionWeeks(current, templateId, duration)).slice(0, duration);
-        const existing=(current.progression?.weeks||[]).slice(0,duration);
+        const mode = document.getElementById("progressionApplyMode")?.value || "empty-only";
+        const previewWeeks = (coachProgramUi.modalData.weeks || generateProgressionWeeks(current, templateId, duration)).slice(0, duration);
+        const editedWeeks=new Set((coachProgramUi.modalData.editedWeekIndexes||[]).map(Number));
+        const weeks=generateProgressionWeeks(current,templateId,duration).map((week,index)=>editedWeeks.has(index)?(previewWeeks[index]||week):week);
+        const persistedWeeks=(current.progression?.weeks||[]).slice(0,duration);
+        const existing=Array.from({length:duration},(_,index)=>editedWeeks.has(index)?previewWeeks[index]:(previewWeeks[index]?.source==="manual"?previewWeeks[index]:(persistedWeeks[index]||previewWeeks[index]||null)));
         let generated=weeks;
-        if(mode==="empty-only") generated=generateProgressionWeeks(current,templateId,duration,{},existing).map((week,index)=>existing[index]?.source==="manual"?existing[index]:week);
+        if(mode==="empty-only") generated=weeks.map((week,index)=>existing[index]?.source==="manual"?existing[index]:week);
         if(mode==="confirm-each") {
           const confirmation=coachProgramUi.modalData.confirmation,host=document.getElementById("coachModalPortalHost");
-          if(!confirmation&&beginProgressionConfirmation(host,current,weeks,existing))return;
+          const confirmationExisting=existing.map((week,index)=>editedWeeks.has(index)?null:week);
+          if(!confirmation&&beginProgressionConfirmation(host,current,weeks,confirmationExisting))return;
           generated=weeks.map((week,index)=>{
+            if(editedWeeks.has(index))return previewWeeks[index]||week;
             const manual=existing[index]?.source==="manual"?existing[index]:null,choice=confirmation?.decisions?.[index];
             if(!manual)return week;
             if(choice==="replace")return {...week,confirmationDecision:"replace"};
@@ -14140,7 +14232,7 @@ function sanitizeForFirestore(value) {
         const exerciseId=coachProgramUi.modalData.exerciseId, weekNumber=Number(coachProgramUi.modalData.weekNumber)||1;
         const exercise=programRepository.getExerciseById(program?.id,sheetId,exerciseId);
         if(!exercise)return showToast("Esercizio non trovato.");
-        const patch=inlineExercisePatch(exercise,"note",document.getElementById("coachExerciseNote")?.value||"",weekNumber);
+        const patch=sharedExerciseNotePatch(exercise,document.getElementById("coachExerciseNote")?.value||"",programWeekCount(program,programRepository.getSheetById(program.id,sheetId)));
         const result=programRepository.updateExercise(program.id,sheetId,exerciseId,patch,{immediate:true,forceLocked:true});
         if(!result.ok)return showToast("Non sono riuscito a salvare la nota.");
         discardCoachDraft(program.id,sheetId);closeCoachModal();render();return showToast("Nota salvata e visibile all’atleta.");
