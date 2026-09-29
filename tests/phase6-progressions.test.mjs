@@ -19,6 +19,14 @@ const result = vm.runInContext(`(() => {
   const s=programRepository.createSheet(p.id,{id:"s6",code:"A",name:"Forza"},{save:false}).value;
   const e=programRepository.createExercise(p.id,s.id,{id:"e6",name:"Military",muscle:"Spalle",prescription:{sets:3,reps:"8-12",rir:"2",rest:{seconds:120},prescribedLoad:{value:null,unit:"kg"}}},{save:false}).value;
   check("libreria essenziale con template aggiunti", progressionTemplates().length === 6 && progressionTemplateById("workbook-double-progression") && progressionTemplateById("workbook-technical") && progressionTemplateById("workbook-volume-accumulation") && progressionTemplateById("rep-range-progression") && progressionTemplateById("undulating-reps") && progressionTemplateById("intensification-wave"));
+  const precedenceExercise={id:"precedence",name:"Squat",sets:"4",reps:"12",prescription:{sets:4,reps:parseReps("12")},progression:{weeks:[{week:1,weekNumber:1,sets:2,reps:parseReps("6"),source:"auto"},{week:2,weekNumber:2,sets:null,reps:parseReps(""),source:"manual"}]}};
+  const precedenceWeek1=coachWeekPrescription(precedenceExercise,1),precedenceWeek2=coachWeekPrescription(precedenceExercise,2);
+  check("settimana progressione prevale sui default",precedenceWeek1.sets===2&&precedenceWeek1.reps==="6");
+  check("campi settimanali vuoti non ricadono sui default",precedenceWeek2.sets===""&&precedenceWeek2.reps==="");
+  const athleteWeek1=exercisePrescriptionForTrainingWeek(precedenceExercise,1),athleteWeek2=exercisePrescriptionForTrainingWeek(precedenceExercise,2);
+  check("prescrizione atleta usa i valori della settimana",athleteWeek1.sets==="2"&&athleteWeek1.reps==="6");
+  check("prescrizione atleta non ripristina i default",athleteWeek2.sets===""&&athleteWeek2.reps==="");
+  check("valori base conservati",precedenceExercise.prescription.sets===4&&formatReps(precedenceExercise.prescription.reps)==="12");
   check("4 settimane dinamiche", generateProgressionWeeks(e,"maintenance",4).length===4);
   check("8 settimane dinamiche", generateProgressionWeeks(e,"double-progression",8).length===8);
   const dbl=generateProgressionWeeks(e,"double-progression",8,{repMin:8,repMax:10}); check("doppia progressione", dbl.length===8 && dbl.every(w=>w.reps.min===8 && w.reps.max===10 && w.prescribedLoad.value===null));
