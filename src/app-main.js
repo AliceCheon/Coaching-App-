@@ -2135,6 +2135,13 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       const techniqueByKind={superset:"superset",multiset:"giant-set",alternative:"normal",circuit:"giant-set"};
       const replacementId=coachProgramUi.modalData?.replaceExerciseId||"";
       const replacement=replacementId?programRepository.getExerciseById(program.id,sheet.id,replacementId):null;
+      // v14763 · ANTI-DUPLICATO: se lo stesso clic arriva a più listener (i pulsanti del
+      // modale venivano ricollegati a ogni ridisegno), l'esercizio veniva aggiunto 2-3 volte.
+      const addKey = [program.id, sheet.id, item.id, replacementId, addKind].join("|");
+      const addNow = Date.now();
+      if (!replacement && addKey === addTechnicalExerciseToActiveSheet.lastKey && addNow - addTechnicalExerciseToActiveSheet.lastAt < 900) return { ok:true, deduped:true };
+      addTechnicalExerciseToActiveSheet.lastKey = addKey;
+      addTechnicalExerciseToActiveSheet.lastAt = addNow;
       const exerciseData = {
         masterExerciseId:item.id,
         name:item.name,
@@ -3419,10 +3426,20 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
             // avvio qualunque programma creato dall'utente con fase "intensità";
             // inoltre, tolta la fase, il replacement non veniva mai inserito.
             // Ora si sostituisce per ID del seed: i programmi dell'utente restano.
-            const seededIds = new Set([seeded.id].filter(Boolean));
-            const replacedPrograms = (loaded.programs || []).map((program) => (seededIds.has(program.id) ? replacement : program));
-            if (!replacedPrograms.some((program) => program.id === seeded.id)) replacedPrograms.push(replacement);
-            loaded.programs = replacedPrograms;
+            // v14763 · se il programma esiste già in locale NON va più sostituito con la copia
+            // vergine della libreria (ristampata con l'orario corrente vinceva sempre sui merge
+            // e cancellava le modifiche: "torna sempre la stessa scheda"). Si aggiungono solo le
+            // schede mancanti (per codice), senza toccare quelle esistenti.
+            const existingLocal = (loaded.programs || []).find((program) => program.id === seeded.id);
+            if (!existingLocal) {
+              loaded.programs = [...(loaded.programs || []), replacement];
+            } else {
+              const haveCodes = new Set((existingLocal.sheets || []).map((sheet) => String(sheet.code || sheet.name || "").trim().toLowerCase()));
+              const missing = (replacement.sheets || []).filter((sheet) => !haveCodes.has(String(sheet.code || sheet.name || "").trim().toLowerCase()));
+              if (missing.length) {
+                loaded.programs = (loaded.programs || []).map((program) => (program.id === seeded.id ? { ...program, sheets: [...(program.sheets || []), ...missing], updatedAt: stamp } : program));
+              }
+            }
             loaded.meta = {
               ...(loaded.meta || {}),
               intensitaNuovoBuild: INTENSITA_NUOVO_BUILD,
@@ -5618,7 +5635,7 @@ function sanitizeForFirestore(value) {
           // Riprova ANCHE il download: se il primo caricamento cloud al boot
           // era fallito (rete, auth, Firestore), il solo re-upload non basta
           // a far arrivare sul PC le sedute salvate dal telefono.
-          loadCloudState({ silent: true }).then((loaded) => { if (loaded) render(); });
+          loadCloudState({ silent: true }).then((loaded) => { if (loaded) renderCloudSoon(); });
         }
       }
     }, 45000);
@@ -6708,7 +6725,10 @@ function sanitizeForFirestore(value) {
       if (tag !== "INPUT" && tag !== "TEXTAREA" && !el.isContentEditable) return false;
       if (tag === "INPUT" && ["checkbox", "radio", "color", "range", "button", "submit"].includes(el.type)) return false;
       const screen = document.getElementById("screen");
-      return !!(screen && screen.contains(el));
+      // v14763 · anche i modali (Aggiungi esercizio, note, progressioni) vivono
+      // fuori da #screen, nel portale: scrivere lì non deve essere interrotto.
+      const portal = document.getElementById("coachModalPortalHost");
+      return !!((screen && screen.contains(el)) || (portal && portal.contains(el)));
     }
 
     function captureScreenEditingState(screen) {
@@ -6719,6 +6739,15 @@ function sanitizeForFirestore(value) {
         if (el.id) selector = `#${CSS.escape(el.id)}`;
         else if (el.dataset.editExercise !== undefined && el.dataset.editKey) selector = `[data-edit-exercise="${CSS.escape(el.dataset.editExercise)}"][data-edit-key="${CSS.escape(el.dataset.editKey)}"]`;
         else if (el.dataset.coachSheetField) selector = `[data-coach-sheet-field="${CSS.escape(el.dataset.coachSheetField)}"]`;
+        else {
+          // v14763 · campi inline della tabella schede (serie, reps, RIR, peso, note…):
+          // prima non avevano un selettore, quindi ogni ridisegno faceva perdere
+          // focus e cursore e le lettere successive andavano perse.
+          const parts = [...el.attributes]
+            .filter((attr) => /^data-/.test(attr.name) && !/tooltip|bound|delegated/.test(attr.name) && attr.value !== "")
+            .map((attr) => `[${attr.name}="${CSS.escape(attr.value)}"]`);
+          if (parts.length) selector = `${el.tagName.toLowerCase()}${parts.join("")}`;
+        }
       } catch (_) { return null; }
       if (!selector) return null;
       return { selector, value: el.value, start: el.selectionStart, end: el.selectionEnd, scrollTop: el.scrollTop };
@@ -8960,11 +8989,13 @@ function sanitizeForFirestore(value) {
       const { program } = ensureCoachProgramSelection();
       if (!board || !program) return false;
       const started = performance.now();
+      const boardEditingCapture = captureScreenEditingState(document.getElementById("screen"));
       board.outerHTML = coachProgramBoardHtml(program);
       const next = document.querySelector(".coach-program-board");
       if (next) {
         next.dataset.localDelegated = "1";
         installCoachColumnControls(next);
+        restoreScreenEditingState(boardEditingCapture);
       }
       coachProgramUi.modalDiagnostics.localBoardUpdates = (coachProgramUi.modalDiagnostics.localBoardUpdates || 0) + 1;
       window.__coachPerfMetrics.localBoardUpdates += 1;
@@ -13509,13 +13540,18 @@ function sanitizeForFirestore(value) {
       if (activeScreen !== "coach" || !coachProgramUi.modal) {
         if (host.childElementCount) coachProgramUi.modalDiagnostics.unmounts += 1;
         host.replaceChildren();
+        delete host.dataset.modalType;
         return;
       }
-      if (host.childElementCount > 0 && host.querySelector(".coach-modal")) return;
+      // v14763 · prima, con un modale già montato, il portale usciva sempre qui:
+      // aprire un secondo modale (es. "Crea esercizio custom" dentro "Aggiungi
+      // esercizio") non cambiava nulla a schermo. Ora esce solo se il tipo è lo stesso.
+      if (host.childElementCount > 0 && host.querySelector(".coach-modal") && host.dataset.modalType === coachProgramUi.modal) return;
       coachModalRenderingPortal = true;
       const html = coachUiModalHtml();
       coachModalRenderingPortal = false;
       host.innerHTML = html;
+      host.dataset.modalType = coachProgramUi.modal;
       coachProgramUi.modalDiagnostics.mounts += 1;
       const elapsed=Number((performance.now()-started).toFixed(2));coachProgramUi.modalDiagnostics.operationDurations.modalMount=elapsed;host.dataset.lastMountMs=String(elapsed);
     }
@@ -13619,14 +13655,16 @@ function sanitizeForFirestore(value) {
       host.querySelector("[data-lab-add-sheet]")?.addEventListener("click",(event)=>{const profile=technicalExerciseLibrary().find((item)=>item.id===event.currentTarget.dataset.labAddSheet),result=profile?addTechnicalExerciseToActiveSheet(profile):{ok:false};if(result.ok){closeCoachModal();render();showToast("Esercizio aggiunto alla scheda.");}});
       host.querySelector("[data-lab-duplicate]")?.addEventListener("click",(event)=>{const profile=technicalExerciseLibrary().find((item)=>item.id===event.currentTarget.dataset.labDuplicate);if(!profile)return;const copy=upsertTechnicalExercise({...clone(profile),id:stableId("technical-custom",profile.name,Date.now()),name:`${profile.name} copia`,isCustom:true,origin:"custom"});openCoachModalLocally("technical-exercise-edit",{exerciseId:copy.id});});
       host.querySelector("[data-lab-delete]")?.addEventListener("click",(event)=>openCoachModalLocally("technical-exercise-delete",{exerciseId:event.currentTarget.dataset.labDelete}));
-      host.addEventListener("click",(event)=>{
+      // v14763 · il portale è unico e persistente: il listener va registrato UNA volta,
+      // altrimenti a ogni apertura di un modale si sommava e le scelte si ripetevano.
+      if(host.dataset.confirmDelegated!=="1"){host.dataset.confirmDelegated="1";host.addEventListener("click",(event)=>{
         const choice=event.target.closest("[data-progression-confirm-choice]");if(!choice)return;
         const confirmation=coachProgramUi.modalData.confirmation;if(!confirmation)return;
         const weekIndex=confirmation.indices[confirmation.cursor];confirmation.decisions[weekIndex]=choice.dataset.progressionConfirmChoice;confirmation.cursor+=1;
         if(confirmation.cursor<confirmation.indices.length)return renderProgressionConfirmation(host);
         host.querySelector("[data-progression-confirm-panel]").hidden=true;
          saveCoachUiModal();if(!coachProgramUi.modal)refreshCoachAfterLocalModal();
-      });
+      });}
       const updateLibraryResults=()=>{
         const list=host.querySelector(".technical-picker-list");if(!list)return;
         const replacing=!!coachProgramUi.modalData?.replaceExerciseId;
@@ -14038,7 +14076,7 @@ function sanitizeForFirestore(value) {
         const weeks = (coachProgramUi.modalData.weeks || generateProgressionWeeks(current, templateId, duration)).slice(0, duration);
         const existing=(current.progression?.weeks||[]).slice(0,duration);
         let generated=weeks;
-        if(mode==="empty-only") generated=generateProgressionWeeks(current,templateId,duration,{},existing).map((week,index)=>existing[index]?.source==="manual"?existing[index]:week);
+        if(mode==="empty-only") generated=generateProgressionWeeks(current,templateId,duration,{},existing).map((week,index)=>weeks[index]?.source==="manual"?weeks[index]:(existing[index]?.source==="manual"?existing[index]:week));
         if(mode==="confirm-each") {
           const confirmation=coachProgramUi.modalData.confirmation,host=document.getElementById("coachModalPortalHost");
           if(!confirmation&&beginProgressionConfirmation(host,current,weeks,existing))return;
@@ -14257,6 +14295,24 @@ function sanitizeForFirestore(value) {
         return;
       }
       if (!coachProgramUi.modal) refreshCoachAfterLocalModal();
+    }, true);
+
+    // v14763 · "+ Crea esercizio custom" nel modale "Aggiungi esercizio": il pulsante vive nel
+    // portale, ma il gestore veniva agganciato solo a elementi di #screen, quindi il clic non
+    // faceva nulla. Gestione unica, delegata e in capture (come il Salva qui sopra).
+    document.addEventListener("click", (event) => {
+      const button = event.target.closest?.("[data-exercise-custom]");
+      if (!button) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      const previous = coachProgramUi.modalData || {};
+      try {
+        openCoachModalLocally("technical-exercise-edit", { exerciseId: "", addToSheet: true, sheetId: previous.sheetId, replaceExerciseId: previous.replaceExerciseId });
+      } catch (error) {
+        console.error("[v14763] apertura esercizio custom fallita:", error);
+        showToast("Non riesco ad aprire la creazione dell'esercizio custom. Riprova.", "warning");
+      }
     }, true);
 
     document.addEventListener("click", (event) => {
