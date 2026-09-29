@@ -81,11 +81,9 @@
   }
 
   function defaultRir(exercise, setIndex) {
-    const values = String(exercise?.rir || "")
-      .split(/[,/|]/)
-      .map((value) => value.trim())
-      .filter(Boolean);
-    return values[setIndex] || values[values.length - 1] || "";
+    // Il RIR prescritto guida la serie, ma il valore registrato deve essere
+    // inserito dall'atleta: non confondere target e sforzo realmente percepito.
+    return "";
   }
 
   function ensureExerciseLog(active, context, exercise, index) {
