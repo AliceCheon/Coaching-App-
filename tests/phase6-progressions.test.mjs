@@ -18,7 +18,7 @@ const result = vm.runInContext(`(() => {
   const p=programRepository.createProgram({id:"p6",name:"Progressioni",durationWeeks:4,sheets:[]},{save:false}).value;
   const s=programRepository.createSheet(p.id,{id:"s6",code:"A",name:"Forza"},{save:false}).value;
   const e=programRepository.createExercise(p.id,s.id,{id:"e6",name:"Military",muscle:"Spalle",prescription:{sets:3,reps:"8-12",rir:"2",rest:{seconds:120},prescribedLoad:{value:null,unit:"kg"}}},{save:false}).value;
-  check("template library completa", progressionTemplates().length >= 15 && progressionTemplateById("double-progression"));
+  check("template library completa", progressionTemplates().length >= 15 && progressionTemplateById("double-progression") && progressionTemplateById("rep-range-progression") && progressionTemplateById("undulating-reps") && progressionTemplateById("intensification-wave"));
   check("4 settimane dinamiche", generateProgressionWeeks(e,"maintenance",4).length===4);
   check("8 settimane dinamiche", generateProgressionWeeks(e,"double-progression",8).length===8);
   const dbl=generateProgressionWeeks(e,"double-progression",8,{repMin:8,repMax:10}); check("doppia progressione", dbl.length===8 && dbl.every(w=>w.reps.min===8 && w.reps.max===10 && w.prescribedLoad.value===null));
@@ -26,6 +26,19 @@ const result = vm.runInContext(`(() => {
   check("RIR non crescente", (()=>{const rw=generateProgressionWeeks(e,"rir-progression",4); return rw.length===4 && rw.every((w,i)=>Number(w.rir.min)<=3 && (i===0 || Number(w.rir.min)<=Number(rw[i-1].rir.min))) && rw.some(w=>String(w.notes||"").includes("RIR"));})());
   check("top set e backoff", generateProgressionWeeks(e,"top-set-backoff",4)[0].segments.length===2);
   check("deload tipizzato", generateProgressionWeeks(e,"deload",4).every(w=>w.type==="deload"));
+  const wbExercise={...e,prescription:{sets:3,reps:"8-12",rir:"2",rest:{seconds:90},prescribedLoad:{value:null,unit:"kg"},tempo:{label:"fermo tecnico"}}};
+  const wbDouble=generateProgressionWeeks(wbExercise,"workbook-double-progression",8);
+  check("appunti palestra: doppia progressione non inventa carichi o RIR",wbDouble.length===8&&wbDouble.every(w=>w.sets===3&&w.reps.min===8&&w.reps.max===12&&w.rir.min===2&&w.prescribedLoad.value===null&&/limite alto/.test(w.notes)));
+  const wbTechnical=generateProgressionWeeks(wbExercise,"workbook-technical",8);
+  check("appunti palestra: progressione tecnica resta nel range e conserva il tempo",wbTechnical.length===8&&wbTechnical.every(w=>w.sets===3&&w.reps.min>=8&&w.reps.max<=12&&w.tempo.label==="fermo tecnico"&&/tecnica/.test(w.notes)));
+  const wbAccumulation=generateProgressionWeeks(wbExercise,"workbook-volume-accumulation",8,{setsIncrement:1,maxSets:5});
+  check("appunti palestra: accumulo di serie con scarico periodico",wbAccumulation.length===8&&wbAccumulation[0].sets===3&&wbAccumulation[1].sets===4&&wbAccumulation[2].sets===5&&wbAccumulation[3].type==="deload"&&wbAccumulation[3].sets===2&&wbAccumulation[4].sets===3&&wbAccumulation.every(w=>w.reps.min===8&&w.reps.max===12&&w.prescribedLoad.value===null));
+  const repRange=generateProgressionWeeks(wbExercise,"rep-range-progression",5);
+  check("rep range: step progressivo conserva carico serie e RIR",repRange.map(w=>w.reps.min).join(",")==="8,9,10,11,12"&&repRange.every(w=>w.sets===3&&w.reps.min===w.reps.max&&w.rir.min===2&&w.prescribedLoad.value===null));
+  const undulating=generateProgressionWeeks(wbExercise,"undulating-reps",6,{repTargets:[12,8,10]});
+  check("ondulata: alterna target configurati senza inventare carichi",undulating.map(w=>w.reps.min).join(",")==="12,8,10,12,8,10"&&undulating.every(w=>w.sets===3&&w.rir.min===2&&w.prescribedLoad.value===null));
+  const intensification=generateProgressionWeeks(wbExercise,"intensification-wave",6,{repRanges:["10-12","8-10","6-8"]});
+  check("intensificazione: cambia blocco reps ogni due settimane senza prescrivere kg",intensification.map(w=>String(w.reps.min)+"-"+String(w.reps.max)).join(",")==="10-12,10-12,8-10,8-10,6-8,6-8"&&intensification.every(w=>w.sets===3&&w.rir.min===2&&w.prescribedLoad.value===null));
   programRepository.updateProgram(p.id,{durationWeeks:8},{save:false}); coachProgramUi.programId=p.id; coachProgramUi.sheetId=s.id; coachProgramUi.modal="progression-editor"; coachProgramUi.modalData={exerciseId:e.id,weeks:dbl,templateId:"double-progression"}; saveCoachUiModal();
   const saved=programRepository.getExerciseById(p.id,s.id,e.id); check("salvataggio repository", saved.progression.weeks.length===8 && saved.progression.templateId==="double-progression");
   const before=saved.progression.weeks[0].sets; saved.progression.weeks[0].sets=4; saved.progression.weeks[0].source="manual"; coachProgramUi.modalData={exerciseId:e.id,weeks:saved.progression.weeks,templateId:"double-progression"}; coachProgramUi.modal="progression-editor"; saveCoachUiModal();
