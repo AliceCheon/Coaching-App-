@@ -20,10 +20,18 @@
   function matchesExercise(programExercise,logged,session={}){
     const sourceId=String(logged.sourceExerciseId||logged.programExerciseId||logged.exerciseId||"");
     if(sourceId&&sourceId===String(programExercise.id))return true;
+    // Gli ID espliciti sono autoritativi: non ricadere sul nome se indicano
+    // un'altra istanza (altrimenti omonimi di altre schede contaminano il trend).
+    if(sourceId)return false;
+    const sessionProgramId=String(session.programId||session.program?.id||"");
+    if(sessionProgramId&&programExercise.programId&&sessionProgramId!==String(programExercise.programId))return false;
+    const sessionSheetId=String(session.sheetId||session.workoutId||session.sessionId||"");
+    if(sessionSheetId&&programExercise.sheetId&&sessionSheetId!==String(programExercise.sheetId))return false;
     const masterId=String(logged.masterExerciseId||logged.metadata?.masterExerciseId||"");
     if(masterId&&programExercise.masterRecord?.id&&masterId===String(programExercise.masterRecord.id)){
       return variantRole(logged)===programExercise.variantRole;
     }
+    if(masterId&&programExercise.masterRecord?.id&&masterId!==String(programExercise.masterRecord.id))return false;
     const a=norm(programExercise.name),b=norm(logged.name||logged.exerciseName);
     if(!a||!b||a!==b)return false;
     const loggedRole=variantRole(logged);
