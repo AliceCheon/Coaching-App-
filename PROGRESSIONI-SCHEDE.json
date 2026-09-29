@@ -1,0 +1,168 @@
+{
+  "version": "v147.53-progression-schemes",
+  "generatedAt": "2026-09-29T08:26:19.007Z",
+  "groups": [
+    {
+      "key": "B program 1|A",
+      "phase": "B program 1",
+      "letter": "A",
+      "focus": "Glutei, Femorali",
+      "weeks": 8,
+      "schemeId": "linear-load",
+      "schemeName": "Carico lineare"
+    },
+    {
+      "key": "B program 1|B",
+      "phase": "B program 1",
+      "letter": "B",
+      "focus": "Spalle, Femorali, Centro schiena",
+      "weeks": 8,
+      "schemeId": "double-progression",
+      "schemeName": "Doppia progressione"
+    },
+    {
+      "key": "B program 1|C",
+      "phase": "B program 1",
+      "letter": "C",
+      "focus": "Dorsali, Spalle, Tricipiti",
+      "weeks": 8,
+      "schemeId": "volume-progression",
+      "schemeName": "Progressione di volume"
+    },
+    {
+      "key": "B program 1|D",
+      "phase": "B program 1",
+      "letter": "D",
+      "focus": "Attivazione, Glutei, Dorsali",
+      "weeks": 8,
+      "schemeId": "rir-progression",
+      "schemeName": "Autoregolazione RIR"
+    },
+    {
+      "key": "B program 2|A",
+      "phase": "B program 2",
+      "letter": "A",
+      "focus": "Glutei, Femorali",
+      "weeks": 8,
+      "schemeId": "undulating-dup",
+      "schemeName": "Ondulazione giornaliera (DUP)"
+    },
+    {
+      "key": "B program 2|B",
+      "phase": "B program 2",
+      "letter": "B",
+      "focus": "Dorsali, Centro schiena",
+      "weeks": 8,
+      "schemeId": "step-loading",
+      "schemeName": "Scalini di carico"
+    },
+    {
+      "key": "B program 2|C",
+      "phase": "B program 2",
+      "letter": "C",
+      "focus": "Spalle",
+      "weeks": 8,
+      "schemeId": "reverse-pyramid",
+      "schemeName": "Piramide inversa"
+    },
+    {
+      "key": "B program 2|D",
+      "phase": "B program 2",
+      "letter": "D",
+      "focus": "Glutei",
+      "weeks": 8,
+      "schemeId": "top-set-backoff",
+      "schemeName": "Top set + backoff"
+    },
+    {
+      "key": "Intensificazione|A",
+      "phase": "Intensificazione",
+      "letter": "A",
+      "focus": "Polpacci, Quadricipiti, Femorali",
+      "weeks": 8,
+      "schemeId": "intensity-progression",
+      "schemeName": "Progressione di intensità"
+    },
+    {
+      "key": "Intensificazione|B",
+      "phase": "Intensificazione",
+      "letter": "B",
+      "focus": "Spalle, Dorsali, Centro schiena",
+      "weeks": 8,
+      "schemeId": "peak-taper",
+      "schemeName": "Peaking e taper"
+    },
+    {
+      "key": "Intensificazione|C",
+      "phase": "Intensificazione",
+      "letter": "C",
+      "focus": "Polpacci, Glutei",
+      "weeks": 8,
+      "schemeId": "unilateral-wave",
+      "schemeName": "Ondulazione unilaterale"
+    },
+    {
+      "key": "Intensificazione|D",
+      "phase": "Intensificazione",
+      "letter": "D",
+      "focus": "Spalle, Petto",
+      "weeks": 8,
+      "schemeId": "deload-cycle",
+      "schemeName": "Ciclo di scarico 3:1"
+    },
+    {
+      "key": "Intensificazione|E",
+      "phase": "Intensificazione",
+      "letter": "E",
+      "focus": "Polpacci, Quadricipiti, Femorali",
+      "weeks": 8,
+      "schemeId": "heavy-cluster",
+      "schemeName": "Cluster pesante"
+    },
+    {
+      "key": "Intensificazione|F",
+      "phase": "Intensificazione",
+      "letter": "F",
+      "focus": "Dorsali, Centro schiena",
+      "weeks": 8,
+      "schemeId": "density-progression",
+      "schemeName": "Progressione di densità"
+    },
+    {
+      "key": "Intensità Agosto-Ottobre|A",
+      "phase": "Intensità Agosto-Ottobre",
+      "letter": "A",
+      "focus": "Polpacci, Quadricipiti, Spalle, Tricipiti",
+      "weeks": 8,
+      "schemeId": "micro-loading",
+      "schemeName": "Micro-carichi"
+    },
+    {
+      "key": "Intensità Agosto-Ottobre|B",
+      "phase": "Intensità Agosto-Ottobre",
+      "letter": "B",
+      "focus": "Glutei, Femorali, Dorsali, Centro schiena, Bicipiti",
+      "weeks": 8,
+      "schemeId": "rpe-progression",
+      "schemeName": "RPE autoregolato"
+    },
+    {
+      "key": "Intensità Agosto-Ottobre|C",
+      "phase": "Intensità Agosto-Ottobre",
+      "letter": "C",
+      "focus": "Polpacci, Spalle, Quadricipiti, Tricipiti",
+      "weeks": 8,
+      "schemeId": "rest-pause",
+      "schemeName": "Rest-pause"
+    },
+    {
+      "key": "Intensità Agosto-Ottobre|D",
+      "phase": "Intensità Agosto-Ottobre",
+      "letter": "D",
+      "focus": "Dorsali, Centro schiena, Glutei, Femorali, Bicipiti",
+      "weeks": 8,
+      "schemeId": "ascending-pyramid",
+      "schemeName": "Piramide ascendente"
+    }
+  ]
+}
