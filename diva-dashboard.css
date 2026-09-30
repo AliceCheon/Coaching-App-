@@ -52,3 +52,50 @@
 }
 
 .diva-records-list small { opacity: 0.72; }
+
+/* Fase 9b — calcolatore dischi + rampa di riscaldamento (flusso workout v147) */
+.v147-plates-toggle {
+  all: unset;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--pink-hot, #ff5eb1) 18%, transparent);
+  color: inherit;
+}
+
+.v147-plates-panel { margin: 12px 0; padding: 16px; }
+.v147-plates-panel h3 { margin: 0 0 6px; }
+.v147-plates-panel h4 { margin: 14px 0 6px; }
+
+.v147-plates-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--pink-hot, #ff5eb1) 12%, transparent);
+  margin: 8px 0;
+}
+
+.v147-plates-row strong { font-size: 16px; letter-spacing: 0.3px; }
+
+.v147-warmup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: 8px;
+}
+
+.v147-warmup > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(127, 127, 127, 0.12);
+}
+
+.v147-warmup strong { font-size: 15px; }
+.v147-warmup small { opacity: 0.7; }

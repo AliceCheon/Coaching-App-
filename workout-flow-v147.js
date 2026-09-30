@@ -316,7 +316,7 @@
         <div class="v147-active-grid">
           <main class="v147-execution card">
             <div class="v147-exercise-head">
-              <div><span class="section-eyebrow">Esercizio ${snapshot.exerciseIndex + 1}</span><h2>${escapeHtml(displayExerciseName(exercise.name))}</h2><div class="v147-prescription"><span>${setCountFor(exercise)} serie</span><span>${escapeHtml(displayLabel(exercise.reps || "--"))} ripetizioni</span></div></div>
+              <div><span class="section-eyebrow">Esercizio ${snapshot.exerciseIndex + 1}</span><h2>${escapeHtml(displayExerciseName(exercise.name))}</h2><div class="v147-prescription"><span>${setCountFor(exercise)} serie</span><span>${escapeHtml(displayLabel(exercise.reps || "--"))} ripetizioni</span><button type="button" class="ghost-button v147-plates-toggle" data-v147-plates-open>Dischi &amp; riscaldamento</button></div></div>
               <div class="v147-muscle-chips"><span>${escapeHtml(primary)}</span>${secondary.length ? `<span class="secondary">Secondari: ${escapeHtml(secondary.join(", "))}</span>` : ""}</div>
             </div>
 
@@ -354,6 +354,7 @@
                 </div>`;
               }).join("")}
             </div>
+            <section class="card v147-plates-panel" data-v147-plates-panel hidden></section>
             <button type="button" class="v147-primary v147-confirm" data-v147-confirm-set>CONFERMA SERIE ${nextSetNumber}</button>
           </main>
 
@@ -619,6 +620,15 @@
       scheduleLocalSave(true);
       renderTrainingOnly();
       showToast(active.status === "paused" ? "Workout in pausa e salvato." : "Workout ripreso.");
+    });
+    root.querySelector("[data-v147-plates-open]")?.addEventListener("click", () => {
+      const panel = root.querySelector("[data-v147-plates-panel]");
+      if (!panel || !window.BarbellDivaPlates) return;
+      if (!panel.hidden) { panel.hidden = true; return; }
+      const kgInput = root.querySelector('[data-v147-set-field="kg"]');
+      const target = parseFloat(String(kgInput?.value || "").replace(",", "."));
+      panel.innerHTML = window.BarbellDivaPlates.renderPanel(Number.isFinite(target) ? target : 0);
+      panel.hidden = false;
     });
     root.querySelector("[data-v147-cancel]")?.addEventListener("click", cancelWorkout);
     root.querySelector("[data-v147-finish]")?.addEventListener("click", finishWorkout);
