@@ -14,7 +14,7 @@ stato, modelli, UI e la logica di derivazione della Fase.
 ## Harness dei test
 I test caricano `src/app-main.js` in una VM Node con stub di `window`/`document`
 e un prologo per `matchMedia`, `setInterval`, `performance`, `history`. Vedi
-`tests/v14755-motore-fasi-inferenza.test.mjs` come modello pulito.
+`tests/v14756-motore-fasi-inferenza.test.mjs` come modello pulito.
 
 ## Verifica layout su viewport piccoli (FlexWindow / cover screen)
 Chromium headless ignora `--window-size` sotto ~500px di larghezza, quindi per
@@ -33,7 +33,7 @@ restano in flusso su mobile e allungano il documento oltre `100dvh`
 3. Il token deriva da `vMAJOR.MINOR` → `vMAJOR+MINOR` (es. `v147.57` → `v14757`).
 4. `tests/version-single-source.test.mjs` e molti altri test hardcodano build/cache: aggiornali tutti con un `sed` globale.
 
-## Fase dell'allenamento — architettura (v147.55)
+## Fase dell'allenamento — architettura (v147.56)
 Motore a 3 strati in `src/app-main.js`:
 - **Strato A** `phaseWeekSignals(program)`: estrae segnali per settimana dalle
   prescrizioni reali (serie, forma delle reps, test, RIR, tempo).

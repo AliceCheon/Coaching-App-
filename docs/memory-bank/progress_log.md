@@ -163,3 +163,8 @@ Obiettivo:
 - Stato test: **144/144 pass**; in `v14745` l'asserzione d'ordine è aggiornata al nuovo ordine e ne aggiunge una che vieta il ritorno delle diciture.
 - Blocco aperto: nessuno.
 
+
+## 2026-09-30 · v147.56-cursore-rir
+- RIR/RPE/KG: sempre vuoti nelle 32 card IOD (72 campi RIR ripuliti, tabella + settimane di progressione); si compilano solo in allenamento.
+- Settimana 1: "test 12rm, poi 1x8" (6 righe) e "test 10rm, poi 1x6" (2 righe) accanto al test, fuori dal RIR. I test di metà ciclo in settimana 4 (IOD-B4, IOD-D4) restano senza suffisso.
+- Cursore stabile: render rimandati mentre si scrive (intervallo 45s, eco Firestore, salvataggi differiti, board outerHTML); flush al blur; campi di ricerca live esclusi; modal protetti.

@@ -83,7 +83,7 @@ def parse_sheet(ws):
             reps = cell_str(ws, row, 10 + (week - 1) * 3)
             rir = cell_str(ws, row, 11 + (week - 1) * 3)
             if sets or reps or rir:
-                weeks.append({'week': week, 'sets': sets, 'reps': reps, 'rir': rir})
+                weeks.append({'week': week, 'sets': sets, 'reps': reps, 'rir': ''})
         if not weeks:
             continue
         current['exercises'].append({
@@ -125,7 +125,7 @@ def build_cards(blocks):
                 weeks_payload = [{
                     'sets': item['sets'],
                     'reps': item['reps'],
-                    'rir': item['rir'],
+                    'rir': '',
                     'notes': notes,
                     'note': notes,
                     'week': item['week'],
@@ -138,7 +138,7 @@ def build_cards(blocks):
                     'muscle': exercise['muscle'] or 'Custom',
                     'sets': current.get('sets', ''),
                     'reps': current.get('reps', ''),
-                    'rir': current.get('rir', ''),
+                    'rir': '',
                     'rest': exercise['rest'],
                     'warmup': '--',
                     'tempo': exercise['tempo'],
@@ -171,6 +171,24 @@ def build_cards(blocks):
 def patch_program_library(cards):
     path = ROOT / 'src' / 'app-main.js'
     src = path.read_text(encoding='utf-8')
+    # v147.56: il RIR non si precompila mai (si compila in allenamento); il
+    # "poi 1xN" del test vive nella reps della SOLA settimana 1, mai nel RIR.
+    for _card in lib:
+        if not str(_card.get('code', '')).startswith('IOD-'):
+            continue
+        for _ex in _card.get('exercises', []):
+            _ex['rir'] = ''
+            _reps = str(_ex.get('reps', ''))
+            _low = _reps.lower()
+            _suffix = None
+            if 'test 12' in _low and '1x8' not in _low:
+                _suffix = ', poi 1x8'
+            if 'test 10' in _low and '1x6' not in _low:
+                _suffix = ', poi 1x6'
+            if _suffix and str(_card.get('week')) == '1':
+                _ex['reps'] = _reps + _suffix
+            for _w in ((_ex.get('progression') or {}).get('weeks') or []):
+                _w['rir'] = ''
     match = re.search(r'const PROGRAM_LIBRARY = (\[[\s\S]*?\]);', src)
     if not match:
         raise SystemExit('PROGRAM_LIBRARY non trovato in src/app-main.js')
