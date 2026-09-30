@@ -4976,3 +4976,8 @@ body[data-theme="light"] .coach-modal-error {
      sotto la barra a 5 voci */
   .screen { overflow: auto; -webkit-overflow-scrolling: touch; }
 }
+
+/* Fase 9d — canvas a tema: il colore del root copre anche l'area sotto il
+   documento (FlexWindow / cover screen), così non compare la fascia bianca. */
+html { height: 100%; background-color: #090918; }
+html[data-theme="light"] { background-color: #fff7fb; }

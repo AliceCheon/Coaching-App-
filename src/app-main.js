@@ -6775,6 +6775,7 @@ function sanitizeForFirestore(value) {
     function syncThemeUi() {
       const theme = state.profile.theme === "light" ? "light" : "dark";
       document.body.dataset.theme = theme; // applica il tema subito: il render successivo può essere bloccato dall'anti-loop guard
+      document.documentElement.dataset.theme = theme; // Fase 9d: il canvas (html) segue il tema, niente fascia bianca
       const button = document.getElementById("themeButton");
       const themeMeta = document.querySelector('meta[name="theme-color"]');
       if (themeMeta) themeMeta.setAttribute("content", theme === "light" ? "#c9a7ef" : "#090918");
@@ -6982,6 +6983,7 @@ function sanitizeForFirestore(value) {
       const coachViewport = captureCoachViewport();
       const enteringWorkout = activeScreen === "training" && lastRenderedScreen !== "training";
       document.body.dataset.theme = state.profile.theme || "dark";
+      document.documentElement.dataset.theme = state.profile.theme || "dark";
       document.body.classList.toggle("nav-collapsed", !!state.ui?.mainNavCollapsed);
       const coachEditorRoute = activeScreen === "coach" && coachStudioState().route === "program";
       const coachEditorNavHidden = coachEditorRoute && state.ui?.coachEditorNavVisible !== true;
