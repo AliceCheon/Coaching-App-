@@ -150,7 +150,7 @@ Obiettivo:
 - Stato test: **144/144 pass** (`node --test "tests/*.test.mjs"`), incluso il nuovo `tests/v14752-fase-da-dati-programma.test.mjs` (40 verifiche: priorità della mappatura, type esercizio ignorato, fallback marcato stimato, reattività Programma→Settimana, indipendenza della Scheda, migrazione idempotente, assenza di riferimenti obsoleti).
 - Blocco aperto: nessuno.
 
-### 10) 2026-09-23 — Fase in fondo e dicitura rimossa (v147.53)
+### 10) 2026-09-23 — Fase in fondo e dicitura rimossa (v147.54)
 
 - UUID: 0010
 - Commit riferimento: working tree (sopra 52bfd30)

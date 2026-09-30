@@ -24,7 +24,7 @@ for (const marker of ["function logbookHtml", "saveWorkoutSession", "function ex
 }
 
 // Sync: locale prima, coda, cloud dopo conferma.
-for (const marker of ["queueReliableWorkoutSession", "reliableSyncQueue.enqueue", "flushReliableSync", "reconcileSessionVersions", "sync-reliability.js?v=v14753"]) {
+for (const marker of ["queueReliableWorkoutSession", "reliableSyncQueue.enqueue", "flushReliableSync", "reconcileSessionVersions", "sync-reliability.js?v=v14754"]) {
   check(html.includes(marker) || sync.includes(marker), `sync marker mancante: ${marker}`);
 }
 
@@ -36,9 +36,9 @@ for (const marker of ["function createBackupEnvelope", "function verifyBackupEnv
 // Firebase e cache PWA.
 for (const marker of ["function initFirebase", "saveCloudState", "FIREBASE_CONFIG"]) check(html.includes(marker), `Firebase marker mancante: ${marker}`);
 check(html.includes("const APP_BUILD = window.BarbellDivaV144Config?.build || \"v146.1\""), "build v146.1 non uniforme nell'app");
-check(config.includes('build: "v147.53-progression-schemes"') && config.includes('cache: "atlas-app-v14753-progression-schemes"'), "configurazione v147.53 non caricata correttamente");
-check(sw.includes('const CACHE_NAME = "atlas-app-v14753-progression-schemes"'), "cache service worker non allineata alla build v147.53");
-check(manifest.includes("index.html?v=v14753"), "manifest non allineato alla build v147.53");
+check(config.includes('build: "v147.54-intensita-ottobre-dicembre"') && config.includes('cache: "atlas-app-v14754-intensita-ottobre-dicembre"'), "configurazione v147.54 non caricata correttamente");
+check(sw.includes('const CACHE_NAME = "atlas-app-v14754-intensita-ottobre-dicembre"'), "cache service worker non allineata alla build v147.54");
+check(manifest.includes("index.html?v=v14754"), "manifest non allineato alla build v147.54");
 
 // I moduli esclusi non devono più essere caricati o consegnati.
 for (const removed of ["./nutrizione/", "workout-pro.js", "workout-pro.css", "food-backup.js", "photo-store.js"]) {
@@ -46,6 +46,6 @@ for (const removed of ["./nutrizione/", "workout-pro.js", "workout-pro.css", "fo
 }
 for (const removedFile of ["workout-pro.js", "workout-pro.css", "food-backup.js", "photo-store.js"]) check(!files.has(removedFile), `file escluso ancora presente: ${removedFile}`);
 
-console.log(JSON.stringify({ ok:true, build:"v147.53", checks:17, removedModules:true, core:"app/logbook/coach/sync/backup/firebase/migrations/cache" }));
+console.log(JSON.stringify({ ok:true, build:"v147.54", checks:17, removedModules:true, core:"app/logbook/coach/sync/backup/firebase/migrations/cache" }));
 
 

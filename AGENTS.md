@@ -14,7 +14,7 @@ stato, modelli, UI e la logica di derivazione della Fase.
 ## Harness dei test
 I test caricano `src/app-main.js` in una VM Node con stub di `window`/`document`
 e un prologo per `matchMedia`, `setInterval`, `performance`, `history`. Vedi
-`tests/v14753-motore-fasi-inferenza.test.mjs` come modello pulito.
+`tests/v14754-motore-fasi-inferenza.test.mjs` come modello pulito.
 
 ## Verifica layout su viewport piccoli (FlexWindow / cover screen)
 Chromium headless ignora `--window-size` sotto ~500px di larghezza, quindi per
@@ -237,7 +237,7 @@ in modo che il tema chiaro resti possibile. Test di guardia:
 
 Lo stesso revert aveva toccato anche la **logica**: `src/app-main.js` e
 `workout-flow-v147.js` erano tornati a v147.51, perdendo ~768 righe (motore
-Fasi v147.53, override `periodization.weeks`, contesto workout appuntato v147.58,
+Fasi v147.54, override `periodization.weeks`, contesto workout appuntato v147.58,
 selettore Scheda/Programma manuale). Ripristinati all'ultimo stato sano nella
 stessa tornata di fix (v147.63), insieme alla rimozione di
 `tests/v14750-cover-and-reference.test.mjs` — test introdotto dal revert per una

@@ -149,7 +149,7 @@ fs.writeFileSync(P, src);
 
 // JSON export for reference
 fs.writeFileSync('PROGRESSIONI-SCHEDE.json', JSON.stringify({
-  version: 'v147.53-progression-schemes',
+  version: 'v147.54-intensita-ottobre-dicembre',
   generatedAt: new Date().toISOString(),
   groups: [...groups.entries()].map(([k, arr]) => ({ key: k, phase: arr[0].phase, letter: arr[0].letter, focus: arr[0].focus, weeks: arr.length, schemeId: arr[0].schemeId, schemeName: arr[0].schemeName }))
 }, null, 2));
@@ -190,7 +190,7 @@ test('ogni settimana contiene la regola di progressione in nota', () => {
   }
 });
 `;
-fs.writeFileSync('tests/v14753-progression-schemes.test.mjs', test);
+fs.writeFileSync('tests/v14754-progression-schemes.test.mjs', test);
 
 console.log('OK groups=' + covered + ' distinctSchemes=' + seen.size);
 console.log([...groups.keys()].map((k) => k + '=' + SCHEMES[k].id).join('\n'));
