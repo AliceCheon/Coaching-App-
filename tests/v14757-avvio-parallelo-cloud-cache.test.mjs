@@ -111,5 +111,5 @@ if (!/Promise\.all\(\s*\[[\s\S]*loadCloudPrograms[\s\S]*loadCloudStateBlobs[\s\S
 if (!/\s*const firebaseBootStarted = initFirebase\(\);[\s\S]*?hydrateFromCloudSnapshotCache\(\)\.catch/.test(appMain)) throw new Error("L'idratazione non è agganciata al boot dopo initFirebase");
 if (!appMain.includes("writeCloudSnapshotCache(cloudUser?.uid")) throw new Error("Manca un hook di scrittura della cloud-cache");
 
-console.log("v14760-manifest-coerenza-cloud-cache: " + results.length + " verifiche passate");
+console.log("v14761-lint-e-ci-cloud-cache: " + results.length + " verifiche passate");
 for (const item of results) console.log("  ✓ " + item);

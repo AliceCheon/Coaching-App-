@@ -2882,7 +2882,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       // La versione NON è dato utente: dopo lo spread viene forzata alla
       // VERSION del motore così gli stati salvati con "3.1.0" si riallineano
       // al primo avvio senza migrazione esplicita.
-      target.coachAi3={version:COACH_AI3_VERSION,history:[],ignorePreferences:{},ignoreHistory:[],resolvedPreferences:{},lastProposalAt:null,selectedProgramId:"",lastAnalysisByProgram:{},lastSimulationByProgram:{},...(target.coachAi3||{}),version:COACH_AI3_VERSION};
+      target.coachAi3={history:[],ignorePreferences:{},ignoreHistory:[],resolvedPreferences:{},lastProposalAt:null,selectedProgramId:"",lastAnalysisByProgram:{},lastSimulationByProgram:{},...(target.coachAi3||{}),version:COACH_AI3_VERSION};
       target.coachAi3.lastAnalysisByProgram=target.coachAi3.lastAnalysisByProgram&&typeof target.coachAi3.lastAnalysisByProgram==="object"?target.coachAi3.lastAnalysisByProgram:{};
       target.coachAi3.history=Array.isArray(target.coachAi3.history)?target.coachAi3.history.slice(-500):[];
       // FASE 1.10: il log decisioni unico vive qui; i campi history/ignoreHistory

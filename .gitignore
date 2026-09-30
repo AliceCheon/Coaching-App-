@@ -26,5 +26,3 @@ backup/
 
 # Dipendenze
 node_modules/
-
-package-lock.json
