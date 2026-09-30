@@ -38,6 +38,7 @@ const result = vm.runInContext(`(() => {
   const added=addTechnicalExerciseToActiveSheet(technicalExerciseLibrary().find(x=>x.id===customId));
   check("TEST 5 custom aggiunto alla scheda",added.ok&&programRepository.getExercises(program.id,sheet.id).some(x=>x.metadata?.technicalProfileId===customId));
   const addedExercise=programRepository.getExercises(program.id,sheet.id).find(x=>x.metadata?.technicalProfileId===customId);
+  check("range consigliato dalla libreria non diventa prescrizione workout",addedExercise.prescription.reps.label===""&&addedExercise.prescription.reps.min==null&&addedExercise.prescription.reps.max==null);
   const progression=Array.from({length:8},(_,i)=>parseWeekPrescription({weekNumber:i+1,sets:3,reps:"10-15",rir:"1-2"},i+1));
   programRepository.updateExercise(program.id,sheet.id,addedExercise.id,{progression:{weeks:progression}},{save:false,forceLocked:true});
   check("TEST 6 custom con progressioni",programRepository.getExerciseById(program.id,sheet.id,addedExercise.id).progression.weeks.length===8);

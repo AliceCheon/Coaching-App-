@@ -60,6 +60,16 @@ const result = vm.runInContext(`(() => {
   check("mobile card CSS", ${JSON.stringify(html.includes('@media (max-width: 430px)') && html.includes('.phase4-exercise-table tr.phase4-exercise-row'))});
   check("log allenamenti intatto", state.training.history[0].id === "log-intatto");
   const validation = programRepository.validate(); check("modello valido", validation.valid);
+  const categoryExercise=programRepository.createExercise(program.id,sheetA.id,{id:"category-ex",name:"Alzate laterali con manubri",muscle:"Da classificare",som:"Da classificare",prescription:{sets:3,reps:"10-15"}},{save:false}).value;
+  const modalValues={exerciseModalName:categoryExercise.name,exerciseModalMuscle:"Deltoidi",exerciseModalNotes:"",exerciseModalSecondary:"trapezio",exerciseModalEquipment:"Manubri",exerciseModalPattern:"abduzione spalla",exerciseModalType:"isolation"};
+  document.getElementById=(id)=>({value:modalValues[id]??"",checked:false});
+  coachProgramUi.modal="exercise-details";coachProgramUi.modalData={sheetId:sheetA.id,exerciseId:categoryExercise.id};
+  saveState=()=>true;closeCoachModal=()=>{};updateCoachSaveIndicator=()=>{};
+  let categoryRefreshes=0;refreshCoachAfterLocalModal=()=>{categoryRefreshes+=1;};
+  saveCoachUiModal();
+  const savedCategory=programRepository.getExerciseById(program.id,sheetA.id,categoryExercise.id);
+  check("categoria scelta dalla matita salvata nei campi usati dalla UI",savedCategory.muscle==="Deltoidi"&&savedCategory.som==="Deltoidi");
+  check("board rinfrescato dopo il salvataggio categoria",categoryRefreshes===1);
   return { ok: true, assertions, exercisesA: programRepository.getExercises(program.id, sheetA.id).length, exercisesB: programRepository.getExercises(program.id, sheetB.id).length };
 })()`, context);
 
