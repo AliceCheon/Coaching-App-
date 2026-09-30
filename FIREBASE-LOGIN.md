@@ -54,7 +54,8 @@ Si usa la build **compat** (namespace `window.firebase`), non quella modulare.
 - Collezione principale: `barbellDivaAccounts` (`CLOUD_COLLECTION`, `src/app-main.js:16`).
 - Ogni utente accede **solo** al proprio documento (`request.auth.uid == userId`).
 - Regole: `firestore.rules` (canonica) e `FIRESTORE-RULES-ACTIVE.txt` (copia leggibile).
-- Sottoraccolta `nutritionPhotos` per le foto nutrizione, privata come il documento padre.
+- Sottoraccolte private (programmi, `sessions`, `stateBlobs`, ...): le regole autorizzano
+  l'intero sottoalbero `barbellDivaAccounts/{uid}/**` al solo proprietario.
 
 ### Limite noto: 1 MiB per documento
 
