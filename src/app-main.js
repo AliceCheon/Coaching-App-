@@ -1359,6 +1359,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       sheetMenuId: "",
       modal: "",
       modalData: {},
+      programming20a: { status: "idle" },
       draggedSheetId: "",
       selectedExercises: new Set(),
       draggedExerciseId: "",
@@ -8794,17 +8795,41 @@ function sanitizeForFirestore(value) {
 
     const PROGRAMMING_20A_LABELS = { increaseLoad: "Aumenta carico", increaseReps: "Aumenta ripetizioni", increaseSets: "Aggiungi una serie", adjustRir: "Regola RIR", reduceRest: "Riduci recupero", deload: "Scarico", holdProgression: "Mantieni", reviewAnomaly: "Da rivedere", progressWeek: "Avanza settimana", insufficientData: "Dati insufficienti", unsupportedProgression: "Progressione non supportata", maintainVolume: "Mantieni volume", maintenance: "Mantieni" };
 
+    function runProgramming20aAnalysis() {
+      const engine = window.BarbellDivaProgramming;
+      if (!engine?.getProgrammingSuggestions) { showToast("Motore di programmazione non disponibile."); return; }
+      coachProgramUi.programming20a = { status: "loading" };
+      render();
+      // Lascia dipingere lo stato "in corso" prima del calcolo pesante: l'analisi
+      // legge tutto lo storico e non deve girare a ogni render della pagina.
+      setTimeout(() => {
+        try {
+          const items = engine.getProgrammingSuggestions({}) || [];
+          coachProgramUi.programming20a = { status: "done", items, at: new Date().toISOString() };
+        } catch (error) {
+          coachProgramUi.programming20a = { status: "error", error: String(error?.message || error) };
+        }
+        render();
+      }, 30);
+    }
+
     function programEngineSuggestionsHtml() {
       const engine = window.BarbellDivaProgramming;
       if (!engine?.getProgrammingSuggestions) return "";
-      let suggestions = [];
-      try { suggestions = engine.getProgrammingSuggestions({}) || []; } catch (error) { return ""; }
+      const shell = (inner) => `<section class="ai-workspace-section" id="ai-programming20a"><div class="ai-section-heading"><span class="section-eyebrow">Motore di programmazione · Fase 20A</span><h2>Progressioni suggerite dai dati</h2><p>Calcoli sul tuo storico reale. Nessuna modifica viene applicata da sola: l'ultima parola è tua.</p></div>${inner}</section>`;
+      const status = coachProgramUi.programming20a?.status || "idle";
+      if (status === "loading") return shell(`<div class="program-engine-grid"><article class="program-engine-card"><p class="micro-copy">Sto analizzando lo storico… un attimo.</p></article></div>`);
+      if (status === "error") return shell(`<div class="program-engine-grid"><article class="program-engine-card"><p class="micro-copy">Analisi non riuscita: ${escapeHtml(coachProgramUi.programming20a?.error || "errore")}</p><div class="quick-actions"><button type="button" class="ghost-button" data-programming20a-run>Riprova</button></div></article></div>`);
+      if (status !== "done") {
+        // Calcolo su richiesta: niente analisi pesante a ogni render.
+        return shell(`<div class="program-engine-grid"><article class="program-engine-card"><p class="micro-copy">L'analisi legge tutto lo storico e può richiedere qualche secondo, quindi la eseguo solo quando la chiedi.</p><div class="quick-actions"><button type="button" class="gold-button" data-programming20a-run>Calcola i suggerimenti</button></div></article></div>`);
+      }
       const priorities = { high: 0, medium: 1, low: 2 };
-      const meaningful = suggestions
+      const meaningful = (Array.isArray(coachProgramUi.programming20a.items) ? coachProgramUi.programming20a.items : [])
         .filter((item) => item && item.type && !["maintenance", "maintainLoad", "maintainVolume"].includes(item.type))
         .sort((a, b) => (priorities[a.priority] ?? 1) - (priorities[b.priority] ?? 1))
         .slice(0, 6);
-      if (!meaningful.length) return "";
+      if (!meaningful.length) return shell(`<div class="program-engine-grid"><article class="program-engine-card"><p class="micro-copy">Nessun aggiustamento di progressione da suggerire con i dati attuali.</p><div class="quick-actions"><button type="button" class="ghost-button" data-programming20a-run>Ricalcola</button></div></article></div>`);
       const names = exerciseNameById();
       const rows = meaningful.map((item) => {
         const name = names.get(String(item.exerciseId)) || String(item.exerciseId || "Esercizio");
@@ -8818,7 +8843,7 @@ function sanitizeForFirestore(value) {
         const isDeload = item.type === "deload";
         return `<article class="program-engine-card ${isDeload ? "is-deload" : ""}"><div class="row"><strong>${escapeHtml(name)}</strong><span class="chip">${escapeHtml(PROGRAMMING_20A_LABELS[item.type] || item.type)}</span></div><p class="micro-copy">${escapeHtml(item.rationale || "")}</p>${change ? `<p class="micro-copy">Proposta: <strong>${escapeHtml(change)}</strong></p>` : ""}<div class="quick-actions"><span class="micro-copy">Confidenza: ${escapeHtml(item.confidence || "—")}</span><button type="button" class="ghost-button" data-programming-view="${escapeHtml(item.id)}">Segna come rivisto</button><button type="button" class="ghost-button" data-programming-ignore="${escapeHtml(item.id)}">Ignora</button></div></article>`;
       }).join("");
-      return `<section class="ai-workspace-section" id="ai-programming20a"><div class="ai-section-heading"><span class="section-eyebrow">Motore di programmazione · Fase 20A</span><h2>Progressioni suggerite dai dati</h2><p>Calcoli sul tuo storico reale. Nessuna modifica viene applicata da sola: l'ultima parola è tua.</p></div><div class="program-engine-grid">${rows}</div></section>`;
+      return shell(`<div class="program-engine-grid">${rows}</div><div class="quick-actions"><button type="button" class="ghost-button" data-programming20a-run>Ricalcola</button></div>`);
     }
 
     function coachAiWorkspaceHtml(compact=false){
@@ -11917,6 +11942,7 @@ function sanitizeForFirestore(value) {
       });
       document.querySelectorAll("[data-program-link]").forEach((button)=>button.addEventListener("click",()=>{const strategyId=document.querySelector("[data-strategy-editor]")?.dataset.strategyEditor,strategy=athleteIntelligenceStore().strategies.find((x)=>x.id===strategyId)||activeAthleteIntelligence().strategy;if(!strategy)return;state.athleteIntelligence=window.BarbellDivaAthleteContext.linkProgram(athleteIntelligenceStore(),button.dataset.programLink,{athleteId:strategy.athleteId,strategyId:strategy.id,blockType:strategy.blockType});saveState({immediate:true});showToast("Programma collegato senza modificare esercizi o progressioni.");render();}));
       document.querySelector("[data-ai-program-select]")?.addEventListener("change",(event)=>{const next=coachAiSelectedProgramId(event.target.value);if(!next)return showToast("Il programma selezionato non è più disponibile.");state.coachAi3=state.coachAi3||{};state.coachAi3.selectedProgramId=next;state.coachAi3.lastAnalysisByProgram=state.coachAi3.lastAnalysisByProgram||{};state.coachAi3.lastAnalysisByProgram[next]=new Date().toISOString();coachProgramUi.aiProgramId=next;coachProgramUi.ai3Preview=null;coachAi2Cache={fingerprint:"",result:null};saveState({immediate:true});showToast("Programma cambiato: aggiorno tutta l’analisi Coach AI.");render();});
+      document.querySelectorAll("[data-programming20a-run]").forEach((button) => button.addEventListener("click", runProgramming20aAnalysis));
       document.querySelectorAll("[data-programming-view]").forEach((button) => button.addEventListener("click", () => { window.BarbellDivaProgramming?.markSuggestionViewed?.(button.dataset.programmingView); showToast("Suggerimento segnato come rivisto."); }));
       document.querySelectorAll("[data-programming-ignore]").forEach((button) => button.addEventListener("click", () => { window.BarbellDivaProgramming?.recordSuggestionDecision?.(button.dataset.programmingIgnore, "ignored"); showToast("Suggerimento ignorato."); render(); }));
       document.querySelector("[data-ai-exercise-query]")?.addEventListener("input",(event)=>{clearTimeout(coachProgramUi.aiExerciseSearchTimer);const value=event.target.value;coachProgramUi.aiExerciseSearchTimer=setTimeout(()=>{coachProgramUi.aiExerciseQuery=value;render();},140);});
