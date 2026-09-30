@@ -11,7 +11,6 @@
   const MUSCLES = ["pettorali", "dorsali", "spalle", "bicipiti", "tricipiti", "quadricipiti", "femorali", "glutei", "polpacci", "adduttori", "abduttori", "core"];
   const PATTERNS = ["squat", "hinge", "spinta orizzontale", "tirata orizzontale", "spinta verticale", "tirata verticale", "flessione ginocchio", "estensione ginocchio", "carry", "core"];
   const EQUIPMENT = ["bilanciere", "manubri", "cavi", "macchinari", "multipower", "rack", "panca", "elastici", "corpo libero", "kettlebell", "cardio"];
-  const NUTRITION_PHASES = ["bulk", "lean bulk", "mantenimento", "cut", "mini cut", "reverse diet", "ricomposizione", "peak week", "non definita"];
   const PRIORITY_LEVELS = ["bassa", "media", "alta", "massima"];
   const SEVERITY_LEVELS = ["lieve", "moderata", "alta", "limitante"];
   const PAIN_STATUSES = ["attivo", "in miglioramento", "stabile", "risolto", "da valutare"];
@@ -74,28 +73,14 @@
     };
   }
 
-  function normalizeNutrition(input = {}) {
-    const phase = NUTRITION_PHASES.includes(input.phase) ? input.phase : "non definita";
-    return {
-      phase, source: input.source === "manual" ? "manual" : input.source === "nutrition" ? "nutrition" : "estimated",
-      confidence: input.confidence || "bassa", reason: text(input.reason), targetCalories: numberOrNull(input.targetCalories),
-      actualCalories: numberOrNull(input.actualCalories), maintenanceCalories: numberOrNull(input.maintenanceCalories),
-      balanceCalories: numberOrNull(input.balanceCalories), weightTrend: text(input.weightTrend), adherence: numberOrNull(input.adherence),
-      notes: text(input.notes), updatedAt: input.updatedAt || new Date().toISOString()
-    };
-  }
-
   function normalizeStore(input = {}, legacy = {}) {
     const raw = input && typeof input === "object" ? input : {};
     const athletes = list(raw.athletes).length ? raw.athletes.map((item) => normalizeAthlete(item, legacy)) : [createDefaultAthlete(legacy)];
     const activeAthleteId = athletes.some((item) => item.id === raw.activeAthleteId) ? raw.activeAthleteId : athletes[0].id;
     const strategies = list(raw.strategies).length ? raw.strategies.map((item) => ({ ...createDefaultStrategy(item.athleteId || activeAthleteId), ...item, secondaryGoals: list(item.secondaryGoals), techniques: list(item.techniques), performanceMarkers: list(item.performanceMarkers), targetPatterns: list(item.targetPatterns), targetMuscles: muscleList(item.targetMuscles) })) : [createDefaultStrategy(activeAthleteId)];
-    const nutritionByAthlete = {};
-    Object.entries(raw.nutritionByAthlete || {}).forEach(([key, value]) => { nutritionByAthlete[key] = normalizeNutrition(value); });
-    if (!nutritionByAthlete[activeAthleteId]) nutritionByAthlete[activeAthleteId] = normalizeNutrition(estimateNutritionPhase(legacy.nutrition || {}));
     return {
       schemaVersion: SCHEMA_VERSION, activeAthleteId, athletes, strategies,
-      nutritionByAthlete, programLinks: { ...(raw.programLinks || {}) }, insightHistory: { ...(raw.insightHistory || {}) },
+      programLinks: { ...(raw.programLinks || {}) }, insightHistory: { ...(raw.insightHistory || {}) },
       updatedAt: raw.updatedAt || new Date().toISOString()
     };
   }
@@ -111,26 +96,7 @@
     if (index >= 0) next.strategies[index] = normalized; else next.strategies.push(normalized); next.updatedAt = normalized.updatedAt; return next;
   }
   function linkProgram(store, programId, link = {}) {
-    const next = normalizeStore(store); next.programLinks[programId] = { athleteId: link.athleteId || next.activeAthleteId, strategyId: link.strategyId || "", blockType: link.blockType || "personalizzato", nutritionalPhase: link.nutritionalPhase || "non definita", freeProgram: Boolean(link.freeProgram), linkedAt: new Date().toISOString() }; next.updatedAt = new Date().toISOString(); return next;
-  }
-
-  function estimateNutritionPhase(raw = {}) {
-    const target = numberOrNull(raw.kcal ?? raw.targetCalories ?? raw.targets?.calories);
-    const actual = numberOrNull(raw.actualCalories ?? raw.averageCalories ?? raw.dashboard?.averageCalories);
-    const maintenance = numberOrNull(raw.maintenanceCalories ?? raw.tdee ?? raw.dashboard?.tdee);
-    const balance = target != null && maintenance != null ? target - maintenance : null;
-    let phase = "non definita", confidence = "bassa", reason = "Dati calorici insufficienti: nessuna fase inventata.";
-    if (balance != null) {
-      if (balance > 300) phase = "bulk"; else if (balance > 100) phase = "lean bulk"; else if (balance < -500) phase = "mini cut"; else if (balance < -100) phase = "cut"; else phase = "mantenimento";
-      confidence = "media"; reason = `Stima basata sul target calorico rispetto al mantenimento (${Math.round(balance)} kcal).`;
-    }
-    return { phase, source: "estimated", confidence, reason, targetCalories: target, actualCalories: actual, maintenanceCalories: maintenance, balanceCalories: balance };
-  }
-
-  function syncNutrition(store, athleteId, raw = {}) {
-    const next = normalizeStore(store); const key = athleteId || next.activeAthleteId; const current = normalizeNutrition(next.nutritionByAthlete[key] || {}); const estimate = normalizeNutrition({ ...estimateNutritionPhase(raw), source: "nutrition", updatedAt: new Date().toISOString() });
-    next.nutritionByAthlete[key] = current.source === "manual" ? { ...estimate, ...current, source: "manual", reason: current.reason || "Fase impostata manualmente dal coach." } : estimate;
-    next.updatedAt = new Date().toISOString(); return next;
+    const next = normalizeStore(store); next.programLinks[programId] = { athleteId: link.athleteId || next.activeAthleteId, strategyId: link.strategyId || "", blockType: link.blockType || "personalizzato", freeProgram: Boolean(link.freeProgram), linkedAt: new Date().toISOString() }; next.updatedAt = new Date().toISOString(); return next;
   }
 
   function missingFields(athlete = {}) {
@@ -143,8 +109,8 @@
   }
 
   function selectors(storeInput, appState = {}, programId = "") {
-    const store = normalizeStore(storeInput, appState); const link = store.programLinks[programId] || {}; const athlete = getAthlete(store, link.athleteId); const strategy = getStrategy(store, link.strategyId, athlete.id); const nutrition = normalizeNutrition(store.nutritionByAthlete[athlete.id] || {});
-    return { schemaVersion: SCHEMA_VERSION, athlete: clone(athlete), strategy: strategy ? clone(strategy) : null, nutrition: clone(nutrition), programLink: clone(link), missing: missingFields(athlete), history: clone(store.insightHistory[athlete.id] || []) };
+    const store = normalizeStore(storeInput, appState); const link = store.programLinks[programId] || {}; const athlete = getAthlete(store, link.athleteId); const strategy = getStrategy(store, link.strategyId, athlete.id);
+    return { schemaVersion: SCHEMA_VERSION, athlete: clone(athlete), strategy: strategy ? clone(strategy) : null, programLink: clone(link), missing: missingFields(athlete), history: clone(store.insightHistory[athlete.id] || []) };
   }
 
   function validate(storeInput) {
@@ -155,5 +121,5 @@
     return { ok: errors.length === 0, errors };
   }
 
-  return { SCHEMA_VERSION, GOALS, BLOCK_TYPES, MUSCLES, PATTERNS, EQUIPMENT, NUTRITION_PHASES, PRIORITY_LEVELS, SEVERITY_LEVELS, PAIN_STATUSES, normalizeMuscleName, createDefaultAthlete, createDefaultStrategy, normalizeAthlete, normalizeStore, normalizeNutrition, getAthlete, getStrategy, upsertAthlete, upsertStrategy, linkProgram, estimateNutritionPhase, syncNutrition, missingFields, selectors, validate, id };
+  return { SCHEMA_VERSION, GOALS, BLOCK_TYPES, MUSCLES, PATTERNS, EQUIPMENT, PRIORITY_LEVELS, SEVERITY_LEVELS, PAIN_STATUSES, normalizeMuscleName, createDefaultAthlete, createDefaultStrategy, normalizeAthlete, normalizeStore, getAthlete, getStrategy, upsertAthlete, upsertStrategy, linkProgram, missingFields, selectors, validate, id };
 });

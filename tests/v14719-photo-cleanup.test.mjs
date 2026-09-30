@@ -11,11 +11,10 @@ const sw = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
 const check = (condition, message) => assert.ok(condition, message);
 
 check(html.includes("cleanupV14719"), "flag cleanup una tantum mancante");
-check(html.includes("redactPhotoListFallback(loaded.nutrition?.dashboard?.photos)"), "foto di stato non redatte al bootstrap");
 check(html.includes("writeBackupHistory(historyCleanup)"), "cronologia backup non riscritta senza foto");
-check(html.includes('"front", "back", "side"'), "chiavi foto front/back mancanti dall'elenco heavy");
+check(html.includes('"front", "back", "side"'), "chiavi foto front/back/side mancanti dall'elenco heavy");
 check(config.includes('build: "v147.59-primo-paint-fresco"'), "build non allineata alla versione corrente");
 check(sw.includes("atlas-app-v14759-primo-paint-fresco"), "cache PWA non allineata alla versione corrente");
 
-console.log(JSON.stringify({ ok:true, build:"v147.59-primo-paint-fresco", checks:6, fix:"photo cleanup one-shot front/back/side + history + cloud" }));
+console.log(JSON.stringify({ ok:true, build:"v147.59-primo-paint-fresco", checks:5, fix:"photo cleanup one-shot history + cloud" }));
 

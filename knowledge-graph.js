@@ -10,7 +10,7 @@
     const state=input.state||{},athleteApi=input.athleteApi||{},masterApi=input.masterApi||{},programId=input.programId||"";
     const athleteStore=athleteApi.normalizeStore?athleteApi.normalizeStore(state.athleteIntelligence,state):(state.athleteIntelligence||{});
     const livePrograms=list(state.programs).filter(p=>!p.deletedAt),selected=livePrograms.find(p=>p.id===programId)||livePrograms[0]||{id:"",name:"",sheets:[]};
-    const selectedContext=athleteApi.selectors?athleteApi.selectors(athleteStore,state,selected.id):{athlete:list(athleteStore.athletes)[0]||{},strategy:list(athleteStore.strategies)[0]||{},nutrition:{},programLink:{},missing:[]};
+    const selectedContext=athleteApi.selectors?athleteApi.selectors(athleteStore,state,selected.id):{athlete:list(athleteStore.athletes)[0]||{},strategy:list(athleteStore.strategies)[0]||{},programLink:{},missing:[]};
     const masterStore=masterApi.normalizeStore?masterApi.normalizeStore(state.masterExerciseLibrary||{}):(state.masterExerciseLibrary||{}),nodes=[],edges=[],seen=new Set(),edgeSeen=new Set();
     const add=(type,id,label,data,domain)=>{const nid=nodeId(type,id);if(!seen.has(nid)){seen.add(nid);nodes.push({id:nid,type,entityId:String(id||""),label:String(label||id||type),domain,data:clone(data||{})});}return nid;};
     const link=(from,to,relation,data={})=>{if(!from||!to)return;const key=`${from}|${relation}|${to}`;if(edgeSeen.has(key))return;edgeSeen.add(key);edges.push({id:`edge:${stableHash(key)}`,from,to,relation,data:clone(data)});};
@@ -22,7 +22,7 @@
       list(athlete.muscles?.priorities).forEach(item=>{const name=item.muscle||item;link(aid,add("muscle",norm(name),name,{name},"exercise-knowledge"),"prioritizes",{level:item.level||"media"});});
     });
     list(athleteStore.strategies).forEach(strategy=>{const sid=add("strategy",strategy.id,strategy.name,strategy,"strategy");link(nodeId("athlete",strategy.athleteId),sid,"follows-strategy");const block=add("block",strategy.id,strategy.blockType||strategy.name,{type:strategy.blockType,durationWeeks:strategy.durationWeeks,targetFatigue:strategy.targetFatigue},"strategy");link(sid,block,"defines-block");});
-    Object.entries(athleteStore.nutritionByAthlete||{}).forEach(([athleteId,nutrition])=>link(nodeId("athlete",athleteId),add("nutrition",athleteId,nutrition.phase,nutrition,"nutrition"),"has-nutrition-context"));
+    // (nessun nodo nutrizione: la sezione è stata rimossa dall'app)
     list(masterStore.records).forEach(record=>{
       const mid=add("master-exercise",record.id,record.identity?.name,record,"exercise-knowledge");
       list(record.muscles).forEach(m=>link(mid,add("muscle",norm(m.name),m.name,{name:m.name},"exercise-knowledge"),"trains-muscle",{role:m.role,weight:m.weight}));
@@ -37,7 +37,7 @@
     });
     list(state.training?.sessions).forEach(session=>{const sid=add("workout-session",session.id||stableHash(session),session.sessionName||session.sessionCode,session,"history");list(session.exercises).forEach((ex,index)=>{const perf=add("performance",`${session.id||stableHash(session)}:${index}`,ex.name,{...ex,sessionId:session.id||"",date:session.dateInput||session.date||""},"performance");link(sid,perf,"records-performance");});});
     Object.entries(athleteStore.insightHistory||{}).forEach(([athleteId,items])=>list(items).forEach(item=>link(nodeId("athlete",athleteId),add("insight",item.id,item.title,item,"insights"),"received-insight")));
-    const domainData={athlete:athleteStore.athletes,strategy:athleteStore.strategies,nutrition:athleteStore.nutritionByAthlete,limitations:list(athleteStore.athletes).flatMap(a=>[...list(a.pains),...list(a.motorLimitations)]),equipment:list(athleteStore.athletes).map(a=>a.equipment),programming:livePrograms,"exercise-knowledge":masterStore,progressions:livePrograms.flatMap(p=>list(p.sheets).flatMap(s=>list(s.exercises).map(e=>e.progression))),history:state.training?.sessions||[],performance:list(state.training?.sessions).flatMap(s=>list(s.exercises)),insights:athleteStore.insightHistory||{}};
+    const domainData={athlete:athleteStore.athletes,strategy:athleteStore.strategies,limitations:list(athleteStore.athletes).flatMap(a=>[...list(a.pains),...list(a.motorLimitations)]),equipment:list(athleteStore.athletes).map(a=>a.equipment),programming:livePrograms,"exercise-knowledge":masterStore,progressions:livePrograms.flatMap(p=>list(p.sheets).flatMap(s=>list(s.exercises).map(e=>e.progression))),history:state.training?.sessions||[],performance:list(state.training?.sessions).flatMap(s=>list(s.exercises)),insights:athleteStore.insightHistory||{}};
     const domains=Object.fromEntries(Object.entries(domainData).map(([key,value])=>[key,semanticHash(value)])),snapshot={version:VERSION,programId:selected.id,nodes,edges,domains,fingerprint:stableHash({domains,programId:selected.id})};
     return{snapshot,selectedContext,selectedProgram:selected,athleteStore,masterStore};
   }

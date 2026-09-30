@@ -3458,8 +3458,8 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         loaded.migrations.aliceWorkoutF16Jul2026Corrected = Number(loaded.migrations.aliceWorkoutF16Jul2026Corrected || 0) + postJournalFDateCorrections;
         repairSequentialWorkoutWeeks(loaded);
         if (!loaded.meta?.cleanupV14719) {
-          const cleanPhotos = redactPhotoListFallback(loaded.nutrition?.dashboard?.photos);
-          if (loaded.nutrition) loaded.nutrition = { ...loaded.nutrition, dashboard: { ...(loaded.nutrition.dashboard || {}), photos: cleanPhotos } };
+
+
           const historyCleanup = readBackupHistory().map((item) => redactedEnvelopeForStorage(item)).filter(Boolean);
           if (historyCleanup.length) writeBackupHistory(historyCleanup);
           loaded.meta = { ...(loaded.meta || {}), cleanupV14719: true };
@@ -4003,27 +4003,10 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       });
     }
     function localStorageSnapshotFor(snapshot) {
-      const photos = snapshot?.nutrition?.dashboard?.photos;
-      const store = window.BarbellDivaPhotoStore;
-
-
       // syncPausedUntil è runtime-only: non deve sopravvivere a un ricaricamento
       // (una pausa anti-flood "stale", ricaricata da localStorage/cloud al boot,
       // bloccava le scritture anche quando la quota era tornata disponibile).
-      const cleanSnapshot = { ...snapshot, meta: snapshot?.meta ? { ...snapshot.meta, syncPausedUntil: 0 } : snapshot?.meta };
-      if (!Array.isArray(photos) || !photos.length) return cleanSnapshot;
-      const redacted = store && typeof store.needsRedaction === "function" && store.needsRedaction(photos)
-        ? store.redactPhotoList(photos)
-        : redactPhotoListFallback(photos);
-      if (store && typeof store.putPhotos === "function") {
-        const expected = photos.filter((photo) => store.hasImageData ? store.hasImageData(photo) : true).length;
-        store.putPhotos(photos).then((saved) => {
-          if (saved >= expected) return;
-          lastPersistenceError = "Le foto non sono state archiviate tutte nella memoria dedicata. L'app continua a conservarle in questa sessione: esporta un backup prima di chiuderla e riprova.";
-          try { showToast(lastPersistenceError, "error"); } catch (error) {}
-        });
-      }
-      return { ...cleanSnapshot, nutrition: { ...cleanSnapshot.nutrition, dashboard: { ...cleanSnapshot.nutrition.dashboard, photos: redacted } } };
+      return { ...snapshot, meta: snapshot?.meta ? { ...snapshot.meta, syncPausedUntil: 0 } : snapshot?.meta };
     }
 
     function echoLocalStateQuietly(options = {}) {
@@ -4198,19 +4181,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
     }
 
     function redactedEnvelopeForStorage(envelope) {
-      const store = window.BarbellDivaPhotoStore;
-
-
-      const photos = envelope?.payload?.nutrition?.dashboard?.photos;
-      if (!Array.isArray(photos) || !photos.length) return envelope;
-      const redacted = store && typeof store.needsRedaction === "function" && store.needsRedaction(photos)
-        ? store.redactPhotoList(photos)
-        : redactPhotoListFallback(photos);
-      if (store && typeof store.putPhotos === "function") store.putPhotos(photos);
-      const payload = { ...envelope.payload, nutrition: { ...envelope.payload.nutrition, dashboard: { ...envelope.payload.nutrition.dashboard, photos: redacted } } };
-      const metadata = { ...envelope.metadata };
-      const checksum = backupChecksum({ metadata: { ...metadata, checksum: undefined }, payload });
-      return { ...envelope, metadata: { ...metadata, checksum }, payload };
+      return envelope;
     }
 
     function storeBackupEnvelope(envelope) {
@@ -4269,29 +4240,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
     }
 
     async function downloadCompleteBackupEnvelope(envelope, filename = "") {
-      const verified = verifyBackupEnvelope(envelope);
-      if (!verified.ok) { showToast(verified.error); return false; }
-      const store = window.BarbellDivaPhotoStore;
-      const photos = verified.envelope?.payload?.nutrition?.dashboard?.photos;
-      if (!store || !Array.isArray(photos) || !photos.length) return downloadBackupEnvelope(verified.envelope, filename);
-      const hydrated = await store.hydratePhotoList(photos);
-      const payload = {
-        ...verified.envelope.payload,
-        nutrition: {
-          ...verified.envelope.payload.nutrition,
-          dashboard: { ...verified.envelope.payload.nutrition.dashboard, photos: hydrated }
-        }
-      };
-      const metadata = { ...verified.envelope.metadata };
-      const completeEnvelope = {
-        ...verified.envelope,
-        metadata: {
-          ...metadata,
-          checksum: backupChecksum({ metadata:{ ...metadata, checksum:undefined }, payload })
-        },
-        payload
-      };
-      return downloadBackupEnvelope(completeEnvelope, filename);
+      return downloadBackupEnvelope(envelope, filename);
     }
 
     function backupProgramMatch(current = {}, incoming = {}) {
@@ -4343,7 +4292,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         if (selections.programs) next.programs = clone(incoming.programs || []);
         if (selections.progressions && !selections.programs) next.programs = restoreProgramProgressions(next.programs || [], incoming.programs || []);
         if (selections.checkins) next.quiz = clone(incoming.quiz || next.quiz || {});
-        if (selections.settings) { next.profile = mergeState(next.profile || {}, incoming.profile || {}); next.metrics = clone(incoming.metrics || {}); next.nutrition = clone(incoming.nutrition || {}); next.body = clone(incoming.body || {}); }
+        if (selections.settings) { next.profile = mergeState(next.profile || {}, incoming.profile || {}); next.metrics = clone(incoming.metrics || {}); next.body = clone(incoming.body || {}); }
         if (selections.coachAi) next.coach = { ...next.coach, coachAi:clone(incoming.coach?.coachAi || {}) };
         if (selections.divaBot) next.ui = { ...next.ui, ...Object.fromEntries(["workoutMascotVisible","workoutMascotPosition","divaBotPersonality","divaBotBubbles","divaBotCelebrations","divaBotSounds"].map((key) => [key, incoming.ui?.[key]]).filter(([, value]) => value !== undefined)) };
         if (selections.exerciseLab) next.coach = { ...next.coach, exerciseLibrary:clone(incoming.coach?.exerciseLibrary || []) };
@@ -5195,10 +5144,6 @@ function sanitizeForFirestore(value) {
       // singolo salvataggio (anche solo cambiare una preferenza) fino a farlo scadere per
       // timeout su rete mobile. Le sedute vengono già sincronizzate una per una, in modo
       // leggero e affidabile, tramite queueReliableWorkoutSession/flushReliableSync.
-      const cloudPhotos = payload.nutrition?.dashboard?.photos;
-      if (Array.isArray(cloudPhotos) && cloudPhotos.length) {
-        payload.nutrition = { ...payload.nutrition, dashboard: { ...payload.nutrition.dashboard, photos: redactPhotoListFallback(cloudPhotos) } };
-      }
       const rootPayloadBytes = JSON.stringify(payload).length;
       // === CALCOLO BLOB: campi radice troppo pesanti vanno in documenti dedicati ===
       const blobCollection = cloudStateBlobsCollection();
@@ -8444,7 +8389,7 @@ function sanitizeForFirestore(value) {
 
     function coachStudioSettingsHtml() {
       const coach=coachAiState();
-      return `<section class="coach-studio-page">${coachStudioPageHead("Preferenze","Impostazioni Coach","Controlla l’esperienza Coach senza modificare le impostazioni nutrizionali.")}<article class="coach-studio-card"><h3>Coach AI</h3><div class="coach-settings-grid"><label><input type="checkbox" data-ai-toggle ${coach.enabled?"checked":""}> Suggerimenti attivi</label><label>Layout vista atleta<select data-studio-setting="athleteLayout">${["compact","wide","bottom"].map((v)=>`<option value="${v}" ${state.coach.athleteLayout===v?"selected":""}>${v}</option>`).join("")}</select></label></div></article>${divaBotSettingsHtml()}<article class="coach-studio-card"><h3>Accessibilità e interfaccia</h3>${experienceSettingsHtml()}</article>${accountCardHtml()}</section>`;
+      return `<section class="coach-studio-page">${coachStudioPageHead("Preferenze","Impostazioni Coach","Controlla l’esperienza Coach senza modificare i dati di allenamento.")}<article class="coach-studio-card"><h3>Coach AI</h3><div class="coach-settings-grid"><label><input type="checkbox" data-ai-toggle ${coach.enabled?"checked":""}> Suggerimenti attivi</label><label>Layout vista atleta<select data-studio-setting="athleteLayout">${["compact","wide","bottom"].map((v)=>`<option value="${v}" ${state.coach.athleteLayout===v?"selected":""}>${v}</option>`).join("")}</select></label></div></article>${divaBotSettingsHtml()}<article class="coach-studio-card"><h3>Accessibilità e interfaccia</h3>${experienceSettingsHtml()}</article>${accountCardHtml()}</section>`;
     }
 
     function athleteIntelligenceStore() {
@@ -8483,7 +8428,7 @@ function sanitizeForFirestore(value) {
     function coachAthleteProfileHtml() {
       const ctx=activeAthleteIntelligence(), athlete=activeAthleteProfileDraft(), g=athlete.general, goals=athlete.goals, p=athlete.preferences, e=athlete.equipment;
       const missing=ctx.missing.map((item)=>`<li><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.where)} · ${escapeHtml(item.why)}</span></li>`).join("");
-      return `<section class="coach-studio-page athlete-intelligence-page" data-athlete-profile="${escapeHtml(athlete.id)}">${coachStudioPageHead("Athlete Context","Profilo atleta","La fonte unica che collega strategia, programmi, Nutrizione e Coach AI 2.")}
+      return `<section class="coach-studio-page athlete-intelligence-page" data-athlete-profile="${escapeHtml(athlete.id)}">${coachStudioPageHead("Athlete Context","Profilo atleta","La fonte unica che collega strategia, programmi e Coach AI 2.")}
         ${missing?`<article class="athlete-missing-card"><h3>Informazioni utili ancora mancanti</h3><ul>${missing}</ul></article>`:""}
         <details class="athlete-section" open><summary>Dati generali</summary><div class="athlete-form-grid"><label>Nome<input data-athlete-field="general.name" value="${escapeHtml(g.name)}"></label><label>Data di nascita<input type="date" data-athlete-field="general.birthDate" value="${escapeHtml(g.birthDate)}"></label><label>Età<input type="number" data-athlete-field="general.age" value="${g.age??""}"></label><label>Sesso<input data-athlete-field="general.sex" value="${escapeHtml(g.sex)}"></label><label>Altezza cm<input type="number" data-athlete-field="general.heightCm" value="${g.heightCm??""}"></label><label>Peso kg<input type="number" step="0.1" data-athlete-field="general.weightKg" value="${g.weightKg??""}"></label><label>Livello<select data-athlete-field="general.level"><option value="">Da definire</option>${["principiante","intermedio","avanzato"].map((v)=>`<option ${g.level===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Anni di allenamento<input type="number" data-athlete-field="general.trainingYears" value="${g.trainingYears??""}"></label><label>Sessioni settimanali<input type="number" data-athlete-field="general.weeklySessions" value="${g.weeklySessions??""}"></label><label>Minuti per sessione<input type="number" data-athlete-field="general.sessionMinutes" value="${g.sessionMinutes??""}"></label><label class="full">Note coach<textarea data-athlete-field="general.coachNotes">${escapeHtml(g.coachNotes)}</textarea></label></div></details>
         <details class="athlete-section" open><summary>Obiettivi e priorità</summary><div class="athlete-form-grid"><label>Obiettivo primario<select data-athlete-field="goals.primary">${window.BarbellDivaAthleteContext.GOALS.map((v)=>`<option value="${v}" ${goals.primary===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Obiettivi secondari<input data-athlete-list="goals.secondary" value="${escapeHtml(csvValue(goals.secondary))}" placeholder="forza, performance..."></label><label>Data obiettivo<input type="date" data-athlete-field="goals.targetDate" value="${escapeHtml(goals.targetDate)}"></label><label class="full">Target misurabili<input data-athlete-list="goals.targetMetrics" value="${escapeHtml(csvValue(goals.targetMetrics))}" placeholder="es. +10 kg squat, circonferenza..."></label><div class="full"><div class="row"><strong>Priorità muscolari con livello</strong><button type="button" class="ghost-button" data-priority-add>+ Aggiungi gruppo</button></div><div class="athlete-structured-list">${athletePriorityRowsHtml(athlete.muscles.priorities)}</div></div><label>Carenze percepite<input data-athlete-list="muscles.deficits" value="${escapeHtml(csvValue(athlete.muscles.deficits))}"></label><label>Punti di forza<input data-athlete-list="muscles.strengths" value="${escapeHtml(csvValue(athlete.muscles.strengths))}"></label><label>Da mantenere<input data-athlete-list="muscles.maintain" value="${escapeHtml(csvValue(athlete.muscles.maintain))}"></label><label class="full">Note obiettivo<textarea data-athlete-field="goals.notes">${escapeHtml(goals.notes)}</textarea></label></div></details>
@@ -8493,13 +8438,12 @@ function sanitizeForFirestore(value) {
     }
 
     function coachStrategyHtml() {
-      const store=athleteIntelligenceStore(), ctx=activeAthleteIntelligence(), strategy=store.strategies.find((item)=>item.id===coachStudioState().strategyId) || ctx.strategy || window.BarbellDivaAthleteContext.createDefaultStrategy(ctx.athlete.id), nutrition=store.nutritionByAthlete[strategy.athleteId] || ctx.nutrition;
+      const store=athleteIntelligenceStore(), ctx=activeAthleteIntelligence(), strategy=store.strategies.find((item)=>item.id===coachStudioState().strategyId) || ctx.strategy || window.BarbellDivaAthleteContext.createDefaultStrategy(ctx.athlete.id);
       return `<section class="coach-studio-page athlete-intelligence-page" data-strategy-editor="${escapeHtml(strategy.id)}">${coachStudioPageHead("Direzione del blocco","Strategia","Obiettivi e vincoli leggibili dal coach, dal programma e dal Coach AI 2.",`<button class="ghost-button" data-strategy-new>+ Nuova strategia</button>`)}
-        <article class="athlete-context-strip"><label>Atleta<select data-strategy-field="athleteId">${athleteOptionsHtml(strategy.athleteId)}</select></label><label>Strategia<select data-strategy-select>${strategyOptionsHtml(strategy.id,strategy.athleteId)}</select></label><span><b>Fase nutrizionale</b>${escapeHtml(nutrition.phase)} · ${escapeHtml(nutrition.source)} · confidenza ${escapeHtml(nutrition.confidence)}</span></article>
+        <article class="athlete-context-strip"><label>Atleta<select data-strategy-field="athleteId">${athleteOptionsHtml(strategy.athleteId)}</select></label><label>Strategia<select data-strategy-select>${strategyOptionsHtml(strategy.id,strategy.athleteId)}</select></label></article>
         <details class="athlete-section" open><summary>Blocco e obiettivi</summary><div class="athlete-form-grid"><label>Nome<input data-strategy-field="name" value="${escapeHtml(strategy.name)}"></label><label>Tipo blocco<select data-strategy-field="blockType">${window.BarbellDivaAthleteContext.BLOCK_TYPES.map((v)=>`<option value="${v}" ${strategy.blockType===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Obiettivo primario<select data-strategy-field="primaryGoal">${window.BarbellDivaAthleteContext.GOALS.map((v)=>`<option value="${v}" ${strategy.primaryGoal===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Obiettivi secondari<input data-strategy-list="secondaryGoals" value="${escapeHtml(csvValue(strategy.secondaryGoals))}"></label><label>Durata settimane<input type="number" data-strategy-field="durationWeeks" value="${strategy.durationWeeks||8}"></label><label>Frequenza target<input type="number" data-strategy-field="frequency" value="${strategy.frequency??""}"></label><label>Muscoli target<input data-strategy-list="targetMuscles" value="${escapeHtml(csvValue(strategy.targetMuscles))}"></label><label>Pattern target<input data-strategy-list="targetPatterns" value="${escapeHtml(csvValue(strategy.targetPatterns))}"></label></div></details>
         <details class="athlete-section" open><summary>Prescrizione strategica</summary><div class="athlete-form-grid"><label>Volume target<input data-strategy-field="targetVolume" value="${escapeHtml(strategy.targetVolume)}"></label><label>Fatica target<input data-strategy-field="targetFatigue" value="${escapeHtml(strategy.targetFatigue)}"></label><label>RPE target<input data-strategy-field="targetRpe" value="${escapeHtml(strategy.targetRpe)}"></label><label>RIR target<input data-strategy-field="targetRir" value="${escapeHtml(strategy.targetRir)}"></label><label>Uso del cedimento<input data-strategy-field="failurePolicy" value="${escapeHtml(strategy.failurePolicy)}"></label><label>Recuperi<input data-strategy-field="restPolicy" value="${escapeHtml(strategy.restPolicy)}"></label><label>Densità<input data-strategy-field="density" value="${escapeHtml(strategy.density)}"></label><label>Tecniche<input data-strategy-list="techniques" value="${escapeHtml(csvValue(strategy.techniques))}"></label><label class="full">Indicatori di performance<input data-strategy-list="performanceMarkers" value="${escapeHtml(csvValue(strategy.performanceMarkers))}"></label><label class="full">Note strategiche<textarea data-strategy-field="notes">${escapeHtml(strategy.notes)}</textarea></label></div></details>
         <details class="athlete-section"><summary>Collegamenti programma</summary><div class="program-link-list">${(state.programs||[]).filter((p)=>!p.deletedAt).map((p)=>{const link=store.programLinks[p.id]||{};return `<div><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(link.strategyId?store.strategies.find((x)=>x.id===link.strategyId)?.name||"Strategia non trovata":"Scheda libera")}</span><button class="ghost-button" data-program-link="${escapeHtml(p.id)}">Collega a questa strategia</button></div>`}).join("")}</div></details>
-        <details class="athlete-section"><summary>Fase nutrizionale condivisa</summary><div class="athlete-form-grid"><label>Fase<select data-nutrition-phase>${window.BarbellDivaAthleteContext.NUTRITION_PHASES.map((v)=>`<option value="${v}" ${nutrition.phase===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Fonte<select data-nutrition-source><option value="estimated" ${nutrition.source!=="manual"?"selected":""}>Stimata dai dati</option><option value="manual" ${nutrition.source==="manual"?"selected":""}>Manuale coach</option></select></label><label class="full">Motivo / note<input data-nutrition-reason value="${escapeHtml(nutrition.reason)}"></label></div><p class="micro-copy">Una fase manuale non viene mai sovrascritta dalla sincronizzazione nutrizionale.</p></details>
         <div class="athlete-savebar"><span data-strategy-save-status>Strategia pronta per il salvataggio.</span><button class="gold-button" data-strategy-save>Salva strategia</button></div></section>`;
     }
 
@@ -8736,13 +8680,13 @@ function sanitizeForFirestore(value) {
 
     function coachAiWorkspaceHtml(compact=false){
       const selectedId=coachAiSelectedProgramId(),data=coachAi3Model(selectedId),program=data.program,result=data.result,model=data.model,context=activeAthleteIntelligence(program.id),score=Number(result.score?.score)||0,missing=result.missing||[],undo=coachProgramUi.ai3Undo;
-      const strategy=context.strategy||{},nutrition=context.nutrition||{},last=state.coachAi3?.lastAnalysisByProgram?.[program.id],priorityCount=(result.insights||[]).filter((item)=>item.severity!=="success"&&(["critical","warning"].includes(item.severity)||coachAiPriorityValue(item.priority)>=75)).length;
+      const strategy=context.strategy||{},last=state.coachAi3?.lastAnalysisByProgram?.[program.id],priorityCount=(result.insights||[]).filter((item)=>item.severity!=="success"&&(["critical","warning"].includes(item.severity)||coachAiPriorityValue(item.priority)>=75)).length;
       const conclusion=priorityCount?`Ho individuato ${priorityCount} ${priorityCount===1?"punto prioritario":"punti prioritari"}. Parti dal primo: è quello con il maggiore impatto sul programma.`:"La distribuzione è coerente con i dati disponibili. Non vedo correzioni urgenti.";
       if(compact)return `<div class="coach-ai2 is-compact"><span class="section-eyebrow">Diva Coach AI · ${escapeHtml(program.name)}</span><div class="ai2-score-card"><div class="ai2-score"><strong>${score}</strong><span>/100</span></div><div><h3>${escapeHtml(coachAiUiStatus(score))}</h3><p>${escapeHtml(conclusion)}</p></div></div>${coachAiPriorityCardsV2Html((result.insights||[]).slice(0,3))}<button class="gold-button" data-coach-studio-route="ai">Apri l’analisi completa</button></div>`;
       const reviewItems=(model.review?.items||[]).filter(item=>item.scope!=="diagnostics"&&item.severity!=="success"),positiveItems=(result.insights||[]).filter(item=>item.severity==="success"),summary=model.review?.summary||{},progressionValue=summary.progressionCoverage??(result.metrics.progressionCoverage==null?null:Math.round(result.metrics.progressionCoverage*100)),progressionLabel=progressionValue==null?"—":`${progressionValue}%`,lastSimulation=state.coachAi3?.lastSimulationByProgram?.[program.id]||null;
       return `<div class="coach-ai2 ai-workspace">
         ${coachStudioPageHead("Athlete Intelligence","Diva Coach AI","Una revisione leggibile del programma, con simulazioni sempre sotto il tuo controllo.")}
-        <header class="ai-workspace-header" id="ai-overview"><div class="ai-program-picker"><label for="coachAiProgramSelect">Programma da analizzare</label><select id="coachAiProgramSelect" data-ai-program-select>${coachAiProgramOptionsHtml(program.id)}</select><small>Atleta: ${escapeHtml(context.athlete?.general?.name||"Alice")} · blocco: ${escapeHtml(strategy.name||strategy.blockType||"non collegato")} · nutrizione: ${escapeHtml(nutrition.phase||"non definita")}</small></div><div class="ai-analysis-actions"><span>Ultima analisi: <b>${last?new Date(last).toLocaleString("it-IT"):"non ancora aggiornata in questa sessione"}</b></span><button class="gold-button" data-ai-recalculate>Ricalcola analisi</button></div></header>
+        <header class="ai-workspace-header" id="ai-overview"><div class="ai-program-picker"><label for="coachAiProgramSelect">Programma da analizzare</label><select id="coachAiProgramSelect" data-ai-program-select>${coachAiProgramOptionsHtml(program.id)}</select><small>Atleta: ${escapeHtml(context.athlete?.general?.name||"Alice")} · blocco: ${escapeHtml(strategy.name||strategy.blockType||"non collegato")}</small></div><div class="ai-analysis-actions"><span>Ultima analisi: <b>${last?new Date(last).toLocaleString("it-IT"):"non ancora aggiornata in questa sessione"}</b></span><button class="gold-button" data-ai-recalculate>Ricalcola analisi</button></div></header>
         <nav class="ai-workspace-tabs" aria-label="Sezioni Coach AI">${[["overview","Panoramica"],["review","Revisione programma"],["suggestions","Suggerimenti"],["simulations","Simulazioni"],["history","Storico"],["technical","Dettagli tecnici"]].map(([id,label],index)=>`<button class="${index===0?"active":""}" data-ai-section-target="${id}">${label}</button>`).join("")}</nav>
         <section class="ai-workspace-hero"><div class="ai-hero-score"><strong>${score}</strong><span>/100</span></div><div><span class="section-eyebrow">Valutazione del programma</span><h2>${escapeHtml(coachAiUiStatus(score))}</h2><p>${escapeHtml(conclusion)}</p></div><div class="ai-hero-facts"><span><b>${escapeHtml(coachAiUiTrend(summary.fatigue||result.deload?.decision))}</b>Fatica</span><span><b>${priorityCount}</b>Priorità</span><span><b>${model.proposals?.length||0}</b>Soluzioni</span></div>${undo?'<button class="ghost-button" data-ai3-undo>Annulla ultima modifica AI</button>':''}</section>
         <div class="coach-studio-kpis"><article class="coach-studio-kpi"><span>Finestra performance</span><select data-ai2-window>${[3,5,8].map((v)=>`<option value="${v}" ${Number(coachProgramUi.ai2Window||5)===v?"selected":""}>${v} rilevazioni</option>`).join("")}</select><small>solo storico reale</small></article>${coachProgramUi.ai2Undo?'<article class="coach-studio-kpi"><span>Ultima modifica</span><button class="ghost-button" data-ai2-undo>Annulla progressione</button><small>ripristina lo stato precedente</small></article>':""}</div>
@@ -10238,7 +10182,7 @@ function sanitizeForFirestore(value) {
         const heading=type === "program-new" ? "Nuovo programma" : type === "program-save-as" ? "Salva come nuovo programma" : "Modifica programma";
         const defaultName=type === "program-save-as" ? `${item?.name||"Programma"} · copia` : item?.name||"";
         const store=athleteIntelligenceStore(), linked=store.programLinks[item?.id]||{}, athleteId=linked.athleteId||store.activeAthleteId;
-        const contextFields=`<div class="program-setup"><h4>Contesto atleta e strategia</h4><label><input type="checkbox" id="programModalFree" ${linked.freeProgram?"checked":""}> Scheda libera: salta il collegamento</label><div class="form-grid"><label>Atleta<select id="programModalAthlete">${athleteOptionsHtml(athleteId)}</select></label><label>Strategia<select id="programModalStrategy"><option value="">Nessuna / rapida dopo</option>${strategyOptionsHtml(linked.strategyId||"",athleteId)}</select></label><input type="hidden" id="programModalBlock" value="${escapeHtml(linked.blockType || item?.phase || "")}"><label>Fase nutrizionale<select id="programModalNutrition">${window.BarbellDivaAthleteContext.NUTRITION_PHASES.map((v)=>`<option value="${v}" ${linked.nutritionalPhase===v?"selected":""}>${v}</option>`).join("")}</select></label></div></div>`;
+        const contextFields=`<div class="program-setup"><h4>Contesto atleta e strategia</h4><label><input type="checkbox" id="programModalFree" ${linked.freeProgram?"checked":""}> Scheda libera: salta il collegamento</label><div class="form-grid"><label>Atleta<select id="programModalAthlete">${athleteOptionsHtml(athleteId)}</select></label><label>Strategia<select id="programModalStrategy"><option value="">Nessuna / rapida dopo</option>${strategyOptionsHtml(linked.strategyId||"",athleteId)}</select></label><input type="hidden" id="programModalBlock" value="${escapeHtml(linked.blockType || item?.phase || "")}"></div></div>`;
         return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>${heading}</h3><div class="form-grid" style="margin-top:12px"><label class="full">Nome<input id="programModalName" value="${escapeHtml(defaultName)}" placeholder="Nome programma"></label><label>Fase (tipo di blocco)<select id="programModalPhase">${["", ...(window.BarbellDivaAthleteContext?.BLOCK_TYPES || [])].map((value) => `<option value="${escapeHtml(value)}" ${String(item?.phase || "").toLowerCase() === String(value).toLowerCase() ? "selected" : ""}>${value ? escapeHtml(value) : "— scegli la fase —"}</option>`).join("")}</select></label><label>Durata settimane<input id="programModalDuration" type="number" min="1" value="${escapeHtml(item?.durationWeeks || 8)}"></label><label>Cartella<select id="programModalFolder"><option value="">Nessuna cartella</option>${folders.map((folder)=>`<option value="${escapeHtml(folder)}" ${item?.folder===folder?"selected":""}>${escapeHtml(folder)}</option>`).join("")}</select></label><label>Stato<select id="programModalStatus"><option value="draft" ${type==="program-save-as" || item?.status === "draft" || item?.status === "available" ? "selected" : ""}>Bozza</option><option value="active" ${type!=="program-save-as" && item?.status === "active" ? "selected" : ""}>Attivo</option><option value="archived" ${type!=="program-save-as" && item?.status === "archived" ? "selected" : ""}>Archiviato</option></select></label></div>${contextFields}<div class="coach-modal-actions">${close}<button class="gold-button" data-coach-modal-save>${type==="program-save-as"?"Crea copia":"Salva programma"}</button></div></section></div>`;
       }
       if (type === "sheet-new" || type === "sheet-edit" || type === "sheet-rename") {
@@ -11825,10 +11769,9 @@ function sanitizeForFirestore(value) {
         document.querySelectorAll("[data-strategy-field]").forEach((input)=>setNestedValue(strategy,input.dataset.strategyField,inputValue(input)));
         document.querySelectorAll("[data-strategy-list]").forEach((input)=>setNestedValue(strategy,input.dataset.strategyList,csvList(input.value)));
         state.athleteIntelligence=window.BarbellDivaAthleteContext.upsertStrategy(athleteIntelligenceStore(),strategy);
-        const nutrition=state.athleteIntelligence.nutritionByAthlete[strategy.athleteId]||{};nutrition.phase=document.querySelector("[data-nutrition-phase]")?.value||nutrition.phase;nutrition.source=document.querySelector("[data-nutrition-source]")?.value||nutrition.source;nutrition.reason=document.querySelector("[data-nutrition-reason]")?.value||nutrition.reason;nutrition.updatedAt=new Date().toISOString();state.athleteIntelligence.nutritionByAthlete[strategy.athleteId]=nutrition;
         saveState({immediate:true});showToast("Strategia salvata. I programmi collegati e Coach AI 2 sono aggiornati.");render();
       });
-      document.querySelectorAll("[data-program-link]").forEach((button)=>button.addEventListener("click",()=>{const strategyId=document.querySelector("[data-strategy-editor]")?.dataset.strategyEditor,strategy=athleteIntelligenceStore().strategies.find((x)=>x.id===strategyId)||activeAthleteIntelligence().strategy;if(!strategy)return;const nutrition=athleteIntelligenceStore().nutritionByAthlete[strategy.athleteId]||{};state.athleteIntelligence=window.BarbellDivaAthleteContext.linkProgram(athleteIntelligenceStore(),button.dataset.programLink,{athleteId:strategy.athleteId,strategyId:strategy.id,blockType:strategy.blockType,nutritionalPhase:nutrition.phase});saveState({immediate:true});showToast("Programma collegato senza modificare esercizi o progressioni.");render();}));
+      document.querySelectorAll("[data-program-link]").forEach((button)=>button.addEventListener("click",()=>{const strategyId=document.querySelector("[data-strategy-editor]")?.dataset.strategyEditor,strategy=athleteIntelligenceStore().strategies.find((x)=>x.id===strategyId)||activeAthleteIntelligence().strategy;if(!strategy)return;state.athleteIntelligence=window.BarbellDivaAthleteContext.linkProgram(athleteIntelligenceStore(),button.dataset.programLink,{athleteId:strategy.athleteId,strategyId:strategy.id,blockType:strategy.blockType});saveState({immediate:true});showToast("Programma collegato senza modificare esercizi o progressioni.");render();}));
       document.querySelector("[data-ai-program-select]")?.addEventListener("change",(event)=>{const next=coachAiSelectedProgramId(event.target.value);if(!next)return showToast("Il programma selezionato non è più disponibile.");state.coachAi3=state.coachAi3||{};state.coachAi3.selectedProgramId=next;state.coachAi3.lastAnalysisByProgram=state.coachAi3.lastAnalysisByProgram||{};state.coachAi3.lastAnalysisByProgram[next]=new Date().toISOString();coachProgramUi.aiProgramId=next;coachProgramUi.ai3Preview=null;coachAi2Cache={fingerprint:"",result:null};saveState({immediate:true});showToast("Programma cambiato: aggiorno tutta l’analisi Coach AI.");render();});
       document.querySelector("[data-ai-exercise-query]")?.addEventListener("input",(event)=>{clearTimeout(coachProgramUi.aiExerciseSearchTimer);const value=event.target.value;coachProgramUi.aiExerciseSearchTimer=setTimeout(()=>{coachProgramUi.aiExerciseQuery=value;render();},140);});
       document.querySelector("[data-ai-exercise-sheet]")?.addEventListener("change",event=>{coachProgramUi.aiExerciseSheet=event.target.value;render();});
@@ -14209,7 +14152,7 @@ function sanitizeForFirestore(value) {
           athleteId:document.getElementById("programModalAthlete")?.value,
           strategyId:document.getElementById("programModalStrategy")?.value,
           blockType:document.getElementById("programModalPhase")?.value || document.getElementById("programModalBlock")?.value,
-          nutritionalPhase:document.getElementById("programModalNutrition")?.value,
+
           freeProgram:document.getElementById("programModalFree")?.checked
         });
         saveState({immediate:true});
@@ -15074,80 +15017,6 @@ function sanitizeForFirestore(value) {
     initializeDataSafety();
     recoverDurableWorkoutJournal();
     applyCoachStudioDeepLink();
-    function mergeNutritionDashboard(current = {}, incoming = {}) {
-      const merged = { ...(current || {}), ...(incoming || {}) };
-      merged.log = mergeRowsByKey(current.log, incoming.log, (row) => row.date || JSON.stringify(row));
-      const measures = new Map();
-      [...(Array.isArray(current.measures) ? current.measures : []), ...(Array.isArray(incoming.measures) ? incoming.measures : [])]
-        .filter(Boolean)
-        .forEach((row) => {
-          const key = row.date || JSON.stringify(row);
-          measures.set(key, { ...(measures.get(key) || {}), ...row });
-        });
-      merged.measures = Array.from(measures.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
-      const photoRows = new Map();
-      [...(Array.isArray(current.photos) ? current.photos : []), ...(Array.isArray(incoming.photos) ? incoming.photos : [])]
-        .filter((photo) => photo && (photo.front || photo.side || photo.back))
-        .forEach((photo) => {
-          const key = photo.id || `${photo.date || ""}|${photo.notes || ""}`;
-          photoRows.set(key, { ...(photoRows.get(key) || {}), ...photo });
-        });
-      merged.photos = Array.from(photoRows.values()).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
-      return merged;
-    }
-
-    function nutritionPayloadHasUserData(payload = {}) {
-      return !!(
-        (Array.isArray(payload.photos) && payload.photos.length) ||
-        (Array.isArray(payload.log) && payload.log.length) ||
-        (Array.isArray(payload.measures) && payload.measures.some((row) => String(row.source || "").toLowerCase() === "app"))
-      );
-    }
-
-    function pushNutritionDashboardToFrame() {
-      const frame = document.querySelector(".nutrition-frame");
-      if (!frame?.contentWindow) return;
-      frame.contentWindow.postMessage({
-        type: "barbell-diva:nutrition-load",
-        state: state.nutrition?.dashboard || {}
-      }, window.location.origin);
-    }
-
-    const BUNDLED_NUTRITION_BACKUP = "./dashboard-alimentazione-backup-2026-07-15.json";
-
-    async function importBundledNutritionBackup() {
-      state.migrations = state.migrations || {};
-      if (Number(state.migrations.nutritionBackup15Jul2026 || 0) >= 1) return false;
-      try {
-        let parsed = window.BARBELL_DIVA_FOOD_BACKUP || null;
-        if (!parsed) {
-          if (typeof fetch !== "function") throw new Error("Caricamento backup Food non disponibile");
-          const response = await fetch(BUNDLED_NUTRITION_BACKUP, { cache: "no-store" });
-          if (!response.ok) throw new Error(`Backup Food non disponibile (${response.status})`);
-          parsed = await response.json();
-        }
-        const payload = parsed?.state || parsed;
-        if (!nutritionPayloadHasUserData(payload)) throw new Error("Backup Food privo di dati utente");
-        if (!state.nutrition) state.nutrition = {};
-        const local = state.nutrition.dashboard || {};
-        // Il backup costituisce la base; i dati già presenti nell'app restano prioritari.
-        state.nutrition.dashboard = mergeNutritionDashboard(payload, local);
-        state.migrations.nutritionBackup15Jul2026 = 1;
-        state.migrations.nutritionBackup15Jul2026ImportedAt = new Date().toISOString();
-        state.migrations.nutritionBackup15Jul2026Summary = {
-          log: (payload.log || []).length,
-          measures: (payload.measures || []).length,
-          photos: (payload.photos || []).length
-        };
-        saveState({ immediate: true });
-        pushNutritionDashboardToFrame();
-        if (activeScreen === "nutrition" || activeScreen === "dashboard") render();
-        return true;
-      } catch (error) {
-        return false;
-      }
-    }
-
     const firebaseBootStarted = initFirebase();
     // v147.59 PRIMO PAINT FRESCO: il primo render attende l'idratazione dalla
     // cloud-cache (lettura locale: pochi millisecondi) con un tetto di 400ms.
@@ -15160,11 +15029,6 @@ function sanitizeForFirestore(value) {
       hydrateFromCloudSnapshotCache().catch(() => false),
       new Promise((resolve) => { setTimeout(resolve, 400); })
     ]).then(() => { render(); });
-    // Bonifica nutrizione (v14738): il modulo Nutrizione non fa più parte
-    // dell'app, quindi NON reimportiamo il backup Food bundled: altrimenti i
-    // dati appena bonificati tornerebbero nello stato al primo avvio.
-    // La funzione resta definita (e testata) per un'eventuale riattivazione.
-    // importBundledNutritionBackup();
     const premiumSplash = document.getElementById("premiumSplash");
     if (state.ui?.splashEnabled === false) premiumSplash?.classList.add("is-hidden");
     else {
