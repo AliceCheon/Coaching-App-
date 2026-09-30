@@ -25,10 +25,15 @@ test('ogni scheda mantiene lo stesso metodo su tutte le settimane', () => {
   assert.equal(distinct.size, 21, 'attesi 21 metodi distinti (18 storici + 3 "Intensità:" condivisi tra le schede di ottobre-dicembre)');
 });
 
-test('ogni settimana contiene la regola di progressione in nota', () => {
+test('ogni settimana: metodo linkato via templateId, nota = descrizioni Excel', () => {
   for (const p of lib) {
     for (const ex of p.exercises) {
-      assert.ok(String(ex.note || '').length > 10, 'nota progressione mancante in ' + p.code);
+      if (String(p.code||'').startsWith('IOD-')) {
+        assert.equal(ex.progression?.templateId, p.schemeId, 'metodo non linkato in ' + p.code);
+        assert.ok(!String(ex.note||'').startsWith('INTENSITÀ'), 'nota col prefisso del metodo in ' + p.code);
+      } else {
+        assert.ok(String(ex.note || '').length > 10, 'nota progressione mancante in ' + p.code);
+      }
     }
   }
 });

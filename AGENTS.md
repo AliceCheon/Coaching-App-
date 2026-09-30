@@ -14,7 +14,7 @@ stato, modelli, UI e la logica di derivazione della Fase.
 ## Harness dei test
 I test caricano `src/app-main.js` in una VM Node con stub di `window`/`document`
 e un prologo per `matchMedia`, `setInterval`, `performance`, `history`. Vedi
-`tests/v14754-motore-fasi-inferenza.test.mjs` come modello pulito.
+`tests/v14755-motore-fasi-inferenza.test.mjs` come modello pulito.
 
 ## Verifica layout su viewport piccoli (FlexWindow / cover screen)
 Chromium headless ignora `--window-size` sotto ~500px di larghezza, quindi per

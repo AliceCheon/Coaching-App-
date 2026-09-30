@@ -132,7 +132,7 @@ def build_cards(blocks):
                     'weekNumber': item['week'],
                     'source': 'excel',
                 } for item in exercise['weeks']]
-                parts = [method_note] + [t for t in (exercise['note1'], exercise['note2']) if t]
+                parts = [t for t in (exercise['note1'], exercise['note2']) if t]
                 exercises.append({
                     'name': exercise['name'],
                     'muscle': exercise['muscle'] or 'Custom',
@@ -143,9 +143,9 @@ def build_cards(blocks):
                     'warmup': '--',
                     'tempo': exercise['tempo'],
                     'note': ' · '.join(parts),
-                    'progression': {'weeks': weeks_payload},
+                    'progression': {'weeks': weeks_payload, 'templateId': scheme_id, 'templateName': scheme_name},
                     'metadata': {
-                        'note2': exercise['note2'],
+                        'note2': exercise['tempo'],
                         'excelNote1': exercise['note1'],
                         'excelNote2': exercise['note2'],
                     },

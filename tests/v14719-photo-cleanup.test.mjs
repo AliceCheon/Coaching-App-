@@ -14,8 +14,8 @@ check(html.includes("cleanupV14719"), "flag cleanup una tantum mancante");
 check(html.includes("redactPhotoListFallback(loaded.nutrition?.dashboard?.photos)"), "foto di stato non redatte al bootstrap");
 check(html.includes("writeBackupHistory(historyCleanup)"), "cronologia backup non riscritta senza foto");
 check(html.includes('"front", "back", "side"'), "chiavi foto front/back mancanti dall'elenco heavy");
-check(config.includes('build: "v147.54-intensita-ottobre-dicembre"'), "build non allineata alla versione corrente");
-check(sw.includes("atlas-app-v14754-intensita-ottobre-dicembre"), "cache PWA non allineata alla versione corrente");
+check(config.includes('build: "v147.55-progressione-intensita"'), "build non allineata alla versione corrente");
+check(sw.includes("atlas-app-v14755-progressione-intensita"), "cache PWA non allineata alla versione corrente");
 
-console.log(JSON.stringify({ ok:true, build:"v147.54-intensita-ottobre-dicembre", checks:6, fix:"photo cleanup one-shot front/back/side + history + cloud" }));
+console.log(JSON.stringify({ ok:true, build:"v147.55-progressione-intensita", checks:6, fix:"photo cleanup one-shot front/back/side + history + cloud" }));
 

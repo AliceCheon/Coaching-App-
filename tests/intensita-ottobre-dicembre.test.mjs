@@ -116,3 +116,18 @@ test('PROGRESSIONI-SCHEDE.json mappa la nuova fase sui metodi "Intensità:"', ()
   };
   for (const g of groups) assert.equal(g.schemeId, expected[g.letter], 'gruppo ' + g.letter);
 });
+
+// v147.55 — nota = descrizioni Excel (puo' essere vuota); metodo linkato via templateId; 3 template nel selettore
+const m55 = src.match(/const PROGRAM_LIBRARY = (\[[\s\S]*?\]);/);
+const _lib55 = JSON.parse(m55[1]);
+const _iod55 = _lib55.filter((c) => typeof c.code === 'string' && c.code.startsWith('IOD-'));
+for (const card of _iod55) {
+  for (const ex of card.exercises) {
+    if (String(ex.note || '').startsWith('INTENSITÀ')) throw new Error('nota col prefisso del metodo in ' + card.code + '/' + ex.name);
+    if (ex.progression?.templateId !== card.schemeId) throw new Error('metodo non linkato in ' + card.code + '/' + ex.name);
+  }
+}
+for (const tid of ['intensity-test12-wave', 'intensity-test10-climb', 'intensity-midcycle-test']) {
+  if (!src.includes('"' + tid + '"')) throw new Error('template ' + tid + ' mancante nella libreria del selettore');
+}
+console.log('v14755: note/som/templateId/template OK');
