@@ -1,6 +1,6 @@
 {
   "version": "v147.53-progression-schemes",
-  "generatedAt": "2026-09-29T08:26:19.007Z",
+  "generatedAt": "2026-09-30T07:04:48Z",
   "groups": [
     {
       "key": "B program 1|A",
@@ -163,6 +163,42 @@
       "weeks": 8,
       "schemeId": "ascending-pyramid",
       "schemeName": "Piramide ascendente"
+    },
+    {
+      "key": "Intensità ottobre-dicembre|A",
+      "phase": "Intensità ottobre-dicembre",
+      "letter": "A",
+      "focus": "Dorsali, Spalle, Centro schiena, Femorali, Bicipiti, Tricipiti",
+      "weeks": "8",
+      "schemeId": "intensity-test12-wave",
+      "schemeName": "Intensità: test 12rm + ondata 10-x"
+    },
+    {
+      "key": "Intensità ottobre-dicembre|B",
+      "phase": "Intensità ottobre-dicembre",
+      "letter": "B",
+      "focus": "Polpacci, Quadricipiti, Spalle, Petto, Glutei",
+      "weeks": "8",
+      "schemeId": "intensity-test10-climb",
+      "schemeName": "Intensità: test 10rm + salita 6→9"
+    },
+    {
+      "key": "Intensità ottobre-dicembre|C",
+      "phase": "Intensità ottobre-dicembre",
+      "letter": "C",
+      "focus": "Addominali, Spalle, Femorali, Dorsali, Centro schiena, Bicipiti",
+      "weeks": "8",
+      "schemeId": "intensity-test12-wave",
+      "schemeName": "Intensità: test 12rm + ondata 10-x"
+    },
+    {
+      "key": "Intensità ottobre-dicembre|D",
+      "phase": "Intensità ottobre-dicembre",
+      "letter": "D",
+      "focus": "Polpacci, Quadricipiti, Glutei, Petto, Bicipiti, Tricipiti",
+      "weeks": "8",
+      "schemeId": "intensity-midcycle-test",
+      "schemeName": "Intensità: test a metà ciclo"
     }
   ]
 }
