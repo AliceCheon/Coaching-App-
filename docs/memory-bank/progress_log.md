@@ -199,4 +199,4 @@ Obiettivo:
   - Commento "paracadute" corretto: la copia di ripartenza del prossimo avvio è la cloud-cache, non localStorage.
 - Stato test: nuova suite tests/v14757-avvio-parallelo-cloud-cache.test.mjs (idratazione con guardie uid/stamp/schema, speculativa consumata/scartata, degradazione senza Cache Storage); suite completa verde.
 - Blocco aperto: nessuno.
-- Prossimo step consigliato: push dopo conferma di Alice; verifica sul dispositivo reale (aprire l'app e controllare che i dati partano aggiornati e il badge passi a "Sincronizzato").
+- Push: effettuato su origin/main subito dopo la conferma di Alice (2026-09-30, ~03:26) — v147.57 pubblicata su GitHub Pages. Prossimo step: verifica sul dispositivo reale (al primo avvio la cloud-cache viene scritta; dal secondo apertura in poi i dati partano aggiornati entro un secondo e il badge passa a "Sincronizzato").
