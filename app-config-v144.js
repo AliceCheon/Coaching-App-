@@ -5,8 +5,8 @@
 // fallisce se anche un solo punto resta indietro.
 (function (root) {
   root.BarbellDivaV144Config = Object.freeze({
-    build: "v147.57-avvio-parallelo",
-    cache: "atlas-app-v14757-avvio-parallelo",
+    build: "v147.58-pre-riscaldo-echo",
+    cache: "atlas-app-v14758-pre-riscaldo-echo",
     backupAutomaticLimit: 5,
     legacyModulesRemoved: ["nutrizione", "workout-pro"],
     firebase: Object.freeze({

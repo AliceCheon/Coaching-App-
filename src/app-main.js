@@ -4031,7 +4031,17 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       // avvio. Quando il cloud è attivo il cloud è l'unica fonte di verità: se questa copia
       // fallisce (es. spazio del browser pieno) NON deve mai mostrare un errore all'utente,
       // perché i dati sono comunque al sicuro sul cloud.
-      if (cloudUser && state.profile.account?.syncReady) return true;
+      // v147.58 PRE-RISCALDO: col cloud attivo la copia silenziosa viene scritta
+      // DAVVERO (prima era no-op e il primo render dell'avvio ripartiva da una foto
+      // congelata — la "versione ferma al 29 agosto"). È sicuro perché: la copia è
+      // touch:false, quindi non tocca mai meta.updatedAt; il merge per stamp
+      // (cloud-cache e cloud live) non può far vincere un dato locale più vecchio;
+      // il fallimento quota resta silenzioso (persistStateToLocalStorage: con il
+      // cloud sorgente restituisce false senza esporre errori).
+      // Con touch:true (salvataggio locale reale) il cloud attivo resta no-op:
+      // fingere meta.updatedAt "più nuovo" farebbe perdere al merge dati cloud
+      // legittimamente più nuovi.
+      if (options.touch === true && cloudUser && state.profile.account?.syncReady) return true;
       return persistStateToLocalStorage(state, { touch: options.touch === true });
     }
 
@@ -5428,11 +5438,13 @@ function sanitizeForFirestore(value) {
           state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
           lastCloudSnapshotAt = String(snapshot.data()?.updatedAt || lastCloudSnapshotAt);
           lastCloudError = "";
-          // PARACADUTE (v147.57): la copia di ripartenza del prossimo avvio non è
-          // localStorage (echoLocalStateQuietly qui sotto è volutamente no-op con
-          // il cloud attivo) ma la cloud-cache scritta sopra: contiene l'ultimo
-          // stato visto sul cloud e viene letta da hydrateFromCloudSnapshotCache
-          // all'avvio, prima ancora che Firestore risponda.
+          // PARACADUTE (v147.58): la copia di ripartenza del prossimo avvio è DOPPIA —
+          // la cloud-cache scritta sopra (letta da hydrateFromCloudSnapshotCache
+          // all'avvio, prima ancora che Firestore risponda) e l'eco localStorage qui
+          // sotto, riarmata col pre-riscaldo v147.58: il primo render dell'avvio parte
+          // così dall'ultimo stato visto sul cloud, anche alla prima apertura dopo un
+          // deploy (la cloud-cache sopravvive ai deploy, ma l'eco copre anche il caso
+          // Cache Storage svuotato dal browser).
 
 
 

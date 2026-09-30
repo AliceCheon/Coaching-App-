@@ -200,3 +200,13 @@ Obiettivo:
 - Stato test: nuova suite tests/v14757-avvio-parallelo-cloud-cache.test.mjs (idratazione con guardie uid/stamp/schema, speculativa consumata/scartata, degradazione senza Cache Storage); suite completa verde.
 - Blocco aperto: nessuno.
 - Push: effettuato su origin/main subito dopo la conferma di Alice (2026-09-30, ~03:26) — v147.57 pubblicata su GitHub Pages. Prossimo step: verifica sul dispositivo reale (al primo avvio la cloud-cache viene scritta; dal secondo apertura in poi i dati partano aggiornati entro un secondo e il badge passa a "Sincronizzato").
+
+### 13) 2026-09-30 — Pre-riscaldo: anche la prima apertura dopo un deploy parte aggiornata (v147.58)
+
+- UUID: 0013
+- Contesto: dopo il push v147.57 Alice ha aperto l'app durante il deploy di Pages (build finita 03:28:43, apertura alle 03:27) e ha rivisto la foto del 29 agosto. Due cause sommate: codice vecchio ancora servito + cloud-cache mai scritta (prima sessione v147.57). La cloud-cache sopravvive ai deploy, ma il PRIMO render dell'avvio parte da localStorage (loadState, :1231) — e l'eco era volutamente no-op col cloud attivo (:4034), quindi quella fonte restava congelata.
+- Fix (v147.58 "pre-riscaldo"): eco silenziosa riarmata — echoLocalStateQuietly con touch:false scrive DAVVERO STORE_KEY anche col cloud attivo (dopo ogni download e salvataggio riuscito, e dopo l'idratazione da cloud-cache :4653 → ponte). Il primo render dell'avvio parte così dall'ultimo stato visto sul cloud, alla prima apertura dopo ogni deploy futuro.
+- Sicurezza: touch:false non tocca mai meta.updatedAt; il merge per stamp non può far vincere un locale più vecchio; touch:true col cloud attivo resta no-op (fingere "più nuovo" farebbe perdere al merge dati cloud legittimi); quota esaurita → false silenzioso (persistStateToLocalStorage :4064, cloud sorgente).
+- Limiti fisici dichiarati: la primissima apertura dopo QUESTO deploy paga l'ultimo avvio a freddo (sul dispositivo non esiste ancora nulla di più nuovo del 29 agosto); dal secondo opening in poi — e alla prima apertura dopo ogni deploy futuro — il pre-riscaldo vale.
+- Test: tests/v14758-pre-riscaldo-echo.test.mjs (T1 eco scrive senza toccare meta; T2 touch:true no-op; T3 ponte idratazione→STORE_KEY con stamp preservato; T4 quota silenziosa; guardie strutturali). Suite completa verde.
+- Prossimo step: push dopo conferma di Alice.
