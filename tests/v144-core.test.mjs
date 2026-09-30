@@ -24,7 +24,7 @@ for (const marker of ["function logbookHtml", "saveWorkoutSession", "function ex
 }
 
 // Sync: locale prima, coda, cloud dopo conferma.
-for (const marker of ["queueReliableWorkoutSession", "reliableSyncQueue.enqueue", "flushReliableSync", "reconcileSessionVersions", "sync-reliability.js?v=v14764"]) {
+for (const marker of ["queueReliableWorkoutSession", "reliableSyncQueue.enqueue", "flushReliableSync", "reconcileSessionVersions", "sync-reliability.js?v=v14765"]) {
   check(html.includes(marker) || sync.includes(marker), `sync marker mancante: ${marker}`);
 }
 
@@ -36,9 +36,9 @@ for (const marker of ["function createBackupEnvelope", "function verifyBackupEnv
 // Firebase e cache PWA.
 for (const marker of ["function initFirebase", "saveCloudState", "FIREBASE_CONFIG"]) check(html.includes(marker), `Firebase marker mancante: ${marker}`);
 check(html.includes("const APP_BUILD = window.BarbellDivaV144Config?.build || \"v146.1\""), "build v146.1 non uniforme nell'app");
-check(config.includes('build: "v147.64-dischi-riscaldamento"') && config.includes('cache: "atlas-app-v14764-dischi-riscaldamento"'), "configurazione v147.54 non caricata correttamente");
-check(sw.includes('const CACHE_NAME = "atlas-app-v14764-dischi-riscaldamento"'), "cache service worker non allineata alla build v147.54");
-check(manifest.includes("index.html?v=v14764"), "manifest non allineato alla build v147.54");
+check(config.includes('build: "v147.65-motore-20a-ui"') && config.includes('cache: "atlas-app-v14765-motore-20a-ui"'), "configurazione v147.54 non caricata correttamente");
+check(sw.includes('const CACHE_NAME = "atlas-app-v14765-motore-20a-ui"'), "cache service worker non allineata alla build v147.54");
+check(manifest.includes("index.html?v=v14765"), "manifest non allineato alla build v147.54");
 
 // I moduli esclusi non devono più essere caricati o consegnati.
 for (const removed of ["./nutrizione/", "workout-pro.js", "workout-pro.css", "food-backup.js", "photo-store.js"]) {

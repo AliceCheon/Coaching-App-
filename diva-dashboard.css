@@ -99,3 +99,24 @@
 
 .v147-warmup strong { font-size: 15px; }
 .v147-warmup small { opacity: 0.7; }
+
+/* Fase 9c — motore di programmazione Fase 20A (Coach AI) */
+.program-engine-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.program-engine-card {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(127, 127, 127, 0.10);
+  border: 1px solid color-mix(in srgb, var(--pink-hot, #ff5eb1) 22%, transparent);
+}
+
+.program-engine-card.is-deload {
+  border-color: color-mix(in srgb, #ffb020 55%, transparent);
+  background: color-mix(in srgb, #ffb020 10%, transparent);
+}
+
+.program-engine-card .row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }

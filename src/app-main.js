@@ -8782,6 +8782,43 @@ function sanitizeForFirestore(value) {
       return `<div class="coach-modal-backdrop"><section class="coach-modal" role="dialog" aria-modal="true" aria-labelledby="ai2PreviewTitle"><span class="section-eyebrow">Nessuna modifica è ancora stata applicata</span><h3 id="ai2PreviewTitle">Anteprima modifica Coach AI</h3><p><b>${escapeHtml(preview.exerciseName||"Esercizio")}</b></p><div class="reference-row"><strong>Prima</strong><p>${escapeHtml(preview.beforeLabel||"—")}</p><strong>Dopo</strong><p>${escapeHtml(preview.afterLabel||"—")}</p></div><p class="micro-copy">La modifica sarà registrata e potrà essere annullata dal pannello.</p><div class="coach-modal-actions"><button class="ghost-button" data-ai2-preview-cancel>Annulla</button><button class="gold-button" data-ai2-preview-confirm>Conferma modifica</button></div></section></div>`;
     }
 
+    function exerciseNameById() {
+      const map = new Map();
+      const add = (exercise) => { if (exercise?.id && exercise.name) map.set(String(exercise.id), exercise.name); };
+      (state.training?.sessions || []).forEach((session) => (session.exercises || []).forEach(add));
+      (state.programs || []).forEach((program) => (program.sheets || []).forEach((sheet) => (sheet.exercises || []).forEach(add)));
+      return map;
+    }
+
+    const PROGRAMMING_20A_LABELS = { increaseLoad: "Aumenta carico", increaseReps: "Aumenta ripetizioni", increaseSets: "Aggiungi una serie", adjustRir: "Regola RIR", reduceRest: "Riduci recupero", deload: "Scarico", holdProgression: "Mantieni", reviewAnomaly: "Da rivedere", progressWeek: "Avanza settimana", insufficientData: "Dati insufficienti", unsupportedProgression: "Progressione non supportata", maintainVolume: "Mantieni volume", maintenance: "Mantieni" };
+
+    function programEngineSuggestionsHtml() {
+      const engine = window.BarbellDivaProgramming;
+      if (!engine?.getProgrammingSuggestions) return "";
+      let suggestions = [];
+      try { suggestions = engine.getProgrammingSuggestions({}) || []; } catch (error) { return ""; }
+      const priorities = { high: 0, medium: 1, low: 2 };
+      const meaningful = suggestions
+        .filter((item) => item && item.type && !["maintenance", "maintainLoad", "maintainVolume"].includes(item.type))
+        .sort((a, b) => (priorities[a.priority] ?? 1) - (priorities[b.priority] ?? 1))
+        .slice(0, 6);
+      if (!meaningful.length) return "";
+      const names = exerciseNameById();
+      const rows = meaningful.map((item) => {
+        const name = names.get(String(item.exerciseId)) || String(item.exerciseId || "Esercizio");
+        const proposed = item.proposedPrescription || {};
+        const change = [
+          proposed.load != null ? `${proposed.load} kg` : "",
+          proposed.sets != null ? `${proposed.sets} serie` : "",
+          proposed.repRange ? `${proposed.repRange.min}-${proposed.repRange.max} rip` : "",
+          proposed.rir?.min != null ? `RIR ${proposed.rir.min}` : ""
+        ].filter(Boolean).join(" · ");
+        const isDeload = item.type === "deload";
+        return `<article class="program-engine-card ${isDeload ? "is-deload" : ""}"><div class="row"><strong>${escapeHtml(name)}</strong><span class="chip">${escapeHtml(PROGRAMMING_20A_LABELS[item.type] || item.type)}</span></div><p class="micro-copy">${escapeHtml(item.rationale || "")}</p>${change ? `<p class="micro-copy">Proposta: <strong>${escapeHtml(change)}</strong></p>` : ""}<div class="quick-actions"><span class="micro-copy">Confidenza: ${escapeHtml(item.confidence || "—")}</span><button type="button" class="ghost-button" data-programming-view="${escapeHtml(item.id)}">Segna come rivisto</button><button type="button" class="ghost-button" data-programming-ignore="${escapeHtml(item.id)}">Ignora</button></div></article>`;
+      }).join("");
+      return `<section class="ai-workspace-section" id="ai-programming20a"><div class="ai-section-heading"><span class="section-eyebrow">Motore di programmazione · Fase 20A</span><h2>Progressioni suggerite dai dati</h2><p>Calcoli sul tuo storico reale. Nessuna modifica viene applicata da sola: l'ultima parola è tua.</p></div><div class="program-engine-grid">${rows}</div></section>`;
+    }
+
     function coachAiWorkspaceHtml(compact=false){
       const selectedId=coachAiSelectedProgramId(),data=coachAi3Model(selectedId),program=data.program,result=data.result,model=data.model,context=activeAthleteIntelligence(program.id),score=Number(result.score?.score)||0,missing=result.missing||[],undo=coachProgramUi.ai3Undo;
       const strategy=context.strategy||{},last=state.coachAi3?.lastAnalysisByProgram?.[program.id],priorityCount=(result.insights||[]).filter((item)=>item.severity!=="success"&&(["critical","warning"].includes(item.severity)||coachAiPriorityValue(item.priority)>=75)).length;
@@ -8796,6 +8833,7 @@ function sanitizeForFirestore(value) {
         <div class="coach-studio-kpis"><article class="coach-studio-kpi"><span>Finestra performance</span><select data-ai2-window>${[3,5,8].map((v)=>`<option value="${v}" ${Number(coachProgramUi.ai2Window||5)===v?"selected":""}>${v} rilevazioni</option>`).join("")}</select><small>solo storico reale</small></article>${coachProgramUi.ai2Undo?'<article class="coach-studio-kpi"><span>Ultima modifica</span><button class="ghost-button" data-ai2-undo>Annulla progressione</button><small>ripristina lo stato precedente</small></article>':""}</div>
         <section class="ai-workspace-section" id="ai-review"><div class="ai-section-heading"><span class="section-eyebrow">Da guardare per primi</span><h2>Problemi prioritari</h2><p>Ogni esercizio e variante compare una sola volta, con tutti i dettagli riuniti.</p></div>${coachAiPriorityCardsV2Html(result.insights||[])}</section>
         <section class="ai-workspace-section" id="ai-suggestions"><div class="ai-section-heading"><span class="section-eyebrow">Coach AI · 3 possibilità concrete</span><h2>Come migliorerei il programma</h2><p>Ogni soluzione si può simulare prima di applicarla. Nulla cambia senza la tua conferma.</p></div>${coachAiProposalCardsHtml(model)}</section>
+        ${programEngineSuggestionsHtml()}
         <section class="ai-workspace-section" id="ai-simulations"><div class="ai-section-heading"><span class="section-eyebrow">Ambiente protetto</span><h2>Simulazioni</h2><p>Qui rimane visibile l’ultimo confronto eseguito. Il programma cambia soltanto dopo la conferma finale.</p></div>${coachAi3SimulationStatusHtml(lastSimulation,coachProgramUi.ai3Preview)}</section>
         <details class="ai-workspace-section ai-collapsible-section" id="ai-history"><summary><span><small>Decisioni tracciate</small><b>Storico di ${escapeHtml(program.name)}</b></span><em>Mostra dettagli</em></summary>${coachAiHistoryHtml(program.id)}</details>
         <details class="ai-workspace-section ai-technical ai-collapsible-section" id="ai-technical"><summary><span><small>Per chi vuole approfondire</small><b>Revisione completa e analisi per esercizio</b></span><em>Mostra dettagli</em></summary><p>Qui trovi le osservazioni secondarie, i dati mancanti e l’andamento dei singoli esercizi.</p><div class="ai3-audit-grid"><article><b>Serie settimanali</b><strong>${summary.weeklySets??result.metrics.weeklySets??"—"}</strong></article><article><b>Copertura progressioni</b><strong>${progressionLabel}</strong></article><article><b>Esercizi analizzati</b><strong>${result.metrics.exercises??"—"}</strong></article><article><b>Completezza dati</b><strong>${result.score?.completeness??"—"}%</strong></article></div>${reviewItems.length?`<div class="ai3-findings">${reviewItems.map((item)=>`<article><span class="chip">${escapeHtml(coachAiPlainText(item.category||"Revisione"))}</span><b>${escapeHtml(coachAiPlainText(item.title))}</b><p>${escapeHtml(coachAiPlainText(item.description))}</p></article>`).join("")}</div>`:`<article class="ai-workspace-empty"><span>✓</span><div><h3>Revisione tecnica pulita</h3><p>Non emergono altre osservazioni oltre a quelle già mostrate.</p></div></article>`}${missing.length?`<article class="athlete-missing-card"><h3>Informazioni che renderebbero l’analisi più precisa</h3><ul>${missing.map((item)=>`<li><strong>${escapeHtml(item.label)}</strong><span>Dove inserirla: ${escapeHtml(item.where)}<br>Perché serve: ${escapeHtml(item.why)}</span></li>`).join("")}</ul></article>`:""}${coachAi2ExerciseTableHtml(result.metrics.exerciseAnalyses||[])}</details>
@@ -11877,6 +11915,8 @@ function sanitizeForFirestore(value) {
       });
       document.querySelectorAll("[data-program-link]").forEach((button)=>button.addEventListener("click",()=>{const strategyId=document.querySelector("[data-strategy-editor]")?.dataset.strategyEditor,strategy=athleteIntelligenceStore().strategies.find((x)=>x.id===strategyId)||activeAthleteIntelligence().strategy;if(!strategy)return;state.athleteIntelligence=window.BarbellDivaAthleteContext.linkProgram(athleteIntelligenceStore(),button.dataset.programLink,{athleteId:strategy.athleteId,strategyId:strategy.id,blockType:strategy.blockType});saveState({immediate:true});showToast("Programma collegato senza modificare esercizi o progressioni.");render();}));
       document.querySelector("[data-ai-program-select]")?.addEventListener("change",(event)=>{const next=coachAiSelectedProgramId(event.target.value);if(!next)return showToast("Il programma selezionato non è più disponibile.");state.coachAi3=state.coachAi3||{};state.coachAi3.selectedProgramId=next;state.coachAi3.lastAnalysisByProgram=state.coachAi3.lastAnalysisByProgram||{};state.coachAi3.lastAnalysisByProgram[next]=new Date().toISOString();coachProgramUi.aiProgramId=next;coachProgramUi.ai3Preview=null;coachAi2Cache={fingerprint:"",result:null};saveState({immediate:true});showToast("Programma cambiato: aggiorno tutta l’analisi Coach AI.");render();});
+      document.querySelectorAll("[data-programming-view]").forEach((button) => button.addEventListener("click", () => { window.BarbellDivaProgramming?.markSuggestionViewed?.(button.dataset.programmingView); showToast("Suggerimento segnato come rivisto."); }));
+      document.querySelectorAll("[data-programming-ignore]").forEach((button) => button.addEventListener("click", () => { window.BarbellDivaProgramming?.recordSuggestionDecision?.(button.dataset.programmingIgnore, "ignored"); showToast("Suggerimento ignorato."); render(); }));
       document.querySelector("[data-ai-exercise-query]")?.addEventListener("input",(event)=>{clearTimeout(coachProgramUi.aiExerciseSearchTimer);const value=event.target.value;coachProgramUi.aiExerciseSearchTimer=setTimeout(()=>{coachProgramUi.aiExerciseQuery=value;render();},140);});
       document.querySelector("[data-ai-exercise-sheet]")?.addEventListener("change",event=>{coachProgramUi.aiExerciseSheet=event.target.value;render();});
       document.querySelector("[data-ai-exercise-sort]")?.addEventListener("change",event=>{coachProgramUi.aiExerciseSort=event.target.value;render();});
