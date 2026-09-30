@@ -16,6 +16,11 @@ desktop.ini
 *.log
 .cache/
 
+# Output generati dagli script di sviluppo (non versionare)
+*.ndjson
+*.diff
+tests/performance-*.json
+
 # Snapshot di sviluppo: restano solo in locale, mai nel repository
 backup/
 

@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = __dirname;
+const rootDir = path.join(__dirname, '..');
 
 test('index.html exists and has correct structure', async () => {
   const html = await fs.readFile(path.join(rootDir, 'index.html'), 'utf8');
@@ -20,7 +20,6 @@ test('main source files exist', async () => {
   const files = [
     'src/app-main.js',
     'src/utils-global.js',
-    'src/utils.js',
     'src/firebase-app-check.js',
     'index.html',
     'manifest.webmanifest',

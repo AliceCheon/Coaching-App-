@@ -26,7 +26,6 @@ const APP_SHELL = [
   "./workout-flow-v147.css",
   "./coach-studio-inline.css",
   "./src/utils-global.js",
-  "./src/utils.js",
   "./src/firebase-app-check.js",
   "./src/app-main.js",
   "./src/app-integration.js",
