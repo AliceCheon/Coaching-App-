@@ -4430,6 +4430,15 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       // e scritture in volo perse). Un init è sufficiente per tutta la sessione.
       if (firebaseInitDone) return true;
       if (!window.firebase.apps.length) window.firebase.initializeApp(FIREBASE_CONFIG);
+      // App Check (Fase 3): se app-config espone una site key, attiva la protezione
+      // anti-abuso PRIMA di usare Auth/Firestore. Senza site key resta spento e
+      // l'app funziona come prima (best-effort: non deve mai bloccare l'avvio).
+      try {
+        const appCheckSiteKey = window.BarbellDivaV144Config?.appCheckSiteKey || "";
+        if (appCheckSiteKey && window.BarbellDivaAppCheck?.initializeAppCheck) {
+          window.BarbellDivaAppCheck.initializeAppCheck(window.firebase, { siteKey: appCheckSiteKey });
+        }
+      } catch (error) { /* silenzioso */ }
       authService = window.firebase.auth();
       dbService = window.firebase.firestore ? window.firebase.firestore() : null;
       window.firebase.firestore().settings({ experimentalForceLongPolling: true });

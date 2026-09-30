@@ -66,16 +66,18 @@ in documenti dedicati della sottoraccolta `stateBlobs`, scritti solo quando il c
 cambia (confronto per hash), con "delete sentinel" per rimuoverli dalla radice e fallback
 retrocompatibile in lettura.
 
-## 5. App Check — ⚠️ NON ATTIVO
+## 5. App Check — pronto, da accendere con la site key
 
-- Il modulo `src/firebase-app-check.js` è **caricato** (`index.html:159`) ma la funzione
-  `initializeAppCheck()` **non viene chiamata da nessuna parte** nel repository.
-- Quindi App Check **non è operativo**, anche se il `README.md` lo indica come protezione
-  necessaria contro gli abusi delle API.
-- Per attivarlo: registrare il sito in Firebase Console → App Check, poi invocare
-  `window.BarbellDivaAppCheck.initializeAppCheck(firebase)` dopo l'inizializzazione di
-  Firebase. In locale il modulo è già pronto per il debug token
-  (`localStorage: barbell-diva.appCheckDebugToken`).
+- `src/firebase-app-check.js` è caricato (`index.html`) e ora viene **invocato** da
+  `initFirebase()` (`src/app-main.js`), subito dopo `firebase.initializeApp`.
+- L'attivazione è **guidata dalla configurazione**: `app-config-v144.js` → `appCheckSiteKey`.
+  Finché è vuota, App Check resta spento e l'app non cambia.
+- Per accenderlo davvero:
+  1. Firebase Console → App Check → registra l'app web con **reCAPTCHA v3** (o Enterprise);
+  2. copia la **site key** in `appCheckSiteKey` di `app-config-v144.js`;
+  3. dopo aver visto traffico "verificato" in Console, attiva **Enforcement** su
+     Cloud Firestore e Authentication.
+- In locale il debug token resta su `localStorage: barbell-diva.appCheckDebugToken`.
 
 ## 6. Dati locali
 

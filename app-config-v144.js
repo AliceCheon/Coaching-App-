@@ -9,6 +9,10 @@
     cache: "atlas-app-v14759-primo-paint-fresco",
     backupAutomaticLimit: 5,
     legacyModulesRemoved: ["nutrizione", "workout-pro"],
+    // App Check: incolla qui la site key reCAPTCHA registrata in
+    // Firebase Console → App Check → App web. Finché è vuota, App Check resta
+    // spento (nessun errore) e l'app funziona come prima.
+    appCheckSiteKey: "",
     firebase: Object.freeze({
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",

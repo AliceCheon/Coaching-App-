@@ -27,12 +27,28 @@
       console.warn("[App Check] Firebase non inizializzato.");
       return null;
     }
+    const siteKey = options.siteKey;
+    if (!siteKey) {
+      // Nessuna site key configurata: App Check resta spento, nessun errore.
+      console.warn("[App Check] site key mancante (app-config-v144.js → appCheckSiteKey).");
+      return null;
+    }
     try {
+      // Il provider va ISTANZIATO con la site key (non passato come classe).
+      const providerClass = options.provider
+        || firebaseInstance.appCheck?.ReCaptchaEnterpriseProvider
+        || firebaseInstance.appCheck?.ReCaptchaV3Provider;
+      if (!providerClass) {
+        console.warn("[App Check] provider reCAPTCHA non disponibile negli SDK caricati.");
+        return null;
+      }
+      if (isDebugMode()) {
+        const debugToken = getDebugToken();
+        if (debugToken) root.FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
+      }
+      const provider = new providerClass(siteKey);
       const appCheck = firebaseInstance.appCheck();
-      const provider = options.provider || firebaseInstance.appCheck.ReCaptchaEnterpriseProvider;
-      appCheck.activate(provider, {
-        isTokenAutoRefreshEnabled: true
-      });
+      appCheck.activate(provider, options.isTokenAutoRefreshEnabled !== false);
       console.log("[App Check] Inizializzato con successo.");
       return appCheck;
     } catch (error) {

@@ -69,7 +69,9 @@ La documentazione storica delle versioni precedenti è in `docs/history/`:
 
 - Le regole Firestore sono in `firestore.rules`
 - Ogni utente può accedere solo ai propri dati
-- Le API key Firebase sono pubbliche (normale per Firebase), ma assicurati di configurare **App Check** per prevenire abusi
+- Le API key Firebase sono pubbliche (normale per Firebase). Per prevenire abusi l'app
+  supporta **App Check**: basta incollare la site key reCAPTCHA in `appCheckSiteKey`
+  dentro `app-config-v144.js` (vedi `FIREBASE-LOGIN.md`).
 
 ## 📝 Note
 
