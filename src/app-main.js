@@ -12166,6 +12166,7 @@ function sanitizeForFirestore(value) {
       
       document.querySelectorAll("[data-backup-import]").forEach((input) => input.addEventListener("change", async () => {
         const file = input.files?.[0]; if (!file) return;
+        if (rejectOversizedImport(file)) { input.value = ""; return; }
         try {
           const parsed = JSON.parse(await file.text()); const verified = verifyBackupEnvelope(convertLegacyBackupToEnvelope(parsed));
           if (!verified.ok) throw new Error(verified.error);
@@ -12218,6 +12219,7 @@ function sanitizeForFirestore(value) {
         importAliceButton.addEventListener("click", () => importAliceFile.click());
         importAliceFile.addEventListener("change", () => {
           const file = importAliceFile.files?.[0]; if (!file) return;
+          if (rejectOversizedImport(file)) { importAliceFile.value = ""; return; }
           const reader = new FileReader();
           reader.onload = () => {
             try {
@@ -14704,8 +14706,19 @@ function sanitizeForFirestore(value) {
         .sort((a, b) => String(a.dateInput || a.date || "").localeCompare(String(b.dateInput || b.date || "")));
     }
 
+    // Fase 8: un file importato non deve poter esaurire la memoria del browser.
+    const IMPORT_MAX_BYTES = 25 * 1024 * 1024;
+    function rejectOversizedImport(file) {
+      if (file && Number(file.size) > IMPORT_MAX_BYTES) {
+        showToast(`File troppo grande (${Math.round(Number(file.size) / 1024 / 1024)} MB): limite 25 MB.`, "error");
+        return true;
+      }
+      return false;
+    }
+
     function importBackup(file) {
       if (!file) return;
+      if (rejectOversizedImport(file)) return;
       const reader = new FileReader();
       reader.onload = () => {
         try {

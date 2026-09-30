@@ -78,5 +78,5 @@ if (/if \(cloudUser && state\.profile\.account\?\.syncReady\) return true;/.test
 if (!/if \(options\.touch === true && cloudUser && state\.profile\.account\?\.syncReady\) return true;/.test(appMain)) throw new Error("La guardia touch:true col cloud attivo è sparita (protezione meta.updatedAt persa)");
 if (!appMain.includes("PRE-RISCALDO")) throw new Error("Manca il commento segnaletico del pre-riscaldo");
 
-console.log("v14761-lint-e-ci: " + results.length + " verifiche passate");
+console.log("v14762-hardening: " + results.length + " verifiche passate");
 for (const item of results) console.log("  ✓ " + item);

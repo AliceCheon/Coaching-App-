@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v147.61-lint-e-ci` |
-| `cache` | `atlas-app-v14761-lint-e-ci` |
+| `build` | `v147.62-hardening` |
+| `cache` | `atlas-app-v14762-hardening` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

@@ -241,6 +241,12 @@
     saveState({ mood: mood, lastInteraction: Date.now() });
   }
 
+  function escapePopupText(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+    });
+  }
+
   function showMessagePopup(message, mood) {
     var existing = document.querySelector(".diva-popup");
     if (existing) existing.remove();
@@ -251,7 +257,7 @@
     popup.className = "diva-popup";
     popup.style.cssText = "position: fixed; bottom: 110px; right: 20px; max-width: 260px; padding: 18px 20px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid " + color + "; border-radius: 18px; color: #fff; font-size: 14px; z-index: 9998; box-shadow: 0 10px 30px rgba(255,111,203,0.3); backdrop-filter: blur(4px); animation: divaFadeIn 0.3s ease-out;";
 
-    popup.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="font-size:24px;">💅</span><span style="color:#ff6fcb;font-weight:bold;font-size:16px;">DIVA</span></div><div>' + message + '</div>';
+    popup.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="font-size:24px;">💅</span><span style="color:#ff6fcb;font-weight:bold;font-size:16px;">DIVA</span></div><div>' + escapePopupText(message) + '</div>';
 
     document.body.appendChild(popup);
 
