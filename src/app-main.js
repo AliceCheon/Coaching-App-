@@ -4554,6 +4554,11 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       return true;
     }
 
+    function cloudDocumentFor(uid) {
+      if (!dbService || !uid) return null;
+      return dbService.collection(CLOUD_COLLECTION).doc(uid);
+    }
+
     function cloudDocument() {
       if (!dbService || !cloudUser) return null;
       return dbService.collection(CLOUD_COLLECTION).doc(cloudUser.uid);
@@ -4569,6 +4574,86 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
 
     function cloudProgramDocumentId(programId) {
       return `program-v1-${encodeURIComponent(String(programId || "program")).replaceAll(".", "%2E")}`;
+    }
+
+    // === AVVIO PARALLELO + CLOUD-CACHE (docs/design-avvio-parallelo-cloud-cache.md) ===
+    // L'apertura non deve aspettare auth + Firestore per mostrare dati buoni:
+    // 1) la get() della radice parte SUBITO con l'ultimo uid noto (l'SDK tiene la
+    //    richiesta in coda finché il token non è pronto) e loadCloudState consuma
+    //    quel risultato invece di rifare il round-trip;
+    // 2) l'idratazione iniziale legge l'ultima versione vista sul cloud da Cache
+    //    Storage (quota più ampia di localStorage, che può essere piena) e la fonde
+    //    con lo STESSO merge usato dal cloud live: il vincitore è deciso da
+    //    meta.updatedAt, un dato più vecchio non può mai sovrascriverne uno più nuovo.
+    // Tutto è best-effort: senza caches (navigazione privata) o senza uid salvato si
+    // torna al flusso seriale di prima, senza errori a schermo.
+    const CLOUD_SNAP_CACHE = "atlas-cloud-snap-v1";
+    const CLOUD_SNAP_URL = "/__cloud-snap-v1__";
+    let speculativeRoot = null;
+
+    function startSpeculativeDownload(uid) {
+      if (speculativeRoot || !dbService || !uid || !navigator.onLine) return false;
+      try {
+        const promise = withTimeout(cloudDocumentFor(uid).get(), 40000);
+        promise.catch(() => {}); // segnata gestita: il risultato si valuta solo in loadCloudState
+        speculativeRoot = { uid: String(uid), promise };
+        return true;
+      } catch (speculativeError) { speculativeRoot = null; return false; }
+    }
+
+    function consumeSpeculativeSnapshot(uid) {
+      if (!speculativeRoot) return null;
+      const spec = speculativeRoot;
+      speculativeRoot = null;
+      // uid diverso: dato di un altro account, si scarta senza nemmeno guardarlo
+      return spec.uid === String(uid || "") ? spec.promise : null;
+    }
+
+    async function readCloudSnapshotCache() {
+      try {
+        if (!window.caches?.open) return null;
+        const cache = await window.caches.open(CLOUD_SNAP_CACHE);
+        const response = await cache.match(CLOUD_SNAP_URL);
+        if (!response) return null;
+        return await response.json();
+      } catch (cacheError) { return null; }
+    }
+
+    function writeCloudSnapshotCache(uid, stamp, snapshotState) {
+      try {
+        if (!window.caches?.open || !uid || !snapshotState) return Promise.resolve(false);
+        const body = JSON.stringify({ schema: 1, uid: String(uid), updatedAt: String(stamp || ""), savedAt: new Date().toISOString(), state: snapshotState });
+        return window.caches.open(CLOUD_SNAP_CACHE)
+          .then((cache) => cache.put(CLOUD_SNAP_URL, new Response(body)))
+          .then(() => true)
+          .catch(() => false);
+      } catch (cacheError) { return Promise.resolve(false); }
+    }
+
+    async function hydrateFromCloudSnapshotCache() {
+      try {
+        const savedUid = String(state.profile.account?.uid || "");
+        if (!savedUid || !navigator.onLine) return false;
+        startSpeculativeDownload(savedUid);
+        const cached = await readCloudSnapshotCache();
+        if (!cached || cached.schema !== 1 || cached.uid !== savedUid) return false;
+        const cachedStamp = Date.parse(cached.updatedAt || "") || 0;
+        const localStamp = Date.parse(state.meta?.updatedAt || "") || 0;
+        // La cache non aggiunge nulla se il locale è più nuovo (es. allenamento
+        // registrato offline): si salta senza toccare nulla.
+        if (!cachedStamp || cachedStamp <= localStamp) return false;
+        const remoteState = clone(cached.state);
+        if (!remoteState || typeof remoteState !== "object") return false;
+        state = mergeCloudAndLocalState(state, remoteState);
+        // Lo stamp della cache diventa "già visto": il primo onSnapshot con lo
+        // stesso updatedAt non rifonde (l'eventuale live più nuovo si applica normale).
+        lastCloudSnapshotAt = String(cached.updatedAt || "");
+        state.profile.account = { ...(state.profile.account || {}), cloudStatus: "sync", syncReady: true };
+        setPremiumSaveStatus("syncing", "Aggiorno dal cloud…");
+        echoLocalStateQuietly({ touch: false }); // copia locale silenziosa, senza toccare meta.updatedAt
+        renderCloudSoon();
+        return true;
+      } catch (hydrateError) { console.warn("[cloud-cache] Idratazione non riuscita:", hydrateError?.message || hydrateError); return false; } // mai bloccante: il download live resta la fonte
     }
 
     // === SPLIT DELLA RADICE (limite Firestore: 1 MiB per documento) ===
@@ -4982,6 +5067,7 @@ function sanitizeForFirestore(value) {
           const liveBlobs = await loadCloudStateBlobs(data);
           Object.keys(liveBlobs).forEach((blobField) => { remoteState[blobField] = liveBlobs[blobField]; });
         } catch (blobError) { /* fallback: campo dentro rootData.state */ }
+        writeCloudSnapshotCache(cloudUser?.uid, stamp, remoteState); // cloud-cache: ultima versione vista sul cloud
         state = mergeCloudAndLocalState(state, remoteState);
         const cloudNotesRepaired = repairIntensitaNotesFromLibrary(state);
         recoverWorkoutJournal(state);
@@ -5209,6 +5295,7 @@ function sanitizeForFirestore(value) {
         programsSaved = true;
         lastCloudWriteSuccessAt = Date.now();
         lastCloudSnapshotAt = cloudUpdatedAt;
+        writeCloudSnapshotCache(cloudUser?.uid, cloudUpdatedAt, state); // cloud-cache: ultima versione vista sul cloud
         if (!lastCloudError?.startsWith("Schede sincronizzate")) lastCloudError = "";
         state.meta = { ...(state.meta || {}), programsUpdatedAt: programRevision, cloudProgramsUpdatedAt: programRevision, cloudProgramRevisions: revisions };
         state.profile.account.cloudStatus = "sync";
@@ -5299,22 +5386,40 @@ function sanitizeForFirestore(value) {
       }
       cloudLoading = true;
       startPerceivedLoading("cloud");
+      setPremiumSaveStatus("syncing", "Aggiorno dal cloud…");
       try {
-        const snapshot = await withTimeout(doc.get(), 40000);
+        // AVVIO PARALLELO: all'avvio la get() della radice è già partita (con
+        // l'ultimo uid noto, tenuta in coda dall'SDK finché l'auth non è pronta):
+        // si consuma quel risultato invece di pagare un secondo round-trip.
+        const speculative = consumeSpeculativeSnapshot(cloudUser?.uid);
+        let snapshot;
+        try {
+          snapshot = speculative ? await speculative : await withTimeout(doc.get(), 40000);
+        } catch (speculativeError) {
+          // La get speculativa può fallire per una corsa di sessione (partita
+          // prima dell'auth): si riparte con una get fresca, utente ora valido.
+          snapshot = await withTimeout(doc.get(), 40000);
+        }
         if (snapshot.exists && snapshot.data()?.state) {
           const account = state.profile.account;
           const rootData = snapshot.data();
           const remoteState = clone(rootData.state);
-          remoteState.programs = await loadCloudPrograms(rootData);
-          try {
-            const rootBlobs = await loadCloudStateBlobs(rootData);
-            Object.keys(rootBlobs).forEach((blobField) => { remoteState[blobField] = rootBlobs[blobField]; });
-          } catch (blobError) { /* fallback: i campi restano quelli dentro rootData.state */ }
-          const remoteSessions = await loadCloudSessions(rootData);
+          // Sub-load in PARALLELO: programmi, blob e sedute dipendono tutti dal
+          // solo rootData — tre round-trip seriali diventano uno (design §3.2).
+          const [loadedPrograms, rootBlobs, remoteSessions] = await Promise.all([
+            loadCloudPrograms(rootData),
+            loadCloudStateBlobs(rootData).catch(() => null), // fallback: i campi restano quelli dentro rootData.state
+            loadCloudSessions(rootData)
+          ]);
+          remoteState.programs = loadedPrograms;
+          if (rootBlobs) Object.keys(rootBlobs).forEach((blobField) => { remoteState[blobField] = rootBlobs[blobField]; });
           if (remoteSessions) { // formato nuovo: le sedute arrivano dalla collezione leggera, non dal blocco unico
             if (!remoteState.training) remoteState.training = {};
             remoteState.training.sessions = remoteSessions;
           }
+          // CLOUD-CACHE: il remoto appena scaricato diventa il punto di ripartenza
+          // del prossimo avvio (vedi nota "paracadute" sotto).
+          writeCloudSnapshotCache(cloudUser?.uid, String(rootData.updatedAt || ""), remoteState);
           state = mergeCloudAndLocalState(state, remoteState);
           const cloudNotesRepaired = repairIntensitaNotesFromLibrary(state);
           recoverWorkoutJournal(state);
@@ -5323,10 +5428,11 @@ function sanitizeForFirestore(value) {
           state.profile.account = { ...account, cloudStatus: "sync", syncReady: true };
           lastCloudSnapshotAt = String(snapshot.data()?.updatedAt || lastCloudSnapshotAt);
           lastCloudError = "";
-          // Paracadute locale: dopo un merge cloud riuscito salviamo subito una
-          // copia silenziosa dello stato unito (sedute incluse, così anche se al
-          // prossimo avvio il cloud non viene ricaricato (rete, auth, Firestore),
-          // il Logbook non resta fermo a una data vecchia sul dispositivo.
+          // PARACADUTE (v147.57): la copia di ripartenza del prossimo avvio non è
+          // localStorage (echoLocalStateQuietly qui sotto è volutamente no-op con
+          // il cloud attivo) ma la cloud-cache scritta sopra: contiene l'ultimo
+          // stato visto sul cloud e viene letta da hydrateFromCloudSnapshotCache
+          // all'avvio, prima ancora che Firestore risponda.
 
 
 
@@ -15030,6 +15136,9 @@ function sanitizeForFirestore(value) {
     }
 
     const firebaseBootStarted = initFirebase();
+    // Idratazione dall'ultima versione vista sul cloud (fire-and-forget): dati
+    // buoni entro il primo secondo, mentre auth e download live procedono in parallelo.
+    hydrateFromCloudSnapshotCache().catch(() => {});
     render();
     // Bonifica nutrizione (v14738): il modulo Nutrizione non fa più parte
     // dell'app, quindi NON reimportiamo il backup Food bundled: altrimenti i

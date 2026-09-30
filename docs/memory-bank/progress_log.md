@@ -169,3 +169,34 @@ Obiettivo:
 - Settimana 1: "test 12rm, poi 1x8" (6 righe) e "test 10rm, poi 1x6" (2 righe) accanto al test, fuori dal RIR. I test di metà ciclo in settimana 4 (IOD-B4, IOD-D4) restano senza suffisso.
 - Cursore stabile: render rimandati mentre si scrive (intervallo 45s, eco Firestore, salvataggi differiti, board outerHTML); flush al blur; campi di ricerca live esclusi; modal protetti.
 - Prossimi passi (concordati 2026-09-30, ~02:15): progettare INSIEME una skill Genspark riutilizzabile per il flusso "import fase da Excel → bump versione a sorgente unico → suite test → push GitHub". Da studiare bene prima di implementare: cosa parametrizzare (nome fase, file Excel sorgente, bump automatico, test, push su origin/main) e cosa instead chiedere in conferma all'utente. Contesto completo nella nota memo dell'agente (sb-brain, source memo).
+
+### 11) 2026-09-30 — Skill Genspark "coaching-app-release-fase" rilasciata (repo a d048d85)
+
+- UUID: 0011
+- Commit riferimento: d048d85 ("docs: handoff — prossima sessione: progettare skill riutilizzabile import fasi"). Working tree invariato: la skill vive fuori dal repo (profilo Genspark), nessun nuovo commit necessario.
+- Cosa è cambiato:
+  - Ripresa sessione verificata: albero pulito, `main` allineata a `origin/main`, build `v147.56-cursore-rir` come fonte unica, suite verde all'avvio (~3 min, 9 skip normali), fix FlexWindow/tema v147.57–63 tutti presenti nel tree.
+  - Skill Genspark `coaching-app-release-fase` progettata INSIEME ad Alice e rilasciata come `coaching-app-release-fase.skill` (SKILL.md + scripts/bump_version.sh), consegnata in chat — da aggiungere al profilo con "Add to my skills".
+  - Scelte di Alice: l'agente fa tutto il flusso, l'unico ok richiesto è il push; numero versione automatico (patch +1, suffisso dal nome della fase).
+  - SKILL.md codifica il flusso in 7 fasi (verifica ambiente → import Excel da template `tools/import_intensita_ottobre_dicembre.py` → bump versione a sorgente unico → suite completa → checkpoint → commit → riepilogo e conferma push) con le regole dure: prescrizioni verbatim dall'Excel, RIR/RPE/KG vuoti nelle card, Fase dai dati mai seminata, MAI upload via interfaccia web di GitHub (storia v147.63).
+  - bump_version.sh: bump build/cache in `app-config-v144.js` + token `vMAJOR+MINOR` allineato in `index.html` (tutti i `?v=`), `manifest.webmanifest`, `service-worker.js`, `FIREBASE-LOGIN.md` e nei test che pinnano il token, con verifica dei residui.
+  - Nota onesta: il memo su sb-brain citato dall'handoff non è più presente (ricerche "skill"/"Excel"/"bump"/"fase" senza esito); il piano era comunque completo nella nota handoff di questo file.
+- Stato test: suite verde all'avvio; nessuna modifica al codice dell'app in questa sessione (la skill è esterna al repo).
+- Blocco aperto: nessuno. In attesa che Alice clicchi "Add to my skills" sulla card consegnata.
+- Prossimo step consigliato: alla prima fase nuova reale, adattare il template import alla fase e usare la skill end-to-end (Excel → bump → test → checkpoint → conferma → push).
+
+### 12) 2026-09-30 — Avvio parallelo + cloud-cache: dati buoni entro il primo secondo (v147.57)
+
+- UUID: 0012
+- Commit riferimento: questo commit ("v147.57: avvio parallelo e cloud-cache…"); decisione di progetto ufficializzata a 6e9a8b0 (docs/design-avvio-parallelo-cloud-cache.md).
+- Sintomo: all'apertura dell'app i dati apparivano fermi a fine agosto e si aggiornavano solo dopo ~10 secondi.
+- Diagnosi: avvio seriale auth → download → 3 sub-load; e la copia locale è congelata di proposito col cloud attivo (echoLocalStateQuietly è no-op), quindi la "foto" locale restava all'ultimo salvataggio pre-cloud (il 29 agosto).
+- Cosa è cambiato (design §3-4):
+  - Download speculativo: la get() della radice parte all'avvio con l'ultimo uid noto (l'SDK tiene la richiesta in coda finché l'auth non è pronta); loadCloudState consuma quella promise (fallback su get fresca se una corsa di sessione la fa fallire); se l'uid cambia, il risultato è scartato.
+  - Sub-load programmi/blob/sedute in Promise.all: tre round-trip seriali diventano uno.
+  - Cloud-cache "atlas-cloud-snap-v1" in Cache Storage: scritta dopo il download, dopo ogni snapshot remoto applicato e dopo ogni salvataggio riuscito; letta all'avvio da hydrateFromCloudSnapshotCache() e fusa con lo STESSO merge del cloud live (vincitore per meta.updatedAt), con guardie su uid, schema e stamp; lo stamp idratato viene segnato come già visto (nessun doppio merge dal primo onSnapshot).
+  - Badge "Aggiorno dal cloud…" su setPremiumSaveStatus durante il download live.
+  - Commento "paracadute" corretto: la copia di ripartenza del prossimo avvio è la cloud-cache, non localStorage.
+- Stato test: nuova suite tests/v14757-avvio-parallelo-cloud-cache.test.mjs (idratazione con guardie uid/stamp/schema, speculativa consumata/scartata, degradazione senza Cache Storage); suite completa verde.
+- Blocco aperto: nessuno.
+- Prossimo step consigliato: push dopo conferma di Alice; verifica sul dispositivo reale (aprire l'app e controllare che i dati partano aggiornati e il badge passi a "Sincronizzato").
