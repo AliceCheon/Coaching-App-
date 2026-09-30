@@ -209,4 +209,4 @@ Obiettivo:
 - Sicurezza: touch:false non tocca mai meta.updatedAt; il merge per stamp non può far vincere un locale più vecchio; touch:true col cloud attivo resta no-op (fingere "più nuovo" farebbe perdere al merge dati cloud legittimi); quota esaurita → false silenzioso (persistStateToLocalStorage :4064, cloud sorgente).
 - Limiti fisici dichiarati: la primissima apertura dopo QUESTO deploy paga l'ultimo avvio a freddo (sul dispositivo non esiste ancora nulla di più nuovo del 29 agosto); dal secondo opening in poi — e alla prima apertura dopo ogni deploy futuro — il pre-riscaldo vale.
 - Test: tests/v14758-pre-riscaldo-echo.test.mjs (T1 eco scrive senza toccare meta; T2 touch:true no-op; T3 ponte idratazione→STORE_KEY con stamp preservato; T4 quota silenziosa; guardie strutturali). Suite completa verde.
-- Prossimo step: push dopo conferma di Alice.
+- Push: effettuato su origin/main subito dopo la conferma di Alice (2026-09-30, ~03:37) — v147.58 pubblicata su GitHub Pages. Verifica consigliata: aprire l'app DUE volte di fila; dalla seconda apertura (e alla prima apertura dopo ogni deploy futuro) il primo render parte dall'ultimo stato visto sul cloud.
