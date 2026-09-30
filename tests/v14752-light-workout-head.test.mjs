@@ -31,7 +31,7 @@ assert.ok(!/\.stage,\s*\.phone,\s*\.phone-shell \{\s*height: auto/.test(css), "a
 const build = config.match(/build:\s*"([^"]+)"/)?.[1];
 const m = build.match(/^v(\d+)\.(\d+)/);
 const token = `v${m[1]}${m[2]}`;
-assert.equal(token, "v14758", `token inatteso: ${token}`);
+assert.equal(token, "v14759", `token inatteso: ${token}`);
 assert.ok([...html.matchAll(/\?v=([A-Za-z0-9._-]+)/g)].every((x) => x[1] === token), "index.html non allineato");
 assert.ok([...read("manifest.webmanifest").matchAll(/\?v=([A-Za-z0-9._-]+)/g)].every((x) => x[1] === token), "manifest non allineato");
 assert.equal(sw.match(/const CACHE_NAME = "([^"]+)"/)[1], config.match(/cache:\s*"([^"]+)"/)[1], "CACHE_NAME non allineato");

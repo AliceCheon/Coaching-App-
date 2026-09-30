@@ -210,3 +210,13 @@ Obiettivo:
 - Limiti fisici dichiarati: la primissima apertura dopo QUESTO deploy paga l'ultimo avvio a freddo (sul dispositivo non esiste ancora nulla di più nuovo del 29 agosto); dal secondo opening in poi — e alla prima apertura dopo ogni deploy futuro — il pre-riscaldo vale.
 - Test: tests/v14758-pre-riscaldo-echo.test.mjs (T1 eco scrive senza toccare meta; T2 touch:true no-op; T3 ponte idratazione→STORE_KEY con stamp preservato; T4 quota silenziosa; guardie strutturali). Suite completa verde.
 - Push: effettuato su origin/main subito dopo la conferma di Alice (2026-09-30, ~03:37) — v147.58 pubblicata su GitHub Pages. Verifica consigliata: aprire l'app DUE volte di fila; dalla seconda apertura (e alla prima apertura dopo ogni deploy futuro) il primo render parte dall'ultimo stato visto sul cloud.
+
+### 14) 2026-09-30 — Primo paint fresco: mai più la foto vecchia all'apertura (v147.59)
+
+- UUID: 0014
+- Contesto: con la v147.58 sul dispositivo di Alice l'aggiornamento arriva più veloce, ma il PRIMO render parte ancora da localStorage (loadState :1231): la cloud-cache veniva letta DOPO il primo paint, così la foto vecchia lampeggiava a schermo prima dei dati freschi.
+- Fix (v147.59 "primo paint fresco"): il primo render attende l'idratazione dalla cloud-cache (lettura locale, pochi ms) con tetto di 400ms — Promise.race nel boot dopo initFirebase. Senza cache valida (o offline, dove il locale è la fonte giusta) l'idratazione termina subito e il render parte come prima. Il wiring dello splash premium resta subito dopo: l'eventuale attesa è coperta dall'overlay.
+- Scelta architetturale (chiesta da Alice: "si può togliere il locale e fare solo Firebase?"): NO al cloud-puro — il locale è il paracadute per palestra offline, pause anti-flood di Firestore (già successe) ed eventuali outage; le vere app Google tengono una copia locale ma non la mostrano mai se più vecchia. v147.59 implementa proprio questo: paracadute invisibile.
+- Diagnostica: console.info su idratazione applicata ("Idratata dallo snapshot del cloud: <stamp>") e saltata ("cache assente o non valida") — verificabile da desktop.
+- Test: tests/v14759-primo-paint-fresco.test.mjs (6 verifiche strutturali: race+tetto, niente fire-and-forget, aggancio a initFirebase, diagnostica, hook di scrittura invariati). Suite completa verde.
+- Prossimo step: push dopo conferma di Alice.

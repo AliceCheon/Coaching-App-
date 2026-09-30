@@ -4646,7 +4646,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         if (!savedUid || !navigator.onLine) return false;
         startSpeculativeDownload(savedUid);
         const cached = await readCloudSnapshotCache();
-        if (!cached || cached.schema !== 1 || cached.uid !== savedUid) return false;
+        if (!cached || cached.schema !== 1 || cached.uid !== savedUid) { console.info("[cloud-cache] Idratazione saltata: cache assente o non valida (avvio dal locale)."); return false; }
         const cachedStamp = Date.parse(cached.updatedAt || "") || 0;
         const localStamp = Date.parse(state.meta?.updatedAt || "") || 0;
         // La cache non aggiunge nulla se il locale è più nuovo (es. allenamento
@@ -4662,6 +4662,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         setPremiumSaveStatus("syncing", "Aggiorno dal cloud…");
         echoLocalStateQuietly({ touch: false }); // copia locale silenziosa, senza toccare meta.updatedAt
         renderCloudSoon();
+        console.info("[cloud-cache] Idratata dallo snapshot del cloud:", cached.updatedAt);
         return true;
       } catch (hydrateError) { console.warn("[cloud-cache] Idratazione non riuscita:", hydrateError?.message || hydrateError); return false; } // mai bloccante: il download live resta la fonte
     }
@@ -15148,10 +15149,17 @@ function sanitizeForFirestore(value) {
     }
 
     const firebaseBootStarted = initFirebase();
-    // Idratazione dall'ultima versione vista sul cloud (fire-and-forget): dati
-    // buoni entro il primo secondo, mentre auth e download live procedono in parallelo.
-    hydrateFromCloudSnapshotCache().catch(() => {});
-    render();
+    // v147.59 PRIMO PAINT FRESCO: il primo render attende l'idratazione dalla
+    // cloud-cache (lettura locale: pochi millisecondi) con un tetto di 400ms.
+    // Lo schermo non mostra più la vecchia foto locale quando sul cloud ne è
+    // vista una più nuova — il fastidio "si apre col 29 agosto e poi si
+    // aggiorna". L'attesa è quasi sempre impercettibile e non peggiora mai
+    // l'avvio a freddo: senza cache valide (o offline, dove il locale è la
+    // fonte giusta) l'idratazione termina subito e il render parte come prima.
+    Promise.race([
+      hydrateFromCloudSnapshotCache().catch(() => false),
+      new Promise((resolve) => { setTimeout(resolve, 400); })
+    ]).then(() => { render(); });
     // Bonifica nutrizione (v14738): il modulo Nutrizione non fa più parte
     // dell'app, quindi NON reimportiamo il backup Food bundled: altrimenti i
     // dati appena bonificati tornerebbero nello stato al primo avvio.

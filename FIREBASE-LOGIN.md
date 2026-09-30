@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v147.58-pre-riscaldo-echo` |
-| `cache` | `atlas-app-v14758-pre-riscaldo-echo` |
+| `build` | `v147.59-primo-paint-fresco` |
+| `cache` | `atlas-app-v14759-primo-paint-fresco` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |
