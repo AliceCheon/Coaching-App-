@@ -4468,7 +4468,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
       try {
         const appCheckSiteKey = window.BarbellDivaV144Config?.appCheckSiteKey || "";
         if (appCheckSiteKey && window.BarbellDivaAppCheck?.initializeAppCheck) {
-          window.BarbellDivaAppCheck.initializeAppCheck(window.firebase, { siteKey: appCheckSiteKey });
+          window.BarbellDivaAppCheck.initializeAppCheck(window.firebase, { siteKey: appCheckSiteKey, provider: window.BarbellDivaV144Config?.appCheckProvider || "v3" });
         }
       } catch (error) { /* silenzioso */ }
       authService = window.firebase.auth();

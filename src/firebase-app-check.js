@@ -35,9 +35,11 @@
     }
     try {
       // Il provider va ISTANZIATO con la site key (non passato come classe).
-      const providerClass = options.provider
-        || firebaseInstance.appCheck?.ReCaptchaEnterpriseProvider
-        || firebaseInstance.appCheck?.ReCaptchaV3Provider;
+      // Default reCAPTCHA v3 (registrazione più semplice); "enterprise" se richiesto.
+      const providerName = String(options.provider || "v3").toLowerCase();
+      const providerClass = providerName === "enterprise"
+        ? firebaseInstance.appCheck?.ReCaptchaEnterpriseProvider
+        : (firebaseInstance.appCheck?.ReCaptchaV3Provider || firebaseInstance.appCheck?.ReCaptchaEnterpriseProvider);
       if (!providerClass) {
         console.warn("[App Check] provider reCAPTCHA non disponibile negli SDK caricati.");
         return null;

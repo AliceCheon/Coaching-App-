@@ -13,8 +13,8 @@ const check = (condition, message) => assert.ok(condition, message);
 check(html.includes("cleanupV14719"), "flag cleanup una tantum mancante");
 check(html.includes("writeBackupHistory(historyCleanup)"), "cronologia backup non riscritta senza foto");
 check(html.includes('"front", "back", "side"'), "chiavi foto front/back/side mancanti dall'elenco heavy");
-check(config.includes('build: "v147.66-tema-flexwindow"'), "build non allineata alla versione corrente");
-check(sw.includes("atlas-app-v14766-tema-flexwindow"), "cache PWA non allineata alla versione corrente");
+check(config.includes('build: "v147.67-appcheck-v3"'), "build non allineata alla versione corrente");
+check(sw.includes("atlas-app-v14767-appcheck-v3"), "cache PWA non allineata alla versione corrente");
 
-console.log(JSON.stringify({ ok:true, build:"v147.66-tema-flexwindow", checks:5, fix:"photo cleanup one-shot history + cloud" }));
+console.log(JSON.stringify({ ok:true, build:"v147.67-appcheck-v3", checks:5, fix:"photo cleanup one-shot history + cloud" }));
 

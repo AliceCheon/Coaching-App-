@@ -5,14 +5,16 @@
 // fallisce se anche un solo punto resta indietro.
 (function (root) {
   root.BarbellDivaV144Config = Object.freeze({
-    build: "v147.66-tema-flexwindow",
-    cache: "atlas-app-v14766-tema-flexwindow",
+    build: "v147.67-appcheck-v3",
+    cache: "atlas-app-v14767-appcheck-v3",
     backupAutomaticLimit: 5,
     legacyModulesRemoved: ["nutrizione", "workout-pro"],
     // App Check: incolla qui la site key reCAPTCHA registrata in
     // Firebase Console → App Check → App web. Finché è vuota, App Check resta
     // spento (nessun errore) e l'app funziona come prima.
     appCheckSiteKey: "",
+    // Provider App Check: "v3" (reCAPTCHA v3, il più semplice) oppure "enterprise".
+    appCheckProvider: "v3",
     firebase: Object.freeze({
       apiKey: "AIzaSyDW347rOPjsCSnUSRREh9e3wkZm37Myxdo",
       authDomain: "barbell-diva.firebaseapp.com",

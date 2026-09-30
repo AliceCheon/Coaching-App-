@@ -1,5 +1,5 @@
 import test from "node:test";
 
-test("v147.66 FlexWindow cutout and safe-area coverage", {
-  skip: "La snapshot v147.54 conserva il manifest precedente (portrait/fullscreen); la soluzione cutout v147.66 non è presente.",
+test("v147.67 FlexWindow cutout and safe-area coverage", {
+  skip: "La snapshot v147.54 conserva il manifest precedente (portrait/fullscreen); la soluzione cutout v147.67 non è presente.",
 }, () => {});
