@@ -22,4 +22,4 @@ assert.match(diva, /function escapePopupText\(/, "manca l'escape del testo del p
 assert.match(diva, /escapePopupText\(message\)/, "il popup Diva deve usare escapePopupText(message)");
 assert.ok(!/\+\s*message\s*\+\s*'<\/div>'/.test(diva), "il messaggio grezzo non deve finire in innerHTML");
 
-console.log(JSON.stringify({ ok: true, hardening: "import max-size + escape popup Diva" }));
+console.log(JSON.stringify({ ok: true, checks: "import max-size + escape popup Diva" }));

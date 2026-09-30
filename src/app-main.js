@@ -7262,6 +7262,64 @@ function sanitizeForFirestore(value) {
       return `<section class="dashboard-coach-card card"><button type="button" class="dashboard-coach-button" data-dashboard-coach-open aria-label="Apri il suggerimento del Coach AI: ${escapeHtml(signal.title)}">${coachMascotHtml()}</button><div class="coach-speech"><span class="section-eyebrow">Coach AI</span><h3>${escapeHtml(signal.title)}</h3><p data-coach-message aria-live="polite">${escapeHtml(signal.message)}</p><p class="micro-copy">Tocca Diva Bot per aprire subito il consiglio.</p></div></section>${modal}`;
     }
 
+    function completedTrainingSessions() {
+      return (state.training?.sessions || []).filter((session) => session && sessionTimestamp(session) && (session.status === "completed" || session.completedAt || session.savedAt || (session.exercises || []).length));
+    }
+    function divaDateKey(date) { return new Date(date).toISOString().slice(0, 10); }
+    function divaWeekStart(date) {
+      const d = new Date(date); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); d.setHours(0, 0, 0, 0); return d.getTime();
+    }
+    function dashboardStreakWeeks() {
+      const weeks = new Set(completedTrainingSessions().map((session) => divaWeekStart(sessionTimestamp(session))));
+      const WEEK = 7 * 24 * 60 * 60 * 1000;
+      let cursor = divaWeekStart(Date.now());
+      if (!weeks.has(cursor)) cursor -= WEEK;
+      let streak = 0;
+      while (weeks.has(cursor)) { streak += 1; cursor -= WEEK; }
+      return streak;
+    }
+    function dashboardHeatmapHtml(weeks = 12) {
+      const counts = new Map();
+      completedTrainingSessions().forEach((session) => { const key = divaDateKey(sessionTimestamp(session)); counts.set(key, (counts.get(key) || 0) + 1); });
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const start = new Date(today); start.setDate(start.getDate() - ((weeks * 7) - 1)); start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+      const cells = [];
+      const cursor = new Date(start);
+      while (cursor <= today) {
+        const key = divaDateKey(cursor); const count = counts.get(key) || 0;
+        const level = count === 0 ? 0 : count >= 3 ? 3 : count === 2 ? 2 : 1;
+        cells.push(`<span class="diva-heat-cell" data-level="${level}" title="${key}${count ? ` · ${count}` : ""}"></span>`);
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      return `<section class="card diva-consistency-card"><div class="row"><div><span class="section-eyebrow">Costanza</span><h3>Ultime ${weeks} settimane</h3></div><span class="chip">${dashboardStreakWeeks()} settimane di fila</span></div><div class="diva-heatmap" role="img" aria-label="Mappa di costanza degli allenamenti">${cells.join("")}</div><p class="micro-copy">Ogni quadratino è un giorno: più acceso, più sedute.</p></section>`;
+    }
+    function dashboardRecentPRs(limit = 4) {
+      const best = new Map(); const records = [];
+      completedTrainingSessions().slice().sort((a, b) => sessionTimestamp(a) - sessionTimestamp(b)).forEach((session) => {
+        (session.exercises || []).forEach((log) => {
+          const name = log?.name || log?.exerciseName; if (!name) return;
+          const load = Number(log.maxKg ?? log.kg ?? log.load ?? 0);
+          const reps = Number(log.reps ?? 0);
+          if (!(load > 0) || !(reps > 0)) return;
+          const e1rm = load * (1 + Math.min(reps, 15) / 30);
+          const key = String(name).toLowerCase(); const previous = best.get(key) || 0;
+          if (e1rm > previous * 1.02) records.push({ name, load, reps, date: divaDateKey(sessionTimestamp(session)) });
+          if (e1rm > previous) best.set(key, e1rm);
+        });
+      });
+      return records.sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, limit);
+    }
+    function dashboardConsistencyHtml() {
+      const prs = dashboardRecentPRs(4);
+      const rows = prs.length
+        ? prs.map((pr) => `<li><span><strong>${escapeHtml(pr.name)}</strong> <small>${escapeHtml(formatDateLabel(pr.date))}</small></span><span>${pr.load} kg × ${pr.reps}</span></li>`).join("")
+        : `<li class="micro-copy">Nessun record recente: registra qualche seduta con i carichi.</li>`;
+      return `<section class="diva-consistency-grid">
+        ${dashboardHeatmapHtml(12)}
+        <section class="card diva-records-card"><div class="row"><div><span class="section-eyebrow">Record</span><h3>Ultimi PR</h3></div><span class="chip">${prs.length}</span></div><ul class="diva-records-list">${rows}</ul></section>
+      </section>`;
+    }
+
     function dashboardHtml() {
       const ready = readinessScore(); const last = latestSession(); const context = currentTrainingContext(); const decision = decisionPriority(); const stats = dashboardWorkoutStats();
       return `<div class="phase11-dashboard">
@@ -7276,6 +7334,7 @@ function sanitizeForFirestore(value) {
           ${dashboardSummaryCard(iconSvg("volume", "Volume"), "Volume", stats.volumeAvailable ? `${Math.round(stats.volume)} kg` : "—", stats.volumeAvailable ? "questa settimana" : "dati insufficienti", colors.violet, stats.volumeAvailable ? { key:"volume", value:Math.round(stats.volume), suffix:" kg" } : null)}
           ${dashboardSummaryCard(iconSvg("latest", "Ultima seduta"), "Ultima seduta", last?.sessionCode || "—", last ? formatDateLabel(last.dateInput || last.date) : "nessun log", colors.gold)}
         </section>
+        ${dashboardConsistencyHtml()}
         <section class="phase11-main-grid"><div>
           <section class="phase11-today card"><div class="row"><div><span class="section-eyebrow">La tua seduta</span><h3>${escapeHtml(context.session.name || context.session.code)}</h3><p>${escapeHtml(displayLabel(context.session.focus || "Focus da definire"))}</p></div><span class="status-badge">${context.session.exercises?.length || 0} esercizi</span></div><div class="phase11-progress"><span style="width:${Math.min(100, (context.session.exercises?.length || 0) ? Math.round((stats.sessions.length ? 100 : 0)) : 0)}%"></span></div><div class="quick-actions"><button class="gold-button" data-screen-target="training">${iconSvg("start", "Inizia allenamento")} Avvia</button><button class="ghost-button" data-screen-target="logbook">${iconSvg("logbook", "Apri logbook")} Apri logbook</button></div></section>
           <section class="phase11-chart-card card"><div class="row"><div><span class="section-eyebrow">Progressi recenti</span><h3>Settimana in movimento</h3></div><span class="chip">${stats.sessions.length} sedute</span></div><div class="phase11-bars">${[0,1,2,3,4,5,6].map((day) => { const count = stats.sessions.filter((session) => { const stamp = sessionTimestamp(session); return stamp && new Date(stamp).getDay() === (day + 1) % 7; }).length; return `<div class="phase11-bar-col"><span style="height:${Math.max(8, Math.min(100, count * 34))}%"></span><small>${["L","M","M","G","V","S","D"][day]}</small></div>`; }).join("")}</div><p class="micro-copy">Volume e frequenza vengono aggiornati automaticamente dai tuoi log.</p></section>

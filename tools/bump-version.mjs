@@ -38,9 +38,9 @@ for (const rel of targets) {
   const before = fs.readFileSync(file, "utf8");
   const text = before
     .split(from.build).join(to.build)
+    .split(`atlas-app-${from.token}-${from.suffix}`).join(`atlas-app-${to.token}-${to.suffix}`)
     .split(from.token).join(to.token)
-    .split(from.dot).join(to.dot)
-    .split(from.suffix).join(to.suffix);
+    .split(from.dot).join(to.dot);
   if (text !== before) {
     fs.writeFileSync(file, text, "utf8");
     changed += 1;
