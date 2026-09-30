@@ -82,6 +82,11 @@ retrocompatibile in lettura.
 ## 6. Dati locali
 
 - Chiave di stato: `alice-method-app.v8` (`STORE_KEY`, `src/app-main.js:2`).
+- **Isolamento per account (Fase 4):** l'ultimo uid autenticato è in
+  `alice-method-app.v8.lastAccountUid`. Se un **account diverso** accede sullo stesso
+  dispositivo, `isolateLocalStateForAccount()` azzera lo stato locale (stato, journal,
+  backup, coda di sync, bozze) PRIMA del merge, così i dati del profilo precedente non
+  vengono mai scritti nel cloud del nuovo. Al primo login (nessun uid precedente) non si svuota nulla.
 - Copie pre-merge anti-revert: `…premerge.v1` e `…premerge.prev.v1`.
 - Journal dei workout: `…workoutJournal.v1` + IndexedDB `barbell-diva-workout-rescue`.
 

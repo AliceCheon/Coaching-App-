@@ -11,6 +11,7 @@
     const WORKOUT_JOURNAL_KEY = `${STORE_KEY}.workoutJournal.v1`;
     const WORKOUT_DB_NAME = "barbell-diva-workout-rescue";
     const WORKOUT_ACTIVE_RESCUE_KEY = `${STORE_KEY}.workoutActiveRescue.v1`; // v14745
+    const LAST_ACCOUNT_UID_KEY = `${STORE_KEY}.lastAccountUid`; // Fase 4: isolamento per account
     const WORKOUT_DB_STORE = "sessions";
     const APP_BUILD = window.BarbellDivaV144Config?.build || "v146.1";
     const FIREBASE_CONFIG = window.BarbellDivaV144Config?.firebase || {};
@@ -4422,6 +4423,37 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
     }
 
     let firebaseInitDone = false;
+    function isolateLocalStateForAccount(uid) {
+      // ISOLAMENTO PER ACCOUNT (Fase 4): su un dispositivo condiviso i dati locali
+      // di un altro account Google non devono MAI essere fusi nel nuovo. Se l'uid
+      // è cambiato rispetto all'ultimo login, si riparte da uno stato locale
+      // pulito (il cloud del nuovo utente resta la fonte di verità). Al primo
+      // login in assoluto (nessun uid precedente) NON si svuota: i dati creati in
+      // locale vengono uniti al proprio account, come sempre.
+      let lastUid = "";
+      try { lastUid = localStorage.getItem(LAST_ACCOUNT_UID_KEY) || ""; } catch (error) {}
+      const switched = Boolean(lastUid) && lastUid !== uid;
+      if (switched) {
+        try {
+          [
+            STORE_KEY, WORKOUT_JOURNAL_KEY, WORKOUT_ACTIVE_RESCUE_KEY, BACKUP_HISTORY_KEY, BACKUP_BUILD_KEY,
+            PRE_MERGE_BACKUP_KEY, PRE_MERGE_PREV_BACKUP_KEY, PRE_V55_BACKUP_KEY,
+            `${STORE_KEY}.sync-queue.v1`, `${STORE_KEY}.sync-audit.v1`, `${STORE_KEY}.loginBypass`
+          ].forEach((key) => localStorage.removeItem(key));
+          for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+            const key = localStorage.key(index);
+            if (key && key.startsWith(COACH_DRAFT_RECOVERY_PREFIX)) localStorage.removeItem(key);
+          }
+          if (typeof indexedDB !== "undefined") indexedDB.deleteDatabase(WORKOUT_DB_NAME);
+          state = clone(baseState);
+          reliableSyncQueue = null;
+        } catch (error) { /* best-effort: l'isolamento non deve bloccare il login */ }
+        showToast("Account diverso su questo dispositivo: dati locali azzerati per non mescolare i profili.", "info");
+      }
+      try { localStorage.setItem(LAST_ACCOUNT_UID_KEY, uid); } catch (error) {}
+      return switched;
+    }
+
     function initFirebase() {
       if (!firebaseConfigured() || !window.firebase) return false;
       // IDEMPOTENTE: un secondo initFirebase() aggiungerebbe un altro handler
@@ -4455,6 +4487,10 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         if (user) {
           localLoginBypass = false;
           localStorage.removeItem(`${STORE_KEY}.loginBypass`);
+          // Fase 4: se su questo dispositivo era autenticato un ALTRO account,
+          // azzera lo stato locale prima del merge, così i suoi dati non finiscono
+          // nel cloud del nuovo utente.
+          isolateLocalStateForAccount(user.uid);
         }
         const previousAccount = state.profile.account || {};
         state.profile.account = user ? {
