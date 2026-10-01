@@ -98,7 +98,7 @@ if (!html.includes("newlyMarkedSessions")) throw new Error("Le sessioni locali n
 if (!html.includes("data-cloud-retry-sync") || !html.includes("updateUnsyncedCloudBanner")) throw new Error("Indicatore sincronizzazione visibile mancante");
 if (!html.includes('<details class="card danger-zone">') || !html.includes("requestClearAllData(clearData)")) throw new Error("Svuota dati non protetto");
 if (!html.includes('WORKOUT_DB_NAME = "barbell-diva-workout-rescue"') || !html.includes("persistWorkoutSessionDurably")) throw new Error("Protezione IndexedDB del workout mancante");
-if (!html.includes("weekFromLatestWorkout(date)")) throw new Error("Settimana automatica non derivata dallo storico reale");
+if (!html.includes("weekFromLatestWorkout(date")) throw new Error("Settimana automatica non derivata dallo storico reale");
 if (!html.includes('APP_BUILD = window.BarbellDivaV144Config?.build') || !html.includes("repairSequentialWorkoutWeeks")) throw new Error("Build o riparazione F7 mancante");
 const cloudSaveBlock = html.match(/async function saveCloudState\(\)[\s\S]*?\n    }\n\n    async function loadCloudState/)?.[0] || "";
 if (cloudSaveBlock.indexOf("await withTimeout(doc.set") > cloudSaveBlock.indexOf("saveCloudPrograms(clone(changedPrograms)")) throw new Error("Il cloud salva ancora le schede prima del logbook");

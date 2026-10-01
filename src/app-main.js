@@ -6075,8 +6075,8 @@ function sanitizeForFirestore(value) {
       return currentIndex >= 0 ? ordered[currentIndex + 1]?.code || "" : "";
     }
 
-    function autoSessionCodeForDate(value) {
-      const phase = state.training.phaseFilter || "Intensificazione";
+    function autoSessionCodeForDate(value, phaseOverride = "") {
+      const phase = phaseOverride || state.training.phaseFilter || "Intensificazione";
       const latest = latestAppWorkout(phase);
       const afterLatest = nextProgramCode(latest, phase);
       if (afterLatest) return afterLatest;
@@ -6152,15 +6152,40 @@ function sanitizeForFirestore(value) {
       };
     }
 
+    // v147.77 · Se un programma è ESPLICITAMENTE attivo ("Rendi attivo" → status
+    // "active", o flag active), il contesto allenamento segue QUELLO (fase, schede,
+    // settimana) invece di state.training.phaseFilter, che restava fermo su una fase
+    // vecchia (es. "Intensificazione") e mostrava schede/settimane di un ALTRO
+    // programma (es. "Scheda F", settimana 7). Senza un attivo esplicito si mantiene
+    // il comportamento precedente (fase da phaseFilter) per non cambiare il modello
+    // dei programmi importati/demo.
+    function explicitActiveTrainingProgram(programs=coachAiAvailablePrograms()){
+      const pool=programs.filter((program)=>!program.archivedAt&&String(program.status||"")!=="archived");
+      return pool.find((program)=>String(program.status||"")==="active")||pool.find((program)=>program.active===true)||null;
+    }
+    function activeTrainingProgram(programs=coachAiAvailablePrograms()){
+      return explicitActiveTrainingProgram(programs)
+        ||programs.filter((program)=>!program.archivedAt&&String(program.status||"")!=="archived").slice().sort((a,b)=>String(b.updatedAt||"").localeCompare(String(a.updatedAt||"")))[0]
+        ||programs[0]||null;
+    }
+    function projectProgramSheets(program){
+      if(!program)return [];
+      return (program.sheets||[]).filter((sheet)=>!sheet.deletedAt).slice().sort((a,b)=>Number(a.order||0)-Number(b.order||0)).map((sheet)=>({...sheet,phase:program.phase||sheet.phase||"",exercises:(sheet.exercises||[]).filter((exercise)=>!exercise.deletedAt).sort((a,b)=>Number(a.order||0)-Number(b.order||0))}));
+    }
     function currentTrainingContext() {
       const date = state.training.date || todayInput();
-      const autoWeek = weekFromLatestWorkout(date);
-      const autoCode = autoSessionCodeForDate(date);
       const isManual = state.training.contextMode === "manual";
-      const phase = isManual ? (state.training.manualPhase || state.training.phaseFilter || "Intensificazione") : (state.training.phaseFilter || "Intensificazione");
-      const phaseSessions = sessionsForPhase(phase);
+      const activeProgram = explicitActiveTrainingProgram();
+      const activePhase = activeProgram ? String(activeProgram.phase||"") : "";
+      const programSheets = projectProgramSheets(activeProgram);
+      const phase = isManual
+        ? (state.training.manualPhase || activePhase || state.training.phaseFilter || "Intensificazione")
+        : (activePhase || state.training.phaseFilter || "Intensificazione");
+      const autoWeek = weekFromLatestWorkout(date, phase);
+      const autoCode = autoSessionCodeForDate(date, phase);
+      const phaseSessions = programSheets.length ? (activePhase ? programSheets.filter((sheet)=>sheet.phase===activePhase) : programSheets) : sessionsForPhase(phase);
       const selectedCode = isManual ? state.training.manualSessionCode : (state.training.sessionName === "auto" ? autoCode : state.training.sessionName);
-      let session = allProgramSheets().find((item) => item.code === selectedCode && item.phase === phase);
+      let session = (programSheets.length?programSheets:allProgramSheets()).find((item) => item.code === selectedCode && (programSheets.length?(!activePhase || item.phase === activePhase):item.phase === phase));
       const contextWarning = isManual && selectedCode && !session ? `La scheda ${selectedCode} non è disponibile nella fase ${phase}.` : "";
       if (!session && !isManual) session = phaseSessions.find((item) => item.code === autoCode) || phaseSessions[0] || programByCode(autoCode || "");
       if (!session) session = phaseSessions[0] || programByCode(autoCode || "");
@@ -8571,20 +8596,7 @@ function sanitizeForFirestore(value) {
     let coachAi2Cache={fingerprint:"",program:null,context:null,result:null};
     function coachAiAvailablePrograms(){return (state.programs||[]).filter((program)=>program&&!program.deletedAt);}
     function coachAiActiveProgramId(programs=coachAiAvailablePrograms()){
-      if(!programs.length)return "";
-      // v147.76 · Non si ripiega più ciecamente sul primo programma (era il bug:
-      // senza un 'active' esplicito sceglieva il primo della lista, es. un vecchio
-      // 'B program 1'). Ordine: status 'active' → flag active → programma della
-      // scheda di oggi → più recente NON archiviato → primo non archiviato.
-      const notArchived=programs.filter((program)=>!program.archivedAt&&String(program.status||"")!=="archived");
-      const pool=notArchived.length?notArchived:programs;
-      const byStatus=pool.find((program)=>String(program.status||"")==="active");
-      if(byStatus)return String(byStatus.id||"");
-      const byFlag=pool.find((program)=>program.active===true);
-      if(byFlag)return String(byFlag.id||"");
-      try{const sheet=currentTrainingContext().session,owner=sheet&&findProgramForSheet(sheet.id);if(owner&&pool.some((program)=>program.id===owner.id))return String(owner.id||"");}catch(error){/* contesto non disponibile */}
-      const recent=pool.slice().sort((a,b)=>String(b.updatedAt||"").localeCompare(String(a.updatedAt||"")));
-      return String((recent[0]||pool[0]||{}).id||"");
+      return String((activeTrainingProgram(programs)||{}).id||"");
     }
     function coachAiFollowsActiveProgram(){return state.coachAi3?.followActiveProgram!==false;}
     // v147.73 · la pagina Coach AI è a SCHEDE: ogni sezione porta data-ai-panel e la
