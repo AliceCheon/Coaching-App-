@@ -3,7 +3,7 @@ import vm from "node:vm";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 
-// v147.79 · Coach AI ancorato al PROGRAMMA ATTIVO + una sola card per esercizio
+// v147.80 · Coach AI ancorato al PROGRAMMA ATTIVO + una sola card per esercizio
 // 1) la scelta del programma segue lo status "active" (con override dal menu);
 // 2) lo stesso esercizio presente in più schede non produce più card duplicate.
 
@@ -94,7 +94,7 @@ const results = vm.runInContext(`{
   const fallback = coachAiChatAnswer("blablabla cose a caso");
   assert(fallback.text.includes("Non sono sicura"), "una domanda incomprensibile chiede chiarimenti invece di ripetere la stessa priorità");
 
-  // v147.79 · senza un 'active' esplicito NON si ripiega sul primo della lista:
+  // v147.80 · senza un 'active' esplicito NON si ripiega sul primo della lista:
   // si esclude l'archiviato e si prende il più recente non archiviato.
   state.programs = [
     { id: "p-arch", name: "B program 1", status: "archived", archivedAt: "2026-08-01T00:00:00.000Z", updatedAt: "2026-05-01T00:00:00.000Z", sheets: [] },
@@ -103,7 +103,7 @@ const results = vm.runInContext(`{
   assert(coachAiActiveProgramId() === "p-draft", "senza programma attivo sceglie il più recente NON archiviato, non il primo (vecchio B program 1)");
   assert(coachAiSelectedProgramId() === "p-draft", "di conseguenza Coach AI non analizza più un programma archiviato");
 
-  // v147.79 · il contesto allenamento segue il PROGRAMMA ATTIVO, non il vecchio
+  // v147.80 · il contesto allenamento segue il PROGRAMMA ATTIVO, non il vecchio
   // phaseFilter: con "Intensificazione" salvato ma attivo "Intensità Agosto-Ottobre"
   // (schede A-D) non deve più comparire la "Scheda F" di un altro programma.
   state.training.phaseFilter = "Intensificazione";
@@ -123,5 +123,5 @@ const results = vm.runInContext(`{
   results;
 }`, context);
 
-console.log("v14779-programma-attivo: " + (results.length + 4) + " verifiche passate");
+console.log("v14780-programma-attivo: " + (results.length + 4) + " verifiche passate");
 for (const item of results) console.log("  ✓ " + item);

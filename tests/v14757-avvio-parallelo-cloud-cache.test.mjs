@@ -119,11 +119,11 @@ const results = await vm.runInContext(`(async () => {
 if (!/Promise\.all\(\s*\[[\s\S]*loadCloudPrograms[\s\S]*loadCloudStateBlobs[\s\S]*loadCloudSessions/.test(appMain)) throw new Error("I sub-load non sono in Promise.all");
 if (!/\s*const firebaseBootStarted = initFirebase\(\);[\s\S]*?hydrateFromCloudSnapshotCache\(\)\.catch/.test(appMain)) throw new Error("L'idratazione non è agganciata al boot dopo initFirebase");
 if (!appMain.includes("writeCloudSnapshotCache(cloudUser?.uid")) throw new Error("Manca un hook di scrittura della cloud-cache");
-// v147.79 · la freschezza della cache si decide sullo stamp cloud già applicato,
+// v147.80 · la freschezza della cache si decide sullo stamp cloud già applicato,
 // non su meta.updatedAt locale (che ad ogni avvio viene riscritto a "adesso").
 if (!/const appliedStamp = Date\.parse\(state\.meta\?\.cloudAppliedStamp/.test(appMain)) throw new Error("L'idratazione non usa più cloudAppliedStamp (regressione 29 agosto)");
 if (!/cachedStamp < appliedStamp/.test(appMain)) throw new Error("La guardia dell'idratazione non confronta con appliedStamp");
 if (!appMain.includes("saveState({ cloud: false, touch: false })")) throw new Error("Il boot non persiste più l'account con touch:false");
 
-console.log("v14779-dashboard-costanza-cloud-cache: " + results.length + " verifiche passate");
+console.log("v14780-dashboard-costanza-cloud-cache: " + results.length + " verifiche passate");
 for (const item of results) console.log("  ✓ " + item);

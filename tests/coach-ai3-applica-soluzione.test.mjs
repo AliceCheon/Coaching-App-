@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import vm from "node:vm";
 
-// v147.79 · Applicare una soluzione da Coach AI deve cambiare DAVVERO la scheda.
+// v147.80 · Applicare una soluzione da Coach AI deve cambiare DAVVERO la scheda.
 //
 // Sintomo (Alice, 1 ott 2026): nella scheda premo Coach AI, simulavo "Conservativa"
 // (recupero 180 -> 210) e confermavo con "Conferma e applica", ma tornando alla

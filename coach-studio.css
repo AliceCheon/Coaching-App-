@@ -830,6 +830,14 @@ body[data-theme="light"] .coach-set-group-header em{color:#392247}
 .ai3-options>section>b{font-size:.92rem}
 .ai3-options p{margin:0;flex:1}
 .ai3-options button{width:100%;margin-top:auto}
+/* v147.80 · soluzioni già applicate (in verifica) o ignorate */
+.ai3-verifying{display:grid;gap:12px;margin-top:16px;padding-top:16px;border-top:1px dashed color-mix(in srgb,var(--pink-primary,#d52fd0) 30%,transparent)}
+.ai3-proposal.is-verifying{border-style:dashed;background:color-mix(in srgb,var(--card,#fff) 90%,#ffe9c9)}
+.ai3-proposal.is-verifying h3{margin:.2rem 0}
+.ai3-ignored-row{flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px dashed color-mix(in srgb,var(--pink-primary,#d52fd0) 22%,transparent)}
+.ai3-ignored-row button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ai3-proposal>.quick-actions{margin-top:12px}
+.ai-priority-card>.quick-actions{flex-wrap:wrap}
 .ai3-procon{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .ai3-procon>*{display:block;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--card,#fff) 86%,transparent);line-height:1.4}
 .ai3-history{margin-top:18px;display:grid;gap:2px}
