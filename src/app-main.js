@@ -8594,31 +8594,69 @@ function sanitizeForFirestore(value) {
     // === v147.74 · CHAT CON DIVA BOT (guidata dai dati, nessun modello esterno) ===
     // Le risposte nascono dal motore deterministico: citano sedute, schede e carichi
     // reali e possono proporre azioni. La mascotte si anima mentre "legge" e "scrive".
-    const AI_CHAT_CHIPS=["Come sto messa?","Perché ho stagnato?","Come aumento i carichi?","Cosa alleno oggi?"];
+    const AI_CHAT_CHIPS=["Come sto messa?","Perché ho stagnato?","Come aumento i carichi?","Cosa alleno oggi?","Cosa c'è in scheda?"];
+    function coachAiChatNorm(value){return String(value||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replaceAll("_"," ").replace(/\s+/g," ").trim();}
+    function coachAiChatLookup(){
+      const {program,result}=coachAi3Model(coachAiSelectedProgramId());
+      const analyses=(result.metrics?.exerciseAnalyses||[]);
+      const programRows=analyses.map((analysis)=>({analysis,key:coachAiChatNorm(analysis.name),label:String(analysis.name||"").replaceAll("_"," "),sheet:analysis.sheetName||"",week:analysis.week}));
+      const sessions=(state.training?.sessions||[]).slice().sort((a,b)=>String(a.dateInput||a.date||"").localeCompare(String(b.dateInput||b.date||"")));
+      const lastSeen=new Map();
+      sessions.forEach((session)=>(session.exercises||[]).forEach((exercise)=>{const key=coachAiChatNorm(exercise.name);if(key)lastSeen.set(key,{name:String(exercise.name||"").replaceAll("_"," "),date:String(session.dateInput||session.date||"")});}));
+      return {program,result,analyses,programRows,lastSeen};
+    }
+    function coachAiChatFindExercise(question,lookup){
+      const text=coachAiChatNorm(question);let best=null;
+      lookup.programRows.forEach((row)=>{if(row.key.length>=4&&text.includes(row.key)&&(!best||row.key.length>best.size))best={type:"program",row,size:row.key.length};});
+      if(!best)lookup.lastSeen.forEach((value,key)=>{if(key.length>=4&&text.includes(key)&&(!best||key.length>best.size))best={type:"history",value,size:key.length};});
+      return best;
+    }
     function coachAiChatState(){
       coachProgramUi.aiChat=Array.isArray(coachProgramUi.aiChat)?coachProgramUi.aiChat:[];
       if(!coachProgramUi.aiChat.length){
-        const name=state.profile?.account?.name||"Alice";
+        const name=String(state.profile?.account?.name||"Alice").trim().split(/\s+/)[0]||"Alice";
         coachProgramUi.aiChat.push({role:"bot",text:`Ciao ${name}! 💕 Ho letto tutto il tuo storico, non solo la scheda aperta. Chiedimi quello che vuoi sui tuoi esercizi.`,chips:AI_CHAT_CHIPS.slice(0,3)});
       }
       return coachProgramUi.aiChat;
     }
     function coachAiChatAnswer(question=""){
-      const {program,result}=coachAi3Model(coachAiSelectedProgramId());
-      const insights=(result.insights||[]).filter((item)=>item.scope!=="diagnostics"),clean=(value)=>coachAiPlainText(value||"");
-      const stalled=insights.filter((item)=>/fermo|stallo|serve una progressione/i.test(clean(item.title)));
-      const growing=insights.filter((item)=>item.severity==="success");
-      const priorities=insights.filter((item)=>item.severity!=="success").sort((a,b)=>coachAiPriorityValue(b.priority)-coachAiPriorityValue(a.priority));
-      const list=(items)=>items.slice(0,3).map((item)=>`• ${clean(item.title)}${item.description?` — ${clean(item.description)}`:""}`).join("\n");
-      const q=String(question||"").toLowerCase();
-      if(/stagn|ferm|blocc|stall/.test(q))return stalled.length?{text:`Ho trovato ${stalled.length} esercizi fermi (stesso valore entro la tolleranza):\n${list(stalled)}\nQuasi sempre non manca la forza ma la progressione: guarda "Soluzioni".`,chips:["Vedi le soluzioni","Come aumento i carichi?"]}:{text:"Non vedo stalli evidenti: i carichi si muovono o restano nella tolleranza. 💪",chips:AI_CHAT_CHIPS.slice(0,3)};
-      if(/miglior|cresc|forza|record|pr/.test(q))return growing.length?{text:`Stai crescendo su ${growing.length} esercizi:\n${list(growing)}\nContinua così: la progressione sta funzionando.`,chips:["Cosa sistemo invece?"]}:{text:"Non ho ancora abbastanza sedute per mostrarti una crescita chiara su più schede.",chips:AI_CHAT_CHIPS.slice(0,3)};
-      if(/caric|aument|progression|sugger|soluzion|cambia/.test(q)){const top=priorities.find((item)=>item.suggestion)||priorities[0];return top?{text:`La mia priorità numero uno: ${clean(top.title)}.\n${clean(top.suggestion||top.reason||"")}`,chips:["Vedi le soluzioni","Come sto messa?"]}:{text:"Il programma è coerente: non vedo interventi urgenti da suggerirti.",chips:AI_CHAT_CHIPS.slice(0,3)};}
-      if(/fatica|stanca|recuper|deload|scarico|dolor/.test(q)){const deload=result.deload||{};return{text:`Fatica: ${coachAiUiTrend(deload.decision)}. ${clean(deload.reason||"")}`,chips:["Cosa alleno oggi?","Come sto messa?"]};}
-      if(/oggi|allen|scheda|giorno|domani/.test(q)){const training=currentTrainingContext(),sheet=training.session;return sheet?{text:`Oggi tocca ${sheet.code||""} · ${sheet.name||""} (settimana ${training.week}). Sto seguendo il programma attivo "${program.name}".`,chips:["Come sto messa?","Come aumento i carichi?"]}:{text:"Oggi non risulta una scheda: controlla il contesto allenamento in dashboard.",chips:AI_CHAT_CHIPS.slice(0,3)};}
-      if(/come sto|riepilog|sintesi|valutazione|punteggio|giudizio/.test(q)||!q){const top=priorities[0];return{text:`Valuto il programma ${result.score?.score??"—"}/100. ${priorities.length?`Ho ${priorities.length} punti da guardare, il primo è: ${clean(top.title)}.`:"Non vedo problemi prioritari."}`,chips:["Perché ho stagnato?","Come aumento i carichi?"]};}
-      const top=priorities[0];
-      return top?{text:`Su "${clean(top.title)}": ${clean(top.suggestion||top.reason||"")}`,chips:AI_CHAT_CHIPS.slice(0,3)}:{text:"Dimmi pure: posso parlarti di stalli, crescite, carichi, fatica o della scheda di oggi.",chips:AI_CHAT_CHIPS.slice(0,4)};
+      const lookup=coachAiChatLookup(),{program,result,programRows}=lookup;
+      const clean=(value)=>coachAiPlainText(value||""),qn=coachAiChatNorm(question);
+      const stalled=(result.insights||[]).filter((item)=>/fermo|stallo|serve una progressione/i.test(clean(item.title)));
+      const growing=(result.insights||[]).filter((item)=>item.severity==="success");
+      const priorities=(result.insights||[]).filter((item)=>item.severity!=="success"&&item.scope!=="diagnostics").sort((a,b)=>coachAiPriorityValue(b.priority)-coachAiPriorityValue(a.priority));
+      const bullet=(items)=>items.slice(0,4).map((item)=>`• ${clean(item.title)}${item.description?` — ${clean(item.description)}`:""}`).join("\n");
+      const todayList=()=>{const session=currentTrainingContext().session;return session?{session,names:(session.exercises||[]).map((exercise)=>clean(exercise.name)).filter(Boolean)}:{session:null,names:[]};};
+
+      // 1) L'utente nomina un esercizio: rispondo su QUELLO, con il posto esatto in cui si trova.
+      const found=coachAiChatFindExercise(question,lookup);
+      if(found&&found.type==="program"){
+        const analysis=found.row.analysis,label=found.row.label,where=`${found.row.sheet?`scheda ${found.row.sheet}`:"il programma"}${found.row.week?` · settimana ${found.row.week}`:""}`;
+        if(analysis.history&&analysis.history.length){
+          return {text:`${label} è nel programma attivo "${program.name}" (${where}).\nAndamento: ${coachAiUiTrend(analysis.trend?.status)}${analysis.trend?.changePct!=null?` (${analysis.trend.changePct>0?"+":""}${analysis.trend.changePct}%)`:""}. ${clean(analysis.trend?.reason||"")}\n${clean(analysis.progression?.reason||"")}`,chips:["Vedi le soluzioni","Perché ho stagnato?"]};
+        }
+        return {text:`${label} è nel programma attivo "${program.name}" (${where}) ma non ha ancora sedute registrate, quindi non posso dirti se stai migliorando.`,chips:["Come sto messa?"]};
+      }
+      if(found&&found.type==="history"){
+        return {text:`${found.value.name} NON è nel programma attivo "${program.name}": l'ultima volta l'hai registrato il ${found.value.date||"—"}.\nQuindi è giusto che Coach AI non lo analizzi più — se l'hai tolto tu, va bene così. Se vuoi lo rimetto in discussione nella prossima revisione.`,chips:["Cosa c'è in scheda?","Come sto messa?"]};
+      }
+      // 2) L'utente dice che un esercizio non c'è più: lo confermo e mostro cosa c'è adesso.
+      if(/non (ho|ce l|lo faccio|li faccio|lo trovo|esiste)|tolto|rimosso|eliminato|non c e|non e (in scheda|nel programma)|non lo vedo/.test(qn)){
+        const {session,names}=todayList();
+        return {text:`Ok, ne prendo atto. 👍 Il programma attivo è "${program.name}".\n${names.length?`Scheda di oggi (${session.code||""} · ${session.name||""}): ${names.join(", ")}.`:`Esercizi in analisi: ${programRows.map((row)=>row.label).join(", ")||"nessuno"}.`}`,chips:["Cosa c'è in scheda?","Come sto messa?"]};
+      }
+      // 3) Richiesta dell'elenco di cosa c'è in scheda.
+      if(/cosa (c e|devo|alleno|si fa|faccio)|che esercizi|in scheda|esercizi (di|del|in)|programma attivo/.test(qn)){
+        const {session,names}=todayList();
+        return {text:`Programma attivo: "${program.name}"${session?`, scheda di oggi ${session.code||""} · ${session.name||""}`:""}.\n${names.length?names.join(", "):(programRows.map((row)=>row.label).join(", ")||"Nessun esercizio.")}`,chips:["Come sto messa?","Cosa sistemo?"]};
+      }
+      if(/stagn|ferm|blocc|stall/.test(qn))return stalled.length?{text:`Esercizi fermi (stesso valore entro la tolleranza):\n${bullet(stalled)}\nQuasi sempre non manca la forza ma la progressione: guarda "Soluzioni".`,chips:["Vedi le soluzioni","Come aumento i carichi?"]}:{text:`Nel programma attivo "${program.name}" non vedo stalli evidenti: i carichi si muovono o restano nella tolleranza. 💪`,chips:AI_CHAT_CHIPS.slice(0,3)};
+      if(/miglior|cresc|forza|record|pr/.test(qn))return growing.length?{text:`Stai crescendo su ${growing.length} esercizi:\n${bullet(growing)}\nLa progressione sta funzionando.`,chips:["Cosa sistemo invece?"]}:{text:"Non ho ancora abbastanza sedute per mostrarti una crescita chiara.",chips:AI_CHAT_CHIPS.slice(0,3)};
+      if(/caric|aument|progression|sugger|soluzion|cambia|sistem/.test(qn)){const top=priorities.find((item)=>item.suggestion)||priorities[0];return top?{text:`Priorità numero uno: ${clean(top.title)}.\n${clean(top.suggestion||top.reason||"")}`,chips:["Vedi le soluzioni","Come sto messa?"]}:{text:"Il programma è coerente: non vedo interventi urgenti.",chips:AI_CHAT_CHIPS.slice(0,3)};}
+      if(/fatica|stanca|recuper|deload|scarico|dolor/.test(qn)){const deload=result.deload||{};return{text:`Fatica: ${coachAiUiTrend(deload.decision)}. ${clean(deload.reason||"")}`,chips:["Cosa alleno oggi?","Come sto messa?"]};}
+      if(/oggi|allen|giorno|domani/.test(qn)){const training=currentTrainingContext(),session=training.session;return session?{text:`Oggi tocca ${session.code||""} · ${session.name||""} (settimana ${training.week}). Programma attivo: "${program.name}".`,chips:["Come sto messa?","Come aumento i carichi?"]}:{text:"Oggi non risulta una scheda: controlla il contesto allenamento in dashboard.",chips:AI_CHAT_CHIPS.slice(0,3)};}
+      if(/come sto|riepilog|sintesi|valutazione|punteggio|giudizio/.test(qn)||!qn){const top=priorities[0];return{text:`Valuto il programma "${program.name}" ${result.score?.score??"—"}/100. ${priorities.length?`Ho ${priorities.length} punti da guardare${top?`, il primo è: ${clean(top.title)}`:""}.`:"Non vedo problemi prioritari."}`,chips:["Perché ho stagnato?","Come aumento i carichi?"]};}
+      return {text:"Non sono sicura di aver capito 🙂 Posso parlarti di un esercizio preciso (scrivi il nome), di stalli, crescite, carichi, fatica o della scheda di oggi.",chips:AI_CHAT_CHIPS.slice(0,4)};
     }
     function coachAiChatSend(question=""){
       const text=String(question||"").trim();if(!text)return;
@@ -8944,7 +8982,7 @@ function sanitizeForFirestore(value) {
         ${coachStudioPageHead("Athlete Intelligence","Diva Coach AI","Una revisione leggibile del programma, con simulazioni sempre sotto il tuo controllo.")}
         <header class="ai-workspace-header" id="ai-overview"><div class="ai-program-picker"><label for="coachAiProgramSelect">Programma da analizzare</label><select id="coachAiProgramSelect" data-ai-program-select>${coachAiProgramOptionsHtml(program.id)}</select><small>Atleta: ${escapeHtml(context.athlete?.general?.name||"Alice")} · blocco: ${escapeHtml(strategy.name||strategy.blockType||"non collegato")}</small></div><div class="ai-analysis-actions"><span>Ultima analisi: <b>${last?new Date(last).toLocaleString("it-IT"):"non ancora aggiornata in questa sessione"}</b></span><button class="gold-button" data-ai-recalculate>Ricalcola analisi</button></div></header>
         ${(()=>{const follow=coachAiFollowsActiveProgram(),training=currentTrainingContext(),todaySheet=training.session,activeName=(coachAiAvailablePrograms().find((item)=>item.id===coachAiActiveProgramId())||{}).name||"";return `<div class="ai-context-bar"><span class="ai-context-dot ${follow?"is-on":""}"></span><div class="ai-context-item"><span>${follow?"Programma attivo":"Programma in analisi"}</span><strong>${escapeHtml((follow&&activeName)||program.name)}</strong></div>${todaySheet?`<div class="ai-context-item"><span>Scheda di oggi</span><strong>${escapeHtml(todaySheet.code||"")}${todaySheet.name?` · ${escapeHtml(todaySheet.name)}`:""}</strong></div>`:""}<div class="ai-context-item"><span>Settimana</span><strong>${escapeHtml(String(training.week||"—"))}</strong></div>${follow?"":`<button type="button" class="ghost-button ai-context-follow" data-ai-follow-active>↺ Segui il programma attivo</button>`}</div>`;})()}
-        <nav class="ai-workspace-tabs" aria-label="Sezioni Coach AI">${[["overview","Panoramica"],["strengths","Punti di forza"],["review","Da migliorare"],["solutions","Soluzioni"],["chat","Chat"]].map(([id,label])=>`<button type="button" class="${aiTab===id?"active":""}" data-ai-tab="${id}">${label}</button>`).join("")}</nav>
+        <nav class="ai-workspace-tabs" aria-label="Sezioni Coach AI">${[["overview","📊 Panoramica"],["strengths","💪 Punti di forza"],["review","🎯 Da migliorare"],["solutions","💡 Soluzioni"],["chat","💬 Chat"]].map(([id,label])=>`<button type="button" class="${aiTab===id?"active":""}" data-ai-tab="${id}">${label}</button>`).join("")}</nav>
         <section class="ai-workspace-hero" data-ai-panel="overview"><div class="ai-hero-score"><strong>${score}</strong><span>/100</span></div><div><span class="section-eyebrow">Valutazione del programma</span><h2>${escapeHtml(coachAiUiStatus(score))}</h2><p>${escapeHtml(conclusion)}</p></div><div class="ai-hero-facts"><span><b>${escapeHtml(coachAiUiTrend(summary.fatigue||result.deload?.decision))}</b>Fatica</span><span><b>${priorityCount}</b>Priorità</span><span><b>${model.proposals?.length||0}</b>Soluzioni</span></div>${undo?'<button class="ghost-button" data-ai3-undo>Annulla ultima modifica AI</button>':''}</section>
         <div class="coach-studio-kpis" data-ai-panel="overview"><article class="coach-studio-kpi"><span>Finestra performance</span><select data-ai2-window>${[3,5,8].map((v)=>`<option value="${v}" ${Number(coachProgramUi.ai2Window||5)===v?"selected":""}>${v} rilevazioni</option>`).join("")}</select><small>solo storico reale</small></article>${coachProgramUi.ai2Undo?'<article class="coach-studio-kpi"><span>Ultima modifica</span><button class="ghost-button" data-ai2-undo>Annulla progressione</button><small>ripristina lo stato precedente</small></article>':""}</div>
         <section class="ai-workspace-section" id="ai-digest" data-ai-panel="overview"><div class="ai-section-heading"><span class="section-eyebrow">Cosa dicono i tuoi dati</span><h2>In sintesi</h2><p>Le cose più importanti, lette su tutte le schede reali.</p></div><div class="ai-summary">${digestItems.length?digestItems.map((item)=>`<div class="ai-sum ${sevClass(item.severity)}"><div><b>${escapeHtml(coachAiPlainText(item.title))}</b><p>${escapeHtml(coachAiPlainText(item.description||item.reason))}</p></div></div>`).join(""):`<div class="ai-sum info"><div><b>Ancora pochi dati</b><p>Registra qualche seduta in più per vedere la sintesi.</p></div></div>`}</div></section>

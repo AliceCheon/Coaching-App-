@@ -3,7 +3,7 @@ import vm from "node:vm";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 
-// v147.74 · Coach AI ancorato al PROGRAMMA ATTIVO + una sola card per esercizio
+// v147.75 · Coach AI ancorato al PROGRAMMA ATTIVO + una sola card per esercizio
 // 1) la scelta del programma segue lo status "active" (con override dal menu);
 // 2) lo stesso esercizio presente in più schede non produce più card duplicate.
 
@@ -78,15 +78,24 @@ const results = vm.runInContext(`{
   assert(pageHtml.includes('data-ai-active="overview"'), "la scheda attiva di default è la Panoramica");
   assert(pageHtml.includes('data-ai-panel="chat"') && pageHtml.includes("data-ai-chat-form"), "c'è la scheda Chat con il composer");
 
+  state.training = state.training || {};
+  state.training.sessions = [{ id: "w-old", dateInput: "2026-07-01", programId: "p-active", sheetId: "sh1", exercises: [{ name: "Push Up", completedSets: [{ kg: 0, reps: 10 }] }] }];
+
   const chat = coachAiChatState();
   assert(Array.isArray(chat) && chat.length >= 1 && chat[0].role === "bot", "la chat parte con il saluto di Diva Bot");
   const answer = coachAiChatAnswer("perché ho stagnato?");
   assert(answer && typeof answer.text === "string" && answer.text.length > 10, "Diva Bot risponde con testo vero");
   const summary = coachAiChatAnswer("come sto messa?");
   assert(summary.text.includes("/100"), "la risposta di riepilogo cita il punteggio reale");
+  const aboutRemoved = coachAiChatAnswer("perché non faccio più i push up?");
+  assert(aboutRemoved.text.includes("NON è nel programma attivo"), "la chat riconosce un esercizio tolto dal programma (niente risposte bloccate)");
+  const aboutProgram = coachAiChatAnswer("come sta la lat machine?");
+  assert(aboutProgram.text.includes("è nel programma attivo"), "la chat colloca l'esercizio nel programma attivo");
+  const fallback = coachAiChatAnswer("blablabla cose a caso");
+  assert(fallback.text.includes("Non sono sicura"), "una domanda incomprensibile chiede chiarimenti invece di ripetere la stessa priorità");
 
   results;
 }`, context);
 
-console.log("v14774-programma-attivo: " + (results.length + 4) + " verifiche passate");
+console.log("v14775-programma-attivo: " + (results.length + 4) + " verifiche passate");
 for (const item of results) console.log("  ✓ " + item);
