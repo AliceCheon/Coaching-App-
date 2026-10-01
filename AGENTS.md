@@ -244,3 +244,22 @@ stessa tornata di fix (v147.63), insieme alla rimozione di
 riscrittura mai esistita nello stato sano.
 
 **Stato**: suite **151/151** verde, `main` e GitHub Pages allineati.
+
+## FlexWindow — fullscreen riarmato ad ogni gesto (v147.82)
+Sintomo: in modalità "schermo intero" del cover screen resta una **fascia chiara
+in basso**, dove stanno obiettivi e flash, e non cambia col tema (chiaro/scuro).
+Non è il colore del canvas (già opaco, v147.57-59): è l'area che la finestra
+della PWA non dipinge (fuori dal viewport), sbloccabile solo col cutout mode
+SHORT_EDGES di `requestFullscreen()`.
+
+Perché la v147.62 non bastava: il fullscreen veniva richiesto **una sola volta**
+(`{ once: true }`). Il tasto "dimensione app" di Samsung ridimensiona la finestra
+e fa **uscire** dal fullscreen → la fascia chiara torna e non se ne esce più.
+
+Fix (v147.82): il fullscreen è (ri)richiesto **a ogni gesto** — `pointerdown`,
+`touchstart`, `keydown` persistenti, più `pageshow`/`resize`/`visibilitychange`
+(differiti 60ms) — così al tap successivo si rientra in fullscreen e la fascia
+sparisce. Guardia cover screen su `innerHeight <= 560 && innerWidth <= 760`
+(invece del solo `innerWidth`), così non scatta né sul telefono aperto in
+orizzontale (844x390 / 915x412) né su desktop.
+Test: `tests/v14782-flexwindow-fullscreen-rearm.test.mjs`.
