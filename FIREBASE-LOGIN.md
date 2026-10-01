@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v147.75-coach-chat-sveglia` |
-| `cache` | `atlas-app-v14775-coach-chat-sveglia` |
+| `build` | `v147.76-coach-attivo-robusto` |
+| `cache` | `atlas-app-v14776-coach-attivo-robusto` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

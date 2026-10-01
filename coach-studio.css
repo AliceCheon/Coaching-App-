@@ -628,6 +628,7 @@ body.wp19-open #globalDivaBotHost{display:none}
 .ai-context-item span{font-size:.62rem;text-transform:uppercase;letter-spacing:.07em;font-weight:800;color:var(--muted,#7a6675)}
 .ai-context-item strong{font-size:.82rem}
 .ai-context-follow{margin-left:auto}
+.ai-context-warn{margin-left:auto;font-size:.72rem;font-weight:800;color:#b26a00;background:#fff0db;border:1px solid #ffdca8;padding:5px 11px;border-radius:999px}
 .ai-workspace [data-ai-panel]{display:none}
 .ai-workspace[data-ai-active="overview"] [data-ai-panel="overview"],
 .ai-workspace[data-ai-active="strengths"] [data-ai-panel="strengths"],
