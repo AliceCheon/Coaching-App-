@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import vm from "node:vm";
 
-// v147.80 · Tre lamentele reali di Alice, verificate qui:
+// v147.81 · Tre lamentele reali di Alice, verificate qui:
 //  1. una soluzione GIÀ APPLICATA non deve tornare identica ("mi ripropone la
 //     stessa soluzione") → passa in "In verifica" finché non arrivano sedute nuove;
 //  2. serve un comando "Ignora"/"Ripristina" sulle soluzioni (prima non c'era);
@@ -93,4 +93,4 @@ if (remaining.length) throw new Error(`Il problema già risolto non deve tornare
 if (!appMain.includes("data-ai-ignore-quick")) throw new Error("Manca il pulsante Ignora visibile sulle card dei problemi");
 if (!appMain.includes("function coachAiForgetSolution")) throw new Error("Manca il ripristino delle soluzioni ignorate");
 
-console.log("v147.80 soluzioni: verifica, ignora/ripristina e stimolo diverso OK");
+console.log("v147.81 soluzioni: verifica, ignora/ripristina e stimolo diverso OK");

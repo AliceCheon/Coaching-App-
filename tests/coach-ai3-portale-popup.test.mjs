@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import vm from "node:vm";
 
-// v147.80 · Il popup di Coach AI non deve chiudersi da solo.
+// v147.81 · Il popup di Coach AI non deve chiudersi da solo.
 //
 // Sintomo (Alice): in scheda premo "Simula questa soluzione", il popup si apre e
 // poi si chiude da solo (a volte la pagina "riavvia" un attimo).

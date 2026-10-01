@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v147.80-coach-soluzioni-chiare` |
-| `cache` | `atlas-app-v14780-coach-soluzioni-chiare` |
+| `build` | `v147.81-coach-punti-forza` |
+| `cache` | `atlas-app-v14781-coach-punti-forza` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |
