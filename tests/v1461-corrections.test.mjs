@@ -14,14 +14,14 @@ const sw = read("service-worker.js");
 const workflow = read(".github/workflows/tests.yml");
 const check = (condition, message) => assert.ok(condition, message);
 
-check(config.includes('build: "v147.70-coach-ai-storico"'), "build v147.54 mancante");
-check(config.includes('cache: "atlas-app-v14770-coach-ai-storico"'), "cache contrasto v147.54 mancante");
-check(sw.includes('const CACHE_NAME = "atlas-app-v14770-coach-ai-storico"'), "service worker contrasto non aggiornato");
+check(config.includes('build: "v147.71-avvio-fresco"'), "build v147.54 mancante");
+check(config.includes('cache: "atlas-app-v14771-avvio-fresco"'), "cache contrasto v147.54 mancante");
+check(sw.includes('const CACHE_NAME = "atlas-app-v14771-avvio-fresco"'), "service worker contrasto non aggiornato");
 check(sw.includes('"./coach-schede-restyle-v146.css"'), "CSS v146 non precaricato");
 check(sw.includes('"./coach-schede-v146-enhance.js"'), "JS v146 non precaricato");
-check(manifest.includes("index.html?v=v14770"), "manifest contrasto non aggiornato");
-check(html.includes("coach-schede-restyle-v146.css?v=v14770"), "CSS senza cache bust contrasto");
-check(html.includes("coach-schede-v146-enhance.js?v=v14770"), "JS senza cache bust v146.1");
+check(manifest.includes("index.html?v=v14771"), "manifest contrasto non aggiornato");
+check(html.includes("coach-schede-restyle-v146.css?v=v14771"), "CSS senza cache bust contrasto");
+check(html.includes("coach-schede-v146-enhance.js?v=v14771"), "JS senza cache bust v146.1");
 
 check(html.includes("window.BarbellDivaV146Bridge={"), "bridge correttivo mancante");
 check(html.includes('openCoachModalLocally("sheet-edit",{sheetId})'), "rinomina locale non collegata");

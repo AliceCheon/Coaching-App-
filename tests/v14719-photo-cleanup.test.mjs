@@ -13,8 +13,8 @@ const check = (condition, message) => assert.ok(condition, message);
 check(html.includes("cleanupV14719"), "flag cleanup una tantum mancante");
 check(html.includes("writeBackupHistory(historyCleanup)"), "cronologia backup non riscritta senza foto");
 check(html.includes('"front", "back", "side"'), "chiavi foto front/back/side mancanti dall'elenco heavy");
-check(config.includes('build: "v147.70-coach-ai-storico"'), "build non allineata alla versione corrente");
-check(sw.includes("atlas-app-v14770-coach-ai-storico"), "cache PWA non allineata alla versione corrente");
+check(config.includes('build: "v147.71-avvio-fresco"'), "build non allineata alla versione corrente");
+check(sw.includes("atlas-app-v14771-avvio-fresco"), "cache PWA non allineata alla versione corrente");
 
-console.log(JSON.stringify({ ok:true, build:"v147.70-coach-ai-storico", checks:5, fix:"photo cleanup one-shot history + cloud" }));
+console.log(JSON.stringify({ ok:true, build:"v147.71-avvio-fresco", checks:5, fix:"photo cleanup one-shot history + cloud" }));
 

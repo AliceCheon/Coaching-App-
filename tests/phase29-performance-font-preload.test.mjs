@@ -17,7 +17,7 @@ assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
 
 // Test service worker
 const serviceWorker = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14770-coach-ai-storico"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14771-avvio-fresco"/);
 
 console.log(JSON.stringify({ ok:true, fontPreload:true, versioning:true }));
 

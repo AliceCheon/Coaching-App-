@@ -36,16 +36,25 @@ const results = await vm.runInContext(`(async () => {
   const hasSession = (id) => (state.training?.sessions || []).some((item) => item.id === id);
   const STAMP_CACHE = "2026-09-30T08:00:00.000Z";
 
-  // T1 — idratazione: cache più nuova del locale → applicata
+  // T1 — REGRESSIONE "29 AGOSTO": il locale si dichiara PIÙ NUOVO della cache
+  // perché ad ogni avvio meta.updatedAt viene riscritto a "adesso" (touch:true).
+  // La cache non è però mai stata applicata: l'idratazione DEVE comunque farla
+  // vincere, altrimenti il primo paint resta la foto congelata.
   state.profile.account = { uid: "alice-test", cloudStatus: "locale", syncReady: false };
-  state.meta = { ...(state.meta || {}), updatedAt: "2026-08-29T09:00:00.000Z" };
+  state.meta = { ...(state.meta || {}), updatedAt: "2026-10-05T12:00:00.000Z" }; // locale "più nuovo" (falso)
+  delete state.meta.cloudAppliedStamp;
   await putCache({ schema: 1, uid: "alice-test", updatedAt: STAMP_CACHE, savedAt: STAMP_CACHE, state: { meta: { updatedAt: STAMP_CACHE }, programs: [], training: { sessions: [{ id: "s-cloud", date: "2026-09-29", source: "App", status: "completed", exercises: [], dataHash: "hash-s-cloud", startedAt: "2026-09-29T08:00:00.000Z", updatedAt: "2026-09-29T09:00:00.000Z", cloudSyncedAt: "2026-09-30T08:00:00.000Z" }] } } });
-  assert(await hydrateFromCloudSnapshotCache() === true, "idratazione: cache più nuova applicata");
+  assert(await hydrateFromCloudSnapshotCache() === true, "idratazione: cache applicata anche se il locale si dichiara più nuovo");
   assert(hasSession("s-cloud"), "idratazione: la seduta della cache è nello stato");
+  assert(String(state.meta.cloudAppliedStamp) === STAMP_CACHE, "idratazione: cloudAppliedStamp segnato (non più meta.updatedAt)");
   assert(String(lastCloudSnapshotAt) === STAMP_CACHE, "idratazione: lastCloudSnapshotAt segnato come già visto");
   assert(state.profile.account.syncReady === true && state.profile.account.cloudStatus === "sync", "idratazione: profilo pronto per la sync");
 
-  // T2 — cache più vecchia del locale (es. allenamento registrato offline) → saltata
+  // T1b — riapplicare la stessa cache è idempotente: nessuna seduta duplicata
+  assert(await hydrateFromCloudSnapshotCache() === true, "idratazione: stessa cache riapplicata senza errori");
+  assert((state.training.sessions || []).filter((item) => item.id === "s-cloud").length === 1, "idratazione: nessuna seduta duplicata");
+
+  // T2 — cache più vecchia dello stamp cloud già applicato → saltata
   await putCache({ schema: 1, uid: "alice-test", updatedAt: "2026-09-29T00:00:00.000Z", savedAt: "2026-09-29T00:00:00.000Z", state: { meta: { updatedAt: "2026-09-29T00:00:00.000Z" }, programs: [], training: { sessions: [{ id: "s-old" }] } } });
   assert(await hydrateFromCloudSnapshotCache() === false, "cache più vecchia: idratazione saltata");
   assert(!hasSession("s-old"), "cache più vecchia: nessun dato applicato");
@@ -110,6 +119,11 @@ const results = await vm.runInContext(`(async () => {
 if (!/Promise\.all\(\s*\[[\s\S]*loadCloudPrograms[\s\S]*loadCloudStateBlobs[\s\S]*loadCloudSessions/.test(appMain)) throw new Error("I sub-load non sono in Promise.all");
 if (!/\s*const firebaseBootStarted = initFirebase\(\);[\s\S]*?hydrateFromCloudSnapshotCache\(\)\.catch/.test(appMain)) throw new Error("L'idratazione non è agganciata al boot dopo initFirebase");
 if (!appMain.includes("writeCloudSnapshotCache(cloudUser?.uid")) throw new Error("Manca un hook di scrittura della cloud-cache");
+// v147.71 · la freschezza della cache si decide sullo stamp cloud già applicato,
+// non su meta.updatedAt locale (che ad ogni avvio viene riscritto a "adesso").
+if (!/const appliedStamp = Date\.parse\(state\.meta\?\.cloudAppliedStamp/.test(appMain)) throw new Error("L'idratazione non usa più cloudAppliedStamp (regressione 29 agosto)");
+if (!/cachedStamp < appliedStamp/.test(appMain)) throw new Error("La guardia dell'idratazione non confronta con appliedStamp");
+if (!appMain.includes("saveState({ cloud: false, touch: false })")) throw new Error("Il boot non persiste più l'account con touch:false");
 
-console.log("v14770-dashboard-costanza-cloud-cache: " + results.length + " verifiche passate");
+console.log("v14771-dashboard-costanza-cloud-cache: " + results.length + " verifiche passate");
 for (const item of results) console.log("  ✓ " + item);

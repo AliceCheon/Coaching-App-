@@ -4513,7 +4513,10 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
           cloudStatus: "locale",
           syncReady: false
         };
-        saveState({ cloud: false });
+        // v147.71 · touch:false: persistere il blocco account NON è una modifica
+        // ai dati e non deve far avanzare meta.updatedAt (era proprio questo a
+        // far sembrare la copia locale "più nuova" della cloud-cache ad ogni avvio).
+        saveState({ cloud: false, touch: false });
         render();
         if (user) {
           // Reset esplicito della coda locale: le operazioni rimaste "syncing"
@@ -4540,7 +4543,7 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
 
 
           loadCloudState({ silent: false }).then(async (loaded) => {
-            saveState({ cloud: false });
+            saveState({ cloud: false, touch: false });
             render();
           if (loaded) {
               startCloudStateRealtime();
@@ -4643,13 +4646,22 @@ const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
         const cached = await readCloudSnapshotCache();
         if (!cached || cached.schema !== 1 || cached.uid !== savedUid) { console.info("[cloud-cache] Idratazione saltata: cache assente o non valida (avvio dal locale)."); return false; }
         const cachedStamp = Date.parse(cached.updatedAt || "") || 0;
-        const localStamp = Date.parse(state.meta?.updatedAt || "") || 0;
-        // La cache non aggiunge nulla se il locale è più nuovo (es. allenamento
-        // registrato offline): si salta senza toccare nulla.
-        if (!cachedStamp || cachedStamp <= localStamp) return false;
+        // v147.71 · CAUSA DEL "29 AGOSTO A OGNI AVVIO": il confronto era con
+        // meta.updatedAt LOCALE, che però ogni avvio viene riscritto a "adesso"
+        // (persistStateToLocalStorage con touch:true in onAuthStateChanged) e
+        // faceva risultare la cache SEMPRE più vecchia → idratazione SEMPRE
+        // saltata → il primo paint restava la foto congelata finché non arrivava
+        // il download live (~10s). Il riferimento ora è lo stamp cloud già
+        // applicato (meta.cloudAppliedStamp), che le scritture locali non
+        // falsificano. Un locale davvero più nuovo non si perde: il merge
+        // (mergeCloudAndLocalState) resta l'unico arbitro — unione di sedute e
+        // programmi, vincitore per stamp su meta.
+        const appliedStamp = Date.parse(state.meta?.cloudAppliedStamp || "") || 0;
+        if (!cachedStamp || cachedStamp < appliedStamp) { console.info("[cloud-cache] Idratazione saltata: nessuno stato cloud più nuovo della cache locale."); return false; }
         const remoteState = clone(cached.state);
         if (!remoteState || typeof remoteState !== "object") return false;
         state = mergeCloudAndLocalState(state, remoteState);
+        state.meta = { ...(state.meta || {}), cloudAppliedStamp: String(cached.updatedAt || "") };
         // Lo stamp della cache diventa "già visto": il primo onSnapshot con lo
         // stesso updatedAt non rifonde (l'eventuale live più nuovo si applica normale).
         lastCloudSnapshotAt = String(cached.updatedAt || "");
@@ -5075,6 +5087,7 @@ function sanitizeForFirestore(value) {
         } catch (blobError) { /* fallback: campo dentro rootData.state */ }
         writeCloudSnapshotCache(cloudUser?.uid, stamp, remoteState); // cloud-cache: ultima versione vista sul cloud
         state = mergeCloudAndLocalState(state, remoteState);
+        state.meta = { ...(state.meta || {}), cloudAppliedStamp: String(stamp || "") };
         const cloudNotesRepaired = repairIntensitaNotesFromLibrary(state);
         recoverWorkoutJournal(state);
         const realtimeFDateCorrections = correctAliceWorkoutF16Jul2026(state);
@@ -5299,7 +5312,7 @@ function sanitizeForFirestore(value) {
         lastCloudSnapshotAt = cloudUpdatedAt;
         writeCloudSnapshotCache(cloudUser?.uid, cloudUpdatedAt, state); // cloud-cache: ultima versione vista sul cloud
         if (!lastCloudError?.startsWith("Schede sincronizzate")) lastCloudError = "";
-        state.meta = { ...(state.meta || {}), programsUpdatedAt: programRevision, cloudProgramsUpdatedAt: programRevision, cloudProgramRevisions: revisions };
+        state.meta = { ...(state.meta || {}), programsUpdatedAt: programRevision, cloudProgramsUpdatedAt: programRevision, cloudProgramRevisions: revisions, cloudAppliedStamp: cloudUpdatedAt };
         state.profile.account.cloudStatus = "sync";
         state.profile.account.syncReady = true;
         state.profile.account.lastCloudSyncAt = cloudUpdatedAt;
@@ -5423,6 +5436,7 @@ function sanitizeForFirestore(value) {
           // del prossimo avvio (vedi nota "paracadute" sotto).
           writeCloudSnapshotCache(cloudUser?.uid, String(rootData.updatedAt || ""), remoteState);
           state = mergeCloudAndLocalState(state, remoteState);
+          state.meta = { ...(state.meta || {}), cloudAppliedStamp: String(rootData.updatedAt || "") };
           const cloudNotesRepaired = repairIntensitaNotesFromLibrary(state);
           recoverWorkoutJournal(state);
           const cloudFDateCorrections = correctAliceWorkoutF16Jul2026(state);
