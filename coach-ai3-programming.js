@@ -61,7 +61,30 @@
     if(result.metrics?.orderIssues){const sheet=sheets(program).find(s=>{let accessory=false;return list(s.exercises).some(ex=>{const r=masterById.get(ex.masterExerciseId),compound=r?.identity?.type==="compound";if(!compound)accessory=true;return compound&&accessory;});});if(sheet){const rows=list(sheet.exercises).filter(e=>!e.deletedAt).sort((a,b)=>Number(a.order)-Number(b.order)),compound=rows.find((ex,i)=>i>0&&masterById.get(ex.masterExerciseId)?.identity?.type==="compound"),first=rows[0];if(compound&&first)put({id:"order",title:"Ordine esercizi migliorabile",description:"Un multiarticolare compare dopo un accessorio.",priority:"media",confidence:"alta"},"reorder",compound.id,[strategyOption("conservative","Conservativa","Sposta il multiarticolare di una sola posizione.",["Modifica minima"],["Possibile effetto limitato"],[opUpdate(compound,{order:Math.max(0,Number(compound.order)-1)}),opUpdate(rows[Math.max(0,rows.indexOf(compound)-1)],{order:Number(compound.order)})]),strategyOption("balanced","Bilanciata","Porta il multiarticolare all'inizio.",["Più qualità tecnica","Meno pre-affaticamento"],["Cambia il ritmo della seduta"],[opUpdate(compound,{order:0}),opUpdate(first,{order:Number(compound.order)})]),strategyOption("aggressive","Aggressiva","Porta il multiarticolare all'inizio e aumenta il recupero.",["Massima priorità al gesto"],["Seduta più lunga"],[opUpdate(compound,{order:0,prescription:{...compound.prescription,rest:restValue(compound,restSeconds(compound)+30)}}),opUpdate(first,{order:Number(compound.order)})])]);}}
     return out.slice(0,10);
   }
-  function applyPatch(program={},operations=[]){const before=clone(program),after=clone(program),find=(sheetId,exerciseId)=>list(after.sheets).find(s=>s.id===sheetId)?.exercises?.find(e=>e.id===exerciseId);list(operations).forEach(op=>{if(op.type!=="update-exercise")return;const ex=find(op.sheetId,op.exerciseId);if(!ex)throw new Error(`Esercizio ${op.exerciseId} non trovato`);Object.assign(ex,clone(op.changes));if(op.changes.prescription)ex.prescription={...(ex.prescription||{}),...clone(op.changes.prescription)};if(op.changes.progression)ex.progression={...(ex.progression||{}),...clone(op.changes.progression)};if(op.changes.metadata)ex.metadata={...(ex.metadata||{}),...clone(op.changes.metadata)};ex.updatedAt=new Date().toISOString();});return{before,after,beforeFingerprint:hash(before),afterFingerprint:hash(after)};}
+  function sameApiJSON(a,b){return JSON.stringify(a===undefined?null:a)===JSON.stringify(b===undefined?null:b);}
+  function weekRestValue(week){const value=week?.restSeconds??week?.rest?.seconds;return value===null||value===undefined||value===""?"":Number(value);}
+  // L'editor e il workout mostrano la prescrizione della SETTIMANA, non quella base.
+  // Quando Coach AI cambia la base (es. recupero 180->210) le settimane che
+  // ereditavano il vecchio valore restavano ferme, quindi la modifica sembrava non
+  // applicata. La propaghiamo SOLO alle settimane che riflettono ancora il valore
+  // precedente, per non sovrascrivere le settimane personalizzate a mano.
+  function syncWeeksFromBase(exercise={},oldBase={},changed={}){
+    const weeks=list(exercise.progression?.weeks).filter(week=>week&&!week.deletedAt),newBase=exercise.prescription||{};
+    if(!weeks.length)return;
+    Object.keys(changed).forEach(field=>{
+      if(!(field in newBase))return;
+      const beforeValue=oldBase[field],afterValue=newBase[field];
+      if(field==="rest"){
+        const beforeSeconds=weekRestValue({rest:beforeValue}),afterSeconds=weekRestValue({rest:afterValue});
+        if(beforeSeconds===""||String(beforeSeconds)===String(afterSeconds))return;
+        weeks.forEach(week=>{const current=weekRestValue(week);if(current!==""&&String(current)!==String(beforeSeconds))return;week.rest=clone(afterValue);week.restSeconds=afterSeconds===""?0:afterSeconds;});
+        return;
+      }
+      if(sameApiJSON(beforeValue,afterValue))return;
+      weeks.forEach(week=>{if(week[field]!==undefined&&week[field]!==null&&!sameApiJSON(week[field],beforeValue))return;week[field]=clone(afterValue);});
+    });
+  }
+  function applyPatch(program={},operations=[]){const before=clone(program),after=clone(program),find=(sheetId,exerciseId)=>list(after.sheets).find(s=>s.id===sheetId)?.exercises?.find(e=>e.id===exerciseId);list(operations).forEach(op=>{if(op.type!=="update-exercise")return;const ex=find(op.sheetId,op.exerciseId);if(!ex)throw new Error(`Esercizio ${op.exerciseId} non trovato`);const oldBase=clone(ex.prescription||{});Object.assign(ex,clone(op.changes));if(op.changes.prescription)ex.prescription={...(ex.prescription||{}),...clone(op.changes.prescription)};if(op.changes.progression)ex.progression={...(ex.progression||{}),...clone(op.changes.progression)};if(op.changes.metadata)ex.metadata={...(ex.metadata||{}),...clone(op.changes.metadata)};if(op.changes.prescription)syncWeeksFromBase(ex,oldBase,op.changes.prescription);ex.updatedAt=new Date().toISOString();});return{before,after,beforeFingerprint:hash(before),afterFingerprint:hash(after)};}
   function simulation(beforeResult={},afterResult={}){const before=beforeResult.metrics||{},after=afterResult.metrics||{},muscles=[...new Set([...Object.keys(before.directSets||{}),...Object.keys(after.directSets||{})])],muscleChanges=muscles.map(m=>({muscle:m,before:before.directSets?.[m]||0,after:after.directSets?.[m]||0})).filter(x=>x.before!==x.after);return{score:{before:beforeResult.score?.score??null,after:afterResult.score?.score??null},weeklySets:{before:before.weeklySets||0,after:after.weeklySets||0},frequency:{before:before.frequency||{},after:after.frequency||{}},fatigue:{before:beforeResult.deload?.decision||"non definita",after:afterResult.deload?.decision||"non definita"},muscles:muscleChanges};}
   function build(input={}){const program=input.program||{},decisionResult=input.decisionResult||{};return{version:VERSION,programId:program.id,programFingerprint:hash(program),review:review({...input,program,decisionResult}),proposals:proposals({...input,program,decisionResult})};}
   function record(history=[],entry={}){const next=list(history).map(clone),i=next.findIndex(x=>x.id===entry.id);const value={...clone(entry),updatedAt:new Date().toISOString()};if(i>=0)next[i]=value;else next.unshift(value);return next.slice(0,300);}

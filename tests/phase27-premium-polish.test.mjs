@@ -19,7 +19,7 @@ assert.match(html, /writeBackupHistory/);
 assert.match(html, /"pre-update":3/);
 assert.match(html, /"pre-restore":5/);
 assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14777-contesto-programma-attivo"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14778-coach-applica-soluzione"/);
 
 console.log(JSON.stringify({ ok:true, legacyAdapter:true, selectiveProgressions:true, premiumMotion:true, splash:true, reducedMotion:true }));
 
