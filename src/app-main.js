@@ -12068,8 +12068,21 @@ function sanitizeForFirestore(value) {
     function setNestedValue(target,path,value){const keys=String(path).split(".");let node=target;keys.slice(0,-1).forEach((key)=>{node[key]=node[key]&&typeof node[key]==="object"?node[key]:{};node=node[key];});node[keys.at(-1)]=value;}
     function inputValue(input){if(input.type==="number")return input.value===""?null:Number(input.value);return input.value;}
     function mountCoachAiFeedbackPortal(){
-      const backdrop=document.querySelector(".ai3-backdrop"),portal=document.getElementById("coachModalPortalHost");if(!backdrop||!portal||portal.contains(backdrop))return;
-      portal.append(backdrop);requestAnimationFrame(()=>backdrop.querySelector('[role="dialog"]')?.focus({preventScroll:true}));
+      const portal=document.getElementById("coachModalPortalHost");if(!portal)return;
+      const candidates=[...document.querySelectorAll(".ai3-backdrop")];
+      if(!candidates.length)return;
+      // Tieni UNA sola copia: quella appena renderizzata (fuori dal portal) ha la
+      // precedenza, altrimenti resta quella già montata. Le copie di scorta vengono
+      // rimosse, altrimenti ad ogni render il portal accumulava modali sovrapposti.
+      const backdrop=candidates.find((node)=>!portal.contains(node))||candidates[0];
+      portal.querySelectorAll(".ai3-backdrop").forEach((node)=>{if(node!==backdrop)node.remove();});
+      candidates.forEach((node)=>{if(node!==backdrop&&!portal.contains(node))node.remove();});
+      if(!portal.contains(backdrop))portal.append(backdrop);
+      // Focalizza il dialogo UNA volta. Rifocalizzarlo ad ogni render faceva perdere
+      // e riprendere il focus in continuazione (focusout → render → focus): una delle
+      // cause dei "micro riavvii" mentre il popup era aperto.
+      const dialog=backdrop.querySelector('[role="dialog"]');
+      if(dialog&&!backdrop.contains(document.activeElement))requestAnimationFrame(()=>{if(document.body.contains(backdrop))dialog.focus({preventScroll:true});});
     }
     function clearCoachAiFeedbackPortal(){document.querySelectorAll("#coachModalPortalHost .ai3-backdrop").forEach(node=>node.remove());}
     function bindAthleteIntelligenceUi(){
@@ -13994,25 +14007,38 @@ function sanitizeForFirestore(value) {
       coachProgramUi.modalDiagnostics.closes += 1;
     }
 
+    // v147.79 · Il popup di Coach AI (anteprima/applicata) vive nello stesso portal
+    // dei modali del Coach Editor, ma è gestito da coachProgramUi.ai3Preview e non da
+    // coachProgramUi.modal. renderCoachModalPortal() faceva host.replaceChildren() ad
+    // OGNI render quando nessun modale "coach" era aperto: cancellava quindi anche il
+    // popup di Coach AI, che si chiudeva da solo. Ora tocca solo i propri figli.
+    const coachPortalIsAiFeedback=(node)=>!!node&&!!node.classList&&node.classList.contains("ai3-backdrop");
+    const coachPortalOwnedChildren=(host)=>Array.from(host?.children||[]).filter((node)=>!coachPortalIsAiFeedback(node));
     function renderCoachModalPortal() {
       const host = document.getElementById("coachModalPortalHost");
       if (!host) return;
       const started=performance.now();
       if (activeScreen !== "coach" || !coachProgramUi.modal) {
-        if (host.childElementCount) coachProgramUi.modalDiagnostics.unmounts += 1;
-        host.replaceChildren();
+        const owned=coachPortalOwnedChildren(host);
+        if (owned.length) {
+          coachProgramUi.modalDiagnostics.unmounts += 1;
+          owned.forEach((node)=>node.remove());
+        }
         host.dataset.coachModalType = "";
         return;
       }
-      if (host.childElementCount > 0 && (host.dataset.coachModalType === coachProgramUi.modal || (!host.dataset.coachModalType && host.querySelector(".coach-modal")))) return;
-      if (host.childElementCount > 0) {
+      const ownedNow=coachPortalOwnedChildren(host);
+      if (host.dataset.coachModalType === coachProgramUi.modal && ownedNow.length) return;
+      if (ownedNow.length) {
         coachProgramUi.modalDiagnostics.unmounts += 1;
-        host.replaceChildren();
+        ownedNow.forEach((node)=>node.remove());
       }
       coachModalRenderingPortal = true;
       const html = coachUiModalHtml();
       coachModalRenderingPortal = false;
-      host.innerHTML = html;
+      // Non `innerHTML = html`: sovrascriverebbe l'intero host (e con esso il popup
+      // di Coach AI). Aggiungiamo il modale accanto a quello che resta.
+      host.insertAdjacentHTML("beforeend", html);
       host.dataset.coachModalType = coachProgramUi.modal;
       coachProgramUi.modalDiagnostics.mounts += 1;
       const elapsed=Number((performance.now()-started).toFixed(2));coachProgramUi.modalDiagnostics.operationDurations.modalMount=elapsed;host.dataset.lastMountMs=String(elapsed);
@@ -14113,7 +14139,10 @@ function sanitizeForFirestore(value) {
     function bindLocallyRenderedCoachModal() {
       const host=document.getElementById("coachModalPortalHost");
       if(!host||!coachProgramUi.modal)return;
-      const modalRoot=host.querySelector("[data-coach-portal-modal]")||host.firstElementChild;
+      // Solo i modali del Coach Editor: il popup di Coach AI (ai3-backdrop) è un
+      // altro overlay e non deve essere scambiato per il modale appena renderizzato.
+      const owned=coachPortalOwnedChildren(host);
+      const modalRoot=owned.find((node)=>typeof node.matches==="function"&&node.matches("[data-coach-portal-modal]"))||owned[0]||host.querySelector("[data-coach-portal-modal]")||host.firstElementChild;
       if(!modalRoot||modalRoot.dataset.localBound==="1")return;
       modalRoot.dataset.localBound="1";
       coachProgramUi.modalDiagnostics.listenerBinds += 1;
