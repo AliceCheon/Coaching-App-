@@ -3,7 +3,7 @@ import vm from "node:vm";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 
-// v147.72 · Coach AI ancorato al PROGRAMMA ATTIVO + una sola card per esercizio
+// v147.73 · Coach AI ancorato al PROGRAMMA ATTIVO + una sola card per esercizio
 // 1) la scelta del programma segue lo status "active" (con override dal menu);
 // 2) lo stesso esercizio presente in più schede non produce più card duplicate.
 
@@ -56,8 +56,8 @@ const results = await vm.runInContext(`(() => {
   const results = [];
   const assert = (cond, msg) => { if (!cond) throw new Error(msg); results.push(msg); };
   state.programs = [
-    { id: "p-active", name: "Intensificazione", status: "active" },
-    { id: "p-other", name: "B program 1", status: "available" }
+    { id: "p-active", name: "Intensificazione", status: "active", durationWeeks: 8, sheets: [{ id: "sh1", name: "Scheda A", week: 1, exercises: [{ id: "ex1", name: "Lat machine", sets: 4, reps: "10" }] }] },
+    { id: "p-other", name: "B program 1", status: "available", sheets: [] }
   ];
   state.coachAi3 = { ...(state.coachAi3 || {}), selectedProgramId: "p-other", followActiveProgram: true };
 
@@ -72,8 +72,13 @@ const results = await vm.runInContext(`(() => {
   state.coachAi3.followActiveProgram = true;
   assert(coachAiSelectedProgramId() === "p-active", "riattivando 'Segui attivo' torna il programma attivo");
 
+  const pageHtml = coachAiWorkspaceHtml(false);
+  assert(typeof pageHtml === "string" && pageHtml.includes('data-ai-tab="overview"'), "la pagina Coach AI ha le schede (tab)");
+  assert(pageHtml.includes('data-ai-panel="review"') && pageHtml.includes('data-ai-panel="solutions"'), "le sezioni sono raggruppate in pannelli");
+  assert(pageHtml.includes('data-ai-active="overview"'), "la scheda attiva di default è la Panoramica");
+
   return results;
 })()`, context);
 
-console.log("v14772-programma-attivo: " + (results.length + 4) + " verifiche passate");
+console.log("v14773-programma-attivo: " + (results.length + 4) + " verifiche passate");
 for (const item of results) console.log("  ✓ " + item);
