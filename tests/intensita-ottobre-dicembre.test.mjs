@@ -139,4 +139,4 @@ for (const card of iod56) {
 for (const tid of ['intensity-test12-wave', 'intensity-test10-climb', 'intensity-midcycle-test']) {
   if (!src.includes('"' + tid + '"')) throw new Error('template ' + tid + ' mancante nella libreria del selettore');
 }
-console.log('v14773: rir/rpe/kg puliti, poi-1xN solo in settimana 1, note/template OK');
+console.log('v14774: rir/rpe/kg puliti, poi-1xN solo in settimana 1, note/template OK');

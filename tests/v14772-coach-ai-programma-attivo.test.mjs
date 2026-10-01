@@ -3,7 +3,7 @@ import vm from "node:vm";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 
-// v147.73 · Coach AI ancorato al PROGRAMMA ATTIVO + una sola card per esercizio
+// v147.74 · Coach AI ancorato al PROGRAMMA ATTIVO + una sola card per esercizio
 // 1) la scelta del programma segue lo status "active" (con override dal menu);
 // 2) lo stesso esercizio presente in più schede non produce più card duplicate.
 
@@ -52,7 +52,7 @@ context.window = context; context.globalThis = context;
 vm.createContext(context);
 new vm.Script(script).runInContext(context);
 
-const results = await vm.runInContext(`(() => {
+const results = vm.runInContext(`{
   const results = [];
   const assert = (cond, msg) => { if (!cond) throw new Error(msg); results.push(msg); };
   state.programs = [
@@ -76,9 +76,17 @@ const results = await vm.runInContext(`(() => {
   assert(typeof pageHtml === "string" && pageHtml.includes('data-ai-tab="overview"'), "la pagina Coach AI ha le schede (tab)");
   assert(pageHtml.includes('data-ai-panel="review"') && pageHtml.includes('data-ai-panel="solutions"'), "le sezioni sono raggruppate in pannelli");
   assert(pageHtml.includes('data-ai-active="overview"'), "la scheda attiva di default è la Panoramica");
+  assert(pageHtml.includes('data-ai-panel="chat"') && pageHtml.includes("data-ai-chat-form"), "c'è la scheda Chat con il composer");
 
-  return results;
-})()`, context);
+  const chat = coachAiChatState();
+  assert(Array.isArray(chat) && chat.length >= 1 && chat[0].role === "bot", "la chat parte con il saluto di Diva Bot");
+  const answer = coachAiChatAnswer("perché ho stagnato?");
+  assert(answer && typeof answer.text === "string" && answer.text.length > 10, "Diva Bot risponde con testo vero");
+  const summary = coachAiChatAnswer("come sto messa?");
+  assert(summary.text.includes("/100"), "la risposta di riepilogo cita il punteggio reale");
 
-console.log("v14773-programma-attivo: " + (results.length + 4) + " verifiche passate");
+  results;
+}`, context);
+
+console.log("v14774-programma-attivo: " + (results.length + 4) + " verifiche passate");
 for (const item of results) console.log("  ✓ " + item);
