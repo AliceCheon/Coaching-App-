@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 
-// v147.69 · Primo paint fresco: il primo render attende l'idratazione dalla
+// v147.70 · Primo paint fresco: il primo render attende l'idratazione dalla
 // cloud-cache (tetto 400ms) — lo schermo non mostra mai la foto locale vecchia
 // quando sul cloud ne è vista una più nuova.
 //
@@ -44,4 +44,4 @@ if (writeHooks < 2) {
   throw new Error("Gli hook di scrittura della cloud-cache sono cambiati (attesi >= 2)");
 }
 
-console.log("v14769-dashboard-costanza: 6 verifiche strutturali passate");
+console.log("v14770-dashboard-costanza: 6 verifiche strutturali passate");
