@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v147.83-cover-screen-fullscreen` |
-| `cache` | `atlas-app-v14783-cover-screen-fullscreen` |
+| `build` | `v147.84-twa-fullscreen` |
+| `cache` | `atlas-app-v14784-twa-fullscreen` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

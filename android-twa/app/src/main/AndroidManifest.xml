@@ -4,13 +4,38 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:name=".DivaApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:usesCleartextTraffic="false"
+        android:manageSpaceActivity="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
         android:theme="@style/Theme.BarbellDiva.EdgeToEdge">
+
+        <!-- ============================================================
+             FIX v1.0.2 — PERCHE' L'APP SI CHIUDEVA SUBITO
+             ============================================================
+             androidbrowserhelper, all'avvio, prova a ABILITARE questo
+             componente (per la scorciatoia "Impostazioni sito" e per
+             "Gestisci spazio"). Se il componente NON e' dichiarato nel
+             manifest, Android lancia:
+
+               IllegalArgumentException: Component class
+               com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity
+               does not exist in com.barbelldiva.app
+
+             e l'app si chiude immediatamente. Questa dichiarazione (con
+             manageSpaceActivity sopra) e' esattamente cio' che fa la demo
+             ufficiale di android-browser-helper. -->
+        <activity
+            android:name="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <meta-data
+                android:name="android.support.customtabs.trusted.MANAGE_SPACE_URL"
+                android:value="https://alicecheon.github.io/Coaching-App-/" />
+        </activity>
 
         <!-- MainActivity (sottoclasse di LauncherActivity): apre il sito a tutto
              schermo, senza barra del browser, con login Google funzionante. -->
@@ -51,6 +76,19 @@
             <meta-data
                 android:name="android.support.customtabs.trusted.FALLBACK_TYPE"
                 android:value="customtabs" />
+
+            <!-- v1.0.4 — via la striscetta in basso: la TWA nasconde la barra di
+                 navigazione (modalita' "immersive"). Senza questo la TWA mostra
+                 la barra di sistema in basso (una striscia chiara), che le app
+                 native invece non mostrano. sticky-immersive = la barra resta
+                 nascosta e ricompare solo con uno swipe dal bordo.
+                 NB: la striscia era rimasta anche con "immersive" perche' il
+                 manifest del sito dichiarava "standalone" (che mostra la barra):
+                 ora il manifest chiede "fullscreen", cosi' la TWA va a tutto
+                 schermo davvero. -->
+            <meta-data
+                android:name="android.support.customtabs.trusted.DISPLAY_MODE"
+                android:value="sticky-immersive" />
         </activity>
     </application>
 
