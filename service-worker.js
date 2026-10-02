@@ -8,7 +8,7 @@
    - Match con ignoreSearch: resiste ai bump di versione (?v=...) e ai doppioni in cache
    - Cache key normalizzate per pathname (niente duplicati per ogni ?v=)
 */
-const CACHE_NAME = "atlas-app-v14783-cover-screen-fullscreen";
+const CACHE_NAME = "atlas-app-v14784-twa-fullscreen";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -103,7 +103,11 @@ self.addEventListener("fetch", (event) => {
   const isHtml =
     request.mode === "navigate" ||
     request.destination === "document" ||
-    url.pathname.endsWith(".html");
+    url.pathname.endsWith(".html") ||
+    // Il manifest decide la modalita' di visualizzazione (fullscreen nella TWA):
+    // deve essere SEMPRE fresco, altrimenti l'app resta con la barra di sistema.
+    request.destination === "manifest" ||
+    url.pathname.endsWith(".webmanifest");
 
   // JS e CSS: NETWORK-FIRST con timeout. Dopo un deploy il dispositivo deve
   // eseguire sempre la versione pubblicata quando è online (fix telefono).

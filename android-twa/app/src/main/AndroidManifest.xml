@@ -77,13 +77,18 @@
                 android:name="android.support.customtabs.trusted.FALLBACK_TYPE"
                 android:value="customtabs" />
 
-            <!-- v1.0.3 — via la striscetta in basso: la TWA nasconde la barra di
-                 navigazione (modalita' "immersive"), come fanno le app native.
-                 Senza questo la TWA mostra la barra di sistema in basso (una
-                 striscia chiara), che le app normali invece non mostrano. -->
+            <!-- v1.0.4 — via la striscetta in basso: la TWA nasconde la barra di
+                 navigazione (modalita' "immersive"). Senza questo la TWA mostra
+                 la barra di sistema in basso (una striscia chiara), che le app
+                 native invece non mostrano. sticky-immersive = la barra resta
+                 nascosta e ricompare solo con uno swipe dal bordo.
+                 NB: la striscia era rimasta anche con "immersive" perche' il
+                 manifest del sito dichiarava "standalone" (che mostra la barra):
+                 ora il manifest chiede "fullscreen", cosi' la TWA va a tutto
+                 schermo davvero. -->
             <meta-data
                 android:name="android.support.customtabs.trusted.DISPLAY_MODE"
-                android:value="immersive" />
+                android:value="sticky-immersive" />
         </activity>
     </application>
 
