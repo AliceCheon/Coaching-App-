@@ -4991,3 +4991,61 @@ body[data-theme="light"] .coach-modal-error {
    documento (FlexWindow / cover screen), così non compare la fascia bianca. */
 html { height: 100%; background-color: #090918; }
 html[data-theme="light"] { background-color: #fff7fb; }
+
+/* ============================================================================
+   v147.85 · Diario di seduta (Fase 1)
+   Note, umore, energia e RPE per le sedute recenti. Usa le variabili del tema
+   così funziona sia in scuro (default) sia in chiaro "Lavender Diva".
+   ========================================================================= */
+.journal-panel { display: grid; gap: 14px; }
+.journal-head h3 { margin: 4px 0 2px; }
+.journal-head p { margin: 0; color: var(--text-secondary, #b9a9cf); font-size: 13px; }
+.journal-cards { display: grid; gap: 10px; }
+.journal-card {
+  border: 1px solid var(--line-soft, rgba(255,255,255,.12));
+  border-radius: var(--radius-medium, 14px);
+  background: var(--surface-raised, rgba(255,255,255,.04));
+  overflow: hidden;
+}
+.journal-card > summary {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 13px; cursor: pointer; list-style: none;
+}
+.journal-card > summary::-webkit-details-marker { display: none; }
+.journal-summary-date { font-weight: 700; font-size: 13px; }
+.journal-summary-name { flex: 1; color: var(--text-secondary, #b9a9cf); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.journal-summary-badge {
+  font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+  background: var(--surface, rgba(255,255,255,.08)); color: var(--text-secondary, #cbbde0);
+}
+.journal-summary-badge.is-easy { background: rgba(105, 230, 176, .18); color: #69e6b0; }
+.journal-summary-badge.is-mid { background: rgba(255, 200, 90, .18); color: #ffc85a; }
+.journal-summary-badge.is-hard { background: rgba(255, 110, 150, .2); color: #ff6e96; }
+.journal-body { display: grid; gap: 11px; padding: 0 13px 13px; }
+.journal-field { display: grid; gap: 5px; font-size: 12px; color: var(--text-secondary, #b9a9cf); }
+.journal-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.journal-label { font-size: 12px; color: var(--text-secondary, #b9a9cf); }
+.journal-field-inline { flex: 1; min-width: 110px; }
+.journal-note, .journal-energy, .journal-rpe {
+  width: 100%; padding: 9px 11px; border-radius: var(--radius-small, 10px);
+  border: 1px solid var(--line-soft, rgba(255,255,255,.14));
+  background: var(--surface, rgba(0,0,0,.18)); color: var(--text-primary, #f4eefb);
+  font: inherit; font-size: 14px; resize: vertical;
+}
+.journal-note:focus, .journal-energy:focus, .journal-rpe:focus {
+  outline: none; border-color: var(--pink-primary, #ff6fcb);
+  box-shadow: 0 0 0 3px rgba(255, 111, 203, .22);
+}
+.journal-moods { display: flex; gap: 6px; }
+.journal-mood {
+  font-size: 19px; line-height: 1; padding: 6px 8px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--line-soft, rgba(255,255,255,.14));
+  background: var(--surface, rgba(255,255,255,.04));
+  transition: transform .12s ease, border-color .12s ease, background .12s ease;
+}
+.journal-mood:hover { transform: translateY(-2px); }
+.journal-mood.active { border-color: var(--pink-primary, #ff6fcb); background: rgba(255, 111, 203, .18); transform: translateY(-2px); }
+html[data-theme="light"] .journal-note,
+html[data-theme="light"] .journal-energy,
+html[data-theme="light"] .journal-rpe { background: #fff; color: #2b2233; }
+@media (prefers-reduced-motion: reduce) { .journal-mood { transition: none; } }

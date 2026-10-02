@@ -7843,6 +7843,91 @@ function sanitizeForFirestore(value) {
       return info.available ? info.volume : null;
     }
 
+    // === v147.85 · DIARIO DI SEDUTA (Fase 1) ===
+    // Note libere, umore, energia e RPE percepito per ogni seduta salvata.
+    // I dati vivono in `state.journal` (persistito e sincronizzato dal cloud,
+    // che accetta campi dinamici con merge ricorsivo). L'accesso avviene per
+    // chiave sessione, così il diario non dipende dalla posizione nell'elenco.
+    const JOURNAL_MOODS = [
+      { value: "great", emoji: "🤩", label: "Carica" },
+      { value: "good", emoji: "😊", label: "Bene" },
+      { value: "neutral", emoji: "😐", label: "Così così" },
+      { value: "tired", emoji: "😴", label: "Stanca" },
+      { value: "rough", emoji: "😣", label: "Dura" }
+    ];
+
+    function journalEntries() {
+      const journal = state.journal;
+      if (!journal || typeof journal !== "object" || Array.isArray(journal)) return {};
+      return journal;
+    }
+
+    function journalEntryFor(session = {}) {
+      return journalEntries()[workoutSessionKey(session)] || {};
+    }
+
+    function journalHasContent(entry = {}) {
+      return Boolean(entry.note || entry.mood || entry.energy != null || entry.rpe != null);
+    }
+
+    function journalMoodMeta(value) {
+      return JOURNAL_MOODS.find((item) => item.value === value) || null;
+    }
+
+    // Restituisce la sessione visibile corrispondente alla chiave del diario.
+    function sessionByJournalKey(key) {
+      return visibleWorkoutSessions().find((session) => workoutSessionKey(session) === key) || null;
+    }
+
+    function updateJournalEntry(sessionKey, patch = {}) {
+      if (!sessionKey) return false;
+      const current = journalEntries();
+      const next = { ...current, [sessionKey]: { ...(current[sessionKey] || {}), ...patch } };
+      state.journal = next;
+      saveState();
+      return true;
+    }
+
+    // "Sedute recenti" con diario: le ultime 3 sedute completate/registrate.
+    function journalRecentSessions(limit = 3) {
+      return visibleWorkoutSessions()
+        .filter((session) => sessionCompletionState(session).completed)
+        .sort((a, b) => sessionTimestamp(b) - sessionTimestamp(a))
+        .slice(0, limit);
+    }
+
+    function journalMoodButtonsHtml(sessionKey, currentMood) {
+      return JOURNAL_MOODS.map((mood) => `<button type="button" class="journal-mood${currentMood === mood.value ? " active" : ""}" data-journal-mood="${mood.value}" data-journal-key="${escapeHtml(sessionKey)}" title="${escapeHtml(mood.label)}" aria-label="Umore: ${escapeHtml(mood.label)}" aria-pressed="${currentMood === mood.value ? "true" : "false"}">${mood.emoji}</button>`).join("");
+    }
+
+    function journalFieldHtml(session, entry) {
+      const key = workoutSessionKey(session);
+      const date = formatDateLabel(session.dateInput || session.date || "");
+      const name = session.sessionName || session.name || session.sessionCode || "Allenamento";
+      const mood = entry.mood || "";
+      const energy = entry.energy != null ? Number(entry.energy) : null;
+      const rpe = entry.rpe != null ? Number(entry.rpe) : null;
+      const rpeTone = rpe == null ? "" : rpe <= 6 ? " is-easy" : rpe <= 8 ? " is-mid" : " is-hard";
+      return `<details class="journal-card" data-journal-card="${escapeHtml(key)}"${journalHasContent(entry) ? " open" : ""}>
+        <summary><span class="journal-summary-date">${escapeHtml(date)}</span><span class="journal-summary-name">${escapeHtml(name)}</span><span class="journal-summary-badge${rpeTone}">${rpe == null ? "—" : `RPE ${rpe}`}</span></summary>
+        <div class="journal-body">
+          <label class="journal-field">Come ti sei sentita<textarea class="journal-note" data-journal-field="note" data-journal-key="${escapeHtml(key)}" rows="2" placeholder="Sensazioni, tecnica, dolori…">${escapeHtml(entry.note || "")}</textarea></label>
+          <div class="journal-row"><span class="journal-label">Umore</span><div class="journal-moods">${journalMoodButtonsHtml(key, mood)}</div></div>
+          <div class="journal-row"><label class="journal-field journal-field-inline">Energia<input class="journal-energy" type="number" min="1" max="10" step="1" inputmode="numeric" data-journal-field="energy" data-journal-key="${escapeHtml(key)}" value="${energy == null ? "" : energy}" placeholder="1-10" /></label>
+            <label class="journal-field journal-field-inline">RPE percepito<input class="journal-rpe" type="number" min="1" max="10" step="0.5" inputmode="decimal" data-journal-field="rpe" data-journal-key="${escapeHtml(key)}" value="${rpe == null ? "" : rpe}" placeholder="1-10" /></label></div>
+        </div>
+      </details>`;
+    }
+
+    function journalHtml() {
+      const recent = journalRecentSessions(3);
+      if (!recent.length) return "";
+      return `<section class="card journal-panel">
+        <div class="journal-head"><span class="section-eyebrow">Diario di seduta</span><h3>Come sono andate</h3><p>Aggiungi note, umore, energia e RPE: la tua Diva se ne ricorda.</p></div>
+        <div class="journal-cards">${recent.map((session) => journalFieldHtml(session, journalEntryFor(session))).join("")}</div>
+      </section>`;
+    }
+
     function logbookHtml() {
       const sessions = logbookSessionsForUi();
       const allSessions = visibleWorkoutSessions();
@@ -7853,6 +7938,7 @@ function sanitizeForFirestore(value) {
           ${dashboardSummaryCard(iconSvg("workout", "Sedute"), "Sedute", allSessions.length, "salvate", colors.green)}
           ${dashboardSummaryCard(iconSvg("latest", "Carico top"), "Carico top", best ? `${best} kg` : "—", best ? "miglior dato" : "Nessun carico", colors.gold)}
         </section>
+        ${journalHtml()}
           <section class="card phase11-logbook-toolbar"><label>Cerca nel logbook<input id="phase11LogbookSearch" type="search" placeholder="Esercizio, scheda o data" value="${escapeHtml(state.ui?.logbookSearch || "")}" /></label><label>Mostra<select id="phase11LogbookStatus"><option value="all" ${!state.ui?.logbookStatus || state.ui.logbookStatus === "all" ? "selected" : ""}>Tutte le sedute</option><option value="completed" ${state.ui?.logbookStatus === "completed" ? "selected" : ""}>Completate</option><option value="draft" ${state.ui?.logbookStatus === "draft" ? "selected" : ""}>In bozza</option></select></label><label>Fonte<select id="phase11LogbookSource"><option value="all">Tutte le fonti</option>${["App","Excel","Alice Logbook","Backup Alice 14/07/2026","Cloud","Storico Excel"].map((source) => `<option value="${escapeHtml(source)}" ${state.ui?.logbookSource === source ? "selected" : ""}>${escapeHtml(source)}</option>`).join("")}</select></label><button type="button" class="ghost-button" id="importAliceLogbookButton">Importa dati Alice Logbook</button><input id="importAliceLogbookFile" type="file" accept="application/json" hidden /></section>
         <section class="phase11-logbook-grid">${sessions.length ? sessions.map((session) => {
           const date = formatDateLabel(session.dateInput || session.date || "");
@@ -12609,6 +12695,37 @@ function sanitizeForFirestore(value) {
       if (logbookSource) logbookSource.addEventListener("change", () => {
         state.ui = { ...(state.ui || {}), logbookSource: logbookSource.value };
         render();
+      });
+      // v147.85 · Diario di seduta: note, umore, energia, RPE (bind diretti, no re-render)
+      document.querySelectorAll("[data-journal-field]").forEach((input) => {
+        const commit = () => {
+          const key = input.dataset.journalKey;
+          const field = input.dataset.journalField;
+          if (!key || !field) return;
+          let value = input.value;
+          if (field === "energy" || field === "rpe") {
+            if (String(value).trim() === "") value = null;
+            else { const num = Number(String(value).replace(",", ".")); value = Number.isFinite(num) ? num : null; }
+          }
+          updateJournalEntry(key, { [field]: value });
+        };
+        input.addEventListener("change", commit);
+        if (input.tagName === "TEXTAREA") input.addEventListener("input", commit);
+      });
+      document.querySelectorAll("[data-journal-mood]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const key = button.dataset.journalKey;
+          const mood = button.dataset.journalMood;
+          if (!key) return;
+          const current = (journalEntries()[key] || {}).mood;
+          updateJournalEntry(key, { mood: current === mood ? "" : mood });
+          const group = button.closest(".journal-moods");
+          if (group) group.querySelectorAll("[data-journal-mood]").forEach((peer) => {
+            const on = peer.dataset.journalMood === (current === mood ? "" : mood);
+            peer.classList.toggle("active", on);
+            peer.setAttribute("aria-pressed", String(on));
+          });
+        });
       });
       const importAliceButton = document.getElementById("importAliceLogbookButton");
       const importAliceFile = document.getElementById("importAliceLogbookFile");
