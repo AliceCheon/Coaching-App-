@@ -307,3 +307,58 @@ uniche leve utente sono le impostazioni di sistema/Good Lock (che sul dispositiv
 non hanno risolto). Lato web si garantisce che, quando il sistema concede la
 superficie piena, l'app la occupi **senza buchi** (canvas a tema, nessun inset,
 nessun elemento in flusso fuori schermo).
+
+## App Android (TWA) — perché l'APK si chiudeva subito (v1.0.2)
+
+**Sintomo**: installata l'app, il tap sull'icona "fa per aprirsi e si chiude
+subito" (crash immediato all'avvio).
+
+**Come è stata trovata la causa**: la build diagnostica (v1.0.1) installa un
+`CrashGuard` (`DivaApp.attachBaseContext`) che cattura le eccezioni non gestite,
+le salva su file e le invia a un raccoglitore. Lo stack trace arrivato dal
+dispositivo reale (SM-F766B, Galaxy Z Flip 7, Android 16) è stato decisivo:
+
+```
+java.lang.IllegalArgumentException: Component class
+com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity
+does not exist in com.barbelldiva.app
+  at ...ManageDataLauncherActivity.addSiteSettingsShortcut(ManageDataLauncherActivity.java:387)
+  at ...LauncherActivity.launchTwa(LauncherActivity.java:272)
+  at com.barbelldiva.app.MainActivity.launchTwa(MainActivity.java:44)
+  at ...LauncherActivity.onCreate(LauncherActivity.java:185)
+```
+
+**Causa reale**: `androidbrowserhelper`, in `LauncherActivity.launchTwa()`, chiama
+`ManageDataLauncherActivity.addSiteSettingsShortcut()`, che esegue
+`setComponentEnabledSetting(new ComponentName(context, ManageDataLauncherActivity.class), ...)`.
+Se quel componente **non è dichiarato nel manifest**, Android lancia
+`IllegalArgumentException` e l'app muore. La v1.0.0 non lo dichiarava → crash
+sempre, su qualsiasi dispositivo. (La v1.0.1 sopravviveva solo grazie alla rete
+di sicurezza: l'eccezione veniva intercettata e l'app apriva il sito con un
+intent VIEW.)
+
+**Fix (v1.0.2)**: dichiarare il componente come nella demo ufficiale di
+android-browser-helper:
+
+```xml
+<application
+    android:manageSpaceActivity="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
+    ...>
+  <activity
+      android:name="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
+      android:theme="@android:style/Theme.Translucent.NoTitleBar">
+    <meta-data
+        android:name="android.support.customtabs.trusted.MANAGE_SPACE_URL"
+        android:value="https://alicecheon.github.io/Coaching-App-/" />
+  </activity>
+  ...
+</application>
+```
+
+**Nota per il futuro**: quando si usa `androidbrowserhelper`, il manifest deve
+dichiarare **tutti** i componenti che la libreria manipola per nome —
+`ManageDataLauncherActivity` (+ `manageSpaceActivity`) e, se serve il pulsante
+"apri in browser", `FocusActivity`. Un componente mancante = crash immediato.
+
+**Esito**: v1.0.2 si apre subito, a tutto schermo (TWA verificata, nessun
+fallback), login Google e sync col PC invariati. Release `v1.0.2-app`.
