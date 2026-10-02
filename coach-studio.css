@@ -484,8 +484,14 @@ body.wp19-open #globalDivaBotHost{display:none}
   .global-diva-bubble{max-width:65vw}
   .global-diva-restore{bottom:88px}
   .coach-studio-topbar{position:relative!important;top:auto!important}
-  /* Forza visibilità robottina su mobile/PWA */
-  #globalDivaBotHost{display:block!important;position:static!important}
+  /* Forza visibilità robottina su mobile/PWA.
+     v147.83 — NON usare position:static: l'host entrerebbe nel flusso normale
+     del documento e (pur essendo un contenitore vuoto, col bot position:fixed)
+     resta una "trappola fantasma" che puo' allungare la pagina oltre 100dvh sul
+     cover screen. position:relative e' sufficiente a far uscire l'host dal
+     posizionamento automatico e non tocca il layout del .global-diva-bot
+     (position:fixed, figlio dell'host). */
+  #globalDivaBotHost{display:block!important;position:relative!important}
   #globalDivaBotHost .global-diva-bot{display:block!important;visibility:visible!important;opacity:1!important}
 }
 @media(prefers-reduced-motion:reduce){.global-diva-bubble,.global-diva-panel,.animated-tooltip,body[data-animation-mode="full"] button:hover{animation:none!important;transition:none!important}}

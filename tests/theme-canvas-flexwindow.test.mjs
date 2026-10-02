@@ -21,8 +21,12 @@ assert.match(html, /localStorage\.getItem\("alice-method-app\.v8"\)/, "il pre-pa
 assert.match(main, /document\.documentElement\.dataset\.theme = theme/, "syncThemeUi non aggiorna data-theme su html");
 assert.match(main, /document\.documentElement\.dataset\.theme = state\.profile\.theme \|\| "dark"/, "render() non aggiorna data-theme su html");
 
-// Fullscreen solo su PWA installata e finestra stretta (cover screen).
-assert.match(html, /display-mode: standalone/, "il requestFullscreen non è limitato alla PWA installata");
+// Fullscreen solo su finestra cover screen stretta/bassa (FlexWindow).
+// v147.83: NON si usa piu' `display-mode: standalone` come cancello (si
+// auto-disattivava entrando in fullscreen); si esclude solo il browser normale.
+assert.match(html, /display-mode: browser/, "il requestFullscreen non esclude il browser normale");
+assert.match(html, /innerHeight <= 560/, "manca il limite di altezza del cover screen");
+assert.match(html, /innerWidth <= 760/, "manca il limite di larghezza del cover screen");
 assert.match(html, /requestFullscreen/, "manca requestFullscreen per il cutout");
 
 console.log(JSON.stringify({ ok: true, theme: "canvas a tema + pre-paint + fullscreen cover-screen" }));

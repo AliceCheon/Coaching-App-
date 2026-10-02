@@ -178,7 +178,11 @@
     body {
       margin: 0;
       min-height: 100vh;
-      padding-bottom: env(safe-area-inset-bottom);
+      /* v147.83 — NIENTE inset di sicurezza inferiore sul body: sul cover screen
+         (FlexWindow) l'inset sommato all'altezza del documento supera il layout
+         viewport e allarga la fascia scoperta in basso (regressione gia' rimossa
+         in v147.59 e poi rientrata). Il fondo schermo e' gestito da .screen e
+         .bottom-nav, non dal body. */
       background:
         linear-gradient(135deg, rgba(255,111,203,.16), transparent 34%),
         linear-gradient(225deg, rgba(169,144,255,.16), transparent 42%),
@@ -4897,11 +4901,17 @@
     /* === v14743 B · schermo di copertina Z Flip: riempimento verticale ===
        Sul FlexWindow il viewport visibile e' piu' basso di 100vh (barre di
        sistema + area sicura): con 100vh la schermata risultava tagliata in
-       basso. 100dvh segue l'altezza realmente visibile. */
+       basso. 100dvh segue l'altezza realmente visibile.
+       v147.83 — anche .phone-shell usava "min-height: 100vh" (viewport GRANDE,
+       ~400px) mentre il visibile e' 365px: la shell sforava la scena di ~35px e
+       poteva far scivolare il contenuto sotto la barra di sistema. Qui la si
+       pinna a 100dvh, cosi' shell e telefono coincidono col visibile. */
     @media (max-height: 430px) and (max-width: 560px) {
       .desktop-rail { display: none !important; }
       body { min-height: 100dvh !important; }
       .stage { min-height: 100dvh !important; height: 100dvh !important; }
+      .phone-shell { min-height: 100dvh !important; }
+      .phone { min-height: 100dvh !important; height: 100dvh !important; }
     }
 
 
