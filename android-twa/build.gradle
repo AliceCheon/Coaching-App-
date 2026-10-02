@@ -1,0 +1,5 @@
+// Progetto radice: dichiara solo il plugin Android (applicato nel modulo :app).
+// AGP 8.9.1: richiesto da androidx.browser 1.10 / androidbrowserhelper 2.7.3.
+plugins {
+    id 'com.android.application' version '8.9.1' apply false
+}

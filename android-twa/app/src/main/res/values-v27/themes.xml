@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- v27+: bordo-schermo vero. shortEdges fa rendere la finestra anche
+         nell'area del foro fotocamere, che e' esattamente il punto del
+         FlexWindow Z Flip: senza questo la finestra resta letterboxed e
+         compare la fascia in basso. -->
+    <style name="Theme.BarbellDiva.EdgeToEdge" parent="Theme.BarbellDiva">
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+    </style>
+
+</resources>
