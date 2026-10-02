@@ -262,4 +262,48 @@ Fix (v147.82): il fullscreen è (ri)richiesto **a ogni gesto** — `pointerdown`
 sparisce. Guardia cover screen su `innerHeight <= 560 && innerWidth <= 760`
 (invece del solo `innerWidth`), così non scatta né sul telefono aperto in
 orizzontale (844x390 / 915x412) né su desktop.
-Test: `tests/v14782-flexwindow-fullscreen-rearm.test.mjs`.
+Test: `tests/v14782-flexwindow-fullscreen-rearm.test.mjs` (sostituito in v147.83).
+
+## FlexWindow — perché la fascia restava "immobile" (v147.83)
+Diagnosi su dispositivo reale (pagina `diagnostica-schermo.html` aperta sul
+FlexWindow Z Flip 7). Misure CSS reali: viewport **361×399** in fullscreen,
+**361×237** in browser, schermo fisico **362×400** (DPR 2.625),
+`safe-area-inset-* = 0`. Confermano che in fullscreen la pagina **riempie** il
+viewport che il sistema concede (399/400): la fascia non è un overflow della
+pagina, è l'area che One UI riserva al **manico delle app** del cover screen.
+
+Tre cause web, tutte corrette (nessuna di queste cancella il manico di sistema,
+che non è controllabile via CSS):
+
+1. **Gate fullscreen che si auto-disattivava** (bug vero, v147.82): il cancello
+   `matchMedia("(display-mode: standalone)")` diventa **falso** appena si entra
+   in fullscreen (display-mode passa a `fullscreen`). Risultato: il primo gesto
+   entrava in fullscreen, tutti i gesti successivi uscivano dalla funzione e
+   **non si rientrava mai più** → fascia "immobile" per sempre. Fix: rimosso il
+   cancello `standalone`; ora si esclude solo il **browser normale**
+   (`display-mode: browser`) e si tiene la guardia dimensione (`innerHeight <= 560`,
+   `innerWidth <= 760`). Così il rientro in fullscreen funziona anche da
+   fullscreen e dopo un ridimensionamento del tasto Samsung.
+2. **Regressione padding sul body**: `body { padding-bottom: env(safe-area-inset-bottom) }`
+   era rientrata (v147.59 l'aveva rimossa). Sul cover screen somma l'inset
+   all'altezza del documento e allarga la fascia scoperta. Rimossa di nuovo.
+3. **Elemento fantasma**: `#globalDivaBotHost { position: static !important }`
+   (in `@media(max-width:700px)` di `coach-studio.css`) riportava l'host **nel
+   flusso**, potendo allungare il documento oltre `100dvh`. Il bot è
+   `position: fixed`, quindi l'host resta vuoto: basta `position: relative`
+   (fuori flusso, nessun cambio di layout del bot).
+4. **Guscio oltre il visibile**: `.phone-shell` aveva `min-height: 100vh`
+   (viewport GRANDE ≈400px) mentre il visibile è 365px → sforava la scena di
+   ~35px. Sul cover screen `.phone-shell`/`.phone` ora pinnati a `100dvh`.
+
+Test: `tests/v14783-cover-screen-fullscreen.test.mjs` (guardia anti-regressione
+su tutte e quattro le cause); aggiornato `tests/theme-canvas-flexwindow.test.mjs`
+(il fullscreen non usa più `display-mode: standalone`).
+
+**Limite noto (confermato)**: il manico/la fascia in basso del FlexWindow è
+**disegnato da One UI sopra tutte le app** e non è rimovibile dal web. Una PWA
+non entra nella lista "App a schermo intero" di Samsung come le app native; le
+uniche leve utente sono le impostazioni di sistema/Good Lock (che sul dispositivo
+non hanno risolto). Lato web si garantisce che, quando il sistema concede la
+superficie piena, l'app la occupi **senza buchi** (canvas a tema, nessun inset,
+nessun elemento in flusso fuori schermo).

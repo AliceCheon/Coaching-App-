@@ -19,7 +19,7 @@ assert.match(html, /writeBackupHistory/);
 assert.match(html, /"pre-update":3/);
 assert.match(html, /"pre-restore":5/);
 assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14782-cover-screen-fullscreen"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14783-cover-screen-fullscreen"/);
 
 console.log(JSON.stringify({ ok:true, legacyAdapter:true, selectiveProgressions:true, premiumMotion:true, splash:true, reducedMotion:true }));
 

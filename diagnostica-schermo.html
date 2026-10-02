@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diagnostica schermo — Barbell Diva</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; padding: 0; }
+  html { height: 100%; background: #00c2a8; }   /* teal = dentro il documento */
+  body { min-height: 100dvh; background: #0b0b1a; color: #eae6ff;
+         font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+  /* marcatori dei bordi del viewport */
+  .edge { position: fixed; left: 0; right: 0; height: 6px; z-index: 50; }
+  .edge-top { top: 0; background: #2bd67b; }
+  .edge-bottom { bottom: 0; background: #ff2d95; }
+
+  /* blocco alto esattamente 100dvh: il bordo giallo segna la fine di 100dvh */
+  .dvhblock { height: 100dvh; box-sizing: border-box; position: relative;
+              border-bottom: 6px solid #ffd23f;
+              background: linear-gradient(160deg, #1b1430, #2a1d4d); }
+  .dvhlabel { position: absolute; left: 8px; bottom: 12px; font-size: .6rem;
+              letter-spacing: .1em; color: #ffd23f; }
+
+  /* sonde della safe-area */
+  .probe { position: fixed; width: 14px; height: 14px; background: #00d1ff;
+           z-index: 60; border-radius: 3px; }
+
+  /* pannello dati */
+  .panel { position: fixed; left: 6px; right: 6px; top: 14px; z-index: 70;
+           background: rgba(8,8,24,.9); border: 1px solid #3a2f5e; border-radius: 12px;
+           padding: 8px 10px; backdrop-filter: blur(6px); }
+  .panel h1 { margin: 0 0 6px; font-size: .72rem; letter-spacing: .08em; color: #ff9ad2; }
+  pre { margin: 0; font-size: .56rem; line-height: 1.32; white-space: pre-wrap;
+        word-break: break-word; max-height: 40dvh; overflow: auto; }
+  .btns { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  button { font: inherit; font-size: .6rem; padding: 8px 10px; border-radius: 10px;
+           border: 1px solid #6a4bd0; background: #2a1d4d; color: #fff; }
+  button:active { background: #3d2a6e; }
+</style>
+</head>
+<body>
+  <div class="edge edge-top"></div>
+  <div class="edge edge-bottom"></div>
+  <div class="dvhblock"><span class="dvhlabel">FINE BLOCCO 100dvh (bordo giallo)</span></div>
+
+  <div class="probe" id="pTL"></div><div class="probe" id="pTR"></div>
+  <div class="probe" id="pBL"></div><div class="probe" id="pBR"></div>
+
+  <div class="panel">
+    <h1>DIAGNOSTICA SCHERMO — BARBELL DIVA</h1>
+    <pre id="out">…</pre>
+    <div class="btns">
+      <button id="fs">1) PROVA FULLSCREEN</button>
+      <button id="exit">2) Esci fullscreen</button>
+      <button id="re">Aggiorna</button>
+    </div>
+  </div>
+
+<script>
+  var probe = document.createElement("div");
+  probe.style.cssText =
+    "position:absolute;visibility:hidden;pointer-events:none;" +
+    "padding-top:env(safe-area-inset-top,0px);" +
+    "padding-right:env(safe-area-inset-right,0px);" +
+    "padding-bottom:env(safe-area-inset-bottom,0px);" +
+    "padding-left:env(safe-area-inset-left,0px)";
+  document.body.appendChild(probe);
+
+  function px(v){ var n = parseFloat(v); return isFinite(n) ? n : 0; }
+  function safeArea(){
+    var cs = getComputedStyle(probe);
+    return { top: px(cs.paddingTop), right: px(cs.paddingRight),
+             bottom: px(cs.paddingBottom), left: px(cs.paddingLeft) };
+  }
+  function dm(q){ try { return matchMedia(q).matches ? "SI" : "no"; } catch(e){ return "err"; } }
+  function firstDM(){
+    var qs = ["(display-mode: standalone)","(display-mode: fullscreen)",
+              "(display-mode: minimal-ui)","(display-mode: browser)",
+              "(display-mode: window-controls-overlay)"];
+    for (var i=0;i<qs.length;i++){ if (dm(qs[i]) === "SI") return qs[i].replace(/[()]/g,""); }
+    return "nessuna";
+  }
+
+  function snapshot(){
+    var vv = window.visualViewport, sa = safeArea(), de = document.documentElement;
+    var L = [
+      "innerW x innerH   : " + innerWidth + " x " + innerHeight,
+      "outerW x outerH   : " + outerWidth + " x " + outerHeight,
+      "screen w x h      : " + screen.width + " x " + screen.height,
+      "screen.avail w x h: " + screen.availWidth + " x " + screen.availHeight,
+      "docEl client w x h: " + de.clientWidth + " x " + de.clientHeight,
+      "devicePixelRatio  : " + devicePixelRatio,
+      "visualViewport    : " + (vv ? Math.round(vv.width)+" x "+Math.round(vv.height)+
+                            "  offTop="+Math.round(vv.offsetTop)+"  scale="+vv.scale.toFixed(2) : "n/d"),
+      "safe-area T/R/B/L : " + sa.top + " / " + sa.right + " / " + sa.bottom + " / " + sa.left,
+      "display-mode      : " + firstDM(),
+      "  standalone      : " + dm("(display-mode: standalone)"),
+      "  fullscreen      : " + dm("(display-mode: fullscreen)"),
+      "  browser         : " + dm("(display-mode: browser)"),
+      "fullscreenElement : " + (document.fullscreenElement ? document.fullscreenElement.tagName : "nessuno"),
+      "requestFullscreen : " + (!!de.requestFullscreen),
+      "",
+      "UA: " + navigator.userAgent
+    ];
+    document.getElementById("out").textContent = L.join("\n");
+    document.getElementById("pTL").style.cssText = "top:" + sa.top + "px;left:" + sa.left + "px";
+    document.getElementById("pTR").style.cssText = "top:" + sa.top + "px;right:" + sa.right + "px";
+    document.getElementById("pBL").style.cssText = "bottom:" + sa.bottom + "px;left:" + sa.left + "px";
+    document.getElementById("pBR").style.cssText = "bottom:" + sa.bottom + "px;right:" + sa.right + "px";
+  }
+
+  document.getElementById("fs").addEventListener("click", function(){
+    try {
+      var p = document.documentElement.requestFullscreen();
+      if (p && p.catch) p.catch(function(e){ alert("Fullscreen RIFIUTATO: " + (e && e.message ? e.message : e)); });
+    } catch (e) { alert("Errore fullscreen: " + e.message); }
+  });
+  document.getElementById("exit").addEventListener("click", function(){
+    try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen(); } catch(e){}
+  });
+  document.getElementById("re").addEventListener("click", snapshot);
+
+  addEventListener("resize", snapshot);
+  addEventListener("orientationchange", function(){ setTimeout(snapshot, 200); });
+  addEventListener("fullscreenchange", function(){ setTimeout(snapshot, 120); });
+  snapshot();
+</script>
+</body>
+</html>
