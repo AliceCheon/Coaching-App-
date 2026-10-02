@@ -11,7 +11,31 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:usesCleartextTraffic="false"
+        android:manageSpaceActivity="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
         android:theme="@style/Theme.BarbellDiva.EdgeToEdge">
+
+        <!-- ============================================================
+             FIX v1.0.2 — PERCHE' L'APP SI CHIUDEVA SUBITO
+             ============================================================
+             androidbrowserhelper, all'avvio, prova a ABILITARE questo
+             componente (per la scorciatoia "Impostazioni sito" e per
+             "Gestisci spazio"). Se il componente NON e' dichiarato nel
+             manifest, Android lancia:
+
+               IllegalArgumentException: Component class
+               com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity
+               does not exist in com.barbelldiva.app
+
+             e l'app si chiude immediatamente. Questa dichiarazione (con
+             manageSpaceActivity sopra) e' esattamente cio' che fa la demo
+             ufficiale di android-browser-helper. -->
+        <activity
+            android:name="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <meta-data
+                android:name="android.support.customtabs.trusted.MANAGE_SPACE_URL"
+                android:value="https://alicecheon.github.io/Coaching-App-/" />
+        </activity>
 
         <!-- MainActivity (sottoclasse di LauncherActivity): apre il sito a tutto
              schermo, senza barra del browser, con login Google funzionante. -->
@@ -53,16 +77,6 @@
                 android:name="android.support.customtabs.trusted.FALLBACK_TYPE"
                 android:value="customtabs" />
         </activity>
-
-        <!-- Schermata di emergenza (build diagnostica): mostra l'ultimo errore.
-             Gira in un processo separato (:crash) cosi' compare anche se il
-             processo principale e' in chiusura. -->
-        <activity
-            android:name=".CrashActivity"
-            android:process=":crash"
-            android:exported="false"
-            android:excludeFromRecents="true"
-            android:theme="@android:style/Theme.Material.NoActionBar" />
     </application>
 
 </manifest>
