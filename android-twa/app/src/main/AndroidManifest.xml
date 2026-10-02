@@ -76,6 +76,14 @@
             <meta-data
                 android:name="android.support.customtabs.trusted.FALLBACK_TYPE"
                 android:value="customtabs" />
+
+            <!-- v1.0.3 — via la striscetta in basso: la TWA nasconde la barra di
+                 navigazione (modalita' "immersive"), come fanno le app native.
+                 Senza questo la TWA mostra la barra di sistema in basso (una
+                 striscia chiara), che le app normali invece non mostrano. -->
+            <meta-data
+                android:name="android.support.customtabs.trusted.DISPLAY_MODE"
+                android:value="immersive" />
         </activity>
     </application>
 

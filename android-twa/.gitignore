@@ -8,3 +8,4 @@ app/build/
 *.apk
 *.aab
 crash-collector/
+barbell_diva_keystore_backup*.tar.gz
