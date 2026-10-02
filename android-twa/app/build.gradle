@@ -1,0 +1,52 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.barbelldiva.app'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "com.barbelldiva.app"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    // Firma di release: la password arriva dalla variabile d'ambiente
+    // BD_KEYSTORE_PASS (mai scritta nel repo).
+    signingConfigs {
+        release {
+            storeFile file("../keystore.jks")
+            storePassword System.getenv("BD_KEYSTORE_PASS")
+            keyAlias "barbelldiva"
+            keyPassword System.getenv("BD_KEYSTORE_PASS")
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    // 2.7.3: la prima versione con supporto "edge-to-edge" (EdgeToEdgeController),
+    // che sblocca il rendering dietro il foro fotocamere e la barra di sistema.
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.7.3'
+}
