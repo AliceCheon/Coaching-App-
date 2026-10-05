@@ -5049,3 +5049,127 @@ html[data-theme="light"] .journal-note,
 html[data-theme="light"] .journal-energy,
 html[data-theme="light"] .journal-rpe { background: #fff; color: #2b2233; }
 @media (prefers-reduced-motion: reduce) { .journal-mood { transition: none; } }
+
+    /* ============================================================
+       v147.86 · UI POLISH — Pulsanti, tab, card e pagine più curati
+       Solo estetica. NESSUN tema toccato: le variabili dei temi
+       (Midnight/Lavender Diva) restano identiche.
+       ============================================================ */
+
+    /* ---------- PULSANTI ---------- */
+    .gold-button, .ghost-button, .danger-button {
+      border-radius: 13px;
+      font-weight: 900;
+      letter-spacing: .01em;
+      transition: transform var(--motion-fast,140ms) cubic-bezier(.2,.8,.2,1),
+                  box-shadow var(--motion-normal,260ms) ease,
+                  background-color var(--motion-normal,260ms) ease,
+                  border-color var(--motion-normal,260ms) ease,
+                  filter var(--motion-normal,260ms) ease;
+    }
+    /* Primario: gradiente + riflesso + ombra colorata */
+    .gold-button, .primary-button {
+      background: linear-gradient(135deg, var(--pink-hot,#ff2d95) 0%, var(--pink-primary,#ff4fa3) 48%, var(--purple-primary,#a855f7) 100%);
+      color: #fff;
+      box-shadow: 0 12px 26px color-mix(in srgb, var(--pink-primary,#ff4fa3) 34%, transparent),
+                  inset 0 1px 0 rgba(255,255,255,.36);
+    }
+    .gold-button:hover, .primary-button:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.06);
+      box-shadow: 0 16px 34px color-mix(in srgb, var(--pink-primary,#ff4fa3) 44%, transparent),
+                  inset 0 1px 0 rgba(255,255,255,.42);
+    }
+    /* Secondario: bordo tinto + lift leggero */
+    .ghost-button {
+      background: color-mix(in srgb, var(--card,#15152f) 72%, transparent);
+      border: 1px solid var(--line);
+    }
+    .ghost-button:hover {
+      border-color: color-mix(in srgb, var(--pink-primary,#ff4fa3) 34%, var(--line));
+      background: color-mix(in srgb, var(--pink-primary,#ff4fa3) 10%, transparent);
+      transform: translateY(-1px);
+    }
+    .danger-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px color-mix(in srgb, var(--red,#ff6e7d) 30%, transparent);
+    }
+    .mini-button { border-radius: 11px; }
+    .round-button { box-shadow: 0 8px 20px rgba(0,0,0,.22); }
+    .round-button:hover { transform: translateY(-1px); }
+
+    /* ---------- TAB ---------- */
+    .top-tab {
+      transition: transform var(--motion-fast,140ms) ease, background-color var(--motion-normal,260ms) ease,
+                  color var(--motion-normal,260ms) ease, border-color var(--motion-normal,260ms) ease;
+    }
+    .top-tab:hover { color: var(--text); border-color: color-mix(in srgb, var(--pink-primary,#ff4fa3) 30%, var(--line-soft)); }
+    .top-tab.active {
+      background: linear-gradient(135deg, var(--pink-primary,#ff4fa3), var(--purple-primary,#a855f7));
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 8px 18px color-mix(in srgb, var(--pink-primary,#ff4fa3) 30%, transparent);
+    }
+    .week-tab { border-radius: 999px; }
+    .week-tab.active {
+      background: linear-gradient(135deg, var(--pink-primary,#ff4fa3), var(--purple-primary,#a855f7));
+      color: #fff;
+      border-color: transparent;
+    }
+
+    /* ---------- BARRA DI NAVIGAZIONE (in basso / rail) ---------- */
+    .nav-button {
+      border-radius: 16px;
+      transition: color var(--motion-normal,260ms) ease, background-color var(--motion-normal,260ms) ease,
+                  transform var(--motion-fast,140ms) ease;
+    }
+    .nav-button.active {
+      color: var(--pink-primary,#ff4fa3);
+      background: color-mix(in srgb, var(--pink-primary,#ff4fa3) 13%, transparent);
+    }
+    .nav-button.active svg { transform: translateY(-1px); }
+
+    /* ---------- CARD ---------- */
+    .card {
+      border-radius: 20px;
+      box-shadow: 0 16px 42px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.05);
+      transition: box-shadow var(--motion-normal,260ms) ease, border-color var(--motion-normal,260ms) ease,
+                  transform var(--motion-fast,140ms) ease;
+    }
+    body[data-theme="light"] .card {
+      box-shadow: 0 16px 38px rgba(120,60,140,.13), inset 0 1px 0 rgba(255,255,255,.7);
+    }
+    @media (hover:hover) {
+      .card[role="button"]:hover { transform: translateY(-2px); box-shadow: 0 22px 52px rgba(0,0,0,.28); }
+      body[data-theme="light"] .card[role="button"]:hover { box-shadow: 0 20px 44px rgba(120,60,140,.18); }
+    }
+
+    /* ---------- INTESTAZIONE PAGINA (hero-title) ---------- */
+    .hero-title {
+      position: relative;
+      overflow: hidden;
+      padding: 18px 20px 18px 22px;
+      border-radius: 22px;
+      border: 1px solid color-mix(in srgb, var(--pink-primary,#ff4fa3) 22%, var(--line));
+      background: linear-gradient(125deg,
+        color-mix(in srgb, var(--purple-primary,#a855f7) 16%, var(--card,#15152f)),
+        color-mix(in srgb, var(--pink-primary,#ff4fa3) 12%, var(--card,#15152f)));
+      box-shadow: 0 16px 40px rgba(0,0,0,.20);
+    }
+    .hero-title::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--pink-primary,#ff4fa3), var(--purple-primary,#a855f7) 60%, var(--pink-primary,#ff4fa3));
+    }
+    .hero-title h2 { letter-spacing: -.03em; }
+    body[data-theme="light"] .hero-title { box-shadow: 0 16px 36px rgba(120,60,140,.14); }
+
+    /* ---------- ACCESSIBILITÀ: rispetta "riduci movimento" ---------- */
+    @media (prefers-reduced-motion: reduce) {
+      .gold-button, .primary-button, .ghost-button, .danger-button,
+      .top-tab, .week-tab, .nav-button, .card { transition: none; }
+      .gold-button:hover, .primary-button:hover, .ghost-button:hover,
+      .danger-button:hover, .round-button:hover, .nav-button.active svg { transform: none; }
+    }
