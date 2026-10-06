@@ -46,6 +46,6 @@ assert.match(css, /html\[data-theme="light"\] \.journal-note/, "mancano gli stil
 
 // 7) Versione allineata alla build corrente
 assert.match(config, /build: "v147\.86-ui-polish"/, "build non aggiornata alla build corrente");
-assert.match(sw, /const CACHE_NAME = "atlas-app-v14787-note-excel-fix"/, "cache PWA non aggiornata alla build corrente");
+assert.match(sw, /const CACHE_NAME = "atlas-app-v14788-serie-reps-fix"/, "cache PWA non aggiornata alla build corrente");
 
 console.log(JSON.stringify({ ok: true, fase: 1, feature: "diario-seduta", moods: 5, fields: ["note", "mood", "energy", "rpe"] }));
