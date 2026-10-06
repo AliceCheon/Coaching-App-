@@ -1226,6 +1226,13 @@ const DATA_SCHEMA_VERSION = 11;
     };
 
 const INTENSITA_NUOVO_BUILD = "2026-10-06-note-excel-som-separati-v9";
+// Build del seed "Intensità ottobre-dicembre" (IOD). Come per "Intensità
+// Agosto-Ottobre", quando questo valore cambia il workbook IOD (con le
+// progressioni reali dell'Excel) sostituisce il seed locale salvato a ogni
+// avvio. Serve perché `repairImportedProgressions` conserva qualunque settimana
+// non vuota: un salvataggio con settimane IOD generiche/corrotte non veniva mai
+// riparato, quindi le progressioni reali non tornavano più.
+const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
 
     let recoveryBootError = null;
     let recoveryBootPayload = "";
@@ -3472,6 +3479,38 @@ const INTENSITA_NUOVO_BUILD = "2026-10-06-note-excel-som-separati-v9";
               ...(loaded.meta || {}),
               intensitaNuovoBuild: INTENSITA_NUOVO_BUILD,
               intensitaNuovoSource: "Schede mie.xlsx · intensità nuovo",
+              programsUpdatedAt: stamp,
+              cloudProgramsUpdatedAt: "",
+              cloudProgramRevisions: {}
+            };
+          }
+        }
+        // Stesso principio per "Intensità ottobre-dicembre" (IOD). Il workbook
+        // IOD contiene le progressioni REALI dell'Excel (test 12rm/10rm + ondata
+        // 10-x, salita 6→9, ecc.). Senza un re-seed forzato, un salvataggio che
+        // aveva settimane IOD generiche non veniva mai riparato (la riparazione
+        // conserva qualunque settimana non vuota) e le progressioni reali non
+        // tornavano più: qui il workbook sostituisce il seed locale a ogni
+        // cambio di build, senza toccare programmi creati dall'utente.
+        if (loaded.meta?.intensitaOdBuild !== INTENSITA_OD_BUILD) {
+          const seeded = seededPrograms.find((program) => program.phase === "Intensità ottobre-dicembre");
+          if (seeded) {
+            const stamp = new Date().toISOString();
+            const replacement = clone(seeded);
+            replacement.updatedAt = stamp;
+            replacement.sheets = (replacement.sheets || []).map((sheet) => ({
+              ...sheet,
+              updatedAt: stamp,
+              exercises: (sheet.exercises || []).map((exercise) => ({ ...exercise, updatedAt: stamp }))
+            }));
+            const seededIds = new Set([seeded.id].filter(Boolean));
+            const replacedPrograms = (loaded.programs || []).map((program) => (seededIds.has(program.id) ? replacement : program));
+            if (!replacedPrograms.some((program) => program.id === seeded.id)) replacedPrograms.push(replacement);
+            loaded.programs = replacedPrograms;
+            loaded.meta = {
+              ...(loaded.meta || {}),
+              intensitaOdBuild: INTENSITA_OD_BUILD,
+              intensitaOdSource: "Schede mie.xlsx · Intensità ottobre-dicembre",
               programsUpdatedAt: stamp,
               cloudProgramsUpdatedAt: "",
               cloudProgramRevisions: {}

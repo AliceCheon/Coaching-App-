@@ -24,7 +24,7 @@ const cache = config.match(/cache:\s*"([^"]+)"/)?.[1];
 assert.ok(build, "app-config: campo build mancante");
 assert.ok(cache, "app-config: campo cache mancante");
 
-// Token cache-bust derivato dalla build: "v147.89-rir-vuoto" → "v14789".
+// Token cache-bust derivato dalla build: "v147.90-iod-progressioni" → "v14790".
 const tokenMatch = build.match(/^v(\d+)\.(\d+)/);
 assert.ok(tokenMatch, `build non nel formato atteso vMAJOR.MINOR-suffisso: ${build}`);
 const token = `v${tokenMatch[1]}${tokenMatch[2]}`;
