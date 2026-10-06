@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v147.87-note-excel-fix` |
-| `cache` | `atlas-app-v14787-note-excel-fix` |
+| `build` | `v147.88-serie-reps-fix` |
+| `cache` | `atlas-app-v14788-serie-reps-fix` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |
