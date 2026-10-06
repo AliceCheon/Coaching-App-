@@ -1630,10 +1630,17 @@ const INTENSITA_NUOVO_BUILD = "2026-10-06-note-excel-som-separati-v9";
       return { sets: optionalNumber(p.sets) ?? 3, reps, rir: parseRir(p.rir), rpe: parseRir(p.rpe), restSeconds: optionalNumber(p.rest?.seconds) ?? 90, prescribedLoad: parsePrescribedLoad(p.prescribedLoad), loadUnit: p.prescribedLoad?.unit || "kg", tempo: parseTempo(p.tempo), technique: parseTechnique(p.technique) };
     }
     function progressionNumber(value, fallback = null) { const n = Number(value); return Number.isFinite(n) ? n : fallback; }
+    // Range di ripetizioni di riserva: se l'esercizio non ha NESSUNA ripetizione
+    // impostata (capita agli esercizi creati/modificati a mano, es. "Pendulum
+    // focus glutei" con serie/RIR/recupero ma reps vuote) il generatore non deve
+    // produrre una colonna Ripetizioni vuota per QUALSIASI metodo scelto: senza
+    // questi default repMin e repMax restavano null e ogni progressione usciva
+    // senza ripetizioni.
+    const DEFAULT_PROGRESSION_REP_MIN = 8, DEFAULT_PROGRESSION_REP_MAX = 12;
     function progressionRuntimeConfig(template = {}, exercise = {}, overrides = {}) {
       const base=progressionBasePrescription(exercise),parameters={...(template.parameters||{}),...(overrides||{})};
       const optional=(key,fallback)=>parameters[key] === "" || parameters[key] == null ? fallback : progressionNumber(parameters[key],fallback);
-      const baseRepMin=base.reps.min??base.reps.max,baseRepMax=base.reps.max??base.reps.min;
+      const baseRepMin=base.reps.min??base.reps.max??DEFAULT_PROGRESSION_REP_MIN,baseRepMax=base.reps.max??base.reps.min??DEFAULT_PROGRESSION_REP_MAX;
       return {
         kind:template.rules?.kind||"custom",parameters,
         startSets:optional("startSets",base.sets),
@@ -1660,13 +1667,14 @@ const INTENSITA_NUOVO_BUILD = "2026-10-06-note-excel-som-separati-v9";
         const weekNumber = index + 1;
         const previous = current[index] ? parseWeekPrescription(current[index], weekNumber, base) : null;
         if (previous && (manual.has(weekNumber) || previous.source === "manual")) return { ...previous, week: weekNumber, weekNumber, source: "manual" };
-        let sets=runtime.startSets,reps=parseReps(runtime.repMin!=null&&runtime.repMax!=null?`${runtime.repMin}-${runtime.repMax}`:base.reps),rir=parseRir(runtime.startRir),rpe=parseRir(runtime.startRpe),restSeconds=runtime.startRest,load=parsePrescribedLoad({value:runtime.startLoad,unit:runtime.loadUnit});
+        // RIR e RPE NON si pre-compilano MAI: sono autoregolati dall'atleta e
+        // vanno inseriti a mano in allenamento in base alla fatica percepita.
+        let sets=runtime.startSets,reps=parseReps(runtime.repMin!=null&&runtime.repMax!=null?`${runtime.repMin}-${runtime.repMax}`:base.reps),rir=parseRir(""),rpe=parseRir(""),restSeconds=runtime.startRest,load=parsePrescribedLoad({value:runtime.startLoad,unit:runtime.loadUnit});
         const kind = rule.kind;
         if (kind === "double") { if(runtime.repMin!=null||runtime.repMax!=null) reps=parseReps(`${runtime.repMin??runtime.repMax}-${runtime.repMax??runtime.repMin}`);sets=progressionNumber(rule.parameters.sets,sets); }
         if (kind === "linear-reps" && index===0) reps=parseReps(runtime.repMin??runtime.repMax);
         if ((kind === "linear-sets" || kind === "volume") && index===0) sets=Math.min(sets,runtime.maxSets);
         if ((kind === "linear-load" || kind === "intensity") && load?.value == null) load = { ...load, value:null, unit:load?.unit||base.loadUnit, label:"Da adattare dopo la prestazione" };
-        if (kind === "rir") rir=parseRir(runtime.rirStart);
         if (kind === "top-set-backoff") sets = runtime.backoffSets + 1;
         if (kind === "recovery" || kind === "density") restSeconds = Math.max(runtime.minRest, restSeconds);
         let type = "normal", notes = "";
@@ -1675,7 +1683,7 @@ const INTENSITA_NUOVO_BUILD = "2026-10-06-note-excel-som-separati-v9";
         if(kind==="linear-sets"||kind==="volume")notes=`Dopo completamento valido: +${runtime.setsIncrement} serie, massimo ${runtime.maxSets}`;
         if(kind==="rir")notes=`Target autoregolato: RIR ${runtime.rirStart}${runtime.rirEnd!=null&&runtime.rirEnd!==runtime.rirStart?` → ${runtime.rirEnd}`:""}`;
         if(kind==="density"||kind==="recovery")notes=`Dopo completamento valido: -${runtime.restDecrement}s, minimo ${runtime.minRest}s`;
-        if (kind === "deload" || (runtime.deloadEvery>0 && weekNumber % runtime.deloadEvery === 0)) { type = "deload"; sets = Math.max(1, Math.round(sets * runtime.reduction)); if (load?.value != null) load = { ...load, value: load.value * runtime.reduction }; rir = parseRir((rir.min ?? runtime.rirStart ?? 0) + runtime.rirIncrease); notes = "Settimana di scarico"; }
+        if (kind === "deload" || (runtime.deloadEvery>0 && weekNumber % runtime.deloadEvery === 0)) { type = "deload"; sets = Math.max(1, Math.round(sets * runtime.reduction)); if (load?.value != null) load = { ...load, value: load.value * runtime.reduction }; notes = "Settimana di scarico"; }
         if (kind === "top-set-backoff") notes = `Top set + ${runtime.backoffSets} back-off`;
         if (index>0 && template.mode!=="planned" && kind!=="maintenance" && kind!=="deload") notes=[notes,"La prescrizione definitiva verrà aggiornata dopo il completamento della settimana precedente."].filter(Boolean).join(" ");
         return parseWeekPrescription({ id: previous?.id || stableId("week", exercise.id || exercise.name || "exercise", weekNumber), week: weekNumber, weekNumber, sets, reps, rir, rpe, restSeconds, prescribedLoad: load, loadUnit: load?.unit || base.loadUnit, tempo: base.tempo, technique: base.technique, type, notes, status: "planned", source: "auto", rule, segments: kind === "top-set-backoff" ? [{ kind: "top-set", sets: 1 }, { kind: "back-off", sets: runtime.backoffSets, loadFactor: runtime.backoffPercent }] : undefined }, weekNumber, base);
@@ -6162,7 +6170,6 @@ function sanitizeForFirestore(value) {
       if (!raw) return exercise;
       const week = parseWeekPrescription(raw, Number(weekNumber), exercise.prescription || exercise);
       const reps = formatReps(week.reps);
-      const rir = formatRir(week.rir);
       const rest = formatRest(week.rest) || (week.restSeconds ? `${week.restSeconds}s` : "");
       const tempo = String(exercise.metadata?.note2 || formatTempo(week.tempo) || exercise.tempo || "").trim();
       return {
@@ -6171,7 +6178,8 @@ function sanitizeForFirestore(value) {
         // non riempire i suoi campi vuoti con i default dell'esercizio.
         sets: isClearedValue(week.sets) ? "" : (week.sets != null ? String(week.sets) : ""),
         reps: isClearedValue(week.reps) ? "" : reps,
-        rir: rir || exercise.rir,
+        // RIR/RPE mai pre-compilati: si inseriscono a mano in allenamento.
+        rir: "",
         rest: rest || exercise.rest,
         tempo,
         activeWeek: Number(weekNumber),
@@ -7804,7 +7812,7 @@ function sanitizeForFirestore(value) {
               </div>
               <div class="workout-compact-panel" role="tabpanel" id="${escapeHtml(activeTabIds.panelId)}" aria-labelledby="${escapeHtml(activeTabIds.tabId)}" tabindex="0">
                 <div class="workout-compact-heading">
-                  <div><h3>${escapeHtml(displayExerciseName(item.name))}</h3><p>${escapeHtml(item.muscle || session.focus || session.code)} · RIR ${escapeHtml(displayLabel(item.rir || "libero"))}</p></div>
+                  <div><h3>${escapeHtml(displayExerciseName(item.name))}</h3><p>${escapeHtml(item.muscle || session.focus || session.code)}${item.rir ? ` · RIR ${escapeHtml(displayLabel(item.rir))}` : ""}</p></div>
                   <span class="workout-heart" aria-hidden="true">♥</span>
                 </div>
                 <div class="workout-compact-meta"><span>${escapeHtml(displayLabel(item.sets || "--"))} serie</span><span>${escapeHtml(displayLabel(item.reps || "--"))} reps</span><span>${escapeHtml(displayLabel(item.rest || "recupero libero"))}</span></div>
@@ -8206,8 +8214,10 @@ function sanitizeForFirestore(value) {
         restSeconds:isClearedValue(week.restSeconds)?"":(week.restSeconds??week.rest?.seconds??base.rest?.seconds??""),
         loadValue:isClearedValue(week.prescribedLoad)?"":(week.prescribedLoad?.value??base.prescribedLoad?.value??""),
         loadUnit:week.prescribedLoad?.unit||base.prescribedLoad?.unit||"kg",
-        rpe:isClearedValue(week.rpe)?"":(week.rpe?.label||base.rpe?.label||""),
-        rir:isClearedValue(week.rir)?"":(week.rir?.label||base.rir?.label||""),
+        // RIR e RPE NON compaiono mai nella scheda: sono autoregolati e
+        // l'atleta li scrive a mano in allenamento in base alla fatica.
+        rpe:"",
+        rir:"",
         som, tempo:som,
         // La colonna NOTE deve mostrare le note reali della scheda Excel
         // (note1/note2). Prima l'ordine faceva vincere exercise.note, che per
@@ -9389,7 +9399,9 @@ function sanitizeForFirestore(value) {
           approach: exercise.prescription?.warmup?.label || exercise.warmup || "",
           sets: exercise.prescription?.sets ?? "",
           reps: formatReps(exercise.prescription?.reps),
-          effort: exercise.prescription?.rpe?.min !== null && exercise.prescription?.rpe?.min !== undefined ? `RPE ${formatRir(exercise.prescription.rpe)}` : formatRir(exercise.prescription?.rir),
+          // RIR/RPE mai pre-compilati nella scheda: autoregolati, si scrivono a
+          // mano in allenamento in base alla fatica percepita.
+          effort: "",
           restSeconds: exercise.prescription?.rest?.seconds ?? exercise.prescription?.rest?.minSeconds ?? "",
           tempo: formatTempo(exercise.prescription?.tempo),
           technique: exercise.prescription?.technique?.type || "normal",
@@ -10648,7 +10660,7 @@ function sanitizeForFirestore(value) {
     }
 
     function progressionWeeksRowsHtml(weeks=[]) {
-      return weeks.map((w,i)=>`<tr><td><strong>${i+1}</strong>${w.source==="manual"?'<span class="phase4-badge" title="Hai modificato personalmente i valori di questa settimana.">Manuale</span>':'<span class="phase4-badge">Anteprima</span>'}</td><td><input data-progression-week="${i}" data-progression-field="sets" type="number" min="0" value="${escapeHtml(w.sets??"")}"></td><td><input data-progression-week="${i}" data-progression-field="reps" value="${escapeHtml(formatReps(w.reps))}"></td><td><input data-progression-week="${i}" data-progression-field="rir" value="${escapeHtml(w.rir?.label||"")}"></td><td><input data-progression-week="${i}" data-progression-field="rpe" value="${escapeHtml(w.rpe?.label||"")}"></td><td><input data-progression-week="${i}" data-progression-field="load" type="number" min="0" value="${escapeHtml(w.prescribedLoad?.value??"")}"></td><td><input data-progression-week="${i}" data-progression-field="rest" type="number" min="0" value="${escapeHtml(w.restSeconds??"")}"></td><td><select data-progression-week="${i}" data-progression-field="type">${["normal","accumulation","intensification","deload","test","recovery","custom"].map((v)=>`<option value="${v}" ${w.type===v?"selected":""}>${v}</option>`).join("")}</select></td><td><input data-progression-week="${i}" data-progression-field="notes" value="${escapeHtml(w.notes||"")}"></td></tr>`).join("");
+      return weeks.map((w,i)=>`<tr><td><strong>${i+1}</strong>${w.source==="manual"?'<span class="phase4-badge" title="Hai modificato personalmente i valori di questa settimana.">Manuale</span>':'<span class="phase4-badge">Anteprima</span>'}</td><td><input data-progression-week="${i}" data-progression-field="sets" type="number" min="0" value="${escapeHtml(w.sets??"")}"></td><td><input data-progression-week="${i}" data-progression-field="reps" value="${escapeHtml(formatReps(w.reps))}"></td><td><input data-progression-week="${i}" data-progression-field="rir" value=""></td><td><input data-progression-week="${i}" data-progression-field="rpe" value=""></td><td><input data-progression-week="${i}" data-progression-field="load" type="number" min="0" value="${escapeHtml(w.prescribedLoad?.value??"")}"></td><td><input data-progression-week="${i}" data-progression-field="rest" type="number" min="0" value="${escapeHtml(w.restSeconds??"")}"></td><td><select data-progression-week="${i}" data-progression-field="type">${["normal","accumulation","intensification","deload","test","recovery","custom"].map((v)=>`<option value="${v}" ${w.type===v?"selected":""}>${v}</option>`).join("")}</select></td><td><input data-progression-week="${i}" data-progression-field="notes" value="${escapeHtml(w.notes||"")}"></td></tr>`).join("");
     }
 
     function progressionTemplateEditorHtml(template={}) {
@@ -10888,7 +10900,7 @@ function sanitizeForFirestore(value) {
           <td><textarea data-edit-exercise="${index}" data-edit-key="note">${escapeHtml(exercise.note || "")}</textarea></td>
           <td><input data-edit-exercise="${index}" data-edit-key="sets" value="${escapeHtml(exercise.sets || "")}"></td>
           <td><input data-edit-exercise="${index}" data-edit-key="reps" value="${escapeHtml(exercise.reps || "")}"></td>
-          <td><input data-edit-exercise="${index}" data-edit-key="rir" value="${escapeHtml(exercise.rir || "")}"></td>
+          <td><input data-edit-exercise="${index}" data-edit-key="rir" value=""></td>
           <td><input data-edit-exercise="${index}" data-edit-key="rest" value="${escapeHtml(exercise.rest || "")}"></td>
           <td>${notes.map((row) => `<div class="athlete-note"><strong>${escapeHtml(row.date)}</strong> ${escapeHtml(row.text)}</div>`).join("") || `<span class="micro-copy">Nessuna nota importata.</span>`}</td>
         </tr>
@@ -11487,7 +11499,8 @@ function sanitizeForFirestore(value) {
     function coachWeekCellHtml(exercise, weekNumber, program, sheet) {
       const week = (exercise.progression?.weeks || []).find((item) => Number(item.weekNumber || item.week) === weekNumber);
       if (!week) return `<button type="button" class="coach-week-cell empty" data-progression-open="${escapeHtml(exercise.id)}" data-progression-week-number="${weekNumber}" aria-label="Modifica settimana ${weekNumber}"><span>S${weekNumber}</span><small>—</small></button>`;
-      const reps = formatReps(week.reps); const effort = week.rpe?.label ? `RPE ${week.rpe.label}` : week.rir?.label ? `RIR ${week.rir.label}` : "";
+      // RIR/RPE non compaiono mai: autoregolati e scritti a mano in allenamento.
+      const reps = formatReps(week.reps); const effort = "";
       return `<button type="button" class="coach-week-cell ${week.type === "deload" ? "deload" : ""} ${week.source === "manual" ? "manual" : "auto"}" data-progression-open="${escapeHtml(exercise.id)}" data-progression-week-number="${weekNumber}" aria-label="Modifica settimana ${weekNumber}"><strong>${escapeHtml(week.sets ?? "—")}×${escapeHtml(reps || "—")}</strong>${effort ? `<small>${escapeHtml(effort)}</small>` : ""}${week.prescribedLoad?.value != null ? `<small>${escapeHtml(week.prescribedLoad.value)} ${escapeHtml(week.loadUnit || "kg")}</small>` : ""}<em>${week.source === "manual" ? "manuale" : week.type === "deload" ? "scarico" : "auto"}</em></button>`;
     }
     function coachBuilderWeeksGridHtml(rows, weekCount, program, sheet) {
@@ -11501,7 +11514,7 @@ function sanitizeForFirestore(value) {
         const w = (exercise.progression?.weeks || []).find((item) => Number(item.weekNumber || item.week) === week) || {};
         const tone = `week-${week % 2 ? "odd" : "even"} ${w.type === "deload" ? "week-deload" : ""} ${w.source === "manual" ? "week-manual" : ""}`;
         const technique = w.technique?.type || w.technique || "normal";
-        return `<td class="week-set ${tone}">${input(row,week,"sets",w.sets,"number")}</td><td class="week-reps ${tone}">${input(row,week,"reps",formatReps(w.reps))}</td><td class="week-rir ${tone}">${input(row,week,"rir",w.rir?.label || w.rpe?.label || "")}<div class="week-advanced-inline"><label>kg${input(row,week,"load",w.prescribedLoad?.value,"number")}</label><label>Tec.<select class="week-inline-input" data-week-grid-field="technique" data-week-grid-exercise="${escapeHtml(row.id)}" data-week-grid-number="${week}" aria-label="Tecnica settimana ${week}">${["normal","top-set","back-off","drop-set","rest-pause","myo-reps","cluster","superset"].map((value)=>`<option value="${value}" ${technique===value?"selected":""}>${value}</option>`).join("")}</select></label></div><button type="button" class="week-detail-button" data-progression-open="${escapeHtml(row.id)}" data-progression-week-number="${week}" aria-label="Apri tutti i dettagli della settimana ${week}">•••</button></td>`;
+        return `<td class="week-set ${tone}">${input(row,week,"sets",w.sets,"number")}</td><td class="week-reps ${tone}">${input(row,week,"reps",formatReps(w.reps))}</td><td class="week-rir ${tone}">${input(row,week,"rir","")}<div class="week-advanced-inline"><label>kg${input(row,week,"load",w.prescribedLoad?.value,"number")}</label><label>Tec.<select class="week-inline-input" data-week-grid-field="technique" data-week-grid-exercise="${escapeHtml(row.id)}" data-week-grid-number="${week}" aria-label="Tecnica settimana ${week}">${["normal","top-set","back-off","drop-set","rest-pause","myo-reps","cluster","superset"].map((value)=>`<option value="${value}" ${technique===value?"selected":""}>${value}</option>`).join("")}</select></label></div><button type="button" class="week-detail-button" data-progression-open="${escapeHtml(row.id)}" data-progression-week-number="${week}" aria-label="Apri tutti i dettagli della settimana ${week}">•••</button></td>`;
       };
       const body = rows.map((row,index) => {
         const exercise = programRepository.getExerciseById(program?.id,sheet?.id,row.id)||row;
@@ -11690,7 +11703,8 @@ function sanitizeForFirestore(value) {
               prescription: {
                 sets: firstWeek.sets,
                 reps: firstWeek.reps,
-                rir: firstWeek.rir,
+                // RIR/RPE mai pre-compilati: si scrivono a mano in allenamento.
+                rir: "",
                 rest: firstWeek.rest,
                 warmup: { sets: numericParts(row.approach)[0] ?? null, label: row.approach || "" },
                 tempo: "coach"
@@ -14080,7 +14094,8 @@ function sanitizeForFirestore(value) {
               const legacyEdited = typeof value === "string" && value.trim();
               week.sets = legacyEdited ? week.sets : (optionalNumber(row.sets) ?? week.sets);
               week.reps = legacyEdited ? week.reps : parseReps(row.reps);
-              week.rir = parseRir(row.effort);
+              // RIR/RPE mai pre-compilati: l'atleta li scrive a mano in allenamento.
+              week.rir = parseRir("");
               week.restSeconds = optionalNumber(row.restSeconds) ?? week.restSeconds;
             }
             return week;
