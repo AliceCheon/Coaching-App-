@@ -80,12 +80,10 @@
     return `${index}:${normalizeExerciseName(exercise?.name || `exercise-${index}`)}`;
   }
 
+  // RIR/RPE NON si pre-compilano: l'atleta li scrive a mano in allenamento in
+  // base alla fatica percepita. Il campo resta sempre vuoto in partenza.
   function defaultRir(exercise, setIndex) {
-    const values = String(exercise?.rir || "")
-      .split(/[,/|]/)
-      .map((value) => value.trim())
-      .filter(Boolean);
-    return values[setIndex] || values[values.length - 1] || "";
+    return "";
   }
 
   function ensureExerciseLog(active, context, exercise, index) {

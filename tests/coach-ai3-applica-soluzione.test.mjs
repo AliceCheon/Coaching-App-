@@ -68,7 +68,9 @@ vm.runInContext(`{
 
   const afterView = coachWeekPrescription(saved, 1);
   assert(Number(afterView.restSeconds) === 210, "ora l'editor mostra 210 in settimana 1");
-  assert(String(afterView.rir) === "2-3", "anche il RIR passa a 2-3 dove la settimana lo ereditava");
+  // RIR/RPE non si pre-compilano più: restano vuoti nella scheda e l'atleta li
+  // scrive a mano in allenamento in base alla fatica percepita.
+  assert(String(afterView.rir) === "", "il RIR resta vuoto: si compila a mano in allenamento");
   assert(Number(coachWeekPrescription(saved, 2).restSeconds) === 300, "in settimana 2 l'editor mostra ancora 300");
 
   // Prova diretta: la riga dell'editor (quella che Alice guarda) mostra il nuovo valore.
