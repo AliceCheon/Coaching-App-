@@ -1225,7 +1225,7 @@ const DATA_SCHEMA_VERSION = 11;
       }
     };
 
-const INTENSITA_NUOVO_BUILD = "2026-08-31-sync-notes-v8-note-fallback";
+const INTENSITA_NUOVO_BUILD = "2026-10-06-note-excel-som-separati-v9";
 
     let recoveryBootError = null;
     let recoveryBootPayload = "";
@@ -8182,7 +8182,13 @@ function sanitizeForFirestore(value) {
         rpe:isClearedValue(week.rpe)?"":(week.rpe?.label||base.rpe?.label||""),
         rir:isClearedValue(week.rir)?"":(week.rir?.label||base.rir?.label||""),
         som, tempo:som,
-        note:String(week.notes || week.note || exercise?.note || [exercise?.metadata?.excelNote1, exercise?.metadata?.excelNote2].filter(Boolean).join(" ") || "").trim(), source:week.source||"base"
+        // La colonna NOTE deve mostrare le note reali della scheda Excel
+        // (note1/note2). Prima l'ordine faceva vincere exercise.note, che per
+        // le schede importate contiene la DESCRIZIONE DEL METODO (es.
+        // "MICRO-CARICHI: ..."): la nota Excel finiva nascosta e il coach
+        // vedeva il metodo al posto delle sue indicazioni. Ora la priorità è
+        // settimana → note Excel (note1+note2) → descrizione metodo.
+        note:String(week.notes || week.note || [exercise?.metadata?.excelNote1, exercise?.metadata?.excelNote2].filter(Boolean).join(" ") || exercise?.note || "").trim(), source:week.source||"base"
       };
     }
 
