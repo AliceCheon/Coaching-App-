@@ -4,6 +4,25 @@ Questo file raccoglie i pattern e le convenzioni attualmente in uso nel progetto
 
 ## Identified patterns / conventions
 
+### Motore Progressioni (app-main.js) — pattern settimanale esplicito
+- `PROGRESSION_TEMPLATE_LIBRARY` (~1602): factory `progressionTemplate(id,name,desc,category,suitableFor,kind,parameters,extra)`.
+- I metodi "Intensità:" (ottobre-dicembre) usano `parameters.pattern`: array di
+  stringhe `"<serie>:<reps>"`, una per settimana (es. `"3:10-8-x"`, `"1:test 12rm, poi 1x8"`).
+- `generateProgressionWeeks(exercise, templateId, duration, parameters, existing)` (~1668):
+  il `pattern` è applicato **come ultima parola**, DOPO tutte le regole del `kind`.
+  Regola d'oro: un `pattern` esplicito NON deve mai essere sovrascritto (la vecchia
+  regola `linear-reps` sulla W1 lo cancellava → bug 8-12).
+- Indipendenza dall'esercizio: con un `pattern` il risultato è **identico** per
+  qualunque esercizio (anche esercizi senza reps proprie, es. Pendulum creato a mano).
+- RIR/RPE non vengono mai pre-compilati: `generateProgressionWeeks` parte da
+  `parseRir("")` e `exercisePrescriptionForTrainingWeek` forza `rir:""`.
+- **Editor**: `progressionTemplateEditorHtml` (~10729) mostra la tabella
+  `data-progression-pattern` (Serie/Ripetizioni per settimana); binding in
+  `bindLocallyRenderedCoachModal`; salvataggio in `saveCoachUiModal` (~14802) →
+  `parameters.pattern`.
+- `progressionTemplates()` (~1620) = predefiniti (con eventuali override) **+**
+  metodi personali creati dall'utente (prima venivano scartati).
+
 ### Sync queue pattern
 - Esiste una coda di operazioni con stato esplicito: pending, syncing, synced, failed, conflict.
 - Ogni operazione ha operationId, entityId, operationType, createdAt, attempts, error e lastAttemptAt.
