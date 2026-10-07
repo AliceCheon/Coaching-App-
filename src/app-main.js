@@ -1297,6 +1297,11 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
     state.ui = state.ui || {};
     state.ui.workoutMascotVisible = true; // Forza sempre visibile di default
     if (!["top-right", "middle-right", "bottom-right", "bottom-left"].includes(state.ui.workoutMascotPosition)) state.ui.workoutMascotPosition = "top-right";
+    // FASE 3-ter — posizione libera di Diva Bot: coordinate relative (0..1)
+    // dell'area utile. Restano valide su PC, tablet e telefono.
+    state.ui.workoutMascotFree = state.ui.workoutMascotFree === true;
+    state.ui.workoutMascotXPct = Number.isFinite(Number(state.ui.workoutMascotXPct)) ? clamp(Number(state.ui.workoutMascotXPct), 0, 1) : 1;
+    state.ui.workoutMascotYPct = Number.isFinite(Number(state.ui.workoutMascotYPct)) ? clamp(Number(state.ui.workoutMascotYPct), 0, 1) : 0;
     if (!["silent", "balanced", "diva"].includes(state.ui.divaBotPersonality)) state.ui.divaBotPersonality = "balanced";
     state.ui.divaBotBubbles = state.ui.divaBotBubbles !== false;
     state.ui.divaBotCelebrations = state.ui.divaBotCelebrations !== false;
@@ -4397,7 +4402,7 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
         if (selections.checkins) next.quiz = clone(incoming.quiz || next.quiz || {});
         if (selections.settings) { next.profile = mergeState(next.profile || {}, incoming.profile || {}); next.metrics = clone(incoming.metrics || {}); next.body = clone(incoming.body || {}); }
         if (selections.coachAi) next.coach = { ...next.coach, coachAi:clone(incoming.coach?.coachAi || {}) };
-        if (selections.divaBot) next.ui = { ...next.ui, ...Object.fromEntries(["workoutMascotVisible","workoutMascotPosition","divaBotPersonality","divaBotBubbles","divaBotCelebrations","divaBotSounds"].map((key) => [key, incoming.ui?.[key]]).filter(([, value]) => value !== undefined)) };
+        if (selections.divaBot) next.ui = { ...next.ui, ...Object.fromEntries(["workoutMascotVisible","workoutMascotPosition","workoutMascotFree","workoutMascotXPct","workoutMascotYPct","divaBotPersonality","divaBotBubbles","divaBotCelebrations","divaBotSounds"].map((key) => [key, incoming.ui?.[key]]).filter(([, value]) => value !== undefined)) };
         if (selections.exerciseLab) next.coach = { ...next.coach, exerciseLibrary:clone(incoming.coach?.exerciseLibrary || []) };
       }
       dataSafetyRestoring = true;
@@ -7216,6 +7221,8 @@ function sanitizeForFirestore(value) {
           else triggerDivaBotReaction("workout_opened");
           noteDivaBotWorkoutInteraction();
         }
+      } else {
+        stopWorkoutMascotExpressions(); // FASE 3-ter: fuori dall'allenamento il robottino non "gira" più le espressioni
       }
       if (activeScreen !== "coach") {
         renderEngine();
@@ -7724,7 +7731,7 @@ function sanitizeForFirestore(value) {
       const divaBotBubbles = divaBotPreferences().bubbles;
       const divaBotCelebrations = divaBotPreferences().celebrations;
       const divaBotSounds = divaBotPreferences().sounds;
-      return workoutMascotVisible ? `<div id="workoutMascotLayer" class="workout-mascot-layer" role="group" aria-label="Diva Bot durante l'allenamento"><div class="workout-mascot-anchor" data-position="${workoutMascotPosition}"><button type="button" id="workoutMascotButton" class="workout-mascot-button" aria-label="Sposta Diva Bot" aria-haspopup="menu">${coachMascotHtml("workout-floating")}</button><div id="workoutMascotBubble" class="workout-mascot-bubble" role="status" aria-live="polite" hidden></div><div id="workoutMascotMenu" class="workout-mascot-menu" role="menu" hidden><strong>Diva Bot</strong><label><input type="checkbox" data-workout-mascot-visible checked> Mostra Diva Bot durante l'allenamento</label><label>Personalità<select data-diva-bot-personality><option value="silent" ${divaBotPersonality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${divaBotPersonality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${divaBotPersonality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-bubbles ${divaBotBubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-celebrations ${divaBotCelebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-sounds ${divaBotSounds ? "checked" : ""}> Suoni Diva Bot</label><button type="button" data-workout-mascot-hide>Nascondi Diva Bot</button></div></div></div>` : `<button type="button" class="workout-mascot-restore" data-workout-mascot-show>Mostra Diva Bot durante l'allenamento</button>`;
+      return workoutMascotVisible ? `<div id="workoutMascotLayer" class="workout-mascot-layer" role="group" aria-label="Diva Bot durante l'allenamento"><div class="workout-mascot-anchor" data-position="${workoutMascotPosition}"><button type="button" id="workoutMascotButton" class="workout-mascot-button" aria-label="Trascina Diva Bot; doppio tocco per le espressioni" title="Trascina Diva Bot dove vuoi · doppio tocco: espressioni · tocco lungo: menu" aria-haspopup="menu">${coachMascotHtml("workout-floating")}</button><div id="workoutMascotBubble" class="workout-mascot-bubble" role="status" aria-live="polite" hidden></div><div id="workoutMascotMenu" class="workout-mascot-menu" role="menu" hidden><strong>Diva Bot</strong><label><input type="checkbox" data-workout-mascot-visible checked> Mostra Diva Bot durante l'allenamento</label><label>Personalità<select data-diva-bot-personality><option value="silent" ${divaBotPersonality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${divaBotPersonality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${divaBotPersonality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-bubbles ${divaBotBubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-celebrations ${divaBotCelebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-sounds ${divaBotSounds ? "checked" : ""}> Suoni Diva Bot</label><button type="button" data-workout-mascot-expressions>Mostra tutte le espressioni</button><button type="button" data-workout-mascot-reset>Rimetti in alto a destra</button><button type="button" data-workout-mascot-hide>Nascondi Diva Bot</button></div></div></div>` : `<button type="button" class="workout-mascot-restore" data-workout-mascot-show>Mostra Diva Bot durante l'allenamento</button>`;
     }
 
     function trainingHtml() {
@@ -7740,7 +7747,7 @@ function sanitizeForFirestore(value) {
       const divaBotBubbles = divaBotPreferences().bubbles;
       const divaBotCelebrations = divaBotPreferences().celebrations;
       const divaBotSounds = divaBotPreferences().sounds;
-      const workoutMascotLayer = workoutMascotVisible ? `<div id="workoutMascotLayer" class="workout-mascot-layer" role="group" aria-label="Diva Bot durante l'allenamento"><div class="workout-mascot-anchor" data-position="${workoutMascotPosition}"><button type="button" id="workoutMascotButton" class="workout-mascot-button" aria-label="Sposta Diva Bot" aria-haspopup="menu">${coachMascotHtml("workout-floating")}</button><div id="workoutMascotBubble" class="workout-mascot-bubble" role="status" aria-live="polite" hidden></div><div id="workoutMascotMenu" class="workout-mascot-menu" role="menu" hidden><strong>Diva Bot</strong><label><input type="checkbox" data-workout-mascot-visible checked> Mostra Diva Bot durante l'allenamento</label><label>Personalità<select data-diva-bot-personality><option value="silent" ${divaBotPersonality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${divaBotPersonality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${divaBotPersonality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-bubbles ${divaBotBubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-celebrations ${divaBotCelebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-sounds ${divaBotSounds ? "checked" : ""}> Suoni Diva Bot</label><button type="button" data-workout-mascot-hide>Nascondi Diva Bot</button></div></div></div>` : `<button type="button" class="workout-mascot-restore" data-workout-mascot-show>Mostra Diva Bot durante l'allenamento</button>`;
+      const workoutMascotLayer = workoutMascotVisible ? `<div id="workoutMascotLayer" class="workout-mascot-layer" role="group" aria-label="Diva Bot durante l'allenamento"><div class="workout-mascot-anchor" data-position="${workoutMascotPosition}"><button type="button" id="workoutMascotButton" class="workout-mascot-button" aria-label="Trascina Diva Bot; doppio tocco per le espressioni" title="Trascina Diva Bot dove vuoi · doppio tocco: espressioni · tocco lungo: menu" aria-haspopup="menu">${coachMascotHtml("workout-floating")}</button><div id="workoutMascotBubble" class="workout-mascot-bubble" role="status" aria-live="polite" hidden></div><div id="workoutMascotMenu" class="workout-mascot-menu" role="menu" hidden><strong>Diva Bot</strong><label><input type="checkbox" data-workout-mascot-visible checked> Mostra Diva Bot durante l'allenamento</label><label>Personalità<select data-diva-bot-personality><option value="silent" ${divaBotPersonality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${divaBotPersonality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${divaBotPersonality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-bubbles ${divaBotBubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-celebrations ${divaBotCelebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-sounds ${divaBotSounds ? "checked" : ""}> Suoni Diva Bot</label><button type="button" data-workout-mascot-expressions>Mostra tutte le espressioni</button><button type="button" data-workout-mascot-reset>Rimetti in alto a destra</button><button type="button" data-workout-mascot-hide>Nascondi Diva Bot</button></div></div></div>` : `<button type="button" class="workout-mascot-restore" data-workout-mascot-show>Mostra Diva Bot durante l'allenamento</button>`;
       const sessionNote = String(displayLabel(session.note || ""))
         .replace(/settimana\s+\d+/gi, `settimana ${context.week}`)
         .replace(/week\s+\d+/gi, `settimana ${context.week}`);
@@ -10055,8 +10062,13 @@ function sanitizeForFirestore(value) {
 
     const COACH_MASCOT_STATES = new Set(["idle", "happy", "celebrate", "thinking", "encouraging", "lifting", "warning", "rest"]);
     const WORKOUT_MASCOT_POSITIONS = new Set(["top-right", "middle-right", "bottom-right", "bottom-left"]);
+    // FASE 3-ter — posizione libera + espressioni di Diva Bot.
+    // "Show" completo (doppio tocco o voce di menu): mostra tutte le facce.
+    const WORKOUT_MASCOT_SHOW_EXPRESSIONS = ["happy","celebrate","lifting","thinking","encouraging","warning","rest"];
+    // Rotazione ambientale: solo facce allegre/neutre, per restare non invadente.
+    const WORKOUT_MASCOT_IDLE_EXPRESSIONS = ["happy","thinking","encouraging","lifting"];
     const coachMascotController = { state:"idle", message:"", temporaryTimer:null, blinkTimer:null, blinkResetTimer:null, reactionTimer:null, weightTimer:null, lastWeightReactionAt:0, recentMessages:[], popTimer:null };
-    const workoutMascotUi = { drag:null, scrollTimer:null, resizeTimer:null, longPressTimer:null, suppressClick:false, globalBound:false };
+    const workoutMascotUi = { drag:null, scrollTimer:null, resizeTimer:null, longPressTimer:null, suppressClick:false, globalBound:false, expressionTimer:null, expressionIndex:0, showTimer:null, tapTimer:null, lastTapAt:0 };
     const DIVA_BOT_PERSONALITIES = new Set(["silent", "balanced", "diva"]);
     const DIVA_BOT_PRIORITY = { low:1, medium:2, high:3, critical:4 };
     const DIVA_BOT_EVENTS = {
@@ -10315,13 +10327,75 @@ function sanitizeForFirestore(value) {
       };
     }
 
+    // FASE 3-ter — posizione LIBERA. La "tela" è il viewport (su mobile tolta la
+    // barra bassa), così Diva Bot può essere posata davvero dove vuoi: non solo
+    // nei 4 angoli. Lo stato salvato è in frazioni 0..1 → resta valido al resize.
+    function workoutMascotFreeBounds() {
+      const anchor = document.querySelector(".workout-mascot-anchor");
+      const width = anchor?.offsetWidth || 80;
+      const height = anchor?.offsetHeight || 90;
+      const mobile = window.matchMedia?.("(max-width:980px)").matches;
+      const leftPad = 8, rightPad = 8, topPad = 8;
+      const bottomPad = mobile ? 112 : 24;
+      const areaWidth = Math.max(1, window.innerWidth - leftPad - rightPad);
+      const areaHeight = Math.max(1, window.innerHeight - topPad - bottomPad);
+      return { width, height, leftPad, topPad, areaWidth, areaHeight, maxX:Math.max(0, areaWidth - width), maxY:Math.max(0, areaHeight - height) };
+    }
+
+    // Frazioni (0..1) → pixel, tenendo conto che il layer è ancorato in alto a destra.
+    function workoutMascotFreePixels(xPct, yPct) {
+      const bounds = workoutMascotFreeBounds();
+      const left = Math.round(clamp(Number(xPct) || 0, 0, 1) * bounds.maxX);
+      const top = Math.round(clamp(Number(yPct) || 0, 0, 1) * bounds.maxY);
+      // Il layer è ancorato in alto a DESTRA: lo spostamento x è negativo e parte
+      // dal bordo destro. left=0 → bordo sinistro; left=maxX → bordo destro.
+      return { left, top, x:left - bounds.maxX, y:top };
+    }
+
+    // Posizione libera corrente (px, riferita all'angolo utile in alto a sinistra).
+    function currentWorkoutMascotLeftTop() {
+      const bounds = workoutMascotFreeBounds();
+      if (state.ui?.workoutMascotFree) {
+        const px = workoutMascotFreePixels(state.ui.workoutMascotXPct, state.ui.workoutMascotYPct);
+        return { left:px.left, top:px.top };
+      }
+      const coords = workoutMascotCoordinates(state.ui?.workoutMascotPosition || "top-right") || { x:0, y:8 };
+      return { left:clamp(bounds.maxX + coords.x, 0, bounds.maxX), top:clamp(coords.y, 0, bounds.maxY) };
+    }
+
+    function applyWorkoutMascotFree() {
+      const layer = document.getElementById("workoutMascotLayer");
+      const anchor = layer?.querySelector(".workout-mascot-anchor");
+      if (!anchor) return false;
+      const px = workoutMascotFreePixels(state.ui?.workoutMascotXPct, state.ui?.workoutMascotYPct);
+      anchor.dataset.position = "free";
+      anchor.dataset.side = px.left < workoutMascotFreeBounds().maxX / 2 ? "left" : "right";
+      anchor.style.setProperty("--workout-mascot-x", `${px.x}px`);
+      anchor.style.setProperty("--workout-mascot-y", `${px.y}px`);
+      return true;
+    }
+
+    function persistWorkoutMascotFree(xPct, yPct, options = {}) {
+      state.ui = state.ui || {};
+      state.ui.workoutMascotFree = true;
+      state.ui.workoutMascotXPct = clamp(Number(xPct) || 0, 0, 1);
+      state.ui.workoutMascotYPct = clamp(Number(yPct) || 0, 0, 1);
+      applyWorkoutMascotFree();
+      if (options.persist !== false) saveState();
+      return true;
+    }
+
     function moveWorkoutMascot(positionName, options = {}) {
+      if (state.ui?.workoutMascotFree && options.corner !== true) {
+        if (applyWorkoutMascotFree()) return true;
+      }
       const position = WORKOUT_MASCOT_POSITIONS.has(positionName) ? positionName : "top-right";
       const layer = document.getElementById("workoutMascotLayer");
       const anchor = layer?.querySelector(".workout-mascot-anchor");
       const coords = workoutMascotCoordinates(position);
       if (!anchor || !coords) return false;
       anchor.dataset.position = position;
+      delete anchor.dataset.side;
       anchor.style.setProperty("--workout-mascot-x", `${coords.x}px`);
       anchor.style.setProperty("--workout-mascot-y", `${coords.y}px`);
       if (options.persist) {
@@ -10337,6 +10411,7 @@ function sanitizeForFirestore(value) {
     }
 
     function avoidWorkoutMascotOverlap(target) {
+      if (state.ui?.workoutMascotFree) return; // la posizione scelta a mano ha priorità: niente "planate" automatiche
       const layer = document.getElementById("workoutMascotLayer");
       const anchor = layer?.querySelector(".workout-mascot-anchor");
       if (!layer || !anchor || !target?.getBoundingClientRect) return;
@@ -10372,6 +10447,11 @@ function sanitizeForFirestore(value) {
       if (menu) menu.hidden = false;
     }
 
+    function showWorkoutMascotMenuHide() {
+      const menu = document.getElementById("workoutMascotMenu");
+      if (menu) menu.hidden = true;
+    }
+
     function setWorkoutMascotVisibility(visible) {
       state.ui = state.ui || {};
       state.ui.workoutMascotVisible = !!visible;
@@ -10380,30 +10460,20 @@ function sanitizeForFirestore(value) {
       showToast(visible ? "Diva Bot è tornata nel Workout." : "Diva Bot nascosta durante l'allenamento.");
     }
 
-    function nearestWorkoutMascotPosition(x, y) {
-      let nearest = "top-right";
-      let distance = Infinity;
-      WORKOUT_MASCOT_POSITIONS.forEach((position) => {
-        const coords = workoutMascotCoordinates(position);
-        if (!coords) return;
-        const nextDistance = Math.hypot(coords.x - x, coords.y - y);
-        if (nextDistance < distance) { distance = nextDistance; nearest = position; }
-      });
-      return nearest;
-    }
-
     function workoutMascotDragMove(event) {
       const drag = workoutMascotUi.drag;
       if (!drag || event.pointerId !== drag.pointerId) return;
-      const coords = workoutMascotCoordinates("bottom-left");
-      const bottom = workoutMascotCoordinates("bottom-right");
-      if (!coords || !bottom) return;
-      const x = Math.max(coords.x, Math.min(0, drag.originX + event.clientX - drag.startX));
-      const y = Math.max(8, Math.min(bottom.y, drag.originY + event.clientY - drag.startY));
-      drag.x = x; drag.y = y;
+      const bounds = workoutMascotFreeBounds();
+      const left = clamp(drag.originLeft + event.clientX - drag.startX, 0, bounds.maxX);
+      const top = clamp(drag.originTop + event.clientY - drag.startY, 0, bounds.maxY);
+      drag.left = left; drag.top = top;
       if (Math.abs(event.clientX - drag.startX) > 4 || Math.abs(event.clientY - drag.startY) > 4) drag.moved = true;
-      drag.anchor.style.setProperty("--workout-mascot-x", `${x}px`);
-      drag.anchor.style.setProperty("--workout-mascot-y", `${y}px`);
+      drag.anchor.dataset.position = "free";
+      drag.anchor.dataset.side = left < bounds.maxX / 2 ? "left" : "right";
+      // Stessa conversione di workoutMascotFreePixels: il layer è ancorato in
+      // alto a destra, quindi x parte dal bordo destro (negativo).
+      drag.anchor.style.setProperty("--workout-mascot-x", `${left - bounds.maxX}px`);
+      drag.anchor.style.setProperty("--workout-mascot-y", `${top}px`);
     }
 
     function workoutMascotDragEnd(event) {
@@ -10415,7 +10485,55 @@ function sanitizeForFirestore(value) {
       drag.anchor.classList.remove("is-dragging");
       workoutMascotUi.drag = null;
       workoutMascotUi.suppressClick = drag.moved;
-      moveWorkoutMascot(nearestWorkoutMascotPosition(drag.x, drag.y), { persist:true });
+      if (drag.moved) {
+        // Posizione libera: la ricordiamo in frazioni (0..1) così sopravvive a
+        // rotazioni, resize e cambio dispositivo.
+        const bounds = workoutMascotFreeBounds();
+        persistWorkoutMascotFree(bounds.maxX ? drag.left / bounds.maxX : 0, bounds.maxY ? drag.top / bounds.maxY : 0, { persist:true });
+      }
+    }
+
+    // FASE 3-ter — rotazione "ambientale" delle espressioni + "show" completo.
+    // L'ambiente è raro e solo con facce allegre/neutre (non invasivo); lo show
+    // (doppio tocco o voce di menu) passa in rassegna tutte le espressioni.
+    function startWorkoutMascotExpressions() {
+      clearTimeout(workoutMascotUi.expressionTimer);
+      if (effectiveAnimationMode() !== "full") return;
+      const schedule = () => {
+        workoutMascotUi.expressionTimer = setTimeout(() => {
+          if (activeScreen !== "training" || document.hidden || document.querySelector(".coach-modal-backdrop,.coach-mobile-modal-backdrop")) { schedule(); return; }
+          const list = WORKOUT_MASCOT_IDLE_EXPRESSIONS;
+          workoutMascotUi.expressionIndex = (workoutMascotUi.expressionIndex + 1) % list.length;
+          if (coachMascotController.state === "idle") setCoachMascotState(list[workoutMascotUi.expressionIndex], { duration:2600, returnState:"idle", silentSound:true });
+          schedule();
+        }, 26000);
+      };
+      schedule();
+    }
+
+    function stopWorkoutMascotExpressions() {
+      clearTimeout(workoutMascotUi.expressionTimer);
+      clearTimeout(workoutMascotUi.showTimer);
+      clearTimeout(workoutMascotUi.tapTimer);
+      workoutMascotUi.expressionTimer = null;
+      workoutMascotUi.showTimer = null;
+      workoutMascotUi.tapTimer = null;
+      workoutMascotUi.lastTapAt = 0;
+    }
+
+    function showWorkoutMascotExpressionShow() {
+      clearTimeout(workoutMascotUi.showTimer);
+      stopWorkoutMascotExpressions();
+      const list = WORKOUT_MASCOT_SHOW_EXPRESSIONS;
+      let index = 0;
+      const step = () => {
+        if (activeScreen !== "training") return;
+        setCoachMascotState(list[index], { duration:1000, returnState:"idle", silentSound:true });
+        index += 1;
+        if (index < list.length) workoutMascotUi.showTimer = setTimeout(step, 900);
+        else workoutMascotUi.showTimer = setTimeout(() => { setCoachMascotState("idle", { silentSound:true }); startWorkoutMascotExpressions(); }, 1100);
+      };
+      step();
     }
 
     function bindWorkoutMascot() {
@@ -10442,35 +10560,55 @@ function sanitizeForFirestore(value) {
       document.querySelector("[data-workout-mascot-show]")?.addEventListener("click", () => setWorkoutMascotVisibility(true));
       if (!button) return;
       const anchor = button.closest(".workout-mascot-anchor");
+      const layer = document.getElementById("workoutMascotLayer");
       anchor?.classList.add("is-restoring");
       requestAnimationFrame(() => {
         moveWorkoutMascot(state.ui.workoutMascotPosition || "top-right");
         requestAnimationFrame(() => anchor?.classList.remove("is-restoring"));
       });
+      if (!workoutMascotUi.expressionTimer && !workoutMascotUi.showTimer) startWorkoutMascotExpressions();
+      // I listener si legano una sola volta per istanza della maschera: l HTML di
+      // Allenamento viene ricreato spesso e senza questa guardia si accumulerebbero.
+      if (!layer || layer.dataset.workoutMascotBound === "true") return;
+      layer.dataset.workoutMascotBound = "true";
       button.addEventListener("contextmenu", (event) => { event.preventDefault(); showWorkoutMascotMenu(); });
       button.addEventListener("pointerdown", (event) => {
         if (event.button != null && event.button !== 0) return;
         clearTimeout(workoutMascotUi.longPressTimer);
-        if (window.matchMedia?.("(max-width:600px)").matches) {
-          workoutMascotUi.longPressTimer = setTimeout(() => { workoutMascotUi.suppressClick = true; showWorkoutMascotMenu(); }, 620);
-          return;
-        }
         const anchor = button.closest(".workout-mascot-anchor");
-        const current = workoutMascotCoordinates(anchor.dataset.position) || { x:0, y:8 };
-        workoutMascotUi.drag = { pointerId:event.pointerId, startX:event.clientX, startY:event.clientY, originX:current.x, originY:current.y, x:current.x, y:current.y, moved:false, anchor };
+        const current = currentWorkoutMascotLeftTop();
+        workoutMascotUi.drag = { pointerId:event.pointerId, startX:event.clientX, startY:event.clientY, originLeft:current.left, originTop:current.top, left:current.left, top:current.top, moved:false, anchor };
         anchor.classList.add("is-dragging");
         document.addEventListener("pointermove", workoutMascotDragMove);
         document.addEventListener("pointerup", workoutMascotDragEnd);
         document.addEventListener("pointercancel", workoutMascotDragEnd);
+        // Tocco lungo → apre il menu (su QUALSIASI dispositivo: prima era solo mobile).
+        workoutMascotUi.longPressTimer = setTimeout(() => { workoutMascotUi.suppressClick = true; showWorkoutMascotMenu(); }, 620);
       });
       button.addEventListener("pointerup", () => clearTimeout(workoutMascotUi.longPressTimer));
       button.addEventListener("pointercancel", () => clearTimeout(workoutMascotUi.longPressTimer));
       button.addEventListener("click", () => {
         if (workoutMascotUi.suppressClick) { workoutMascotUi.suppressClick = false; return; }
-        if (!window.matchMedia?.("(max-width:600px)").matches) return;
-        const cycle = ["top-right", "bottom-right", "bottom-left"];
-        const current = button.closest(".workout-mascot-anchor")?.dataset.position || "top-right";
-        moveWorkoutMascot(cycle[(cycle.indexOf(current) + 1) % cycle.length], { persist:true });
+        // Doppio tocco → "show" con tutte le espressioni. Tocco singolo = nessuna
+        // azione (Diva Bot si trascina), così non sposta più di scatto la mascotte.
+        const now = Date.now();
+        if (now - workoutMascotUi.lastTapAt < 320) {
+          clearTimeout(workoutMascotUi.tapTimer);
+          workoutMascotUi.lastTapAt = 0;
+          showWorkoutMascotExpressionShow();
+          return;
+        }
+        workoutMascotUi.lastTapAt = now;
+      });
+      document.querySelector("[data-workout-mascot-expressions]")?.addEventListener("click", () => { showWorkoutMascotMenuHide(); showWorkoutMascotExpressionShow(); });
+      document.querySelector("[data-workout-mascot-reset]")?.addEventListener("click", () => {
+        state.ui = state.ui || {};
+        state.ui.workoutMascotFree = false;
+        state.ui.workoutMascotPosition = "top-right";
+        saveState();
+        moveWorkoutMascot("top-right", { corner:true });
+        showWorkoutMascotMenuHide();
+        showToast("Diva Bot rimessa in alto a destra.");
       });
       document.querySelector("[data-workout-mascot-hide]")?.addEventListener("click", () => setWorkoutMascotVisibility(false));
       document.querySelector("[data-workout-mascot-visible]")?.addEventListener("change", (event) => setWorkoutMascotVisibility(event.target.checked));
