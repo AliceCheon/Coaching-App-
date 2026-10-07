@@ -1,43 +1,41 @@
 # Checkpoint — Coaching-App
 
-UUID checkpoint: 0015
-Ora (locale): 2026-10-07T08:30:00.000Z
-Commit riferimento: `3503208` (Merge PR #13) — build `v147.92-editor-progressioni`
+UUID checkpoint: 0016
+Ora (locale): 2026-10-07T09:55:00.000Z
+Commit riferimento: branch `genspark_ai_developer` — build `v147.93-animazioni` (base `802cbcc`, Merge PR #14)
 
 ## Sommario
 
-- **Editor progressioni settimana-per-settimana** nella sezione Progressioni
-  (tabella Serie/Ripetizioni, salvata in `parameters.pattern`): l'utente scrive la
-  sequenza da sola e vale su qualsiasi esercizio.
-- I **metodi creati da zero** dall'utente ora compaiono in `progressionTemplates()`
-  (prima venivano scartati → non selezionabili).
-- I metodi **"Intensità:"** (ottobre-dicembre) producono la **sequenza reale** (non
-  più il default 8-12). Il `pattern` è l'ultima parola nel generatore.
-- Metodo 1 corretto con le **ultime schede** del foglio (`Lat_mono`/`Front_squat`).
-- Rimosso un errore di sintassi a fine `src/app-main.js`.
-- RIR/RPE **vuoti ovunque** (autoregolati a mano in allenamento).
+- **FASE 3 — Animazioni + mascotte (Diva Bot)** implementata (perimetro: mascotte
+  + motion UI generale, con modi `full`/`reduced`/`off`).
+- 3.1 Transizioni: schermata (solo su cambio reale), route Coach Studio, ingresso modali.
+- 3.2 Micro-animazioni: hover-lift (puntatori fini), nav pop; feedback serie già presente.
+- 3.3 Mascotte: nuovi eventi `program_saved` e `backup_exported`.
+- Guardia `tests/v14793-animazioni.test.mjs`.
+- Bump: `node tools/bump-version.mjs v147.93-animazioni` (28 file).
 
 ## Stato attuale
 
-- Build unica: `app-config-v144.js` → `build: "v147.92-editor-progressioni"`.
-- Suite completa: **220 pass, 0 fail, 9 skipped** (229 test).
-- `main` e GitHub Pages allineati; PR #13 mergiata.
+- Build unica: `app-config-v144.js` → `build: "v147.93-animazioni"`.
+- Branch di lavoro: `genspark_ai_developer`.
 
 ## Blocchi aperti
 
 - **CI "App smoke test"** (`.github/workflows/tests.yml`) fallisce su un'assertion
-  stantia (`2026-08-31-sync-notes-v8-note-fallback`), pre-esistente dalla PR #10.
-  NON correggibile dall'agente (GitHub App senza permesso `workflows`). Non blocca.
+  stantia (`2026-08-31-sync-notes-v8-note-fallback`), pre-esistente. NON correggibile
+  dall'agente (GitHub App senza permesso `workflows`). Non blocca.
 
 ## Prossimi step consigliati
 
-1. **FASE 3 — Animazioni + mascotte (Diva Bot)**: prossima fase richiesta da Alice.
-2. (Poi) FASE 4 — Statistiche; FASE 5 — Coach AI.
+1. Merge FASE 3 su `main`.
+2. **FASE 4 — Statistiche**.
+3. (Poi) FASE 5 — Coach AI.
 
 ## Note
 
 - **VINCOLO URGENTE**: la scheda **"Intensità agosto-ottobre"** è RISOLTA, NON
   toccarla più. La **Pendulum** la sistema Alice a mano (non pre-compilarla).
+- `#globalDivaBotHost` deve restare **fuori flusso** (`position: relative`).
 
 ---
 

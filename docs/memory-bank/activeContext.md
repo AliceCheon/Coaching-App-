@@ -22,15 +22,15 @@ Use this section as the short "global context" that survives across parallel cha
 
 1. ✅ **FASE 1 — Diario di seduta** (PR #7, merged).
 2. ✅ **FASE 2 — UI polish** (PR #8, merged; temi chiaro/scuro esistenti mantenuti).
-3. ⏳ **FASE 3 — Animazioni + mascotte (Diva Bot)** ← PROSSIMA.
-4. ⏳ **FASE 4 — Statistiche**.
+3. ✅ **FASE 3 — Animazioni + mascotte (Diva Bot)** → build `v147.93-animazioni`.
+4. ⏳ **FASE 4 — Statistiche** ← PROSSIMA.
 5. ⏳ **FASE 5 — Coach AI**.
 
 ## Current state
 
-- **Build**: `v147.92-editor-progressioni`.
-- **Ultimo commit**: `3503208` (Merge PR #13). PR #13:
-  https://github.com/AliceCheon/Coaching-App-/pull/13 (mergiata).
+- **Build**: `v147.93-animazioni`.
+- **Ultimo commit FASE 3**: build `v147.93-animazioni` (branch `genspark_ai_developer`).
+  Base precedente: `802cbcc` (Merge PR #14).
 - **Suite test**: **220 pass, 0 fail, 9 skipped** (229 test totali, ~8 min di durata →
   lanciare in background). Comando: `node --test tests/*.test.mjs`.
 - **Tree**: `main` = `origin/main`; branch di lavoro `genspark_ai_developer`.
@@ -52,18 +52,36 @@ Use this section as the short "global context" that survives across parallel cha
 - **RIR/RPE vuoti ovunque** dalle schede (autoregolati a mano in allenamento).
 - **Fix**: rimosso un errore di sintassi a fine `src/app-main.js` che bloccava tutto.
 
-## Prossimi step consigliati (FASE 3)
+## FASE 3 in sintesi (2026-10-07) — build `v147.93-animazioni`
 
-1. **FASE 3 — Animazioni + mascotte (Diva Bot)**. Punti di aggancio già in codebase:
-   - `setCoachMascotState(stateName, options)` (app-main.js ~10572)
-   - `playDivaBotSound(kind)` (~10106)
-   - host `#globalDivaBotHost` (~7613), asset `coach-mascot.svg`
-   - CSS: `coach-studio.css`, `coach-studio-inline.css` (badge `program-board-bot`)
-   - stati già usati: `happy`, `celebrate` (es. dopo "Progressione applicata ✨").
-   - Trappola nota: `#globalDivaBotHost` deve restare **fuori flusso**
-     (`position: relative`, non `static`) — vedi AGENTS.md, altrimenti allunga il
-     documento oltre `100dvh` sul cover screen.
-2. (Poi) FASE 4 Statistiche, FASE 5 Coach AI.
+Perimetro concordato: **mascotte Diva Bot + motion UI generale**, tutto dentro
+`src/app-main.js` + `coach-studio-inline.css`, sempre rispettando i modi
+`full`/`reduced`/`off` e `prefers-reduced-motion`.
+
+- **3.1 — Transizioni di schermata**: `.screen.screen-enter` già esistente,
+  ora scatta solo sul **cambio reale**. Aggiunta la transizione di **route** del
+  Coach Studio (`.coach-studio-page.route-enter` + `@keyframes premiumRouteIn`)
+  e l'**ingresso animato dei modali** (`@keyframes coachModalIn` + backdrop
+  `premiumFadeIn`). In `render()` una nuova `renderKey` (schermo + route coach)
+  evita che le transizioni ripartano ad ogni render interno.
+- **3.2 — Micro-animazioni UI**: hover-lift su card/kpi/shortcut/`exercise-lab-card`
+  (solo `@media (hover:hover) and (pointer:fine)`), "pop" del tab attivo al cambio
+  schermata (`@keyframes navPop`). Il feedback di completamento serie
+  (`.compact-set-done.done` → `premiumCheck`) era già presente.
+- **3.3 — Mascotte evoluta**: due nuovi eventi
+  `program_saved` e `backup_exported` in `DIVA_BOT_EVENTS` + messaggi in
+  `DIVA_BOT_MESSAGES` + agganci in `handleProgramAction("save")` e
+  `exportBackup()`. Prima quelle azioni erano mute.
+- **3.4 — Guardie**: `tests/v14793-animazioni.test.mjs` (transizioni, modali,
+  micro-animazioni, nuove reazioni, degradazione reduced/off, `#globalDivaBotHost`
+  fuori flusso).
+
+## Prossimi step consigliati
+
+1. **FASE 4 — Statistiche** (dopo merge della FASE 3).
+2. (Poi) FASE 5 — Coach AI.
+3. Se Alice vuole, estendere la FASE 3 con transizioni dedicate a tab interni di
+   Allenamento (richiede un tracker di tab per evitare il re-trigger ad ogni render).
 
 ## Vincoli duri (non violare)
 
@@ -73,16 +91,16 @@ Use this section as the short "global context" that survives across parallel cha
 - Modifiche al monolite **`src/app-main.js`** (non moduli additivi).
 - Fase/progressioni **dai dati**, mai da tabelle seminate per nome.
 - Mergiare ogni fase subito; bump versione a ogni fase.
+- `#globalDivaBotHost` resta **fuori flusso** (`position: relative`, non `static`).
 
 ## Open questions / things to confirm next time
 
-- FASE 3: quali animazioni esattamente Alice vuole (transizioni pagina? micro-animazioni
-  su card/azioni? animazione della mascotte su azioni specifiche?).
-- Confermare il perimetro: "animazioni + mascotte" — solo Diva Bot o anche motion UI
-  generali (rispettando `prefers-reduced-motion`).
+- FASE 3: confermare con Alice se bastano transizioni schermata+route+modali o se
+  vuole anche transizioni dedicate ai tab interni di Allenamento.
+- Confermare se le micro-animazioni (hover-lift, nav pop) sono della misura giusta.
 
 ## Default next actions if paused
 
-1. Leggere `docs/memory-bank/progress_log.md` (checkpoint 15) e `AGENTS.md`.
+1. Leggere `docs/memory-bank/progress_log.md` (checkpoint 16) e `AGENTS.md`.
 2. Verificare suite verde (`node --test tests/*.test.mjs`, in background).
-3. Aprire FASE 3 concordando con Alice il dettaglio delle animazioni.
+3. Aprire FASE 4 (Statistiche).
