@@ -220,3 +220,19 @@ Obiettivo:
 - Diagnostica: console.info su idratazione applicata ("Idratata dallo snapshot del cloud: <stamp>") e saltata ("cache assente o non valida") — verificabile da desktop.
 - Test: tests/v14759-primo-paint-fresco.test.mjs (6 verifiche strutturali: race+tetto, niente fire-and-forget, aggancio a initFirebase, diagnostica, hook di scrittura invariati). Suite completa verde.
 - Prossimo step: push dopo conferma di Alice.
+
+### 15) 2026-10-07 — Editor progressioni settimana-per-settimana + metodi "Intensità:" reali (v147.92, repo a 3503208)
+
+- UUID: 0015
+- Commit riferimento: `3503208` (Merge PR #13) — build `v147.92-editor-progressioni`. PR #13: https://github.com/AliceCheon/Coaching-App-/pull/13 (mergiata).
+- Cosa è cambiato:
+  - **Progressioni "Intensità:" (ottobre-dicembre) riparate**: i 3 metodi davano il default **8-12** (parametri `{}`, sequenza solo nella descrizione). Ora ogni metodo ha `parameters.pattern` (`["3:10-x","2:10",...]`) applicato come **ultima parola** in `generateProgressionWeeks` (dopo la regola `linear-reps` che sovrascriveva la W1). Sequenze verificate: metodo 1 `test 12rm, poi 1x8 / 10-x / 10-8-x / 10 / 10-x / 10-8-x / 10-8-x / 10` (allineato alle **ultime schede** `Lat_mono`/`Front_squat`); metodo 2 `test 10rm, poi 1x6 / 6 / 6 / 6 / 7 / 7 / 8 / 9`; metodo 3 `8-10 / 8-10 / 8-10 / test 10 rm / 7 / 8 / 8 / 9`.
+  - **Editor progressioni settimana-per-settimana**: nuova tabella in `progressionTemplateEditorHtml` (`data-progression-pattern`), binding in `bindLocallyRenderedCoachModal`, salvataggio in `saveCoachUiModal` → `parameters.pattern`. Vale su qualsiasi esercizio (indipendente dall'esercizio).
+  - **Metodi personali**: `progressionTemplates()` ora include i template creati da zero (`!baseTemplateId && non-predefinito`); prima venivano scartati e non erano selezionabili.
+  - **RIR/RPE vuoti ovunque** dalle schede (autoregolati in allenamento). Niente default 8-12 nei metodi Intensità:.
+  - **Fix**: rimosso un errore di sintassi a fine `src/app-main.js` che bloccava il boot/il file.
+  - Nuovi test: `tests/v14791-intensity-patterns.test.mjs`, `tests/v14792-editor-progressioni.test.mjs`.
+- Stato test: suite completa **220 pass, 0 fail, 9 skipped** (229 test, ~8 min in background).
+- Blocco aperto: smoke test CI (`.github/workflows/tests.yml`) stantio (`2026-08-31-sync-notes-v8-note-fallback`) — pre-esistente, NON correggibile (permessi `workflows`). Non bloccante.
+- Vincoli ribaditi: NON toccare la scheda **"Intensità agosto-ottobre"**; NON pre-compilare la **Pendulum** (la fa Alice a mano).
+- Prossimo step consigliato: **FASE 3 — animazioni + mascotte (Diva Bot)**. Agganci: `setCoachMascotState` (~10572), `playDivaBotSound` (~10106), host `#globalDivaBotHost` (~7613), asset `coach-mascot.svg`, CSS `coach-studio*.css`.

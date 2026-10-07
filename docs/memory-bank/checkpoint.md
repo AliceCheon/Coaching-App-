@@ -1,39 +1,43 @@
 # Checkpoint — Coaching-App
 
-UUID checkpoint: 0001
-Ora (locale): 2026-09-11T11:25:00.000Z
-Commit riferimento: b8a7ce1
+UUID checkpoint: 0015
+Ora (locale): 2026-10-07T08:30:00.000Z
+Commit riferimento: `3503208` (Merge PR #13) — build `v147.92-editor-progressioni`
 
 ## Sommario
 
-- Inizializzato il meccanismo della memory bank con aggiornamento automatico dei checkpoint.
-- Aggiunti file base:
-  - docs/memory-bank/README.md
-  - docs/memory-bank/activeContext.md
-  - docs/memory-bank/progress_log.md
-  - docs/memory-bank/systemPatterns.md
-  - docs/memory-bank/development_recipes.md
-  - docs/memory-bank/checkpoint.md
+- **Editor progressioni settimana-per-settimana** nella sezione Progressioni
+  (tabella Serie/Ripetizioni, salvata in `parameters.pattern`): l'utente scrive la
+  sequenza da sola e vale su qualsiasi esercizio.
+- I **metodi creati da zero** dall'utente ora compaiono in `progressionTemplates()`
+  (prima venivano scartati → non selezionabili).
+- I metodi **"Intensità:"** (ottobre-dicembre) producono la **sequenza reale** (non
+  più il default 8-12). Il `pattern` è l'ultima parola nel generatore.
+- Metodo 1 corretto con le **ultime schede** del foglio (`Lat_mono`/`Front_squat`).
+- Rimosso un errore di sintassi a fine `src/app-main.js`.
+- RIR/RPE **vuoti ovunque** (autoregolati a mano in allenamento).
 
 ## Stato attuale
 
-- La memory bank è pronta per essere aggiornata automaticamente ogni tot task/commit.
-- Active context e progress log hanno una struttura compatibile con checkpoint futuri.
-- Ultimo commit: fix: duplic \bato coachInlineExerciseRowHtml e test dopo modularizzazione.
+- Build unica: `app-config-v144.js` → `build: "v147.92-editor-progressioni"`.
+- Suite completa: **220 pass, 0 fail, 9 skipped** (229 test).
+- `main` e GitHub Pages allineati; PR #13 mergiata.
 
 ## Blocchi aperti
 
-- Nessuno per ora.
+- **CI "App smoke test"** (`.github/workflows/tests.yml`) fallisce su un'assertion
+  stantia (`2026-08-31-sync-notes-v8-note-fallback`), pre-esistente dalla PR #10.
+  NON correggibile dall'agente (GitHub App senza permesso `workflows`). Non blocca.
 
 ## Prossimi step consigliati
 
-1. Definire il trigger automatico: ogni N task/commit, generare un checkpoint nuovo.
-2. Allineare l’aggiornamento su activeContext.md e progress_log.md con la stessa struttura.
-3. Se possibile, tenere un elenco dei checkpoint generati (vedi progress_log.md).
+1. **FASE 3 — Animazioni + mascotte (Diva Bot)**: prossima fase richiesta da Alice.
+2. (Poi) FASE 4 — Statistiche; FASE 5 — Coach AI.
 
 ## Note
 
-- Il checkpoint attuale copre il primo setup della memory bank.
+- **VINCOLO URGENTE**: la scheda **"Intensità agosto-ottobre"** è RISOLTA, NON
+  toccarla più. La **Pendulum** la sistema Alice a mano (non pre-compilarla).
 
 ---
 
@@ -47,3 +51,14 @@ Commit riferimento: b8a7ce1
 - Stato/evidenza attuale: memory bank pronta, structure invariata su activeContext.md e progress_log.md.
 - Blocco aperto: nessuno.
 - Prossimo step consigliato: definire il trigger automatico ogni tot task/commit.
+
+### 2) 2026-10-07T08:30:00.000Z
+
+- UUID: 0015
+- Commit riferimento: `3503208` (Merge PR #13) — build `v147.92-editor-progressioni`
+- Cosa è cambiato: editor progressioni settimana-per-settimana; metodi personali
+  selezionabili; sequenze reali dei metodi "Intensità:" (pattern come ultima parola);
+  metodo 1 allineato alle ultime schede; fix errore di sintassi EOF; RIR/RPE vuoti.
+- Stato/evidenza attuale: suite verde 220/0/9; `main` = Pages allineati; PR #13 mergiata.
+- Blocco aperto: smoke test CI stantio (permessi `workflows` assenti) — non bloccante.
+- Prossimo step consigliato: **FASE 3 (animazioni + mascotte Diva Bot)**.
