@@ -362,3 +362,23 @@ dichiarare **tutti** i componenti che la libreria manipola per nome —
 
 **Esito**: v1.0.2 si apre subito, a tutto schermo (TWA verificata, nessun
 fallback), login Google e sync col PC invariati. Release `v1.0.2-app`.
+
+## FASE 3 — Animazioni + mascotte (v147.93)
+Perimetro: **mascotte Diva Bot + motion UI generale**, con modi `full`/`reduced`/`off`
+e `prefers-reduced-motion`. Tutto in `src/app-main.js` + `coach-studio-inline.css`.
+
+- **3.1 Transizioni**: `.screen.screen-enter` scatta solo su **cambio reale**;
+  nuova transizione di **route** Coach Studio (`.coach-studio-page.route-enter`
+  + `@keyframes premiumRouteIn`); **ingresso modali** (`@keyframes coachModalIn` +
+  backdrop `premiumFadeIn`). `render()` usa una `renderKey` (schermo + route coach)
+  per non ri-triggerare le animazioni ad ogni render interno.
+- **3.2 Micro-animazioni**: hover-lift su card/kpi/shortcut/`exercise-lab-card`
+  (solo `@media (hover:hover) and (pointer:fine)`), nav pop sul tab attivo
+  (`@keyframes navPop`). Il feedback serie `.compact-set-done.done` c'era già.
+- **3.3 Mascotte**: nuovi eventi `program_saved` e `backup_exported` in
+  `DIVA_BOT_EVENTS`/`DIVA_BOT_MESSAGES`, agganciati in `handleProgramAction("save")`
+  e `exportBackup()`.
+- **3.4 Guardia**: `tests/v14793-animazioni.test.mjs`.
+- **Regola**: ogni nuova animazione deve degradare in `reduced`/`off` e dentro
+  `@media (prefers-reduced-motion: reduce)`. `#globalDivaBotHost` resta fuori
+  flusso (`position: relative`).

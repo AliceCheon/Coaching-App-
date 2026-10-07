@@ -1312,6 +1312,9 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
     let activeScreen = initialScreens.has(initialHash) ? initialHash : "dashboard";
     let activeBottom = activeScreen === "training" ? "workout" : activeScreen === "dashboard" ? "home" : activeScreen;
     let lastRenderedScreen = "";
+    // FASE 3.1 — Animazioni: ultima chiave di render (schermata + route Coach Studio)
+    // per far scattare le transizioni SOLO al cambio reale e non ad ogni render.
+    let lastRenderKey = "";
     let timerHandle = null;
     let authService = null;
     let dbService = null;
@@ -7179,7 +7182,20 @@ function sanitizeForFirestore(value) {
         screen.innerHTML = newScreenHtml;
       }
       renderCoachModalPortal();
-      if (lastRenderedScreen && lastRenderedScreen !== activeScreen && premiumMotionEnabled()) { screen.classList.remove("screen-enter"); requestAnimationFrame(() => screen.classList.add("screen-enter")); }
+      // FASE 3.1 — Animazioni: la transizione scatta SOLO al cambio reale di
+      // schermata o di route del Coach Studio, non ad ogni render (che avviene
+      // spesso per soli stati interni). La chiave unisce schermo + route.
+      const renderKey = activeScreen === "coach" ? `${activeScreen}:${coachStudioState().route}` : activeScreen;
+      const renderKeyChanged = renderKey !== lastRenderKey;
+      lastRenderKey = renderKey;
+      if (lastRenderedScreen && premiumMotionEnabled()) {
+        if (lastRenderedScreen !== activeScreen) {
+          screen.classList.remove("screen-enter"); requestAnimationFrame(() => screen.classList.add("screen-enter"));
+        } else if (renderKeyChanged && activeScreen === "coach") {
+          const studioPage = screen.querySelector(".coach-studio-page");
+          if (studioPage) { studioPage.classList.remove("route-enter"); requestAnimationFrame(() => studioPage.classList.add("route-enter")); }
+        }
+      }
       ensureCoachMascotFallbacks();
       // Solo se il DOM è stato ricreato, riassocia gli event listener
       if (newScreenHtml !== prevScreenHtml) {
@@ -10061,7 +10077,11 @@ function sanitizeForFirestore(value) {
       recovery_warning:{ priority:"high", cooldown:0, state:"warning", duration:2800, once:true },
       idle_too_long:{ priority:"medium", cooldown:0, state:"thinking", duration:2300, once:true },
       coach_analysis_started:{ priority:"low", cooldown:10000, state:"thinking", duration:900 },
-      coach_analysis_completed:{ priority:"medium", cooldown:10000, state:"happy", duration:1500 }
+      coach_analysis_completed:{ priority:"medium", cooldown:10000, state:"happy", duration:1500 },
+      // FASE 3.3 — La mascotte accompagna anche il lavoro di programmazione, non
+      // solo l'allenamento: due azioni prima mute ora hanno una reazione.
+      program_saved:{ priority:"low", cooldown:8000, state:"happy", duration:1600 },
+      backup_exported:{ priority:"low", cooldown:10000, state:"happy", duration:1700 }
     };
     const DIVA_BOT_MESSAGES = {
       workout_opened:{ balanced:[{id:"open-balanced-01",text:"Pronta? Oggi lavoriamo bene e con tecnica pulita."}], diva:[{id:"open-diva-01",text:"Bene Diva, vediamo chi comanda oggi."},{id:"open-diva-02",text:"Look cute. Lift heavy. Iniziamo."}] },
@@ -10081,7 +10101,9 @@ function sanitizeForFirestore(value) {
       rir_too_low:{ balanced:[{id:"rir-low-balanced-01",text:"Sei andata più vicina al cedimento del previsto. Valuta il recupero."}], diva:[{id:"rir-low-diva-01",text:"Bellissima la cattiveria, ma il target RIR esiste per un motivo."}] },
       rir_too_high:{ balanced:[{id:"rir-high-balanced-01",text:"La serie potrebbe essere stata troppo conservativa rispetto al target."}], diva:[{id:"rir-high-diva-01",text:"Avevi ancora parecchio in riserva. Il bilanciere non morde."}] },
       coach_analysis_started:{ balanced:[{id:"analysis-start-01",text:"Controllo i dati della scheda…"}], diva:[{id:"analysis-start-diva-01",text:"Aspetta, sto facendo i conti da Diva."}] },
-      coach_analysis_completed:{ balanced:[{id:"analysis-done-01",text:"Analisi aggiornata."}], diva:[{id:"analysis-done-diva-01",text:"Analisi pronta. Sempre un passo avanti."}] }
+      coach_analysis_completed:{ balanced:[{id:"analysis-done-01",text:"Analisi aggiornata."}], diva:[{id:"analysis-done-diva-01",text:"Analisi pronta. Sempre un passo avanti."}] },
+      program_saved:{ balanced:[{id:"save-balanced-01",text:"Programma salvato. Tutto al suo posto."}], diva:[{id:"save-diva-01",text:"Salvato. Ordine, metodo e un filo di eleganza."},{id:"save-diva-02",text:"Programma al sicuro. La Diva non perde nulla."}] },
+      backup_exported:{ balanced:[{id:"backup-balanced-01",text:"Backup esportato. I tuoi dati sono al sicuro."}], diva:[{id:"backup-diva-01",text:"Backup fatto. Anche i dati vanno vestiti bene."}] }
     };
     const divaBotSession = { key:"", reactionCount:0, shownEvents:new Set(), celebratedExercises:new Set(), recentMessageIds:[], personalRecordValues:{}, lastEventAt:{}, activePriority:0, activePriorityTimer:null, idleTimer:null, lastInteractionAt:0 };
 
@@ -14686,6 +14708,7 @@ function sanitizeForFirestore(value) {
         const ok = committed && cloudSaved;
         updateCoachSaveIndicator(ok ? "saved" : "error");
         playDivaBotSound("soft");
+        if (ok) triggerDivaBotReaction("program_saved");
         return showToast(ok ? "Programma salvato e sincronizzato." : "Modifiche salvate localmente: sincronizzazione cloud in attesa.", ok ? "success" : "warning");
       }
       if (action === "edit") return openCoachModal("program-edit", { programId: program.id });
@@ -15281,6 +15304,7 @@ function sanitizeForFirestore(value) {
         } else {
           showToast(stored.error || "Backup scaricato ma salvato locale fallito per mancanza di spazio.", "warning");
         }
+        triggerDivaBotReaction("backup_exported");
       } catch (error) {
         showToast(`Errore durante l'esportazione backup: ${error?.message || error}`, "error");
         console.error("Export backup error:", error);

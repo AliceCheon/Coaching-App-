@@ -236,3 +236,17 @@ Obiettivo:
 - Blocco aperto: smoke test CI (`.github/workflows/tests.yml`) stantio (`2026-08-31-sync-notes-v8-note-fallback`) — pre-esistente, NON correggibile (permessi `workflows`). Non bloccante.
 - Vincoli ribaditi: NON toccare la scheda **"Intensità agosto-ottobre"**; NON pre-compilare la **Pendulum** (la fa Alice a mano).
 - Prossimo step consigliato: **FASE 3 — animazioni + mascotte (Diva Bot)**. Agganci: `setCoachMascotState` (~10572), `playDivaBotSound` (~10106), host `#globalDivaBotHost` (~7613), asset `coach-mascot.svg`, CSS `coach-studio*.css`.
+
+### 16) 2026-10-07 — FASE 3: Animazioni + mascotte (Diva Bot) (v147.93, branch genspark_ai_developer)
+
+- UUID: 0016
+- Base: `802cbcc` (Merge PR #14, build `v147.92-editor-progressioni`) → nuova build `v147.93-animazioni` (token `v14793`).
+- Perimetro concordato: **mascotte Diva Bot + motion UI generale**, rispettando i modi `full`/`reduced`/`off` e `prefers-reduced-motion`. Tutto in `src/app-main.js` + `coach-studio-inline.css`.
+- Cosa è cambiato:
+  - **3.1 Transizioni**: `.screen.screen-enter` ora scatta solo sul cambio reale; nuova transizione di **route** Coach Studio (`.coach-studio-page.route-enter` + `@keyframes premiumRouteIn`); **ingresso animato dei modali** (`@keyframes coachModalIn` + backdrop `premiumFadeIn`). In `render()` una `renderKey` (schermo+route coach) evita il re-trigger ad ogni render interno.
+  - **3.2 Micro-animazioni UI**: hover-lift su card/kpi/shortcut/`exercise-lab-card` (solo `@media (hover:hover) and (pointer:fine)`); "pop" del tab attivo al cambio schermata (`@keyframes navPop`). Il feedback serie (`.compact-set-done.done`) c'era già.
+  - **3.3 Mascotte evoluta**: due nuovi eventi `program_saved` e `backup_exported` in `DIVA_BOT_EVENTS` + messaggi in `DIVA_BOT_MESSAGES` + agganci in `handleProgramAction("save")` e `exportBackup()`.
+  - **3.4 Guardie**: `tests/v14793-animazioni.test.mjs` (transizioni, modali, micro-animazioni, nuove reazioni, degradazione reduced/off, `#globalDivaBotHost` fuori flusso).
+  - Bump versione: `node tools/bump-version.mjs v147.93-animazioni` (28 file).
+- Vincoli rispettati: NON toccata "Intensità agosto-ottobre"; NON pre-compilata la Pendulum; RIR/RPE vuoti; `#globalDivaBotHost` fuori flusso.
+- Prossimo step consigliato: merge FASE 3 su `main`, poi **FASE 4 — Statistiche**.
