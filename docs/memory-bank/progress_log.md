@@ -265,3 +265,16 @@ Obiettivo:
   - Bump versione: `node tools/bump-version.mjs v147.94-animazioni` (29 file) → cambia `CACHE_NAME` del SW, il PWA scarica subito la versione nuova.
 - Vincoli rispettati: NON toccata "Intensità agosto-ottobre"; NON pre-compilata la Pendulum; RIR/RPE vuoti; `#globalDivaBotHost` fuori flusso.
 - Prossimo step consigliato: merge FASE 3-bis su `main`, poi **FASE 4 — Statistiche** (3 moduli statistiche già presenti ma mai agganciati: `src/goals-stats.js`, `src/progress-charts.js`, `src/consistency-heatmap.js`).
+
+## Checkpoint 18 — FASE 3-ter: Diva Bot movibile + espressioni (v147.95-robottino-mobile)
+- **Richiesta Alice**: *"il robottino durante gli allenamenti è in un angolino in alto e non posso muoverlo a piacimento; vorrei che fosse movibile e facesse tutte le espressioni nuove."*
+- **Causa radice drag**: il layer `.workout-mascot-layer` (fixed) avvolge esattamente l'anchor (~80px) → `-Math.max(0, layer.clientWidth - anchorWidth)` era **sempre 0**: la mascotte non poteva spostarsi a sinistra e lo snap cadeva nei 4 angoli.
+- **Fix**: posizione **libera** in frazioni `state.ui.workoutMascotFree/XPct/YPct` (0..1, valide a resize/rotazione). Helper `workoutMascotFreeBounds/FreePixels/currentWorkoutMascotLeftTop/applyWorkoutMascotFree/persistWorkoutMascotFree`. Layer ancorato in alto a **destra** → x **negativo** (`left - maxX`). Drag riscritto (originLeft/originTop, clamp sul viewport, `--workout-mascot-x = left - maxX`). `nearestWorkoutMascotPosition` rimosso (dead code); `avoidWorkoutMascotOverlap` salta se posizione libera.
+- **Espressioni**: `WORKOUT_MASCOT_SHOW_EXPRESSIONS` (tutte e 7: happy, celebrate, lifting, thinking, encouraging, warning, rest) + `WORKOUT_MASCOT_IDLE_EXPRESSIONS` (rotazione ambientale ogni ~26s, solo facce allegre/neutre = non invasiva). `showWorkoutMascotExpressionShow()` innescata da **doppio tocco** (<320ms) sulla mascotte o voce di menu "Mostra tutte le espressioni". Tocco singolo = nessuna azione. Tocco lungo (620ms) = menu su **ogni** dispositivo.
+- **Menu**: aggiunte voci "Mostra tutte le espressioni" e "Rimetti in alto a destra" (`data-workout-mascot-expressions/reset`). Rebind-guard `layer.dataset.workoutMascotBound` (l'HTML di Allenamento si ricrea often). `render()` → `stopWorkoutMascotExpressions()` fuori dall'Allenamento.
+- **CSS**: `.workout-mascot-anchor[data-side="left"]` → bubble/menu a sinistra quando la mascotte è nella metà sinistra.
+- **Guardia test**: `tests/phase23-floating-workout-mascot.test.mjs` esteso (freeBounds, persistWorkoutMascotFree, originLeft, SHOW_EXPRESSIONS, show expression, data attrs, data-side=left).
+- **Suite**: `node --test tests/*.test.mjs` → **237 test, 228 pass, 0 fail, 9 skipped, EXIT:0**.
+- **Bump**: `node tools/bump-version.mjs v147.95-robottino-mobile` (29 file) → nuovo `CACHE_NAME` del SW.
+- Vincoli rispettati: NON toccata "Intensità agosto-ottobre"; RIR/RPE vuoti.
+- Prossimo step: **FASE 4 — Statistiche** (confermare scope con Alice; candidato = agganciare `src/goals-stats.js`, `src/progress-charts.js`, `src/consistency-heatmap.js`).

@@ -399,3 +399,29 @@ vecchio service worker serviva ancora la v14793 dalla cache. Rende il motion
   timer in `coachMascotController.popTimer`.
 - **Bump `v147.94-animazioni`** (29 file): cambia `CACHE_NAME` del SW così il PWA
   scarica subito la versione nuova (era la vera causa del "non vedo cambiamenti").
+
+## FASE 3-ter — Diva Bot movibile + espressioni (v147.95)
+Alice: *"il robottino durante gli allenamenti è in un angolino in alto e non posso
+muoverlo a piacimento; vorrei che fosse movibile e facesse tutte le espressioni
+nuove."* Rende la mascotte del Workout **liberamente posizionabile** e le fa
+"girare" tutte le facce (`src/app-main.js` + `coach-studio-inline.css`).
+
+- **Posizione libera**: `state.ui.workoutMascotFree/XPct/YPct` (frazioni 0..1,
+  così sopravvivono a resize/rotazione). Helper `workoutMascotFreeBounds()`,
+  `workoutMascotFreePixels()`, `currentWorkoutMascotLeftTop()`,
+  `applyWorkoutMascotFree()`, `persistWorkoutMascotFree()`. Il layer è ancorato
+  in alto a **destra**, quindi lo spostamento x è **negativo** (`left - maxX`).
+  Il vecchio bug `-max(0, layer.clientWidth - anchorWidth)` (sempre 0) è sparito:
+  il drag ora è vero e non snap-a più nei 4 angoli. `nearestWorkoutMascotPosition`
+  rimosso; `avoidWorkoutMascotOverlap` salta quando la posizione è libera.
+- **Espressioni**: `WORKOUT_MASCOT_SHOW_EXPRESSIONS` (tutte e 7) +
+  `WORKOUT_MASCOT_IDLE_EXPRESSIONS` (rotazione ambientale ogni 26s, solo facce
+  allegre/neutre → non invadente). `showWorkoutMascotExpressionShow()` passa in
+  rassegna tutte le facce. **Doppio tocco** sulla mascotte o voce di menu
+  "Mostra tutte le espressioni". Menu: "+ Rimetti in alto a destra". Tocco lungo
+  = menu anche su desktop. `render()` chiama `stopWorkoutMascotExpressions()`
+  fuori dall'Allenamento.
+- **Fumetto lato giusto**: `.workout-mascot-anchor[data-side="left"]` sposta
+  bubble/menu a sinistra quando la mascotte è nella metà sinistra.
+- **Guardia**: `tests/phase23-floating-workout-mascot.test.mjs` esteso.
+- **Bump `v147.95-robottino-mobile`** (29 file) → nuovo `CACHE_NAME` del SW.

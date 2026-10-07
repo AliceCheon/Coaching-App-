@@ -128,3 +128,12 @@ invasivo**, sempre dietro i gateway `premiumMotionEnabled()`/`effectiveAnimation
 1. Leggere `docs/memory-bank/progress_log.md` (checkpoint 16) e `AGENTS.md`.
 2. Verificare suite verde (`node --test tests/*.test.mjs`, in background).
 3. Aprire FASE 4 (Statistiche).
+
+## Checkpoint 18 — FASE 3-ter DONE (v147.95-robottino-mobile)
+- Diva Bot nel Workout ora **liberamente trascinabile** (posizione salvata in frazioni 0..1) e **mostra tutte le espressioni** (doppio tocco o menu). Fix del bug di drag che la teneva ancorata in alto a destra.
+- Suite verde (237/228/0/9). Bump v147.95 (29 file).
+
+## Default next actions if paused
+1. Leggere `docs/memory-bank/progress_log.md` (checkpoint 18) e `AGENTS.md`.
+2. Verificare suite verde (`node --test tests/*.test.mjs`, in background).
+3. **FASE 4 (Statistiche)**: confermare lo scope con Alice prima di implementare.

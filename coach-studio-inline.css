@@ -3486,6 +3486,9 @@
     .workout-mascot-bubble span { padding-right:13px; }
     .workout-mascot-bubble-close { position:absolute; top:3px; right:5px; width:18px; height:18px; padding:0; border:0; border-radius:50%; background:transparent; color:currentColor; font-size:1rem; line-height:1; pointer-events:auto; }
     .workout-mascot-anchor[data-position="bottom-left"] .workout-mascot-bubble { right:auto; left:calc(100% - 8px); border-radius:14px 14px 14px 4px; }
+    /* FASE 3-ter — con la posizione libera il fumetto si aggancia al lato giusto. */
+    .workout-mascot-anchor[data-side="left"] .workout-mascot-bubble { right:auto; left:calc(100% - 8px); border-radius:14px 14px 14px 4px; }
+    .workout-mascot-anchor[data-side="left"] .workout-mascot-menu { right:auto; left:8px; }
     .workout-mascot-menu { position:absolute; right:8px; top:108px; width:230px; padding:10px; border:1px solid rgba(255,184,220,.4); border-radius:14px; background:linear-gradient(145deg,rgba(61,36,80,.99),rgba(31,18,47,.99)); box-shadow:0 16px 42px rgba(8,2,18,.5); pointer-events:auto; }
     .workout-mascot-menu > strong { display:block; margin:1px 0 8px; color:var(--pink-soft); font-size:.78rem; }
     .workout-mascot-menu label { display:flex; gap:8px; align-items:flex-start; color:#ffe9f7; font-size:.72rem; line-height:1.3; }
