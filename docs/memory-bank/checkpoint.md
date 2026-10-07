@@ -1,22 +1,24 @@
 # Checkpoint — Coaching-App
 
-UUID checkpoint: 0016
-Ora (locale): 2026-10-07T09:55:00.000Z
-Commit riferimento: branch `genspark_ai_developer` — build `v147.93-animazioni` (base `802cbcc`, Merge PR #14)
+UUID checkpoint: 0017
+Ora (locale): 2026-10-07T10:30:00.000Z
+Commit riferimento: branch `genspark_ai_developer` — build `v147.94-animazioni` (base `a3dcb39`, Merge PR #15)
 
 ## Sommario
 
-- **FASE 3 — Animazioni + mascotte (Diva Bot)** implementata (perimetro: mascotte
-  + motion UI generale, con modi `full`/`reduced`/`off`).
-- 3.1 Transizioni: schermata (solo su cambio reale), route Coach Studio, ingresso modali.
-- 3.2 Micro-animazioni: hover-lift (puntatori fini), nav pop; feedback serie già presente.
-- 3.3 Mascotte: nuovi eventi `program_saved` e `backup_exported`.
-- Guardia `tests/v14793-animazioni.test.mjs`.
-- Bump: `node tools/bump-version.mjs v147.93-animazioni` (28 file).
+- **FASE 3-bis — Animazioni più evidenti (non invasive)** implementata, dopo il
+  riscontro di Alice ("Non noto molto cambiamenti").
+- Transizioni più marcate (16px/18px/22px), **entrata a cascata** della route
+  (`premiumStagger`), **"pop" della mascotte** ad ogni reazione (`mascotPop` +
+  `popCoachMascot()`); degradazioni `reduced`/`off` garantite.
+- Guardia `tests/v14793-animazioni.test.mjs` estesa (8 test).
+- Bump: `node tools/bump-version.mjs v147.94-animazioni` (29 file) → il
+  `CACHE_NAME` del SW cambia e il PWA scarica subito la versione nuova (causa
+  principale del "non vedo cambiamenti").
 
 ## Stato attuale
 
-- Build unica: `app-config-v144.js` → `build: "v147.93-animazioni"`.
+- Build unica: `app-config-v144.js` → `build: "v147.94-animazioni"`.
 - Branch di lavoro: `genspark_ai_developer`.
 
 ## Blocchi aperti
@@ -27,8 +29,9 @@ Commit riferimento: branch `genspark_ai_developer` — build `v147.93-animazioni
 
 ## Prossimi step consigliati
 
-1. Merge FASE 3 su `main`.
-2. **FASE 4 — Statistiche**.
+1. Merge FASE 3-bis su `main`.
+2. **FASE 4 — Statistiche** (moduli già presenti ma mai agganciati:
+   `src/goals-stats.js`, `src/progress-charts.js`, `src/consistency-heatmap.js`).
 3. (Poi) FASE 5 — Coach AI.
 
 ## Note
