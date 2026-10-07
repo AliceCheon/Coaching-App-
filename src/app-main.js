@@ -10055,7 +10055,7 @@ function sanitizeForFirestore(value) {
 
     const COACH_MASCOT_STATES = new Set(["idle", "happy", "celebrate", "thinking", "encouraging", "lifting", "warning", "rest"]);
     const WORKOUT_MASCOT_POSITIONS = new Set(["top-right", "middle-right", "bottom-right", "bottom-left"]);
-    const coachMascotController = { state:"idle", message:"", temporaryTimer:null, blinkTimer:null, blinkResetTimer:null, reactionTimer:null, weightTimer:null, lastWeightReactionAt:0, recentMessages:[] };
+    const coachMascotController = { state:"idle", message:"", temporaryTimer:null, blinkTimer:null, blinkResetTimer:null, reactionTimer:null, weightTimer:null, lastWeightReactionAt:0, recentMessages:[], popTimer:null };
     const workoutMascotUi = { drag:null, scrollTimer:null, resizeTimer:null, longPressTimer:null, suppressClick:false, globalBound:false };
     const DIVA_BOT_PERSONALITIES = new Set(["silent", "balanced", "diva"]);
     const DIVA_BOT_PRIORITY = { low:1, medium:2, high:3, critical:4 };
@@ -10525,6 +10525,22 @@ function sanitizeForFirestore(value) {
       });
     }
 
+    // FASE 3-bis — "pop" visibile ma discreto della mascotte ad OGNI reazione.
+    // Riavvia l'animazione rimuovendo e riaggiungendo la classe (reflow), così
+    // si nota il cambio di stato anche quando è lo stesso di prima.
+    function popCoachMascot() {
+      if (!premiumMotionEnabled() || !document.querySelectorAll) return;
+      document.querySelectorAll(".coach-avatar").forEach((avatar) => {
+        avatar.classList.remove("mascot-pop");
+        void avatar.offsetWidth; // forza il reflow per poter riavviare l'animazione
+        avatar.classList.add("mascot-pop");
+      });
+      clearTimeout(coachMascotController.popTimer);
+      coachMascotController.popTimer = setTimeout(() => {
+        document.querySelectorAll(".coach-avatar").forEach((avatar) => avatar.classList.remove("mascot-pop"));
+      }, 720);
+    }
+
     function scheduleCoachMascotBlink() {
       clearTimeout(coachMascotController.blinkTimer);
       clearTimeout(coachMascotController.blinkResetTimer);
@@ -10599,6 +10615,7 @@ function sanitizeForFirestore(value) {
       coachMascotController.message = String(options.message || "");
       if (options.silentSound) window.__divaSilentStateChange = Date.now(); // marca il cambio come cosmetico: diva-bot-sounds non suonerà
       syncCoachMascotState();
+      popCoachMascot(); // FASE 3-bis: piccolo "pop" ad ogni reazione, così il cambio si nota
       if (options.announce && options.message) showCoachMascotReaction(options.message);
       if ((nextState === "happy" || nextState === "celebrate") && divaBotPreferences().celebrations) addCoachMascotParticles();
       const duration = Number(options.duration) || 0;

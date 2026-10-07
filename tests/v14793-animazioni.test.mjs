@@ -1,4 +1,4 @@
-// v147.93 — FASE 3 (Animazioni + mascotte).
+// v147.94 — FASE 3 (Animazioni + mascotte).
 // Guardie anti-regressione sul layer motion introdotto/rifinito in questa fase:
 //  3.1 transizioni di schermata + cambio route Coach Studio + ingresso modali;
 //  3.2 micro-animazioni UI (nav pop, hover-lift su puntatori fini);
@@ -36,6 +36,28 @@ test("3.2 — micro-animazioni UI con hover limitato a puntatori fini", () => {
   assert.ok(/\.coach-studio-card:hover,\s*\.coach-studio-kpi:hover/.test(css), "manca l'hover-lift delle card coach");
   assert.ok(css.includes("@keyframes navPop"), "manca navPop");
   assert.ok(/\.top-tab\.active, \.nav-button\.active \{ animation:navPop/.test(css), "il pop di navigazione non è agganciato ai tab attivi");
+});
+
+test("3-bis — entrata a cascata del contenuto route (più evidente, non invasiva)", () => {
+  // FASE 3-bis: il contenuto della sezione entra con uno stagger breve.
+  assert.ok(css.includes("@keyframes premiumStagger"), "manca premiumStagger");
+  assert.ok(css.includes(".coach-studio-page.route-enter > *"), "il contenuto della route non ha lo stagger");
+  assert.ok(/\.coach-studio-page\.route-enter > \*:nth-child\(1\) \{ animation-delay:\.02s; \}/.test(css), "manca il delay del primo figlio");
+  assert.ok(/\.coach-studio-page\.route-enter > \*:nth-child\(n\+6\) \{ animation-delay:\.22s; \}/.test(css), "mancano i delay della coda (n+6)");
+  // Deve degradare in reduced (dissolvenza breve) e sparire in off.
+  assert.ok(/body\[data-animation-mode="reduced"\] \.coach-studio-page\.route-enter > \* \{ animation:premiumFadeIn/.test(css), "lo stagger non degrada in reduced");
+});
+
+test("3-bis — 'pop' della mascotte ad ogni reazione (visibile ma breve)", () => {
+  assert.ok(css.includes("@keyframes mascotPop"), "manca mascotPop");
+  assert.ok(/\.coach-avatar\.mascot-pop \{ animation:mascotPop/.test(css), "il pop non è agganciato alla mascotte");
+  assert.ok(appMain.includes("function popCoachMascot()"), "manca popCoachMascot()");
+  assert.ok(appMain.includes('classList.add("mascot-pop")'), "popCoachMascot non applica la classe mascot-pop");
+  assert.ok(appMain.includes("popCoachMascot();"), "setCoachMascotState non chiama popCoachMascot()");
+  assert.ok(appMain.includes("popTimer:null"), "il controller mascotte non traccia popTimer");
+  // Deve essere disattivato in reduced e non creare dipendenze fuori dal gateway premium.
+  assert.ok(/body\[data-animation-mode="reduced"\] \.coach-avatar\.mascot-pop \{ animation:none; \}/.test(css), "il pop non si disattiva in reduced");
+  assert.ok(/function popCoachMascot\(\) \{\s*if \(!premiumMotionEnabled\(\)/.test(appMain), "popCoachMascot non rispetta il gateway premiumMotionEnabled");
 });
 
 test("3.2/3.1 — degradazione accessibilità (reduced/off e prefers-reduced-motion)", () => {

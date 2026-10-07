@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v147.93-animazioni` |
-| `cache` | `atlas-app-v14793-animazioni` |
+| `build` | `v147.94-animazioni` |
+| `cache` | `atlas-app-v14794-animazioni` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

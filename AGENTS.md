@@ -382,3 +382,20 @@ e `prefers-reduced-motion`. Tutto in `src/app-main.js` + `coach-studio-inline.cs
 - **Regola**: ogni nuova animazione deve degradare in `reduced`/`off` e dentro
   `@media (prefers-reduced-motion: reduce)`. `#globalDivaBotHost` resta fuori
   flusso (`position: relative`).
+
+## FASE 3-bis — Animazioni più evidenti (v147.94)
+Alice: *"Non noto molto cambiamenti"*. Le animazioni erano troppo sottili e il
+vecchio service worker serviva ancora la v14793 dalla cache. Rende il motion
+**più visibile ma non invasivo** (sempre dietro `premiumMotionEnabled()` /
+`effectiveAnimationMode()`), in `src/app-main.js` + `coach-studio-inline.css`.
+
+- **Transizioni più marcate**: `premiumScreenIn` 9→16px + `scale(.994)`;
+  `premiumRouteIn` 10→18px; `coachModalIn` 14px/.982 → 22px/.955.
+- **Entrata a cascata** della route: `.coach-studio-page.route-enter > *`
+  (`@keyframes premiumStagger`, 340ms) con delay `.02→.22s`. Solo sul cambio
+  reale di route (`renderKey`), non ad ogni render.
+- **"Pop" mascotte** ad ogni reazione: `.coach-avatar.mascot-pop`
+  (`@keyframes mascotPop`) via `popCoachMascot()` dentro `setCoachMascotState()`;
+  timer in `coachMascotController.popTimer`.
+- **Bump `v147.94-animazioni`** (29 file): cambia `CACHE_NAME` del SW così il PWA
+  scarica subito la versione nuova (era la vera causa del "non vedo cambiamenti").

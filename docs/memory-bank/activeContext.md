@@ -1,6 +1,6 @@
 # Active Context — Coaching-App
 
-Ultimo aggiornamento: 2026-10-07 — build `v147.92-editor-progressioni`.
+Ultimo aggiornamento: 2026-10-07 — build `v147.94-animazioni` (FASE 3-bis).
 
 Use this section as the short "global context" that survives across parallel chats and task handoffs.
 
@@ -23,15 +23,16 @@ Use this section as the short "global context" that survives across parallel cha
 1. ✅ **FASE 1 — Diario di seduta** (PR #7, merged).
 2. ✅ **FASE 2 — UI polish** (PR #8, merged; temi chiaro/scuro esistenti mantenuti).
 3. ✅ **FASE 3 — Animazioni + mascotte (Diva Bot)** → build `v147.93-animazioni`.
+   - ✅ **FASE 3-bis — Animazioni più evidenti (non invasive)** → build `v147.94-animazioni`.
 4. ⏳ **FASE 4 — Statistiche** ← PROSSIMA.
 5. ⏳ **FASE 5 — Coach AI**.
 
 ## Current state
 
-- **Build**: `v147.93-animazioni`.
-- **Ultimo commit FASE 3**: build `v147.93-animazioni` (branch `genspark_ai_developer`).
-  Base precedente: `802cbcc` (Merge PR #14).
-- **Suite test**: **220 pass, 0 fail, 9 skipped** (229 test totali, ~8 min di durata →
+- **Build**: `v147.94-animazioni` (FASE 3-bis).
+- **Ultimo commit FASE 3-bis**: build `v147.94-animazioni` (branch `genspark_ai_developer`).
+  Base precedente: `a3dcb39` (Merge PR #15, FASE 3 `v147.93-animazioni`).
+- **Suite test**: da riconfermare a fine FASE 3-bis (~8 min di durata →
   lanciare in background). Comando: `node --test tests/*.test.mjs`.
 - **Tree**: `main` = `origin/main`; branch di lavoro `genspark_ai_developer`.
 
@@ -76,9 +77,32 @@ Perimetro concordato: **mascotte Diva Bot + motion UI generale**, tutto dentro
   micro-animazioni, nuove reazioni, degradazione reduced/off, `#globalDivaBotHost`
   fuori flusso).
 
+## FASE 3-bis in sintesi (2026-10-07) — build `v147.94-animazioni`
+
+Alice: *"Non noto molto cambiamenti"* → le animazioni della FASE 3 erano troppo
+sottili (9-14px, 140-260ms) e, soprattutto, il **vecchio service worker serviva
+ancora la v14793 in cache**. FASE 3-bis rende il motion **più evidente ma non
+invasivo**, sempre dietro i gateway `premiumMotionEnabled()`/`effectiveAnimationMode()`.
+
+- **Transizioni più marcate**: `premiumScreenIn` 9px→**16px + scale(.994)**;
+  `premiumRouteIn` 10px→**18px**; `coachModalIn` 14px/.982→**22px/.955**.
+- **Entrata a cascata** della sezione route: `.coach-studio-page.route-enter > *`
+  (`@keyframes premiumStagger`, 340ms) con delay scaglionati `.02/.06/.10/.14/.18/.22s`.
+  Parte **solo** sul cambio reale di route (via `renderKey`), non ad ogni render.
+- **"Pop" della mascotte** ad ogni reazione: `.coach-avatar.mascot-pop`
+  (`@keyframes mascotPop`, 0→1.14→.98→1 con leggera rotazione) innescato da
+  `popCoachMascot()` dentro `setCoachMascotState()`, così si nota anche quando
+  lo stato resta lo stesso. Timer tracciato in `coachMascotController.popTimer`.
+- **Degradazioni**: in `reduced` lo stagger → `premiumFadeIn` e il pop → `animation:none`;
+  in `off` tutto a `.01ms`. Nessuna animazione obbligatoria.
+- **Guardie**: `tests/v14793-animazioni.test.mjs` esteso con i blocchi "3-bis — entrata
+  a cascata" e "3-bis — 'pop' della mascotte" (8 test, ora verdi).
+- **Bump**: `node tools/bump-version.mjs v147.94-animazioni` (29 file) — così il
+  `CACHE_NAME` del service worker cambia e il PWA scarica subito la versione nuova.
+
 ## Prossimi step consigliati
 
-1. **FASE 4 — Statistiche** (dopo merge della FASE 3).
+1. **FASE 4 — Statistiche** (dopo merge della FASE 3-bis).
 2. (Poi) FASE 5 — Coach AI.
 3. Se Alice vuole, estendere la FASE 3 con transizioni dedicate a tab interni di
    Allenamento (richiede un tracker di tab per evitare il re-trigger ad ogni render).

@@ -250,3 +250,18 @@ Obiettivo:
   - Bump versione: `node tools/bump-version.mjs v147.93-animazioni` (28 file).
 - Vincoli rispettati: NON toccata "Intensità agosto-ottobre"; NON pre-compilata la Pendulum; RIR/RPE vuoti; `#globalDivaBotHost` fuori flusso.
 - Prossimo step consigliato: merge FASE 3 su `main`, poi **FASE 4 — Statistiche**.
+
+### 17) 2026-10-07 — FASE 3-bis: animazioni più evidenti (non invasive) (v147.94, branch genspark_ai_developer)
+
+- UUID: 0017
+- Base: `a3dcb39` (Merge PR #15, build `v147.93-animazioni`) → nuova build `v147.94-animazioni` (token `v14794`).
+- Motivo: Alice *"Non noto molto cambiamenti"*. Due cause: (1) animazioni troppo sottili (9-14px, 140-260ms); (2) il **service worker serviva ancora la v14793 dalla cache** (la cosa che rende "invisibile" un deploy su PWA).
+- Cosa è cambiato (tutto dietro `premiumMotionEnabled()`/`effectiveAnimationMode()`):
+  - **Transizioni più marcate**: `premiumScreenIn` 9→16px + `scale(.994)`; `premiumRouteIn` 10→18px; `coachModalIn` 14px/.982 → 22px/.955.
+  - **Entrata a cascata** della route: `.coach-studio-page.route-enter > *` (`@keyframes premiumStagger`, 340ms) con delay `.02→.22s`. Parte **solo** sul cambio reale di route (`renderKey`), non ad ogni render.
+  - **"Pop" mascotte** ad ogni reazione: `.coach-avatar.mascot-pop` (`@keyframes mascotPop`) innescato da `popCoachMascot()` in `setCoachMascotState()`; timer in `coachMascotController.popTimer`.
+  - **Degradazioni**: in `reduced` lo stagger → `premiumFadeIn` e il pop → `animation:none`; in `off` tutto a `.01ms`.
+  - **Guardie**: `tests/v14793-animazioni.test.mjs` esteso (blocchi "3-bis — entrata a cascata" e "3-bis — 'pop' della mascotte", 8 test verdi).
+  - Bump versione: `node tools/bump-version.mjs v147.94-animazioni` (29 file) → cambia `CACHE_NAME` del SW, il PWA scarica subito la versione nuova.
+- Vincoli rispettati: NON toccata "Intensità agosto-ottobre"; NON pre-compilata la Pendulum; RIR/RPE vuoti; `#globalDivaBotHost` fuori flusso.
+- Prossimo step consigliato: merge FASE 3-bis su `main`, poi **FASE 4 — Statistiche** (3 moduli statistiche già presenti ma mai agganciati: `src/goals-stats.js`, `src/progress-charts.js`, `src/consistency-heatmap.js`).

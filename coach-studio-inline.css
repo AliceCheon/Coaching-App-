@@ -74,14 +74,27 @@
     button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:none; box-shadow:var(--focus-ring); }
     button:disabled { opacity:.48; cursor:not-allowed; filter:saturate(.55); }
     .screen.screen-enter { animation:premiumScreenIn var(--motion-normal) var(--ease-premium) both; }
-    @keyframes premiumScreenIn { from { opacity:0; transform:translateY(9px); } to { opacity:1; transform:none; } }
+    @keyframes premiumScreenIn { from { opacity:0; transform:translateY(16px) scale(.994); } to { opacity:1; transform:none; } }
     /* FASE 3.1 — transizione di route dentro il Coach Studio (cambio sezione). */
     .coach-studio-page.route-enter { animation:premiumRouteIn var(--motion-normal) var(--ease-premium) both; }
-    @keyframes premiumRouteIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:none; } }
+    @keyframes premiumRouteIn { from { opacity:0; transform:translateX(18px); } to { opacity:1; transform:none; } }
+    /* FASE 3-bis — entrata a cascata del contenuto di una sezione (più evidente,
+       ma ogni riga resta breve). Solo sul cambio route, non ad ogni render. */
+    .coach-studio-page.route-enter > * { animation:premiumStagger .34s var(--ease-premium) both; }
+    .coach-studio-page.route-enter > *:nth-child(1) { animation-delay:.02s; }
+    .coach-studio-page.route-enter > *:nth-child(2) { animation-delay:.06s; }
+    .coach-studio-page.route-enter > *:nth-child(3) { animation-delay:.10s; }
+    .coach-studio-page.route-enter > *:nth-child(4) { animation-delay:.14s; }
+    .coach-studio-page.route-enter > *:nth-child(5) { animation-delay:.18s; }
+    .coach-studio-page.route-enter > *:nth-child(n+6) { animation-delay:.22s; }
+    @keyframes premiumStagger { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
     /* FASE 3.1 — ingresso animato dei modali (dialog + backdrop). */
     .coach-modal-backdrop { animation:premiumFadeIn var(--motion-fast) ease both; }
     .coach-modal { animation:coachModalIn var(--motion-normal) var(--ease-premium) both; }
-    @keyframes coachModalIn { from { opacity:0; transform:translateY(14px) scale(.982); } to { opacity:1; transform:none; } }
+    @keyframes coachModalIn { from { opacity:0; transform:translateY(22px) scale(.955); } to { opacity:1; transform:none; } }
+    /* FASE 3-bis — "pop" della mascotte ad ogni reazione (breve, non invasivo). */
+    .coach-avatar.mascot-pop { animation:mascotPop var(--motion-normal) var(--ease-premium); }
+    @keyframes mascotPop { 0% { transform:scale(1); } 45% { transform:scale(1.14) rotate(-2deg); } 70% { transform:scale(.98) rotate(1deg); } 100% { transform:scale(1); } }
     .premium-splash { position:fixed; inset:0; top:0; right:0; bottom:0; left:0; width:100%; min-height:100vh; min-height:100dvh; z-index:9999; display:flex; align-items:center; justify-content:center; overflow:hidden; background:radial-gradient(circle at 25% 20%,rgba(255,79,163,.28),transparent 36%),radial-gradient(circle at 80% 75%,rgba(168,85,247,.34),transparent 40%),#120c1a; color:#fff7fc; transition:opacity var(--motion-slow) var(--ease-premium), visibility var(--motion-slow); }
     .premium-splash.is-hidden { opacity:0; visibility:hidden; pointer-events:none; }
     .premium-splash-card { margin:auto; text-align:center; padding:42px; min-width:min(86vw,350px); max-width:min(92vw,420px); border:1px solid rgba(255,255,255,.18); border-radius:var(--radius-large); background:rgba(32,18,47,.62); box-shadow:var(--shadow-raised); backdrop-filter:blur(18px); }
@@ -115,7 +128,9 @@
     @media (hover:hover) and (pointer:fine) { body[data-animation-mode="reduced"] .coach-studio-card:hover, body[data-animation-mode="reduced"] .coach-studio-kpi:hover, body[data-animation-mode="reduced"] .coach-studio-shortcut:hover, body[data-animation-mode="reduced"] .exercise-lab-card:hover, body[data-animation-mode="reduced"] .progression-template-card:hover { transform:none !important; box-shadow:var(--shadow-card) !important; } }
     body[data-animation-mode="reduced"] .screen.screen-enter { animation:premiumFadeIn 120ms ease both; }
     body[data-animation-mode="reduced"] .coach-studio-page.route-enter { animation:premiumFadeIn 120ms ease both; }
+    body[data-animation-mode="reduced"] .coach-studio-page.route-enter > * { animation:premiumFadeIn 120ms ease both; }
     body[data-animation-mode="reduced"] .coach-modal { animation:premiumFadeIn 120ms ease both; }
+    body[data-animation-mode="reduced"] .coach-avatar.mascot-pop { animation:none; }
     body[data-animation-mode="off"] *, body[data-animation-mode="off"] *::before, body[data-animation-mode="off"] *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; transition-delay:0ms !important; }
     body[data-animation-mode="off"] .premium-monogram, body[data-animation-mode="off"] .premium-loader::after { animation:none !important; }
     body.reduced-glow .premium-pr-badge, body.reduced-glow .workout-entry.exercise-just-completed, body.reduced-glow .compact-set-done.done { box-shadow:0 0 0 1px var(--border-soft) !important; }
