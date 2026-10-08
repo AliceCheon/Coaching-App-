@@ -425,3 +425,27 @@ nuove."* Rende la mascotte del Workout **liberamente posizionabile** e le fa
   bubble/menu a sinistra quando la mascotte è nella metà sinistra.
 - **Guardia**: `tests/phase23-floating-workout-mascot.test.mjs` esteso.
 - **Bump `v147.95-robottino-mobile`** (29 file) → nuovo `CACHE_NAME` del SW.
+
+## FASE 3-ter-bis — Diva Bot contestuale + menu che si chiude (v147.96)
+Alice: *"non mi piace che le faccia tutte assieme; vorrei le facesse in base a
+quello che scrivo… e anche mentre sto sull'app, di compagnia. Inoltre il popup
+del menu non si toglie più."* Due interventi in `src/app-main.js`.
+
+- **Espressioni CONTESTUALI (già pronte)**: ogni faccia segue l'evento reale via
+  `DIVA_BOT_EVENTS` → `setCoachMascotState(config.state)`: `set_completed`→happy,
+  `personal_record`/`workout_completed`→celebrate, `load_increased`→lifting,
+  `recovery_warning`/`rir_too_low`→warning, `coach_analysis_started`→thinking,
+  `idle_too_long`→rest.
+- **"Compagnia" (nuova, al posto dello "show" di tutte le facce)**:
+  `WORKOUT_MASCOT_COMPANIONSHIP` (facce + messaggini brevi),
+  `startWorkoutMascotCompanionship()` (ogni 32–58s, **solo quando `idle`**, salta
+  se stai scrivendo in input/textarea/select), `stopWorkoutMascotCompanionship()`,
+  `reactWorkoutMascotCompanionship()` (doppio tocco = una faccia + un saluto, non
+  più tutte assieme). Entra in `bindWorkoutMascot()`, esce in `render()`.
+  Rimossi `WORKOUT_MASCOT_SHOW_EXPRESSIONS`/`WORKOUT_MASCOT_IDLE_EXPRESSIONS`/
+  `showWorkoutMascotExpressionShow()` e il pulsante "Mostra tutte le espressioni".
+- **Menu che si chiude**: su `pointerdown` (capture) fuori da `#workoutMascotMenu`
+  (e non sul bottone) → `showWorkoutMascotMenuHide()`; anche **tasto Esc**.
+- **Guardia**: `tests/phase23-floating-workout-mascot.test.mjs` esteso
+  (compagnia contestuale + `menu.contains(event.target)` + `Escape`).
+- **Bump `v147.96-robottina-compagnia`** (29 file).

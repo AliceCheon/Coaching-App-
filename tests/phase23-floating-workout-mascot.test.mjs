@@ -30,11 +30,19 @@ assert.match(html, /function persistWorkoutMascotFree\(xPct, yPct/);
 assert.match(html, /state\.ui\.workoutMascotXPct/);
 assert.match(html, /state\.ui\.workoutMascotFree/);
 assert.match(html, /originLeft/);
-// FASE 3-ter — tutte le espressioni: doppio tocco + voce di menu.
-assert.match(html, /const WORKOUT_MASCOT_SHOW_EXPRESSIONS = \["happy","celebrate","lifting","thinking","encouraging","warning","rest"\]/);
-assert.match(html, /function showWorkoutMascotExpressionShow\(\)/);
-assert.match(html, /data-workout-mascot-expressions/);
+// FASE 3-ter-bis — le espressioni sono CONTESTUALI (in base a quello che scrivi)
+// + "compagnia" lenta e discreta. Niente più "tutte le facce assieme".
+assert.match(html, /const WORKOUT_MASCOT_COMPANIONSHIP = \[/);
+assert.match(html, /function startWorkoutMascotCompanionship\(\)/);
+assert.match(html, /function stopWorkoutMascotCompanionship\(\)/);
+assert.match(html, /function reactWorkoutMascotCompanionship\(\)/);
+assert.doesNotMatch(html, /WORKOUT_MASCOT_SHOW_EXPRESSIONS/);
+assert.doesNotMatch(html, /showWorkoutMascotExpressionShow/);
+assert.doesNotMatch(html, /data-workout-mascot-expressions/);
 assert.match(html, /data-workout-mascot-reset/);
 assert.match(html, /data-side="left"/);
+// FASE 3-ter-bis — il menu si chiude: click fuori + tasto Esc.
+assert.match(html, /menu.contains\(event.target\)/);
+assert.match(html, /event.key === "Escape"/);
 
-console.log(JSON.stringify({ ok:true, floating:true, drag:true, freePosition:true, expressions:true, hide:true, singleRobot:true }));
+console.log(JSON.stringify({ ok:true, floating:true, drag:true, freePosition:true, companionship:true, contextualExpressions:true, menuClose:true, hide:true, singleRobot:true }));
