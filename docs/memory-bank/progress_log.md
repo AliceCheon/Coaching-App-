@@ -288,3 +288,12 @@ Obiettivo:
 - **Bump**: `node tools/bump-version.mjs v147.96-robottina-compagnia` (29 file).
 - Vincoli rispettati: NON toccata "Intensità agosto-ottobre"; RIR/RPE vuoti.
 - Prossimo step: FASE 4 — Statistiche (confermare scope con Alice).
+
+## Checkpoint 20 — FASE 4: Sezione Statistiche (v147.98-statistiche)
+- **Richiesta Alice**: rinominare "Analisi progressi" in "Statistiche" e mettere dentro due tab (Analisi progressi + Volume); mockup dentro l'app con torta per gruppo muscolare, linee per settimana e confronto volumi tra schede per gruppo muscolare.
+- **Nav**: `progress` → label "Statistiche" (rail, top-tab, titleMap). Id schermata invariato.
+- **`statisticsHtml()`**: tab progress/volume. Volume: `statisticsVolumeHtml()` su `VOLUME_HISTORY`, torta `drawVolumePie`, linee `drawVolumeLines`, confronto `volumeComparisonHtml(blocks)`.
+- **Stato**: `state.ui.statisticsTab`, `state.ui.volumeSheet`. CSS dedicato. `drawCharts()` ridisegna i grafici.
+- **Guardia**: `tests/phase30-statistiche-volume.test.mjs`. Suite **238 test, 229 pass, 0 fail, 9 skip, EXIT:0**.
+- **Bump**: `v147.98-statistiche` (29 file).
+- **Nota**: è un MOCKUP navigabile ma con dati reali (`VOLUME_HISTORY`), pronto a evolvere su richiesta di Alice.

@@ -5214,3 +5214,25 @@ html[data-theme="light"] .journal-rpe { background: #fff; color: #2b2233; }
       .gold-button:hover, .primary-button:hover, .ghost-button:hover,
       .danger-button:hover, .round-button:hover, .nav-button.active svg { transform: none; }
     }
+
+    /* FASE 4 — Sezione Statistiche (tab Analisi progressi / Volume) */
+    .statistics-tabs { display:flex; gap:8px; margin:14px 0 12px; padding:4px; border-radius:14px; border:1px solid var(--line-soft); background:rgba(255,255,255,.03); }
+    .statistics-tab { flex:1; padding:10px 12px; border:0; border-radius:11px; background:transparent; color:var(--muted); font:inherit; font-size:.82rem; font-weight:600; cursor:pointer; transition:background .2s ease,color .2s ease; }
+    .statistics-tab.active { background:linear-gradient(135deg,var(--pink-primary),var(--purple-primary)); color:#fff; box-shadow:0 8px 20px rgba(255,79,163,.28); }
+    .statistics-panel { display:grid; gap:12px; }
+    .statistics-volume { display:grid; gap:12px; }
+    .volume-charts { display:grid; gap:12px; grid-template-columns:1fr; margin-top:6px; }
+    .volume-chart-card { border-radius:14px; border:1px solid var(--line-soft); background:rgba(255,255,255,.025); padding:12px; display:grid; gap:8px; }
+    .volume-chart-card canvas { width:100%; }
+    .volume-legend { display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:6px; }
+    .volume-legend span { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:.7rem; }
+    .volume-legend i { width:9px; height:9px; border-radius:3px; background:var(--c,var(--pink-primary)); }
+    .volume-compare { display:grid; gap:6px; margin-top:10px; overflow-x:auto; }
+    .volume-compare-head, .volume-compare-row { display:grid; grid-template-columns:92px repeat(auto-fit,minmax(70px,1fr)); gap:8px; align-items:center; min-width:340px; }
+    .volume-compare-head { color:var(--pink-soft); font-size:.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+    .volume-compare-row { padding:5px 0; border-top:1px solid var(--line-soft); }
+    .vc-muscle { color:var(--text-secondary); font-size:.72rem; }
+    .vc-cell { position:relative; display:flex; flex-direction:column; gap:3px; }
+    .vc-cell em { display:block; height:6px; border-radius:4px; background:var(--c,var(--pink-primary)); width:var(--w,0%); min-width:3px; opacity:.85; }
+    .vc-cell b { font-size:.72rem; color:var(--text-primary); }
+    @media (min-width:760px) { .volume-charts { grid-template-columns:1fr 1fr; } }

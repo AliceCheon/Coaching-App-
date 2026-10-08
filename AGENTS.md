@@ -463,3 +463,23 @@ Alice: *"La robottina non si muove mai e il menù è sparito."* REGRESSIONE mia.
 - **Guardia**: `tests/phase23-floating-workout-mascot.test.mjs` (delegationBound,
   fromMascot, niente `layer.dataset.workoutMascotBound`/`menuOutsideBound`).
 - **Bump `v147.97-robottina-fix`** (29 file).
+
+## FASE 4 — Sezione STATISTICHE (mockup navigabile) (v147.98)
+Alice: *"al posto di Analisi progressi voglio Statistiche e poi dentro Statistiche ci
+rimetti Analisi progressi e Volume"* + mockup dentro l'app con grafico a torta,
+grafico a linee per settimana e confronto volumi tra schede **per gruppo muscolare**.
+- **Nav rinominata**: "Analisi progressi" → **"Statistiche"** (rail-dot + top-tab +
+  `titleMap.progress`), l'id schermata resta `progress` (nessun routing rotto).
+- **`statisticsHtml()`** (in `src/app-main.js`): due tab `data-statistics-tab`
+  ("Analisi progressi" = `progressHtml()` esistente, "Volume" = `statisticsVolumeHtml()`).
+- **Tab Volume**: selettore scheda (`#volumeSheetSelect`) su `VOLUME_HISTORY` +
+  **grafico a torta** per gruppo muscolare (`drawVolumePie`) + **grafico a linee**
+  per settimana (`drawVolumeLines`, top 6 gruppi, palette `VOLUME_PALETTE`) + legenda.
+- **Confronto schede per gruppo muscolare** (`volumeComparisonHtml(blocks)`): griglia
+  gruppi × schede con barre proporzionali (`--w`/`--c`).
+- **Stato UI**: `state.ui.statisticsTab` ("progress"|"volume"), `state.ui.volumeSheet`.
+- **CSS** in `coach-studio-inline.css` (`.statistics-tabs`, `.statistics-tab.active`,
+  `.volume-chart-card`, `.volume-compare-row`, `.vc-cell`, …). Grafici ridisegnati in
+  `drawCharts()`.
+- **Guardia**: `tests/phase30-statistiche-volume.test.mjs`.
+- **Bump `v147.98-statistiche`** (29 file).
