@@ -37,10 +37,33 @@ assert.match(app, /id="volumeSheetSelect"/);
 // --- Grafici: torta (gruppi muscolari) + linee (settimane) ---
 assert.match(app, /id="volumePieChart"/);
 assert.match(app, /id="volumeLineChart"/);
-assert.match(app, /function drawVolumeCharts\(\)/);
+assert.match(app, /function drawVolumeCharts\(animate\)/);
 assert.match(app, /function drawVolumePie\(\)/);
 assert.match(app, /function drawVolumeLines\(\)/);
-assert.match(app, /drawVolumeCharts\(\);[\s\S]{0,20}\}/);
+assert.match(app, /drawVolumeCharts\(animate !== false\);/);
+
+// --- ask#12: torta con freccette (callout) + nome gruppo + percentuale ---
+assert.match(app, /function volumeHexAlpha\(/);
+assert.match(app, /Ripartizione per gruppo muscolare/);
+assert.match(app, /const edge = \(ang, extra\) =>/);
+assert.match(app, /const label = `\$\{row\.muscle\} \$\{Math\.round\(row\.total \/ total \* 100\)\}%`/);
+
+// --- ask#12: grafico settimanale di UN solo gruppo alla volta + selettore ---
+assert.match(app, /id="volumeGroupSelect"/);
+assert.match(app, /function clampVolumeGroup\(/);
+assert.match(app, /function currentVolumeLineRows\(\)/);
+assert.match(app, /function currentVolumeGroupRow\(\)/);
+assert.match(app, /const row = currentVolumeGroupRow\(\)/);
+assert.match(app, /state\.ui\.volumeGroup = clampVolumeGroup\(/);
+assert.match(app, /state\.ui\.volumeGroup = 0;/);
+
+// --- ask#12: animazione di rivelazione della torta ---
+assert.match(app, /function animateVolumePie\(\)/);
+assert.match(app, /let volumePieProgress = 1;/);
+assert.match(app, /drawCharts\(\); \/\/ animazione della torta solo sui render completi/);
+assert.match(app, /drawCharts\(false\); \/\/ resize: ridisegno immediato, senza animazione/);
+assert.match(app, /prefers-reduced-motion: reduce/);
+assert.match(all, /\.volume-chart-card:hover/);
 
 // --- Confronto schede per gruppo muscolare ---
 assert.match(app, /function volumeComparisonHtml\(blocks\)/);

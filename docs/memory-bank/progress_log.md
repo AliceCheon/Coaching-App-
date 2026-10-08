@@ -297,3 +297,19 @@ Obiettivo:
 - **Guardia**: `tests/phase30-statistiche-volume.test.mjs`. Suite **238 test, 229 pass, 0 fail, 9 skip, EXIT:0**.
 - **Bump**: `v147.98-statistiche` (29 file).
 - **Nota**: è un MOCKUP navigabile ma con dati reali (`VOLUME_HISTORY`), pronto a evolvere su richiesta di Alice.
+
+## Checkpoint 21 — FASE 4-bis: Torta con freccette + settimane di un solo gruppo (v147.99-torta-frecce)
+- **Richiesta Alice**: (1) nel grafico a torta aggiungere la legenda con i gruppi muscolari, "una freccetta su ogni colore con scritto il nome del gruppo"; (2) renderlo più carino con animazioni; (3) il grafico per settimane di **un solo gruppo alla volta**.
+- **Anteprima isolata**: `design-preview/statistiche-mockup.html` (file a sé, non nel bundle; `design-preview/` resta non tracciato). Alice ha chiesto di vederla e poi di pubblicare direttamente.
+- **App (`src/app-main.js`)**:
+  - `drawVolumePie()` con **callout** (`edge()`), label `` `${muscle} ${%}` ``, raggio `- 52` per lo spazio attorno.
+  - `animateVolumePie()` (0→1 in ~650ms, `prefers-reduced-motion`, `maxFrames` anti-loop, fallback senza rAF) + `volumeHexAlpha()`.
+  - `drawVolumeLines()` → **una sola linea** (gruppo scelto), area sfumata, punti, nome in alto.
+  - `#volumeGroupSelect` + `state.ui.volumeGroup` (`clampVolumeGroup`, `currentVolumeLineRows`, `currentVolumeGroupRow`); cambio scheda → `volumeGroup = 0`.
+  - `drawCharts(animate)` → `drawVolumeCharts(animate !== false)`; render completo anima, resize no.
+- **Regressioni dalle animazioni (trovate e corrette)**: `cancelAnimationFrame` assente in alcuni harness VM → guard `typeof`; `drawCharts()` letterale atteso da una guardia → animazione di default; `createLinearGradient` non supportato nei canvas finti → fallback piatto.
+- **CSS**: `.volume-chart-card` hover, `.mini` selettore.
+- **Guardia**: `tests/phase30-statistiche-volume.test.mjs` esteso.
+- **Suite**: **238 test, 229 pass, 0 fail, 9 skipped, EXIT:0**.
+- **Bump**: `node tools/bump-version.mjs v147.99-torta-frecce` (29 file).
+- **Prossimo step**: feedback di Alice sull'app pubblicata; poi (in coda) Coach AI su reps/note/RIR/RPE.
