@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v147.98-statistiche` |
-| `cache` | `atlas-app-v14798-statistiche` |
+| `build` | `v147.99-torta-frecce` |
+| `cache` | `atlas-app-v14799-torta-frecce` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

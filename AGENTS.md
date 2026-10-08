@@ -483,3 +483,27 @@ grafico a linee per settimana e confronto volumi tra schede **per gruppo muscola
   `drawCharts()`.
 - **Guardia**: `tests/phase30-statistiche-volume.test.mjs`.
 - **Bump `v147.98-statistiche`** (29 file).
+
+## FASE 4-bis — Torta con freccette + settimane di un solo gruppo (v147.99)
+Alice: *"nel grafico a torta aggiungi anche la legenda con i gruppi muscolari
+(magari una freccetta su ogni colore con scritto il nome del gruppo)… un po' più
+carina con animazioni… Aggiungi anche il grafico per settimane di un solo gruppo
+alla volta."*
+- **Torta**: `drawVolumePie()` ora disegna **freccette (callout)** attorno al cerchio,
+  ognuna con il **nome del gruppo muscolare + percentuale** (`edge()`, label
+  `` `${muscle} ${round(total/total*100)}%` ``). Raggio ridotto (`- 52`) per fare spazio.
+- **Animazione**: `animateVolumePie()` rivela la torta da 0→1 in ~650ms via
+  `requestAnimationFrame`; rispetta `prefers-reduced-motion`, ha paracadute
+  `maxFrames` per harness con rAF sincrono, e fallback immediato senza rAF.
+  `drawCharts(animate)` → `drawVolumeCharts(animate !== false)`: animazione sui render
+  completi, ridisegno immediato sul resize. Helper `volumeHexAlpha()` per i gradienti.
+- **Settimane di UN solo gruppo**: `drawVolumeLines()` mostra una sola linea (gruppo
+  scelto) con **area sfumata**, punti e nome in alto a sinistra. Nuovo selettore
+  `#volumeGroupSelect` + `state.ui.volumeGroup` (helpers `clampVolumeGroup()`,
+  `currentVolumeLineRows()`, `currentVolumeGroupRow()`). Cambiando scheda riparte dal
+  gruppo col volume più alto (`state.ui.volumeGroup = 0`).
+- **CSS**: `.volume-chart-card` con hover (`translateY(-2px)`), `.mini` per l'etichetta
+  del selettore.
+- **Guardia**: `tests/phase30-statistiche-volume.test.mjs` esteso (callout label,
+  `volumeGroupSelect`, `animateVolumePie`, hover).
+- **Bump `v147.99-torta-frecce`** (29 file).

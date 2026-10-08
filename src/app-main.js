@@ -7226,7 +7226,7 @@ function sanitizeForFirestore(value) {
       }
       if (activeScreen !== "coach") {
         renderEngine();
-        drawCharts();
+        drawCharts(); // animazione della torta solo sui render completi
       }
       lastRenderedScreen = activeScreen;
       restoreCoachViewport(coachViewport);
@@ -12783,12 +12783,34 @@ function sanitizeForFirestore(value) {
         .replace(/Intensita/i, "Intensità");
     }
 
+    function clampVolumeGroup(value, length) {
+      const index = Math.round(Number(value) || 0);
+      if (!Number.isFinite(index) || index < 0) return 0;
+      return Math.min(index, Math.max(0, length - 1));
+    }
+
+    // Righe usate dal grafico settimanale: solo gruppi con almeno una settimana
+    // a volume > 0, ordinate per volume decrescente (stessa logica della torta).
+    function currentVolumeLineRows() {
+      const block = currentVolumeBlock();
+      return block ? block.rows.filter((row) => row.weeks.some((value) => value > 0)).sort((a, b) => b.total - a.total) : [];
+    }
+
+    function currentVolumeGroupRow() {
+      const rows = currentVolumeLineRows();
+      if (!rows.length) return null;
+      const index = clampVolumeGroup(state.ui?.volumeGroup, rows.length);
+      return rows[index];
+    }
+
     function statisticsVolumeHtml() {
       const blocks = VOLUME_HISTORY;
       const index = clampVolumeIndex(state.ui?.volumeSheet);
       const block = blocks[index];
       const rows = currentVolumeRows();
       const total = rows.reduce((sum, row) => sum + row.total, 0);
+      const lineRows = currentVolumeLineRows();
+      const groupIndex = clampVolumeGroup(state.ui?.volumeGroup, Math.max(1, lineRows.length));
       return `
         <section class="card statistics-volume">
           <div class="row"><h3>Volume per scheda</h3><span class="chip">${blocks.length} schede · ${total} serie</span></div>
@@ -12801,10 +12823,15 @@ function sanitizeForFirestore(value) {
           <div class="volume-charts">
             <div class="volume-chart-card">
               <div class="section-eyebrow">Ripartizione per gruppo muscolare</div>
-              <canvas id="volumePieChart" height="220"></canvas>
+              <canvas id="volumePieChart" height="260"></canvas>
             </div>
             <div class="volume-chart-card">
               <div class="section-eyebrow">Andamento settimanale</div>
+              <label class="mini">Gruppo muscolare
+                <select id="volumeGroupSelect" ${lineRows.length ? "" : "disabled"}>
+                  ${lineRows.map((row, i) => `<option value="${i}" ${i === groupIndex ? "selected" : ""}>${escapeHtml(row.muscle)}</option>`).join("")}
+                </select>
+              </label>
               <canvas id="volumeLineChart" height="220"></canvas>
             </div>
           </div>
@@ -12827,9 +12854,45 @@ function sanitizeForFirestore(value) {
     }
 
     // --- Grafici canvas ---------------------------------------------------
-    function drawVolumeCharts() {
-      drawVolumePie();
+    function drawVolumeCharts(animate) {
+      if (animate) animateVolumePie();
+      else { volumePieProgress = 1; drawVolumePie(); }
       drawVolumeLines();
+    }
+
+    // Animazione di rivelazione della torta: va da 0 a 1 e viene disegnata una
+    // "fetta alla volta" tramite requestAnimationFrame. `volumePieRaf` evita
+    // che un nuovo render lasci un vecchio loop attivo.
+    let volumePieProgress = 1;
+    let volumePieRaf = 0;
+
+    function animateVolumePie() {
+      // Ambiente di test / SSR: senza requestAnimationFrame disegno subito la torta piena.
+      if (typeof requestAnimationFrame !== "function") { volumePieProgress = 1; drawVolumePie(); return; }
+      if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(volumePieRaf);
+      const reduceMotion = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+      if (reduceMotion) { volumePieProgress = 1; drawVolumePie(); return; }
+      volumePieProgress = 0;
+      const start = (typeof performance !== "undefined" ? performance.now() : Date.now());
+      let frames = 0;
+      const maxFrames = 90; // paracadute: alcuni harness chiamano rAF in modo sincrono
+      const step = (now) => {
+        frames += 1;
+        const elapsed = (Number.isFinite(now) ? now : start) - start;
+        volumePieProgress = Math.min(1, Math.max(frames / 40, elapsed / 650));
+        drawVolumePie();
+        if (volumePieProgress < 1 && frames < maxFrames) volumePieRaf = requestAnimationFrame(step);
+      };
+      volumePieRaf = requestAnimationFrame(step);
+    }
+
+    // Converte un colore esadecimale (#rrggbb) in rgba() con l'alpha indicato.
+    function volumeHexAlpha(hex, alpha) {
+      const value = String(hex || "").replace("#", "");
+      const num = parseInt(value.length === 3 ? value.split("").map((c) => c + c).join("") : value, 16);
+      if (!Number.isFinite(num)) return `rgba(255,111,203,${alpha})`;
+      const r = (num >> 16) & 255, g = (num >> 8) & 255, b = num & 255;
+      return `rgba(${r},${g},${b},${alpha})`;
     }
 
     function drawVolumePie() {
@@ -12846,10 +12909,13 @@ function sanitizeForFirestore(value) {
       }
       const total = rows.reduce((sum, row) => sum + row.total, 0);
       const cx = width / 2, cy = height / 2;
-      const radius = Math.max(40, Math.min(width, height) / 2 - 16);
+      // Margini ampi per ospitare le freccette con i nomi attorno alla torta.
+      const radius = Math.max(34, Math.min(width, height) / 2 - 52);
+      const progress = volumePieProgress;
       let angle = -Math.PI / 2;
       rows.forEach((row, i) => {
-        const slice = (row.total / total) * Math.PI * 2;
+        const full = (row.total / total) * Math.PI * 2;
+        const slice = full * progress;
         ctx.beginPath();
         ctx.moveTo(cx, cy);
         ctx.arc(cx, cy, radius, angle, angle + slice);
@@ -12859,7 +12925,7 @@ function sanitizeForFirestore(value) {
         ctx.strokeStyle = "rgba(20,10,30,.55)";
         ctx.lineWidth = 2;
         ctx.stroke();
-        angle += slice;
+        angle += full; // gli angoli restano quelli pieni: solo il disegno è animato
       });
       ctx.beginPath();
       ctx.arc(cx, cy, radius * 0.56, 0, Math.PI * 2);
@@ -12872,6 +12938,38 @@ function sanitizeForFirestore(value) {
       ctx.fillStyle = "#D8C6DD";
       ctx.font = "11px Segoe UI, sans-serif";
       ctx.fillText("serie totali", cx, cy + 16);
+
+      // Freccette (callout) con il NOME del gruppo muscolare + percentuale.
+      const edge = (ang, extra) => ({ x: cx + Math.cos(ang) * (radius + extra), y: cy + Math.sin(ang) * (radius + extra) });
+      ctx.font = "600 11px Segoe UI, sans-serif";
+      ctx.textBaseline = "middle";
+      let marker = -Math.PI / 2;
+      rows.forEach((row, i) => {
+        const full = (row.total / total) * Math.PI * 2;
+        const mid = marker + full / 2;
+        const left = Math.cos(mid) < 0;
+        const color = VOLUME_PALETTE[i % VOLUME_PALETTE.length];
+        const p0 = edge(mid, radius * 0.02);
+        const p1 = edge(mid, 16);
+        const p2 = edge(mid, 30);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        const dir = left ? -1 : 1;
+        ctx.beginPath();
+        ctx.moveTo(p2.x, p2.y);
+        ctx.lineTo(p2.x - dir * 5, p2.y - 3.5);
+        ctx.lineTo(p2.x - dir * 5, p2.y + 3.5);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.fillStyle = "#FFF7FC";
+        ctx.textAlign = left ? "right" : "left";
+        const label = `${row.muscle} ${Math.round(row.total / total * 100)}%`;
+        ctx.fillText(label, p2.x + (left ? -7 : 7), p2.y);
+        marker += full;
+      });
+      ctx.textBaseline = "alphabetic";
     }
 
     function drawVolumeLines() {
@@ -12879,19 +12977,25 @@ function sanitizeForFirestore(value) {
       if (!prep) return;
       const { ctx, width, height } = prep;
       ctx.clearRect(0, 0, width, height);
-      const block = currentVolumeBlock();
-      const rows = block ? block.rows.filter((row) => row.weeks.some((value) => value > 0)).sort((a, b) => b.total - a.total).slice(0, 6) : [];
-      if (!rows.length) {
+      const row = currentVolumeGroupRow();
+      if (!row) {
         ctx.fillStyle = "rgba(255,255,255,.03)"; roundRect(ctx, 0, 0, width, height, 14); ctx.fill();
         ctx.fillStyle = "#8f8b85"; ctx.font = "13px Segoe UI, sans-serif"; ctx.textAlign = "center";
         ctx.fillText("Nessun andamento settimanale.", width / 2, height / 2);
         return;
       }
-      const weekCount = Math.max(...rows.map((row) => row.weeks.length));
-      const padLeft = 34, padRight = 12, padTop = 16, padBottom = 26;
+      const weeks = row.weeks;
+      const weekCount = weeks.length;
+      const padLeft = 38, padRight = 16, padTop = 22, padBottom = 28;
       const plotW = width - padLeft - padRight;
       const plotH = height - padTop - padBottom;
-      const max = Math.max(1, ...rows.flatMap((row) => row.weeks));
+      const max = Math.max(1, ...weeks);
+      const paletteIndex = currentVolumeLineRows().findIndex((item) => item.muscle === row.muscle);
+      const color = VOLUME_PALETTE[(paletteIndex < 0 ? 0 : paletteIndex) % VOLUME_PALETTE.length];
+      const X = (week) => padLeft + (weekCount === 1 ? plotW / 2 : (week / (weekCount - 1)) * plotW);
+      const Y = (value) => padTop + (max - value) / max * plotH;
+
+      // griglia + assi
       ctx.strokeStyle = "rgba(255,111,203,.12)";
       ctx.lineWidth = 1;
       ctx.fillStyle = "#89708d";
@@ -12903,27 +13007,41 @@ function sanitizeForFirestore(value) {
         ctx.fillText(String(Math.round(max - (i / 4) * max)), padLeft - 6, y + 3);
       }
       ctx.textAlign = "center";
-      for (let w = 0; w < weekCount; w++) {
-        const x = padLeft + (weekCount === 1 ? plotW / 2 : (w / (weekCount - 1)) * plotW);
-        ctx.fillText(`S${w + 1}`, x, height - 8);
+      for (let w = 0; w < weekCount; w++) ctx.fillText(`S${w + 1}`, X(w), height - 8);
+
+      // area riempita (sfumatura) sotto la linea; fallback piatto se il contesto
+      // non supporta i gradienti (es. canvas finto nei test).
+      const grad = typeof ctx.createLinearGradient === "function" ? ctx.createLinearGradient(0, padTop, 0, height - padBottom) : null;
+      if (grad && typeof grad.addColorStop === "function") {
+        grad.addColorStop(0, volumeHexAlpha(color, 0.35));
+        grad.addColorStop(1, volumeHexAlpha(color, 0));
       }
-      rows.forEach((row, i) => {
-        const color = VOLUME_PALETTE[i % VOLUME_PALETTE.length];
-        ctx.beginPath();
-        row.weeks.forEach((value, w) => {
-          const x = padLeft + (weekCount === 1 ? plotW / 2 : (w / (weekCount - 1)) * plotW);
-          const y = padTop + (max - value) / max * plotH;
-          if (w === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        });
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2.5;
-        ctx.stroke();
-        row.weeks.forEach((value, w) => {
-          const x = padLeft + (weekCount === 1 ? plotW / 2 : (w / (weekCount - 1)) * plotW);
-          const y = padTop + (max - value) / max * plotH;
-          ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
-        });
+      ctx.beginPath();
+      ctx.moveTo(X(0), height - padBottom);
+      weeks.forEach((value, w) => ctx.lineTo(X(w), Y(value)));
+      ctx.lineTo(X(weekCount - 1), height - padBottom);
+      ctx.closePath();
+      ctx.fillStyle = grad || volumeHexAlpha(color, 0.18);
+      ctx.fill();
+
+      // linea del gruppo selezionato
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      weeks.forEach((value, w) => { if (w === 0) ctx.moveTo(X(w), Y(value)); else ctx.lineTo(X(w), Y(value)); });
+      ctx.stroke();
+      weeks.forEach((value, w) => {
+        ctx.beginPath(); ctx.arc(X(w), Y(value), 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = color; ctx.fill();
+        ctx.strokeStyle = "rgba(20,10,30,.55)"; ctx.lineWidth = 1.5; ctx.stroke();
       });
+
+      // etichetta del gruppo in alto a sinistra
+      ctx.fillStyle = "#FFF7FC";
+      ctx.textAlign = "left";
+      ctx.font = "700 12px Segoe UI, sans-serif";
+      ctx.fillText(row.muscle, padLeft, padTop - 6);
     }
 
     function bindScreen() {
@@ -14187,6 +14305,16 @@ function sanitizeForFirestore(value) {
         volumeSheetSelect.addEventListener("change", () => {
           state.ui = state.ui || {};
           state.ui.volumeSheet = clampVolumeIndex(volumeSheetSelect.value);
+          state.ui.volumeGroup = 0; // cambiando scheda riparto dal gruppo col volume più alto
+          saveState();
+          render();
+        });
+      }
+      const volumeGroupSelect = document.getElementById("volumeGroupSelect");
+      if (volumeGroupSelect) {
+        volumeGroupSelect.addEventListener("change", () => {
+          state.ui = state.ui || {};
+          state.ui.volumeGroup = clampVolumeGroup(volumeGroupSelect.value, currentVolumeLineRows().length);
           saveState();
           render();
         });
@@ -15855,11 +15983,13 @@ function sanitizeForFirestore(value) {
       priorityTree.innerHTML = priorityHtml();
     }
 
-    function drawCharts() {
+    function drawCharts(animate) {
       drawProgressChart();
       drawWeightChart();
       // FASE 4 — grafici della tab Volume (solo se presenti nel DOM).
-      drawVolumeCharts();
+      // L'animazione della torta è attiva di default sui render completi; sul
+      // resize passiamo `false` per ridisegnare subito, senza animare.
+      drawVolumeCharts(animate !== false);
     }
 
     function prepCanvas(id) {
@@ -16134,7 +16264,7 @@ function sanitizeForFirestore(value) {
       if (chartResizeFrame || document.hidden) return;
       chartResizeFrame = requestAnimationFrame(() => {
         chartResizeFrame = null;
-        drawCharts();
+        drawCharts(false); // resize: ridisegno immediato, senza animazione
       });
     }
     window.addEventListener("resize", scheduleChartRedraw, { passive:true });

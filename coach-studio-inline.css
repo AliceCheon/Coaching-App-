@@ -5222,8 +5222,11 @@ html[data-theme="light"] .journal-rpe { background: #fff; color: #2b2233; }
     .statistics-panel { display:grid; gap:12px; }
     .statistics-volume { display:grid; gap:12px; }
     .volume-charts { display:grid; gap:12px; grid-template-columns:1fr; margin-top:6px; }
-    .volume-chart-card { border-radius:14px; border:1px solid var(--line-soft); background:rgba(255,255,255,.025); padding:12px; display:grid; gap:8px; }
+    .volume-chart-card { border-radius:14px; border:1px solid var(--line-soft); background:rgba(255,255,255,.025); padding:12px; display:grid; gap:8px; transition:transform .25s ease, border-color .25s ease; }
+    .volume-chart-card:hover { transform:translateY(-2px); border-color:rgba(201,167,255,.28); }
     .volume-chart-card canvas { width:100%; }
+    .volume-chart-card .mini { font-size:.68rem; color:var(--muted); margin-top:2px; }
+    .volume-chart-card .mini select { margin-top:4px; padding:7px; font-size:.78rem; }
     .volume-legend { display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:6px; }
     .volume-legend span { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:.7rem; }
     .volume-legend i { width:9px; height:9px; border-radius:3px; background:var(--c,var(--pink-primary)); }
