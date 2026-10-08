@@ -7222,7 +7222,7 @@ function sanitizeForFirestore(value) {
           noteDivaBotWorkoutInteraction();
         }
       } else {
-        stopWorkoutMascotExpressions(); // FASE 3-ter: fuori dall'allenamento il robottino non "gira" più le espressioni
+        stopWorkoutMascotCompanionship(); // FASE 3-ter-bis: fuori dall'allenamento Diva Bot non "gira" più
       }
       if (activeScreen !== "coach") {
         renderEngine();
@@ -7731,7 +7731,7 @@ function sanitizeForFirestore(value) {
       const divaBotBubbles = divaBotPreferences().bubbles;
       const divaBotCelebrations = divaBotPreferences().celebrations;
       const divaBotSounds = divaBotPreferences().sounds;
-      return workoutMascotVisible ? `<div id="workoutMascotLayer" class="workout-mascot-layer" role="group" aria-label="Diva Bot durante l'allenamento"><div class="workout-mascot-anchor" data-position="${workoutMascotPosition}"><button type="button" id="workoutMascotButton" class="workout-mascot-button" aria-label="Trascina Diva Bot; doppio tocco per le espressioni" title="Trascina Diva Bot dove vuoi · doppio tocco: espressioni · tocco lungo: menu" aria-haspopup="menu">${coachMascotHtml("workout-floating")}</button><div id="workoutMascotBubble" class="workout-mascot-bubble" role="status" aria-live="polite" hidden></div><div id="workoutMascotMenu" class="workout-mascot-menu" role="menu" hidden><strong>Diva Bot</strong><label><input type="checkbox" data-workout-mascot-visible checked> Mostra Diva Bot durante l'allenamento</label><label>Personalità<select data-diva-bot-personality><option value="silent" ${divaBotPersonality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${divaBotPersonality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${divaBotPersonality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-bubbles ${divaBotBubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-celebrations ${divaBotCelebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-sounds ${divaBotSounds ? "checked" : ""}> Suoni Diva Bot</label><button type="button" data-workout-mascot-expressions>Mostra tutte le espressioni</button><button type="button" data-workout-mascot-reset>Rimetti in alto a destra</button><button type="button" data-workout-mascot-hide>Nascondi Diva Bot</button></div></div></div>` : `<button type="button" class="workout-mascot-restore" data-workout-mascot-show>Mostra Diva Bot durante l'allenamento</button>`;
+      return workoutMascotVisible ? `<div id="workoutMascotLayer" class="workout-mascot-layer" role="group" aria-label="Diva Bot durante l'allenamento"><div class="workout-mascot-anchor" data-position="${workoutMascotPosition}"><button type="button" id="workoutMascotButton" class="workout-mascot-button" aria-label="Trascina Diva Bot; doppio tocco per un saluto" title="Trascina Diva Bot dove vuoi · doppio tocco: un saluto · tocco lungo: menu" aria-haspopup="menu">${coachMascotHtml("workout-floating")}</button><div id="workoutMascotBubble" class="workout-mascot-bubble" role="status" aria-live="polite" hidden></div><div id="workoutMascotMenu" class="workout-mascot-menu" role="menu" hidden><strong>Diva Bot</strong><label><input type="checkbox" data-workout-mascot-visible checked> Mostra Diva Bot durante l'allenamento</label><label>Personalità<select data-diva-bot-personality><option value="silent" ${divaBotPersonality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${divaBotPersonality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${divaBotPersonality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-bubbles ${divaBotBubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-celebrations ${divaBotCelebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-sounds ${divaBotSounds ? "checked" : ""}> Suoni Diva Bot</label><button type="button" data-workout-mascot-reset>Rimetti in alto a destra</button><button type="button" data-workout-mascot-hide>Nascondi Diva Bot</button></div></div></div>` : `<button type="button" class="workout-mascot-restore" data-workout-mascot-show>Mostra Diva Bot durante l'allenamento</button>`;
     }
 
     function trainingHtml() {
@@ -7747,7 +7747,7 @@ function sanitizeForFirestore(value) {
       const divaBotBubbles = divaBotPreferences().bubbles;
       const divaBotCelebrations = divaBotPreferences().celebrations;
       const divaBotSounds = divaBotPreferences().sounds;
-      const workoutMascotLayer = workoutMascotVisible ? `<div id="workoutMascotLayer" class="workout-mascot-layer" role="group" aria-label="Diva Bot durante l'allenamento"><div class="workout-mascot-anchor" data-position="${workoutMascotPosition}"><button type="button" id="workoutMascotButton" class="workout-mascot-button" aria-label="Trascina Diva Bot; doppio tocco per le espressioni" title="Trascina Diva Bot dove vuoi · doppio tocco: espressioni · tocco lungo: menu" aria-haspopup="menu">${coachMascotHtml("workout-floating")}</button><div id="workoutMascotBubble" class="workout-mascot-bubble" role="status" aria-live="polite" hidden></div><div id="workoutMascotMenu" class="workout-mascot-menu" role="menu" hidden><strong>Diva Bot</strong><label><input type="checkbox" data-workout-mascot-visible checked> Mostra Diva Bot durante l'allenamento</label><label>Personalità<select data-diva-bot-personality><option value="silent" ${divaBotPersonality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${divaBotPersonality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${divaBotPersonality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-bubbles ${divaBotBubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-celebrations ${divaBotCelebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-sounds ${divaBotSounds ? "checked" : ""}> Suoni Diva Bot</label><button type="button" data-workout-mascot-expressions>Mostra tutte le espressioni</button><button type="button" data-workout-mascot-reset>Rimetti in alto a destra</button><button type="button" data-workout-mascot-hide>Nascondi Diva Bot</button></div></div></div>` : `<button type="button" class="workout-mascot-restore" data-workout-mascot-show>Mostra Diva Bot durante l'allenamento</button>`;
+      const workoutMascotLayer = workoutMascotVisible ? `<div id="workoutMascotLayer" class="workout-mascot-layer" role="group" aria-label="Diva Bot durante l'allenamento"><div class="workout-mascot-anchor" data-position="${workoutMascotPosition}"><button type="button" id="workoutMascotButton" class="workout-mascot-button" aria-label="Trascina Diva Bot; doppio tocco per un saluto" title="Trascina Diva Bot dove vuoi · doppio tocco: un saluto · tocco lungo: menu" aria-haspopup="menu">${coachMascotHtml("workout-floating")}</button><div id="workoutMascotBubble" class="workout-mascot-bubble" role="status" aria-live="polite" hidden></div><div id="workoutMascotMenu" class="workout-mascot-menu" role="menu" hidden><strong>Diva Bot</strong><label><input type="checkbox" data-workout-mascot-visible checked> Mostra Diva Bot durante l'allenamento</label><label>Personalità<select data-diva-bot-personality><option value="silent" ${divaBotPersonality === "silent" ? "selected" : ""}>Silenziosa</option><option value="balanced" ${divaBotPersonality === "balanced" ? "selected" : ""}>Equilibrata</option><option value="diva" ${divaBotPersonality === "diva" ? "selected" : ""}>Diva Mode</option></select></label><label><input type="checkbox" data-diva-bot-bubbles ${divaBotBubbles ? "checked" : ""}> Mostra fumetti motivazionali</label><label><input type="checkbox" data-diva-bot-celebrations ${divaBotCelebrations ? "checked" : ""}> Mostra animazioni di celebrazione</label><label><input type="checkbox" data-diva-bot-sounds ${divaBotSounds ? "checked" : ""}> Suoni Diva Bot</label><button type="button" data-workout-mascot-reset>Rimetti in alto a destra</button><button type="button" data-workout-mascot-hide>Nascondi Diva Bot</button></div></div></div>` : `<button type="button" class="workout-mascot-restore" data-workout-mascot-show>Mostra Diva Bot durante l'allenamento</button>`;
       const sessionNote = String(displayLabel(session.note || ""))
         .replace(/settimana\s+\d+/gi, `settimana ${context.week}`)
         .replace(/week\s+\d+/gi, `settimana ${context.week}`);
@@ -10062,13 +10062,19 @@ function sanitizeForFirestore(value) {
 
     const COACH_MASCOT_STATES = new Set(["idle", "happy", "celebrate", "thinking", "encouraging", "lifting", "warning", "rest"]);
     const WORKOUT_MASCOT_POSITIONS = new Set(["top-right", "middle-right", "bottom-right", "bottom-left"]);
-    // FASE 3-ter — posizione libera + espressioni di Diva Bot.
-    // "Show" completo (doppio tocco o voce di menu): mostra tutte le facce.
-    const WORKOUT_MASCOT_SHOW_EXPRESSIONS = ["happy","celebrate","lifting","thinking","encouraging","warning","rest"];
-    // Rotazione ambientale: solo facce allegre/neutre, per restare non invadente.
-    const WORKOUT_MASCOT_IDLE_EXPRESSIONS = ["happy","thinking","encouraging","lifting"];
+    // FASE 3-ter-bis — Diva Bot fa le espressioni in base a QUELLO CHE SCRIVI:
+    // ogni faccia è agganciata a un evento reale (serie fatta, PR, RIR, recupero…)
+    // tramite DIVA_BOT_EVENTS. Qui sotto c'è solo la "compagnia": una rotazione
+    // lenta e discreta, con un messaggino breve, NON tutte le facce insieme.
+    const WORKOUT_MASCOT_COMPANIONSHIP = [
+      { state:"happy", messages:["Sono qui con te. Una serie alla volta.","Ci penso io al cronometro, tu pensa a sollevare.","Respira, tecnica pulita, poi si spinge."] },
+      { state:"encouraging", messages:["Vai così, la tecnica è bellissima.","Sei più forte di stamattina, me lo sento.","Un'altra serie e siamo a posto."] },
+      { state:"thinking", messages:["Sto contando i tuoi kg. Non barare.","Sto pensando a quanto stai andando bene.","Qui a controllare che non ti distragga."] },
+      { state:"lifting", messages:["Carica bene e spingi: ti guardo.","Fammi vedere una bella ripetizione.","Tecnica sopra tutto, poi il carico."] },
+      { state:"rest", messages:["Recupera: la prossima serie è tua.","Riposa, il bilanciere ti aspetta.","Prendi fiato, Diva. Poi si torna."] }
+    ];
     const coachMascotController = { state:"idle", message:"", temporaryTimer:null, blinkTimer:null, blinkResetTimer:null, reactionTimer:null, weightTimer:null, lastWeightReactionAt:0, recentMessages:[], popTimer:null };
-    const workoutMascotUi = { drag:null, scrollTimer:null, resizeTimer:null, longPressTimer:null, suppressClick:false, globalBound:false, expressionTimer:null, expressionIndex:0, showTimer:null, tapTimer:null, lastTapAt:0 };
+    const workoutMascotUi = { drag:null, scrollTimer:null, resizeTimer:null, longPressTimer:null, suppressClick:false, globalBound:false, companionshipTimer:null, companionshipIndex:0, lastCompanionshipAt:0, menuOutsideBound:false, lastTapAt:0 };
     const DIVA_BOT_PERSONALITIES = new Set(["silent", "balanced", "diva"]);
     const DIVA_BOT_PRIORITY = { low:1, medium:2, high:3, critical:4 };
     const DIVA_BOT_EVENTS = {
@@ -10493,47 +10499,45 @@ function sanitizeForFirestore(value) {
       }
     }
 
-    // FASE 3-ter — rotazione "ambientale" delle espressioni + "show" completo.
-    // L'ambiente è raro e solo con facce allegre/neutre (non invasivo); lo show
-    // (doppio tocco o voce di menu) passa in rassegna tutte le espressioni.
-    function startWorkoutMascotExpressions() {
-      clearTimeout(workoutMascotUi.expressionTimer);
+    // FASE 3-ter-bis — "compagnia": rotazione lenta e discreta. Diva Bot cambia
+    // faccia SOLO quando è libera (nessuna reazione in corso) e ogni tanto scrive
+    // un messaggino nel fumetto. Niente più tutte le espressioni tutte insieme.
+    function startWorkoutMascotCompanionship() {
+      clearTimeout(workoutMascotUi.companionshipTimer);
       if (effectiveAnimationMode() !== "full") return;
       const schedule = () => {
-        workoutMascotUi.expressionTimer = setTimeout(() => {
-          if (activeScreen !== "training" || document.hidden || document.querySelector(".coach-modal-backdrop,.coach-mobile-modal-backdrop")) { schedule(); return; }
-          const list = WORKOUT_MASCOT_IDLE_EXPRESSIONS;
-          workoutMascotUi.expressionIndex = (workoutMascotUi.expressionIndex + 1) % list.length;
-          if (coachMascotController.state === "idle") setCoachMascotState(list[workoutMascotUi.expressionIndex], { duration:2600, returnState:"idle", silentSound:true });
+        workoutMascotUi.companionshipTimer = setTimeout(() => {
+          if (activeScreen !== "training" || document.hidden || document.querySelector(".coach-modal-backdrop,.coach-mobile-modal-backdrop") || document.activeElement?.matches?.("input,textarea,select")) { schedule(); return; }
+          if (coachMascotController.state !== "idle") { schedule(); return; } // lascia spazio a quello che "scrivi"
+          const list = WORKOUT_MASCOT_COMPANIONSHIP;
+          workoutMascotUi.companionshipIndex = (workoutMascotUi.companionshipIndex + 1) % list.length;
+          const beat = list[workoutMascotUi.companionshipIndex];
+          setCoachMascotState(beat.state, { duration:4600, returnState:"idle", silentSound:true });
+          if (beat.messages?.length && Math.random() < 0.55 && workoutMascotVisible()) {
+            showWorkoutMascotBubble(beat.messages[Math.floor(Math.random() * beat.messages.length)]);
+          }
+          workoutMascotUi.lastCompanionshipAt = Date.now();
           schedule();
-        }, 26000);
+        }, 32000 + Math.round(Math.random() * 26000)); // 32–58s: presente, non insistente
       };
       schedule();
     }
 
-    function stopWorkoutMascotExpressions() {
-      clearTimeout(workoutMascotUi.expressionTimer);
-      clearTimeout(workoutMascotUi.showTimer);
-      clearTimeout(workoutMascotUi.tapTimer);
-      workoutMascotUi.expressionTimer = null;
-      workoutMascotUi.showTimer = null;
-      workoutMascotUi.tapTimer = null;
-      workoutMascotUi.lastTapAt = 0;
+    function stopWorkoutMascotCompanionship() {
+      clearTimeout(workoutMascotUi.companionshipTimer);
+      workoutMascotUi.companionshipTimer = null;
     }
 
-    function showWorkoutMascotExpressionShow() {
-      clearTimeout(workoutMascotUi.showTimer);
-      stopWorkoutMascotExpressions();
-      const list = WORKOUT_MASCOT_SHOW_EXPRESSIONS;
-      let index = 0;
-      const step = () => {
-        if (activeScreen !== "training") return;
-        setCoachMascotState(list[index], { duration:1000, returnState:"idle", silentSound:true });
-        index += 1;
-        if (index < list.length) workoutMascotUi.showTimer = setTimeout(step, 900);
-        else workoutMascotUi.showTimer = setTimeout(() => { setCoachMascotState("idle", { silentSound:true }); startWorkoutMascotExpressions(); }, 1100);
-      };
-      step();
+    // Doppio tocco sulla mascotte → subito una piccola reazione di compagnia
+    // (una faccia + eventuale messaggino), non più "tutte le facce assieme".
+    function reactWorkoutMascotCompanionship() {
+      if (activeScreen !== "training") return false;
+      const list = WORKOUT_MASCOT_COMPANIONSHIP;
+      workoutMascotUi.companionshipIndex = (workoutMascotUi.companionshipIndex + 1) % list.length;
+      const beat = list[workoutMascotUi.companionshipIndex];
+      setCoachMascotState(beat.state, { duration:3600, returnState:"idle", silentSound:true });
+      if (beat.messages?.length && workoutMascotVisible()) showWorkoutMascotBubble(beat.messages[Math.floor(Math.random() * beat.messages.length)]);
+      return true;
     }
 
     function bindWorkoutMascot() {
@@ -10566,11 +10570,23 @@ function sanitizeForFirestore(value) {
         moveWorkoutMascot(state.ui.workoutMascotPosition || "top-right");
         requestAnimationFrame(() => anchor?.classList.remove("is-restoring"));
       });
-      if (!workoutMascotUi.expressionTimer && !workoutMascotUi.showTimer) startWorkoutMascotExpressions();
+      if (!workoutMascotUi.companionshipTimer) startWorkoutMascotCompanionship();
       // I listener si legano una sola volta per istanza della maschera: l HTML di
       // Allenamento viene ricreato spesso e senza questa guardia si accumulerebbero.
       if (!layer || layer.dataset.workoutMascotBound === "true") return;
       layer.dataset.workoutMascotBound = "true";
+      // Chiusura menu: click/tocco FUORI dal menu, oppure tasto Esc. (Prima il menu
+      // restava aperto per sempre: ora si toglie da solo.)
+      if (!workoutMascotUi.menuOutsideBound) {
+        workoutMascotUi.menuOutsideBound = true;
+        document.addEventListener("pointerdown", (event) => {
+          const menu = document.getElementById("workoutMascotMenu");
+          if (!menu || menu.hidden) return;
+          if (menu.contains(event.target) || event.target?.closest?.("#workoutMascotButton")) return;
+          showWorkoutMascotMenuHide();
+        }, true);
+        document.addEventListener("keydown", (event) => { if (event.key === "Escape") showWorkoutMascotMenuHide(); });
+      }
       button.addEventListener("contextmenu", (event) => { event.preventDefault(); showWorkoutMascotMenu(); });
       button.addEventListener("pointerdown", (event) => {
         if (event.button != null && event.button !== 0) return;
@@ -10589,18 +10605,16 @@ function sanitizeForFirestore(value) {
       button.addEventListener("pointercancel", () => clearTimeout(workoutMascotUi.longPressTimer));
       button.addEventListener("click", () => {
         if (workoutMascotUi.suppressClick) { workoutMascotUi.suppressClick = false; return; }
-        // Doppio tocco → "show" con tutte le espressioni. Tocco singolo = nessuna
-        // azione (Diva Bot si trascina), così non sposta più di scatto la mascotte.
+        // Doppio tocco → subito un piccolo saluto di compagnia. Tocco singolo =
+        // nessuna azione (Diva Bot si trascina), così non ti sorprende mai.
         const now = Date.now();
         if (now - workoutMascotUi.lastTapAt < 320) {
-          clearTimeout(workoutMascotUi.tapTimer);
           workoutMascotUi.lastTapAt = 0;
-          showWorkoutMascotExpressionShow();
+          reactWorkoutMascotCompanionship();
           return;
         }
         workoutMascotUi.lastTapAt = now;
       });
-      document.querySelector("[data-workout-mascot-expressions]")?.addEventListener("click", () => { showWorkoutMascotMenuHide(); showWorkoutMascotExpressionShow(); });
       document.querySelector("[data-workout-mascot-reset]")?.addEventListener("click", () => {
         state.ui = state.ui || {};
         state.ui.workoutMascotFree = false;

@@ -137,3 +137,8 @@ invasivo**, sempre dietro i gateway `premiumMotionEnabled()`/`effectiveAnimation
 1. Leggere `docs/memory-bank/progress_log.md` (checkpoint 18) e `AGENTS.md`.
 2. Verificare suite verde (`node --test tests/*.test.mjs`, in background).
 3. **FASE 4 (Statistiche)**: confermare lo scope con Alice prima di implementare.
+
+## Checkpoint 19 — FASE 3-ter-bis DONE (v147.96-robottina-compagnia)
+- Diva Bot ora fa le espressioni **contestuali** (in base a quello che scrivi/eventi reali) + una rotazione di "compagnia" lenta e discreta. Niente più tutte le facce assieme. Doppio tocco = un saluto.
+- Il menu si chiude cliccando fuori o con Esc.
+- Suite verde (237/228/0/9). Bump v147.96.

@@ -278,3 +278,13 @@ Obiettivo:
 - **Bump**: `node tools/bump-version.mjs v147.95-robottino-mobile` (29 file) → nuovo `CACHE_NAME` del SW.
 - Vincoli rispettati: NON toccata "Intensità agosto-ottobre"; RIR/RPE vuoti.
 - Prossimo step: **FASE 4 — Statistiche** (confermare scope con Alice; candidato = agganciare `src/goals-stats.js`, `src/progress-charts.js`, `src/consistency-heatmap.js`).
+
+## Checkpoint 19 — FASE 3-ter-bis: Diva Bot contestuale + menu che si chiude (v147.96-robottina-compagnia)
+- **Lamentele Alice**: (1) le espressioni partivano *tutte assieme* con un gesto → le vuole *in base a quello che scrive*, e di "compagnia" mentre è sull'app; (2) il menu (popup) non si chiudeva più.
+- **Espressioni contestuali**: già veicolate da `DIVA_BOT_EVENTS` (serie→happy, PR/workout→celebrate, load_up→lifting, recovery/rir→warning, analysis→thinking, idle→rest). Niente più "show" forzato di tutte le facce.
+- **Compagnia**: `WORKOUT_MASCOT_COMPANIONSHIP` + `start/stop/reactWorkoutMascotCompanionship()`. Rotazione ogni 32–58s, **solo se `idle`**, salta mentre digiti (input/textarea/select). Doppio tocco = 1 faccia + 1 saluto. Rimosse `WORKOUT_MASCOT_SHOW_EXPRESSIONS`, `WORKOUT_MASCOT_IDLE_EXPRESSIONS`, `showWorkoutMascotExpressionShow()` e il pulsante "Mostra tutte le espressioni".
+- **Menu che si chiude**: `pointerdown` capture fuori dal menu (`menu.contains(event.target)` → ignora) + `Escape`.
+- **Suite**: `node --test tests/*.test.mjs` → **237 test, 228 pass, 0 fail, 9 skipped, EXIT:0**.
+- **Bump**: `node tools/bump-version.mjs v147.96-robottina-compagnia` (29 file).
+- Vincoli rispettati: NON toccata "Intensità agosto-ottobre"; RIR/RPE vuoti.
+- Prossimo step: FASE 4 — Statistiche (confermare scope con Alice).
