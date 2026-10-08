@@ -449,3 +449,17 @@ del menu non si toglie più."* Due interventi in `src/app-main.js`.
 - **Guardia**: `tests/phase23-floating-workout-mascot.test.mjs` esteso
   (compagnia contestuale + `menu.contains(event.target)` + `Escape`).
 - **Bump `v147.96-robottina-compagnia`** (29 file).
+
+## FASE 3-ter-quater — Fix: Diva Bot immobile + menu sparito (v147.97)
+Alice: *"La robottina non si muove mai e il menù è sparito."* REGRESSIONE mia.
+- **Causa**: trascinamento e menu erano legati direttamente a `#workoutMascotButton`,
+  che viene ricreato ad ogni render dell'Allenamento: alla prima ricreazione i
+  listener sparivano → bot immobile e menu assente (mentre la "compagnia" restava
+  attiva perché su un timer).
+- **Fix**: `ensureWorkoutMascotDelegation()` lega **una sola volta** sul `document`
+  (delega: `contextmenu`, `pointerdown` capture per drag + chiusura fuori, `pointerup`,
+  `keydown` Esc, `click` per doppio tocco/reset/hide/show, `change` per le preferenze).
+  Sopravvive a TUTTI i re-render. `bindWorkoutMascot()` chiama la delega per prima.
+- **Guardia**: `tests/phase23-floating-workout-mascot.test.mjs` (delegationBound,
+  fromMascot, niente `layer.dataset.workoutMascotBound`/`menuOutsideBound`).
+- **Bump `v147.97-robottina-fix`** (29 file).
