@@ -45,4 +45,11 @@ assert.match(html, /data-side="left"/);
 assert.match(html, /menu.contains\(event.target\)/);
 assert.match(html, /event.key === "Escape"/);
 
+// FASE 3-ter-quater — drag/menu con DELEGAZIONE a livello documento (sopravvivono ai re-render).
+assert.match(html, /function ensureWorkoutMascotDelegation\(\)/);
+assert.match(html, /delegationBound/);
+assert.match(html, /const fromMascot = \(event\) => event\.target\?\.closest\?\.\("#workoutMascotButton"\)/);
+assert.match(html, /document\.addEventListener\("pointerdown", \(event\) => \{/);
+assert.doesNotMatch(html, /layer\.dataset\.workoutMascotBound/);
+assert.doesNotMatch(html, /menuOutsideBound/);
 console.log(JSON.stringify({ ok:true, floating:true, drag:true, freePosition:true, companionship:true, contextualExpressions:true, menuClose:true, hide:true, singleRobot:true }));
