@@ -30,7 +30,7 @@ assert.match(html, /Scarica dati corrotti/);
 assert.match(html, /initializeDataSafety\(\)/);
 assert.match(html, /type === "automatic"/);
 assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14797-robottina-fix"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14798-statistiche"/);
 
 console.log(JSON.stringify({ ok:true, export:true, import:true, checksum:true, history:20, selectiveRestore:true, recovery:true }));
 

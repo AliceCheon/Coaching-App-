@@ -7159,7 +7159,7 @@ function sanitizeForFirestore(value) {
       const titleMap = {
         dashboard: [APP_NAME, OPENING_QUOTE],
         training: ["Workout del giorno", state.profile.phase],
-        progress: ["Analisi progressi", "Trend carichi e score"],
+        progress: ["Statistiche", "Analisi progressi e volume"],
         logbook: ["Logbook", "Storico allenamenti e PR"],
         volume: ["Volume", "Programmazione annuale"],
         quiz: ["Check-in", "Semaforo e benessere"],
@@ -7174,7 +7174,7 @@ function sanitizeForFirestore(value) {
       let newScreenHtml = null;
       if (activeScreen === "dashboard") newScreenHtml = dashboardHtml();
       else if (activeScreen === "training") newScreenHtml = trainingHtml();
-      else if (activeScreen === "progress") newScreenHtml = progressHtml();
+      else if (activeScreen === "progress") newScreenHtml = statisticsHtml(); // FASE 4
       else if (activeScreen === "logbook") newScreenHtml = logbookHtml();
       else if (activeScreen === "volume") newScreenHtml = volumeScreenHtml();
       else if (activeScreen === "quiz") newScreenHtml = quizHtml();
@@ -12730,6 +12730,202 @@ function sanitizeForFirestore(value) {
       host.appendChild(button);
     }
 
+    // ===================================================================
+    // FASE 4 — Sezione STATISTICHE (mockup navigabile).
+    // Due tab: "Analisi progressi" (contenuto storico esistente) e "Volume"
+    // (volume per scheda: torta per gruppo muscolare + linee per settimana +
+    // confronto tra schede per gruppo muscolare). Dati da VOLUME_HISTORY.
+    // ===================================================================
+    const VOLUME_PALETTE = ["#ff6fcb","#a990ff","#69e6b0","#ff9b49","#7fd0ff","#ff6e7d","#d8a4ff","#f4c86f","#7fe3d8","#ffa8d6","#c9e36b","#ff9f7a"];
+
+    function statisticsTab() {
+      return state.ui?.statisticsTab === "volume" ? "volume" : "progress";
+    }
+
+    function statisticsHtml() {
+      const tab = statisticsTab();
+      return `
+        <div class="hero-title">
+          <h2>Statistiche <span>Diva</span></h2>
+          <p>Analisi progressi e volume delle schede, in un unico posto.</p>
+        </div>
+        <div class="statistics-tabs" role="tablist" aria-label="Sezioni statistiche">
+          <button type="button" role="tab" class="statistics-tab ${tab === "progress" ? "active" : ""}" data-statistics-tab="progress" aria-selected="${tab === "progress"}">Analisi progressi</button>
+          <button type="button" role="tab" class="statistics-tab ${tab === "volume" ? "active" : ""}" data-statistics-tab="volume" aria-selected="${tab === "volume"}">Volume</button>
+        </div>
+        <div class="statistics-panel">
+          ${tab === "volume" ? statisticsVolumeHtml() : progressHtml()}
+        </div>
+      `;
+    }
+
+    function clampVolumeIndex(value) {
+      const index = Math.round(Number(value) || 0);
+      if (!Number.isFinite(index) || index < 0) return 0;
+      return Math.min(index, Math.max(0, VOLUME_HISTORY.length - 1));
+    }
+
+    function currentVolumeBlock() {
+      if (!VOLUME_HISTORY.length) return null;
+      return VOLUME_HISTORY[clampVolumeIndex(state.ui?.volumeSheet)];
+    }
+
+    function currentVolumeRows() {
+      const block = currentVolumeBlock();
+      return block ? block.rows.slice().sort((a, b) => b.total - a.total) : [];
+    }
+
+    function shortVolumeTitle(title) {
+      return displayLabel(title)
+        .replace(/^Volume\s+/i, "")
+        .replace(/program\s*/i, "P")
+        .replace(/Intensificazione/i, "Intensif.")
+        .replace(/Intensita/i, "Intensità");
+    }
+
+    function statisticsVolumeHtml() {
+      const blocks = VOLUME_HISTORY;
+      const index = clampVolumeIndex(state.ui?.volumeSheet);
+      const block = blocks[index];
+      const rows = currentVolumeRows();
+      const total = rows.reduce((sum, row) => sum + row.total, 0);
+      return `
+        <section class="card statistics-volume">
+          <div class="row"><h3>Volume per scheda</h3><span class="chip">${blocks.length} schede · ${total} serie</span></div>
+          <label>Scheda
+            <select id="volumeSheetSelect">
+              ${blocks.map((item, i) => `<option value="${i}" ${i === index ? "selected" : ""}>${escapeHtml(shortVolumeTitle(item.title))}</option>`).join("")}
+            </select>
+          </label>
+          <p class="micro-copy">${escapeHtml(displayLabel(block?.title || ""))} · fonte: ${escapeHtml(block?.source || "Programmazione annuale")}</p>
+          <div class="volume-charts">
+            <div class="volume-chart-card">
+              <div class="section-eyebrow">Ripartizione per gruppo muscolare</div>
+              <canvas id="volumePieChart" height="220"></canvas>
+            </div>
+            <div class="volume-chart-card">
+              <div class="section-eyebrow">Andamento settimanale</div>
+              <canvas id="volumeLineChart" height="220"></canvas>
+            </div>
+          </div>
+          <div class="volume-legend">${rows.slice(0, 12).map((row, i) => `<span><i style="--c:${VOLUME_PALETTE[i % VOLUME_PALETTE.length]}"></i>${escapeHtml(row.muscle)}</span>`).join("")}</div>
+        </section>
+        <section class="card">
+          <div class="row"><h3>Confronto schede per gruppo muscolare</h3><span class="chip">tutte le schede</span></div>
+          ${volumeComparisonHtml(blocks)}
+        </section>
+      `;
+    }
+
+    function volumeComparisonHtml(blocks) {
+      const muscles = [...new Set(blocks.flatMap((block) => block.rows.map((row) => row.muscle)))];
+      const perBlock = blocks.map((block) => { const map = {}; block.rows.forEach((row) => { map[row.muscle] = row.total; }); return map; });
+      const max = Math.max(1, ...perBlock.flatMap((map) => muscles.map((muscle) => map[muscle] || 0)));
+      const head = `<div class="volume-compare-head"><span class="vc-muscle">Gruppo</span>${blocks.map((block) => `<span>${escapeHtml(shortVolumeTitle(block.title))}</span>`).join("")}</div>`;
+      const body = muscles.map((muscle) => `<div class="volume-compare-row"><span class="vc-muscle">${escapeHtml(muscle)}</span>${blocks.map((block, i) => { const value = perBlock[i][muscle] || 0; return `<span class="vc-cell" title="${escapeHtml(shortVolumeTitle(block.title))} · ${escapeHtml(muscle)}: ${value}"><em style="--w:${Math.round(value / max * 100)}%;--c:${VOLUME_PALETTE[i % VOLUME_PALETTE.length]}"></em><b>${value}</b></span>`; }).join("")}</div>`).join("");
+      return `<div class="volume-compare">${head}${body}</div>`;
+    }
+
+    // --- Grafici canvas ---------------------------------------------------
+    function drawVolumeCharts() {
+      drawVolumePie();
+      drawVolumeLines();
+    }
+
+    function drawVolumePie() {
+      const prep = prepCanvas("volumePieChart");
+      if (!prep) return;
+      const { ctx, width, height } = prep;
+      ctx.clearRect(0, 0, width, height);
+      const rows = currentVolumeRows().filter((row) => row.total > 0);
+      if (!rows.length) {
+        ctx.fillStyle = "rgba(255,255,255,.03)"; roundRect(ctx, 0, 0, width, height, 14); ctx.fill();
+        ctx.fillStyle = "#8f8b85"; ctx.font = "13px Segoe UI, sans-serif"; ctx.textAlign = "center";
+        ctx.fillText("Nessun volume da mostrare.", width / 2, height / 2);
+        return;
+      }
+      const total = rows.reduce((sum, row) => sum + row.total, 0);
+      const cx = width / 2, cy = height / 2;
+      const radius = Math.max(40, Math.min(width, height) / 2 - 16);
+      let angle = -Math.PI / 2;
+      rows.forEach((row, i) => {
+        const slice = (row.total / total) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, angle, angle + slice);
+        ctx.closePath();
+        ctx.fillStyle = VOLUME_PALETTE[i % VOLUME_PALETTE.length];
+        ctx.fill();
+        ctx.strokeStyle = "rgba(20,10,30,.55)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        angle += slice;
+      });
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * 0.56, 0, Math.PI * 2);
+      ctx.fillStyle = "#2B1B38";
+      ctx.fill();
+      ctx.fillStyle = "#FFF7FC";
+      ctx.textAlign = "center";
+      ctx.font = "700 20px Segoe UI, sans-serif";
+      ctx.fillText(String(total), cx, cy - 2);
+      ctx.fillStyle = "#D8C6DD";
+      ctx.font = "11px Segoe UI, sans-serif";
+      ctx.fillText("serie totali", cx, cy + 16);
+    }
+
+    function drawVolumeLines() {
+      const prep = prepCanvas("volumeLineChart");
+      if (!prep) return;
+      const { ctx, width, height } = prep;
+      ctx.clearRect(0, 0, width, height);
+      const block = currentVolumeBlock();
+      const rows = block ? block.rows.filter((row) => row.weeks.some((value) => value > 0)).sort((a, b) => b.total - a.total).slice(0, 6) : [];
+      if (!rows.length) {
+        ctx.fillStyle = "rgba(255,255,255,.03)"; roundRect(ctx, 0, 0, width, height, 14); ctx.fill();
+        ctx.fillStyle = "#8f8b85"; ctx.font = "13px Segoe UI, sans-serif"; ctx.textAlign = "center";
+        ctx.fillText("Nessun andamento settimanale.", width / 2, height / 2);
+        return;
+      }
+      const weekCount = Math.max(...rows.map((row) => row.weeks.length));
+      const padLeft = 34, padRight = 12, padTop = 16, padBottom = 26;
+      const plotW = width - padLeft - padRight;
+      const plotH = height - padTop - padBottom;
+      const max = Math.max(1, ...rows.flatMap((row) => row.weeks));
+      ctx.strokeStyle = "rgba(255,111,203,.12)";
+      ctx.lineWidth = 1;
+      ctx.fillStyle = "#89708d";
+      ctx.font = "10px Segoe UI, sans-serif";
+      ctx.textAlign = "right";
+      for (let i = 0; i <= 4; i++) {
+        const y = padTop + (i / 4) * plotH;
+        ctx.beginPath(); ctx.moveTo(padLeft, y); ctx.lineTo(width - padRight, y); ctx.stroke();
+        ctx.fillText(String(Math.round(max - (i / 4) * max)), padLeft - 6, y + 3);
+      }
+      ctx.textAlign = "center";
+      for (let w = 0; w < weekCount; w++) {
+        const x = padLeft + (weekCount === 1 ? plotW / 2 : (w / (weekCount - 1)) * plotW);
+        ctx.fillText(`S${w + 1}`, x, height - 8);
+      }
+      rows.forEach((row, i) => {
+        const color = VOLUME_PALETTE[i % VOLUME_PALETTE.length];
+        ctx.beginPath();
+        row.weeks.forEach((value, w) => {
+          const x = padLeft + (weekCount === 1 ? plotW / 2 : (w / (weekCount - 1)) * plotW);
+          const y = padTop + (max - value) / max * plotH;
+          if (w === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        row.weeks.forEach((value, w) => {
+          const x = padLeft + (weekCount === 1 ? plotW / 2 : (w / (weekCount - 1)) * plotW);
+          const y = padTop + (max - value) / max * plotH;
+          ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+        });
+      });
+    }
+
     function bindScreen() {
       bindV144Diagnostics();
       bindGlobalDivaBot();
@@ -13973,6 +14169,24 @@ function sanitizeForFirestore(value) {
       if (progressExercise) {
         progressExercise.addEventListener("change", () => {
           state.training.selected = progressExercise.value;
+          saveState();
+          render();
+        });
+      }
+      // FASE 4 — Statistiche: tab (Analisi progressi / Volume) e selettore scheda.
+      document.querySelectorAll("[data-statistics-tab]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.ui = state.ui || {};
+          state.ui.statisticsTab = button.dataset.statisticsTab === "volume" ? "volume" : "progress";
+          saveState();
+          render();
+        });
+      });
+      const volumeSheetSelect = document.getElementById("volumeSheetSelect");
+      if (volumeSheetSelect) {
+        volumeSheetSelect.addEventListener("change", () => {
+          state.ui = state.ui || {};
+          state.ui.volumeSheet = clampVolumeIndex(volumeSheetSelect.value);
           saveState();
           render();
         });
@@ -15644,6 +15858,8 @@ function sanitizeForFirestore(value) {
     function drawCharts() {
       drawProgressChart();
       drawWeightChart();
+      // FASE 4 — grafici della tab Volume (solo se presenti nel DOM).
+      drawVolumeCharts();
     }
 
     function prepCanvas(id) {
