@@ -12987,9 +12987,12 @@ function sanitizeForFirestore(value) {
       return displayLabel(title).replace(/^Volume\s*/i, "");
     }
 
+    // Indice del gruppo muscolare scelto: -1 = "Tutti i gruppi" (ripartizione
+    // completa sulla torta + totale settimanale sul grafico a linee), 0..n-1 =
+    // muscolo singolo (torta a fuoco su quella fetta).
     function clampVolumeGroup(value, length) {
-      const index = Math.round(Number(value) || 0);
-      if (!Number.isFinite(index) || index < 0) return 0;
+      const index = Math.round(Number(value));
+      if (!Number.isFinite(index) || index < 0) return -1;
       return Math.min(index, Math.max(0, length - 1));
     }
 
@@ -13034,13 +13037,17 @@ function sanitizeForFirestore(value) {
               <div class="section-eyebrow">Andamento settimanale</div>
               <label class="mini">Gruppo muscolare
                 <select id="volumeGroupSelect" ${lineRows.length ? "" : "disabled"}>
+                  <option value="-1" ${groupIndex === -1 ? "selected" : ""}>Tutti i gruppi</option>
                   ${lineRows.map((row, i) => `<option value="${i}" ${i === groupIndex ? "selected" : ""}>${escapeHtml(row.muscle)}</option>`).join("")}
                 </select>
               </label>
               <canvas id="volumeLineChart" height="220"></canvas>
             </div>
           </div>
-          <div class="volume-legend">${rows.slice(0, 12).map((row, i) => `<span><i style="--c:${VOLUME_PALETTE[i % VOLUME_PALETTE.length]}"></i>${escapeHtml(row.muscle)}</span>`).join("")}</div>
+          <div class="volume-legend">${rows.slice(0, 12).map((row, i) => {
+            const on = lineRows[groupIndex]?.muscle === row.muscle;
+            return `<button type="button" class="volume-legend-item ${on ? "active" : ""}" data-volume-muscle="${escapeHtml(row.muscle)}" aria-pressed="${on}" title="${on ? "Torna alla ripartizione completa" : `Fuoco su ${escapeHtml(row.muscle)}`}"><i style="--c:${VOLUME_PALETTE[i % VOLUME_PALETTE.length]}"></i>${escapeHtml(row.muscle)}</button>`;
+          }).join("")}</div>
         </section>
         <section class="card">
           <div class="row"><h3>Confronto schede per gruppo muscolare</h3><span class="chip">${selectedCompareCount} di ${blocks.length} schede</span></div>
@@ -13140,6 +13147,20 @@ function sanitizeForFirestore(value) {
       return `rgba(${r},${g},${b},${alpha})`;
     }
 
+    // Muscolo a fuoco per la torta: segue il selettore destro e la legenda
+    // (-1 = "Tutti i gruppi" → ripartizione completa).
+    function volumeFocusIndex() {
+      return clampVolumeGroup(state.ui?.volumeGroup, Math.max(1, currentVolumeLineRows().length));
+    }
+
+    // Somma delle serie di tutti i gruppi per ogni settimana: è la linea che si
+    // vede sul grafico settimanale quando il selettore è su "Tutti i gruppi".
+    function volumeWeeklyTotals() {
+      const rows = currentVolumeLineRows();
+      const weekCount = rows.reduce((max, row) => Math.max(max, row.weeks.length), 0);
+      return Array.from({ length: weekCount }, (_, w) => rows.reduce((sum, row) => sum + (Number(row.weeks[w]) || 0), 0));
+    }
+
     function drawVolumePie() {
       const prep = prepCanvas("volumePieChart");
       if (!prep) return;
@@ -13153,37 +13174,78 @@ function sanitizeForFirestore(value) {
         return;
       }
       const total = rows.reduce((sum, row) => sum + row.total, 0);
+      const focusIndex = volumeFocusIndex();
+      const focusedMuscle = focusIndex >= 0 ? currentVolumeLineRows()[focusIndex]?.muscle : null;
       const cx = width / 2, cy = height / 2;
-      // Torta centrata e ampia: i nomi dei gruppi stanno nella legenda sotto,
-      // non servono più freccette attorno al cerchio.
       const radius = Math.max(40, Math.min(width, height) / 2 - 18);
+      const inner = radius * 0.6;
       const progress = volumePieProgress;
+      const multi = rows.length > 1;
       let angle = -Math.PI / 2;
       rows.forEach((row, i) => {
         const full = (row.total / total) * Math.PI * 2;
+        const color = VOLUME_PALETTE[i % VOLUME_PALETTE.length];
+        const isFocus = focusedMuscle != null && row.muscle === focusedMuscle;
+        const dimmed = focusedMuscle != null && !isFocus;
         const slice = full * progress;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, radius, angle, angle + slice);
-        ctx.closePath();
-        ctx.fillStyle = VOLUME_PALETTE[i % VOLUME_PALETTE.length];
-        ctx.fill();
-        ctx.strokeStyle = "rgba(20,10,30,.55)";
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        const mid = angle + full / 2;
+        // la fetta a fuoco si stacca dolcemente dal centro mentre si rivela
+        const off = isFocus ? radius * 0.055 * progress : 0;
+        const px = cx + Math.cos(mid) * off, py = cy + Math.sin(mid) * off;
+        const g = multi ? Math.min(0.016, full * 0.18) : 0; // fesa tra le fette: bordi puliti
+        const start = angle + g / 2;
+        const end = angle + slice - g / 2;
+        if (end > start) {
+          ctx.beginPath();
+          ctx.moveTo(px, py);
+          ctx.arc(px, py, radius, start, end);
+          ctx.closePath();
+          // sfumatura radiale: leggermente più chiara verso il bordo esterno
+          const grad = typeof ctx.createRadialGradient === "function" ? (() => { try { const gradient = ctx.createRadialGradient(px, py, inner * 0.5, px, py, radius); gradient.addColorStop(0, volumeHexAlpha(color, dimmed ? 0.16 : 0.8)); gradient.addColorStop(1, volumeHexAlpha(color, dimmed ? 0.26 : 1)); return gradient; } catch (error) { return null; } })() : null;
+          ctx.save();
+          if (isFocus) { ctx.shadowColor = volumeHexAlpha(color, 0.45); ctx.shadowBlur = 16; }
+          ctx.fillStyle = grad || volumeHexAlpha(color, dimmed ? 0.2 : 1);
+          ctx.fill();
+          ctx.restore();
+        }
         angle += full; // gli angoli restano quelli pieni: solo il disegno è animato
       });
+      // foro centrale e testi: con un muscolo a fuoco mostra nome, serie e quota
       ctx.beginPath();
-      ctx.arc(cx, cy, radius * 0.56, 0, Math.PI * 2);
+      ctx.arc(cx, cy, inner, 0, Math.PI * 2);
       ctx.fillStyle = "#2B1B38";
       ctx.fill();
-      ctx.fillStyle = "#FFF7FC";
+      ctx.strokeStyle = "rgba(255,255,255,.07)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
       ctx.textAlign = "center";
-      ctx.font = "700 20px Segoe UI, sans-serif";
-      ctx.fillText(String(total), cx, cy - 2);
-      ctx.fillStyle = "#D8C6DD";
-      ctx.font = "11px Segoe UI, sans-serif";
-      ctx.fillText("serie totali", cx, cy + 16);
+      if (focusedMuscle) {
+        const row = rows.find((item) => item.muscle === focusedMuscle) || rows[0];
+        const share = total ? Math.round((row.total / total) * 100) : 0;
+        let nameSize = 12;
+        if (typeof ctx.measureText === "function") {
+          ctx.font = `700 ${nameSize}px Segoe UI, sans-serif`;
+          while (nameSize > 9 && ctx.measureText(focusedMuscle).width > inner * 1.55) {
+            nameSize -= 1;
+            ctx.font = `700 ${nameSize}px Segoe UI, sans-serif`;
+          }
+        } else ctx.font = "700 12px Segoe UI, sans-serif";
+        ctx.fillStyle = "rgba(255,247,252,.66)";
+        ctx.fillText(focusedMuscle, cx, cy - 13);
+        ctx.fillStyle = "#FFF7FC";
+        ctx.font = "700 22px Segoe UI, sans-serif";
+        ctx.fillText(String(row.total), cx, cy + 9);
+        ctx.fillStyle = "rgba(255,247,252,.55)";
+        ctx.font = "11px Segoe UI, sans-serif";
+        ctx.fillText(`${share}% del totale`, cx, cy + 25);
+      } else {
+        ctx.fillStyle = "#FFF7FC";
+        ctx.font = "700 20px Segoe UI, sans-serif";
+        ctx.fillText(String(total), cx, cy - 2);
+        ctx.fillStyle = "#D8C6DD";
+        ctx.font = "11px Segoe UI, sans-serif";
+        ctx.fillText("serie totali", cx, cy + 16);
+      }
     }
 
     function drawVolumeLines() {
@@ -13192,20 +13254,22 @@ function sanitizeForFirestore(value) {
       const { ctx, width, height } = prep;
       ctx.clearRect(0, 0, width, height);
       const row = currentVolumeGroupRow();
-      if (!row) {
+      const lineRows = currentVolumeLineRows();
+      if (!lineRows.length) {
         ctx.fillStyle = "rgba(255,255,255,.03)"; roundRect(ctx, 0, 0, width, height, 14); ctx.fill();
         ctx.fillStyle = "#8f8b85"; ctx.font = "13px Segoe UI, sans-serif"; ctx.textAlign = "center";
         ctx.fillText("Nessun andamento settimanale.", width / 2, height / 2);
         return;
       }
-      const weeks = row.weeks;
+      // "Tutti i gruppi" (-1): la linea mostra il TOTALE settimanale della scheda.
+      const weeks = row ? row.weeks : volumeWeeklyTotals();
       const weekCount = weeks.length;
       const padLeft = 38, padRight = 16, padTop = 22, padBottom = 28;
       const plotW = width - padLeft - padRight;
       const plotH = height - padTop - padBottom;
       const max = Math.max(1, ...weeks);
-      const paletteIndex = currentVolumeLineRows().findIndex((item) => item.muscle === row.muscle);
-      const color = VOLUME_PALETTE[(paletteIndex < 0 ? 0 : paletteIndex) % VOLUME_PALETTE.length];
+      const paletteIndex = row ? currentVolumeLineRows().findIndex((item) => item.muscle === row.muscle) : -1;
+      const color = paletteIndex < 0 ? "#f4c86f" : VOLUME_PALETTE[(paletteIndex < 0 ? 0 : paletteIndex) % VOLUME_PALETTE.length];
       const X = (week) => padLeft + (weekCount === 1 ? plotW / 2 : (week / (weekCount - 1)) * plotW);
       const Y = (value) => padTop + (max - value) / max * plotH;
 
@@ -13251,11 +13315,11 @@ function sanitizeForFirestore(value) {
         ctx.strokeStyle = "rgba(20,10,30,.55)"; ctx.lineWidth = 1.5; ctx.stroke();
       });
 
-      // etichetta del gruppo in alto a sinistra
+      // etichetta del gruppo (o del totale) in alto a sinistra
       ctx.fillStyle = "#FFF7FC";
       ctx.textAlign = "left";
       ctx.font = "700 12px Segoe UI, sans-serif";
-      ctx.fillText(row.muscle, padLeft, padTop - 6);
+      ctx.fillText(row ? row.muscle : "Totale scheda", padLeft, padTop - 6);
     }
 
     function bindScreen() {
@@ -14519,7 +14583,7 @@ function sanitizeForFirestore(value) {
         volumeSheetSelect.addEventListener("change", () => {
           state.ui = state.ui || {};
           state.ui.volumeSheet = clampVolumeIndex(volumeSheetSelect.value);
-          state.ui.volumeGroup = 0; // cambiando scheda riparto dal gruppo col volume più alto
+          state.ui.volumeGroup = -1; // cambiando scheda torno alla ripartizione completa ("Tutti i gruppi")
           saveState();
           render();
         });
@@ -14533,6 +14597,20 @@ function sanitizeForFirestore(value) {
           render();
         });
       }
+      // Legenda cliccabile: stesso stato del selettore destro (torta e linee si
+      // aggiornano insieme). Secondo tap sul muscolo già a fuoco = tutti i gruppi.
+      document.querySelectorAll("[data-volume-muscle]").forEach((item) => {
+        item.addEventListener("click", () => {
+          state.ui = state.ui || {};
+          const rows = currentVolumeLineRows();
+          const index = rows.findIndex((row) => row.muscle === item.dataset.volumeMuscle);
+          if (index < 0) return;
+          const next = clampVolumeGroup(index, rows.length);
+          state.ui.volumeGroup = state.ui?.volumeGroup === next ? -1 : next;
+          saveState();
+          render();
+        });
+      });
       // Confronto schede: i chip "tutte le schede" sono ora una selezione multipla.
       document.querySelectorAll("[data-volume-compare]").forEach((chip) => {
         chip.addEventListener("click", () => {

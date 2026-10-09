@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v148.03-parita-settimane` |
-| `cache` | `atlas-app-v14803-parita-settimane` |
+| `build` | `v148.04-torta-focus-muscoli` |
+| `cache` | `atlas-app-v14804-torta-focus-muscoli` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

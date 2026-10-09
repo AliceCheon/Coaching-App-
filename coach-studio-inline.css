@@ -5234,9 +5234,12 @@ html[data-theme="light"] .journal-rpe { background: #fff; color: #2b2233; }
     .volume-chart-card canvas { width:100%; }
     .volume-chart-card .mini { font-size:.68rem; color:var(--muted); margin-top:2px; }
     .volume-chart-card .mini select { margin-top:4px; padding:7px; font-size:.78rem; }
-    .volume-legend { display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:6px; }
-    .volume-legend span { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:.7rem; }
-    .volume-legend i { width:9px; height:9px; border-radius:3px; background:var(--c,var(--pink-primary)); }
+    .volume-legend { display:flex; flex-wrap:wrap; gap:6px 8px; margin-top:6px; }
+    .volume-legend i { width:9px; height:9px; border-radius:3px; background:var(--c,var(--pink-primary)); flex:none; }
+    .volume-legend-item { display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; border:1px solid var(--line-soft); background:rgba(255,255,255,.03); color:var(--muted); font:inherit; font-size:.7rem; font-weight:600; cursor:pointer; transition:border-color .2s ease, color .2s ease, background .2s ease, transform .2s ease; }
+    .volume-legend-item i { width:9px; height:9px; border-radius:3px; background:var(--c,var(--pink-primary)); flex:none; }
+    .volume-legend-item:hover { transform:translateY(-1px); border-color:rgba(201,167,255,.35); color:var(--text-primary); }
+    .volume-legend-item.active { border-color:var(--c,var(--pink-primary)); background:rgba(255,255,255,.07); color:var(--text-primary); box-shadow:0 0 0 1px rgba(255,255,255,.04) inset; }
     .volume-compare-picker { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
     .volume-compare-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border-radius:999px; border:1px solid var(--line-soft); background:rgba(255,255,255,.03); color:var(--muted); font:inherit; font-size:.7rem; font-weight:600; cursor:pointer; transition:border-color .2s ease, color .2s ease, background .2s ease; }
     .volume-compare-chip i { width:9px; height:9px; border-radius:3px; background:var(--c,var(--pink-primary)); }

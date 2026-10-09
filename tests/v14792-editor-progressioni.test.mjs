@@ -1,4 +1,4 @@
-// v148.03 — La sezione "Progressioni" deve permettere di SCRIVERE le progressioni
+// v148.04 — La sezione "Progressioni" deve permettere di SCRIVERE le progressioni
 // settimana per settimana, e crearne di proprie, che poi escono su QUALSIASI
 // esercizio.
 //
@@ -28,7 +28,7 @@ const context = { console, structuredClone, Date, Math, JSON, Intl, Map, Set, We
 context.window = context;
 context.globalThis = context;
 vm.createContext(context);
-new vm.Script(script, { filename: "v14803-editor-progressioni.js" }).runInContext(context);
+new vm.Script(script, { filename: "v14804-editor-progressioni.js" }).runInContext(context);
 
 const NO_REPS = `{ id:"x", name:"esercizio senza reps", prescription:{ sets:3, reps:"", rest:{seconds:90} } }`;
 
@@ -81,4 +81,4 @@ test("senza righe di pattern l'editor mostra il messaggio e non inventa settiman
   assert.equal(res.rows, 0);
 });
 
-console.log("v14803: editor progressioni settimana per settimana + metodi personali selezionabili");
+console.log("v14804: editor progressioni settimana per settimana + metodi personali selezionabili");

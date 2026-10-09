@@ -1,4 +1,4 @@
-// v148.03 — FASE 3 (Animazioni + mascotte).
+// v148.04 — FASE 3 (Animazioni + mascotte).
 // Guardie anti-regressione sul layer motion introdotto/rifinito in questa fase:
 //  3.1 transizioni di schermata + cambio route Coach Studio + ingresso modali;
 //  3.2 micro-animazioni UI (nav pop, hover-lift su puntatori fini);

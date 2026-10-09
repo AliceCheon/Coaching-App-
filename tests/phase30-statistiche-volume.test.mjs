@@ -66,7 +66,17 @@ assert.match(app, /function currentVolumeLineRows\(\)/);
 assert.match(app, /function currentVolumeGroupRow\(\)/);
 assert.match(app, /const row = currentVolumeGroupRow\(\)/);
 assert.match(app, /state\.ui\.volumeGroup = clampVolumeGroup\(/);
-assert.match(app, /state\.ui\.volumeGroup = 0;/);
+assert.match(app, /state\.ui\.volumeGroup = -1; \/\/ cambiando scheda/);
+
+// --- v148.04: torta a fuoco sul muscolo scelto a destra + legenda cliccabile ---
+assert.match(app, /<option value="-1" \$\{groupIndex === -1 \? "selected" : ""\}>Tutti i gruppi<\/option>/);
+assert.match(app, /function volumeFocusIndex\(\)/);
+assert.match(app, /function volumeWeeklyTotals\(\)/);
+assert.match(app, /data-volume-muscle="\$\{escapeHtml\(row\.muscle\)\}"/);
+assert.match(app, /class="volume-legend-item \$\{on \? "active" : ""\}"/);
+assert.match(app, /% del totale/);
+assert.match(app, /Totale scheda/);
+assert.match(all, /\.volume-legend-item\.active/);
 
 // --- ask#13: confronto schede con selezione multipla funzionante ---
 assert.match(app, /function volumeCompareSelectedIndexes\(\)/);
