@@ -111,7 +111,64 @@
 
     const ANNUAL_PHASES = [{"phase":"1.Volume","objective":"Ipertrofia e Basi","scheme":"3x6 -\u003e 6x6 (o 5x8)","load":"Carico iniziale basato su 10 RM","duration":"6 - 8 Settimane","current":true},{"phase":"2.Intensificazione","objective":"Forza Submassimale","scheme":"4x6 Costante","load":"Incremento dei kg ogni settimana","duration":"6 - 8/12 Settimane","current":false},{"phase":"3.Intensità","objective":"Forza Massima","scheme":"8 - X - X (a scalare)","load":"Massimo sforzo (RPE molto alto)","duration":"3 - 4 Settimane (Picco)","current":false},{"phase":"4. Stabilizzazione","objective":"Consolidamento","scheme":"2 - 10/x","load":"Controllo tecnico e tenuta","duration":"2 - 3 Settimane","current":false},{"phase":"5. Restart Tecnico","objective":"Scarico e Reset","scheme":"3x8 Leggero","load":"Pulizia dei difetti esecutivi","duration":"1 - 2 Settimane (Reset)","current":false}];
 
-    const VOLUME_HISTORY = [{"title":"Volume B program 1","source":"Programmazione annuale","rows":[{"muscle":"Glutei","weeks":[0,28,28,19,30,30,19,10],"total":164,"average":20.5},{"muscle":"Quadricipiti","weeks":[6,6,6,4,6,6,6,4],"total":44,"average":5.5},{"muscle":"Femorali","weeks":[6,6,6,4,6,6,5,3],"total":42,"average":5.25},{"muscle":"Spalle","weeks":[12,12,13,8,14,15,10,6],"total":90,"average":11.25},{"muscle":"Bicipiti","weeks":[4,4,4,3,4,4,4,3],"total":30,"average":3.75},{"muscle":"Tricipiti","weeks":[12,12,12,9,12,12,12,9],"total":90,"average":11.25},{"muscle":"Dorsali","weeks":[7,11,11,9,11,11,10,4],"total":74,"average":9.25},{"muscle":"Centro schiena","weeks":[6,6,6,4,8,8,4,2],"total":44,"average":5.5},{"muscle":"Polpacci","weeks":[4,4,4,4,4,4,4,4],"total":32,"average":4},{"muscle":"Petto","weeks":[0,0,0,0,0,0,0,0],"total":0,"average":0}]},{"title":"Volume B program 2","source":"Programmazione annuale","rows":[{"muscle":"Glutei","weeks":[21,24,26,13,26,23,14,15],"total":162,"average":20.25},{"muscle":"Quadricipiti","weeks":[6,6,6,4,6,6,6,4],"total":44,"average":5.5},{"muscle":"Femorali","weeks":[7,6,5,4,6,6,5,3],"total":42,"average":5.25},{"muscle":"Spalle","weeks":[12,13,14,7,14,14,9,6],"total":89,"average":11.12},{"muscle":"Bicipiti","weeks":[8,8,8,6,8,8,8,6],"total":60,"average":7.5},{"muscle":"Tricipiti","weeks":[8,8,8,6,8,8,8,6],"total":60,"average":7.5},{"muscle":"Dorsali","weeks":[12,11,10,4,11,11,10,4],"total":73,"average":9.12},{"muscle":"Centro schiena","weeks":[6,6,6,4,8,8,4,2],"total":44,"average":5.5},{"muscle":"Polpacci","weeks":[4,4,4,4,4,4,4,4],"total":32,"average":4},{"muscle":"Petto","weeks":[0,0,0,0,0,0,0,0],"total":0,"average":0}]},{"title":"Volume B program 3","source":"Programmazione annuale","rows":[{"muscle":"Glutei","weeks":[20,21,24,15,24,20,15,10],"total":149,"average":18.62},{"muscle":"Quadricipiti","weeks":[6,6,6,6,6,6,6,4],"total":46,"average":5.75},{"muscle":"Femorali","weeks":[8,8,8,7,8,8,7,4],"total":58,"average":7.25},{"muscle":"Spalle","weeks":[12,12,13,13,13,14,10,6],"total":93,"average":11.62},{"muscle":"Bicipiti","weeks":[4,4,4,4,4,4,4,4],"total":32,"average":4},{"muscle":"Tricipiti","weeks":[10,11,12,10,12,11,10,7],"total":83,"average":10.38},{"muscle":"Dorsali","weeks":[12,12,11,6,11,11,10,4],"total":77,"average":9.62},{"muscle":"Centro schiena","weeks":[6,6,6,5,8,8,4,2],"total":45,"average":5.62},{"muscle":"Polpacci","weeks":[4,4,4,4,4,4,4,4],"total":32,"average":4},{"muscle":"Petto","weeks":[0,0,0,0,0,0,0,0],"total":0,"average":0}]},{"title":"Volume Intensificazione","source":"Programmazione annuale","rows":[{"muscle":"Glutei","weeks":[19,19,20,18,19,20,20,15],"total":150,"average":18.75},{"muscle":"Quadricipiti","weeks":[19,19,19,17,19,19,19,13],"total":144,"average":18},{"muscle":"Femorali","weeks":[15,15,15,13,15,15,15,10],"total":113,"average":14.12},{"muscle":"Spalle","weeks":[22,22,22,21,22,22,22,15],"total":168,"average":21},{"muscle":"Bicipiti","weeks":[6,6,6,6,6,6,6,6],"total":48,"average":6},{"muscle":"Tricipiti","weeks":[5,5,5,5,5,5,5,5],"total":40,"average":5},{"muscle":"Dorsali","weeks":[12,12,13,10,14,14,14,6],"total":95,"average":11.88},{"muscle":"Centro schiena","weeks":[5,5,5,5,6,6,6,4],"total":42,"average":5.25},{"muscle":"Polpacci","weeks":[6,6,6,4,5,6,6,6],"total":45,"average":5.62},{"muscle":"Petto","weeks":[0,0,0,0,0,0,0,0],"total":0,"average":0},{"muscle":"Cardio","weeks":[2,2,2,2,2,2,2,2],"total":16,"average":2}]},{"title":"Volume Intensita","source":"calcolato dalla scheda Intensita","rows":[{"muscle":"Bicipiti","weeks":[3,3,3,2,3,3,3,2],"total":22,"average":2.75},{"muscle":"Cardio","weeks":[2,2,2,2,2,2,2,2],"total":16,"average":2},{"muscle":"Femorali","weeks":[11,12,13,8,13,12,12,9],"total":90,"average":11.25},{"muscle":"Glutei","weeks":[10,12,11,8,12,11,12,7],"total":83,"average":10.38},{"muscle":"Petto","weeks":[3,3,3,1,3,3,3,2],"total":21,"average":2.62},{"muscle":"Polpacci","weeks":[1,1,1,1,1,1,1,1],"total":8,"average":1},{"muscle":"Quadricipiti","weeks":[14,14,14,10,13,13,13,8],"total":99,"average":12.38},{"muscle":"Spalle","weeks":[21,21,22,14,22,21,21,13],"total":155,"average":19.38},{"muscle":"Tricipiti","weeks":[3,3,3,2,3,3,3,3],"total":23,"average":2.88}]}];
+    // FASE 4-ter — VOLUME_HISTORY è ora CALCOLATO dalla PROGRAM_LIBRARY (fonte unica).
+    // Così i blocchi sono sempre quelli reali e completi (incluse TUTTE le fasi
+    // "Intensità ...") e non possono più restare disallineati come la vecchia tabella
+    // scritta a mano (che mostrava un "B program 3" inesistente e nascondeva
+    // "Intensità ottobre-dicembre"). Il volume è la somma delle serie settimanali per
+    // gruppo muscolare, settimana per settimana.
+    const VOLUME_MUSCLE_ORDER = ["Glutei", "Quadricipiti", "Femorali", "Spalle", "Petto", "Dorsali", "Centro schiena", "Bicipiti", "Tricipiti", "Polpacci", "Addominali", "Attivazione", "Cardio"];
+    const VOLUME_MUSCLE_ALIASES = { "Addome": "Addominali" };
+
+    // Converte il valore "serie" in un numero, sommando anche i casi composti
+    // (es. superserie "1+2" => 3). Valori non numerici contano 0.
+    function volumeSetsToNumber(value) {
+      const parts = String(value ?? "").match(/\d+(?:[.,]\d+)?/g);
+      if (!parts) return 0;
+      return parts.reduce((sum, part) => sum + (Number(part.replace(",", ".")) || 0), 0);
+    }
+
+    // Ricostruisce lo storico volume (un blocco per fase del programma) leggendo
+    // direttamente le schede: { title, source, rows:[{ muscle, weeks[], total, average }] }.
+    function volumeHistoryFromProgramLibrary(library) {
+      const phases = [];
+      const seen = new Set();
+      (library || []).forEach((card) => {
+        const phase = String(card?.phase || "").trim();
+        if (!phase || seen.has(phase)) return;
+        seen.add(phase);
+        phases.push(phase);
+      });
+      return phases.map((phase) => {
+        const cards = library.filter((card) => String(card?.phase || "").trim() === phase);
+        const weeks = [...new Set(cards.map((card) => Number(card.week) || 0))].filter((week) => week > 0).sort((a, b) => a - b);
+        const buckets = new Map();
+        cards.forEach((card) => {
+          const weekIndex = weeks.indexOf(Number(card.week) || 0);
+          if (weekIndex < 0) return;
+          (card.exercises || []).forEach((exercise) => {
+            const raw = String(exercise?.muscle || "").trim();
+            if (!raw) return;
+            const muscle = VOLUME_MUSCLE_ALIASES[raw] || raw;
+            if (!buckets.has(muscle)) buckets.set(muscle, new Array(weeks.length).fill(0));
+            buckets.get(muscle)[weekIndex] += volumeSetsToNumber(exercise.sets);
+          });
+        });
+        const rows = [...buckets.entries()].map(([muscle, series]) => {
+          const total = series.reduce((sum, value) => sum + value, 0);
+          const active = series.filter((value) => value > 0).length;
+          return { muscle, weeks: series, total, average: active ? Math.round((total / active) * 100) / 100 : 0 };
+        }).filter((row) => row.total > 0);
+        rows.sort((a, b) => {
+          const ai = VOLUME_MUSCLE_ORDER.indexOf(a.muscle);
+          const bi = VOLUME_MUSCLE_ORDER.indexOf(b.muscle);
+          return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
+        });
+        return { title: `Volume ${phase}`, source: "Programmazione annuale", rows };
+      }).filter((block) => block.rows.length);
+    }
+
+    const VOLUME_HISTORY = volumeHistoryFromProgramLibrary(PROGRAM_LIBRARY);
     const COACH_EXERCISE_LIBRARY = {
     "Spalle":  [
                    {
@@ -3503,8 +3560,20 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
             // avvio qualunque programma creato dall'utente con fase "intensità";
             // inoltre, tolta la fase, il replacement non veniva mai inserito.
             // Ora si sostituisce per ID del seed: i programmi dell'utente restano.
+            // v148.00 · CAUSA DEL "TORNA A BOZZA": sostituire TUTTO il programma
+            // (incluso `status`) con la copia del workbook — che ha
+            // status:"available", mostrato come "Bozza" — azzerava lo stato scelto
+            // da Alice (Attivo/Archiviato) ad ogni cambio di build del seed.
+            // Ora dal workbook si aggiornano SOLO la fase (se mancante), le schede
+            // e il timestamp: stato, flag attivo, cartella e nome restano quelli
+            // decisi dall'utente.
             const seededIds = new Set([seeded.id].filter(Boolean));
-            const replacedPrograms = (loaded.programs || []).map((program) => (seededIds.has(program.id) ? replacement : program));
+            const replacedPrograms = (loaded.programs || []).map((program) => (seededIds.has(program.id) ? {
+              ...program,
+              phase: program.phase || replacement.phase,
+              sheets: replacement.sheets,
+              updatedAt: replacement.updatedAt
+            } : program));
             if (!replacedPrograms.some((program) => program.id === seeded.id)) replacedPrograms.push(replacement);
             loaded.programs = replacedPrograms;
             loaded.meta = {
@@ -3535,8 +3604,20 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
               updatedAt: stamp,
               exercises: (sheet.exercises || []).map((exercise) => ({ ...exercise, updatedAt: stamp }))
             }));
+            // v148.00 · CAUSA DEL "TORNA A BOZZA": sostituire TUTTO il programma
+            // (incluso `status`) con la copia del workbook — che ha
+            // status:"available", mostrato come "Bozza" — azzerava lo stato scelto
+            // da Alice (Attivo/Archiviato) ad ogni cambio di build del seed.
+            // Ora dal workbook si aggiornano SOLO la fase (se mancante), le schede
+            // e il timestamp: stato, flag attivo, cartella e nome restano quelli
+            // decisi dall'utente.
             const seededIds = new Set([seeded.id].filter(Boolean));
-            const replacedPrograms = (loaded.programs || []).map((program) => (seededIds.has(program.id) ? replacement : program));
+            const replacedPrograms = (loaded.programs || []).map((program) => (seededIds.has(program.id) ? {
+              ...program,
+              phase: program.phase || replacement.phase,
+              sheets: replacement.sheets,
+              updatedAt: replacement.updatedAt
+            } : program));
             if (!replacedPrograms.some((program) => program.id === seeded.id)) replacedPrograms.push(replacement);
             loaded.programs = replacedPrograms;
             loaded.meta = {
@@ -12775,12 +12856,10 @@ function sanitizeForFirestore(value) {
       return block ? block.rows.slice().sort((a, b) => b.total - a.total) : [];
     }
 
-    function shortVolumeTitle(title) {
-      return displayLabel(title)
-        .replace(/^Volume\s+/i, "")
-        .replace(/program\s*/i, "P")
-        .replace(/Intensificazione/i, "Intensif.")
-        .replace(/Intensita/i, "Intensità");
+    // Nome COMPLETO della scheda, senza abbreviazioni: serve a capire subito a
+    // quale fase del programma si riferisce (richiesta di Alice).
+    function volumeSheetLabel(title) {
+      return displayLabel(title).replace(/^Volume\s*/i, "");
     }
 
     function clampVolumeGroup(value, length) {
@@ -12811,12 +12890,13 @@ function sanitizeForFirestore(value) {
       const total = rows.reduce((sum, row) => sum + row.total, 0);
       const lineRows = currentVolumeLineRows();
       const groupIndex = clampVolumeGroup(state.ui?.volumeGroup, Math.max(1, lineRows.length));
+      const selectedCompareCount = volumeCompareSelectedIndexes().length;
       return `
         <section class="card statistics-volume">
           <div class="row"><h3>Volume per scheda</h3><span class="chip">${blocks.length} schede · ${total} serie</span></div>
           <label>Scheda
             <select id="volumeSheetSelect">
-              ${blocks.map((item, i) => `<option value="${i}" ${i === index ? "selected" : ""}>${escapeHtml(shortVolumeTitle(item.title))}</option>`).join("")}
+              ${blocks.map((item, i) => `<option value="${i}" ${i === index ? "selected" : ""}>${escapeHtml(volumeSheetLabel(item.title))}</option>`).join("")}
             </select>
           </label>
           <p class="micro-copy">${escapeHtml(displayLabel(block?.title || ""))} · fonte: ${escapeHtml(block?.source || "Programmazione annuale")}</p>
@@ -12838,19 +12918,59 @@ function sanitizeForFirestore(value) {
           <div class="volume-legend">${rows.slice(0, 12).map((row, i) => `<span><i style="--c:${VOLUME_PALETTE[i % VOLUME_PALETTE.length]}"></i>${escapeHtml(row.muscle)}</span>`).join("")}</div>
         </section>
         <section class="card">
-          <div class="row"><h3>Confronto schede per gruppo muscolare</h3><span class="chip">tutte le schede</span></div>
+          <div class="row"><h3>Confronto schede per gruppo muscolare</h3><span class="chip">${selectedCompareCount} di ${blocks.length} schede</span></div>
           ${volumeComparisonHtml(blocks)}
         </section>
       `;
     }
 
+    // Indice del blocco-volume che corrisponde alla scheda ATTIVA (quella con
+    // status "active", es. "Intensità Agosto-Ottobre"). Serve come selezione di
+    // default del confronto: senza una scelta salvata si parte dalla scheda che
+    // Alice sta seguendo, non da tutte. -1 se nessun programma è attivo.
+    function activeVolumeBlockIndex() {
+      const activePhase = String((explicitActiveTrainingProgram()?.phase) || "").trim();
+      if (!activePhase) return -1;
+      const target = normalizeExerciseName(activePhase);
+      return VOLUME_HISTORY.findIndex((block) => normalizeExerciseName(volumeSheetLabel(block.title)) === target || normalizeExerciseName(block.title.replace(/^Volume\s*/i, "")) === target);
+    }
+
+    // Indici delle schede scelte per il confronto. Se non c'è ancora una scelta
+    // salvata, si parte dalla SCHEDA ATTIVA (es. "Intensità Agosto-Ottobre");
+    // in sua assenza si ripiega su TUTTE. Da lì Alice può togliere/aggiungere
+    // schede a piacimento con i chip.
+    function volumeCompareSelectedIndexes() {
+      const raw = Array.isArray(state.ui?.volumeCompare) ? state.ui.volumeCompare : null;
+      if (!raw) {
+        const activeIndex = activeVolumeBlockIndex();
+        if (activeIndex >= 0) return [activeIndex];
+        return VOLUME_HISTORY.map((_, i) => i);
+      }
+      return [...new Set(raw.map((value) => Math.round(Number(value))).filter((value) => Number.isFinite(value) && value >= 0 && value < VOLUME_HISTORY.length))];
+    }
+
+    function volumeCompareChipHtml(blocks) {
+      const selected = volumeCompareSelectedIndexes();
+      return `<div class="volume-compare-picker" role="group" aria-label="Schede da confrontare">${blocks.map((block, i) => {
+        const on = selected.includes(i);
+        return `<button type="button" class="volume-compare-chip ${on ? "active" : ""}" data-volume-compare="${i}" aria-pressed="${on}"><i style="--c:${VOLUME_PALETTE[i % VOLUME_PALETTE.length]}"></i>${escapeHtml(volumeSheetLabel(block.title))}</button>`;
+      }).join("")}</div>`;
+    }
+
     function volumeComparisonHtml(blocks) {
-      const muscles = [...new Set(blocks.flatMap((block) => block.rows.map((row) => row.muscle)))];
-      const perBlock = blocks.map((block) => { const map = {}; block.rows.forEach((row) => { map[row.muscle] = row.total; }); return map; });
+      const selected = volumeCompareSelectedIndexes();
+      const picker = volumeCompareChipHtml(blocks);
+      if (!selected.length) {
+        return `${picker}<p class="volume-compare-empty">Seleziona almeno una scheda per vedere il confronto.</p>`;
+      }
+      const shown = selected.map((i) => blocks[i]).filter(Boolean);
+      const muscles = [...new Set(shown.flatMap((block) => block.rows.map((row) => row.muscle)))];
+      const perBlock = shown.map((block) => { const map = {}; block.rows.forEach((row) => { map[row.muscle] = row.total; }); return map; });
       const max = Math.max(1, ...perBlock.flatMap((map) => muscles.map((muscle) => map[muscle] || 0)));
-      const head = `<div class="volume-compare-head"><span class="vc-muscle">Gruppo</span>${blocks.map((block) => `<span>${escapeHtml(shortVolumeTitle(block.title))}</span>`).join("")}</div>`;
-      const body = muscles.map((muscle) => `<div class="volume-compare-row"><span class="vc-muscle">${escapeHtml(muscle)}</span>${blocks.map((block, i) => { const value = perBlock[i][muscle] || 0; return `<span class="vc-cell" title="${escapeHtml(shortVolumeTitle(block.title))} · ${escapeHtml(muscle)}: ${value}"><em style="--w:${Math.round(value / max * 100)}%;--c:${VOLUME_PALETTE[i % VOLUME_PALETTE.length]}"></em><b>${value}</b></span>`; }).join("")}</div>`).join("");
-      return `<div class="volume-compare">${head}${body}</div>`;
+      const cols = `--cols:${shown.length}`;
+      const head = `<div class="volume-compare-head" style="${cols}"><span class="vc-muscle">Gruppo</span>${shown.map((block) => `<span>${escapeHtml(volumeSheetLabel(block.title))}</span>`).join("")}</div>`;
+      const body = muscles.map((muscle) => `<div class="volume-compare-row" style="${cols}"><span class="vc-muscle">${escapeHtml(muscle)}</span>${shown.map((block, i) => { const blockIndex = selected[i]; const value = perBlock[i][muscle] || 0; return `<span class="vc-cell" title="${escapeHtml(volumeSheetLabel(block.title))} · ${escapeHtml(muscle)}: ${value}"><em style="--w:${Math.round(value / max * 100)}%;--c:${VOLUME_PALETTE[blockIndex % VOLUME_PALETTE.length]}"></em><b>${value}</b></span>`; }).join("")}</div>`).join("");
+      return `${picker}<div class="volume-compare">${head}${body}</div>`;
     }
 
     // --- Grafici canvas ---------------------------------------------------
@@ -12909,8 +13029,9 @@ function sanitizeForFirestore(value) {
       }
       const total = rows.reduce((sum, row) => sum + row.total, 0);
       const cx = width / 2, cy = height / 2;
-      // Margini ampi per ospitare le freccette con i nomi attorno alla torta.
-      const radius = Math.max(34, Math.min(width, height) / 2 - 52);
+      // Torta centrata e ampia: i nomi dei gruppi stanno nella legenda sotto,
+      // non servono più freccette attorno al cerchio.
+      const radius = Math.max(40, Math.min(width, height) / 2 - 18);
       const progress = volumePieProgress;
       let angle = -Math.PI / 2;
       rows.forEach((row, i) => {
@@ -12938,38 +13059,6 @@ function sanitizeForFirestore(value) {
       ctx.fillStyle = "#D8C6DD";
       ctx.font = "11px Segoe UI, sans-serif";
       ctx.fillText("serie totali", cx, cy + 16);
-
-      // Freccette (callout) con il NOME del gruppo muscolare + percentuale.
-      const edge = (ang, extra) => ({ x: cx + Math.cos(ang) * (radius + extra), y: cy + Math.sin(ang) * (radius + extra) });
-      ctx.font = "600 11px Segoe UI, sans-serif";
-      ctx.textBaseline = "middle";
-      let marker = -Math.PI / 2;
-      rows.forEach((row, i) => {
-        const full = (row.total / total) * Math.PI * 2;
-        const mid = marker + full / 2;
-        const left = Math.cos(mid) < 0;
-        const color = VOLUME_PALETTE[i % VOLUME_PALETTE.length];
-        const p0 = edge(mid, radius * 0.02);
-        const p1 = edge(mid, 16);
-        const p2 = edge(mid, 30);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1.4;
-        ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
-        const dir = left ? -1 : 1;
-        ctx.beginPath();
-        ctx.moveTo(p2.x, p2.y);
-        ctx.lineTo(p2.x - dir * 5, p2.y - 3.5);
-        ctx.lineTo(p2.x - dir * 5, p2.y + 3.5);
-        ctx.closePath();
-        ctx.fillStyle = color;
-        ctx.fill();
-        ctx.fillStyle = "#FFF7FC";
-        ctx.textAlign = left ? "right" : "left";
-        const label = `${row.muscle} ${Math.round(row.total / total * 100)}%`;
-        ctx.fillText(label, p2.x + (left ? -7 : 7), p2.y);
-        marker += full;
-      });
-      ctx.textBaseline = "alphabetic";
     }
 
     function drawVolumeLines() {
@@ -14319,6 +14408,18 @@ function sanitizeForFirestore(value) {
           render();
         });
       }
+      // Confronto schede: i chip "tutte le schede" sono ora una selezione multipla.
+      document.querySelectorAll("[data-volume-compare]").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          state.ui = state.ui || {};
+          const index = Math.round(Number(chip.dataset.volumeCompare));
+          const current = volumeCompareSelectedIndexes();
+          const next = current.includes(index) ? current.filter((value) => value !== index) : [...current, index].sort((a, b) => a - b);
+          state.ui.volumeCompare = next;
+          saveState();
+          render();
+        });
+      });
       const clearData = document.getElementById("clearData");
       if (clearData) clearData.addEventListener("click", () => requestClearAllData(clearData));
       const googleLoginButton = document.getElementById("googleLoginButton");

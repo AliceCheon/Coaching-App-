@@ -507,3 +507,34 @@ alla volta."*
 - **Guardia**: `tests/phase30-statistiche-volume.test.mjs` esteso (callout label,
   `volumeGroupSelect`, `animateVolumePie`, hover).
 - **Bump `v147.99-torta-frecce`** (29 file).
+
+## FASE 4-ter — Nomi schede, selezione confronto e stop al "torna a bozza" (v148.00)
+Alice: *"le freccette non si vedono... l'unica cosa è che non capisco come mai non
+compare la scheda intensità ottobre-dicembre, e quella che compare si chiama solo
+intensità... metti i nomi completi delle schede... c'è un tastino 'tutte le schede'
+però non funziona, rendilo attivo e rendi selezionabili le schede che dico io
+(confronto tra due/tre schede a piacimento)... Di default ci deve stare quella attiva
+(intensità agosto ottobre). Tra l'altro sono diverse volte che metto attivo dentro le
+schede e archiviate dentro altre schede ma poi puntualmente tornano tutte a bozza."*
+- **Nomi completi + fasi corrette**: `VOLUME_HISTORY` non è più una tabella scritta a
+  mano (aveva una fase fantasma "B program 3" e mancava "Intensità ottobre-dicembre"):
+  ora è **calcolato** da `PROGRAM_LIBRARY` con `volumeHistoryFromProgramLibrary()`
+  (5 blocchi reali). I nomi usano `volumeSheetLabel()` (COMPLETI, niente
+  `shortVolumeTitle`).
+- **Freccette rimosse**: `drawVolumePie()` torna alla torta centrata, senza callout
+  (`edge()` eliminato); i gruppi stanno nella legenda sotto.
+- **Confronto selezionabile**: il chip inerte "tutte le schede" è ora una **selezione
+  multipla** di chip (`volumeCompareChipHtml()`, `data-volume-compare`,
+  `state.ui.volumeCompare`); si confrontano 2/3/n schede a piacere.
+- **Default = scheda attiva**: `activeVolumeBlockIndex()` mappa la fase del programma
+  ATTIVO (`explicitActiveTrainingProgram()`) sul blocco-volume; senza scelta salvata il
+  confronto parte da QUELLA scheda (es. "Intensità Agosto-Ottobre").
+- **BUG "torna a bozza" (radice trovata e corretta)**: i due blocchi di re-seed forzato
+  in `loadState()` ("Intensità Agosto-Ottobre" e "Intensità ottobre-dicembre")
+  sostituivano **tutto** il programma con la copia del workbook, il cui `status` è
+  `"available"` → `programStatusLabel()` lo rende come **"Bozza"**. Ogni cambio di build
+  del seed (o flag di meta assente dopo un pull cloud) riportava quindi Attivo/Archiviato
+  a Bozza. Ora dal workbook si aggiornano SOLO fase mancante, schede e timestamp: stato,
+  `active`, cartella e nome restano quelli scelti dall'utente.
+- **Guardia**: `tests/phase30-statistiche-volume.test.mjs` esteso (default = scheda attiva).
+- **Bump `v148.00-nomi-schede-confronto-stato`** (29 file).
