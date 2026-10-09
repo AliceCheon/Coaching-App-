@@ -334,3 +334,9 @@ Obiettivo:
 - **Guardia**: `tests/v14801-classificazione-robottina.test.mjs`. Suite: **239 test, 230 pass, 0 fail, 9 skipped, EXIT:0**.
 - **Bump**: `node tools/bump-version.mjs v148.01-classifica-robottina` (29 file) → nuovo `CACHE_NAME` del SW.
 - Prossimi step: feedback di Alice; in coda Coach AI su reps/note/RIR/RPE.
+- **Follow-up Alice (stesso giorno)**: *"Riconosci i muscoli anche per i custom con nomi creativi, così nessuno resta orfano da sistemare a mano."*
+  - `inferMusclesFromLibrary()`: il gruppo dei custom senza KB/evidenze lo votano i record GIÀ classificati della libreria (parole condivise col nome, peso = lunghezza del token; anche match parziale ≥5 char e alias). Stopword di grammatica E di attrezzatura (macchina, bilanciere, manubri, cavo, …) non votano.
+  - **Trappola vera trovata dal test VM**: "di Alice" — il nome della proprietaria compariva in ogni custom e contaminava i voti (una "Macchina fantastica di Alice" ereditava il gruppo di "Topo Forte di Alice"). Fix: l'ultimo token dopo "di/del/della" non vota mai + "alice" in stopword.
+  - Ultima spiaggia onesta: zero segnali → **"Full body"** (categoria reale, correttabile a mano in un tocco) — nessun esercizio resta più con un segnaposto.
+  - Fallback primari consolidato: `primaryMuscles` vuoti → prendono la categoria effettiva (fine del "Muscolo da definire" con categoria vera a fianco).
+  - Test VM esteso (harness phase4): auto-riparo stacchi → femorali; ereditarietà "Topo Forte di Alice" → Quadricipiti; "Macchina fantastica di Alice" → Full body (mai segnaposto). Suite: **239 test, 230 pass, 0 fail, 9 skipped, EXIT:0**.

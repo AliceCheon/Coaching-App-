@@ -2042,6 +2042,39 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
     const MUSCLE_PLACEHOLDERS = ["da classificare","non classificato","da definire","muscolo da definire","unclassified",""];
     function isPlaceholderMuscleLabel(value = "") { return MUSCLE_PLACEHOLDERS.includes(String(value || "").trim().toLowerCase()); }
     function technicalRealMuscleList(values) { return (Array.isArray(values) ? values : []).map((value) => String(value || "").trim()).filter(Boolean).filter((name) => !isPlaceholderMuscleLabel(name)); }
+    // Parole di grammatica o di ATREZZATURA: non dicono nulla sul muscolo, non votano.
+    const MUSCLE_INFERENCE_STOPWORDS = new Set(["di","del","della","dei","delle","degli","con","senza","su","in","per","la","il","lo","gli","le","un","una","al","alla","ai","alle","molto","versione","variante","stile","modo","macchina","macchinario","bilanciere","bilancieri","manubrio","manubri","cavo","cavi","elastico","elastici","banda","bande","multipower","attrezzatura","variabile","kettlebell","kettlebells","alice"]);
+    // FIX v148.01 — custom con nomi creativi: il gruppo lo si deduce dai record
+    // GIÀ classificati della libreria condividendo parole del nome (i tuoi
+    // esercizi dicono già come si chiama la famiglia: la libreria imparana).
+    function inferMusclesFromLibrary(name = "", excludeId = "") {
+      const tokens = normalizeExerciseName(name).split(" ").filter(Boolean);
+      // "di Alice", "del giardino": l'ultimo token dopo il possessivo dice CHI
+      // possiede l'esercizio, non cosa allena — non deve mai votare.
+      if (tokens.length >= 2 && ["di","del","della"].includes(tokens[tokens.length - 2])) tokens.pop();
+      const signals = tokens.filter((token) => (token.length >= 4 || ["dip","dips","rdl"].includes(token)) && !MUSCLE_INFERENCE_STOPWORDS.has(token));
+      if (!signals.length) return "";
+      const records = window.BarbellDivaMasterLibrary.buildIndex(state.masterExerciseLibrary || {}).store.records;
+      const votes = new Map();
+      records.forEach((record) => {
+        if (record.id === excludeId) return;
+        const category = String(record.identity?.category || "").trim();
+        if (isPlaceholderMuscleLabel(category)) return;
+        const haystack = normalizeExerciseName([record.identity?.name, ...(record.identity?.aliases || [])].join(" "));
+        if (!haystack) return;
+        const words = haystack.split(" ");
+        let score = 0;
+        signals.forEach((token) => {
+          if (words.includes(token)) score += token.length;
+          else if (token.length >= 5 && haystack.includes(token)) score += Math.ceil(token.length / 2);
+        });
+        if (!score) return;
+        const group = normalizeMuscleCategory(category);
+        votes.set(group, (votes.get(group) || 0) + score);
+      });
+      if (!votes.size) return "";
+      return [...votes.entries()].sort((a, b) => b[1] - a[1])[0][0];
+    }
 
     function technicalExerciseProfile(source = {}, context = {}) {
       const evidence = technicalEvidenceProfile(source);
@@ -2058,12 +2091,18 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
       // classificazioni: non devono più vincere su un gruppo muscolare vero né
       // sopravvivere nei primari di Libreria, schede e statistiche.
       const categoryCandidate = String(source.category || source.metadata?.category || "");
+      const realCategory = technicalRealMuscleList([categoryCandidate])[0] || "";
       const realPrimary = technicalRealMuscleList(source.primaryMuscles).length ? technicalRealMuscleList(source.primaryMuscles)
-        : technicalRealMuscleList([categoryCandidate]).length ? technicalRealMuscleList([categoryCandidate])
+        : realCategory ? [realCategory]
         : technicalRealMuscleList(bio.primaryMuscles).length ? technicalRealMuscleList(bio.primaryMuscles)
         : technicalRealMuscleList(evidence.primaryMuscles).length ? technicalRealMuscleList(evidence.primaryMuscles)
         : technicalRealMuscleList([source.muscle || source.som]);
-      const categoryValue = technicalRealMuscleList([categoryCandidate]).length ? technicalRealMuscleList([categoryCandidate])[0] : (realPrimary[0] || "non classificato");
+      // Rete di sicurezza per i nomi creativi: se né prescrizioni né profilo
+      // biomeccanico né evidenze dicono il gruppo, votano i record GIÀ
+      // classificati della libreria (parole condivise); ultima spiaggia onesta
+      // è "Full body" — nessun esercizio resta orfano con un segnaposto.
+      const libraryMuscle = (realPrimary.length || realCategory) ? "" : inferMusclesFromLibrary(source.name, source.id);
+      const categoryValue = realCategory || realPrimary[0] || libraryMuscle || "Full body";
       const normalized = {
         ...clone(source),
         id: source.id || stableId("technical-exercise", context.origin || "system", source.name || "exercise", context.index || 0),
@@ -2075,7 +2114,7 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
         description: String(source.description || source.metadata?.description || source.note || ""),
         equipment: inferExerciseEquipment(source.name, source.equipment && source.equipment !== "Non indicata" ? source.equipment : source.metadata?.equipment || evidence.equipment),
         machineModel: String(source.machineModel || source.metadata?.machineModel || ""),
-        primaryMuscles: realPrimary,
+        primaryMuscles: realPrimary.length ? realPrimary : [categoryValue],
         secondaryMuscles: technicalStringList(source.secondaryMuscles?.length ? source.secondaryMuscles : source.metadata?.secondaryMuscles?.length ? source.metadata.secondaryMuscles : bio.secondaryMuscles?.length ? bio.secondaryMuscles : evidence.secondaryMuscles),
         stabilizers: technicalStringList(source.stabilizers || source.metadata?.stabilizers),
         targetRegion: String(source.targetRegion || source.metadata?.targetRegion || source.muscle || source.som || ""),
