@@ -381,3 +381,9 @@ Obiettivo:
 - **Causa**: il sottotitolo dell'intestazione (titleMap.render, riga ~7353) leggeva `state.profile.phase` — fossile mai più scritto da nessuna parte (default di stato "Intensificazione") — mentre la card e `currentTrainingContext()` derivano la fase dal PROGRAMMA ATTIVO (o dalla scelta manuale). Telefono = dove il fossile si vede, perché i dati aggiornati arrivano dal cloud ma il profilo locale resta vecchio.
 - **Fix**: estratto `effectiveTrainingPhase()` (programma attivo vince; in manuale manualPhase prima) usato SIA da `currentTrainingContext()` (niente più logica duplicata) SIA dal sottotitolo del Workout: intestazione e card dicono sempre la stessa cosa.
 - **Guardie**: `tests/v14806-fase-efficace.test.mjs`.
+
+## Checkpoint 30 — Campo fossile profile.phase rimosso del tutto (v148.07-fossile-fase-rimosso)
+- **Richiesta Alice**: "Cerca ogni altro punto dove resta profile.phase e togli del tutto il campo fossile".
+- **Censimento completo**: `profile.phase` sopravviveva in DUE soli punti di codice — default di stato (`phase: "Intensificazione"`, riga ~1110) e fallback della migrazione di manualPhase (`target.profile?.phase`, riga ~3044). Nessuna scrittura da nessuno (era il motivo del congelamento), nessun uso in test/HTML/CSS oltre i commenti. `phaseStart`/`phaseLength` sono VIVI (derivazione settimane: righe ~6317-6320, ~7622) → non toccati.
+- **Estirpo**: default senza `phase`; fallback della migrazione senza il termine fossile; `migrateStateSchema` ora fa `delete migrated.profile.phase` su OGNI stato caricato (locale, cloud, backup) → il campo sparisce dai dati salvati al primo avvio e non torna più.
+- **Guardie**: `tests/v14807-fossile-fase-rimosso.test.mjs` (nessuna lettura residua, default pulito, migrazione attiva, `effectiveTrainingPhase` unica fonte).

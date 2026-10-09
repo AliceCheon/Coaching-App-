@@ -1107,7 +1107,6 @@ const DATA_SCHEMA_VERSION = 11;
     const baseState = {
       profile: {
         name: "Alice",
-        phase: "Intensificazione",
         phaseStart: "2026-06-04",
         phaseLength: 8,
         mode: "athlete",
@@ -2795,6 +2794,10 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
       const migrated = clone(input || {});
       migrated.training = migrated.training || {};
       if (!Object.prototype.hasOwnProperty.call(migrated.training, "activeWorkout")) migrated.training.activeWorkout = null;
+      // v148.07 · il fossile profile.phase viene rimosso da OGNI stato caricato
+      // (locale, cloud, backup): nessuno lo legge più — la fase efficace è
+      // calcolata da effectiveTrainingPhase() (programma attivo / scelta manuale).
+      if (migrated.profile) delete migrated.profile.phase;
       migrated.meta = { ...(migrated.meta || {}), schemaVersion:5, workoutProMigrationAt:new Date().toISOString() };
       return migrated;
     }
@@ -3041,7 +3044,7 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
       target.training.contextMode = target.training.contextMode === "manual" || legacyManual ? "manual" : "auto";
       target.training.manualWeek = Number(target.training.manualWeek) > 0 ? Number(target.training.manualWeek) : null;
       target.training.manualSessionCode = String(target.training.manualSessionCode || (legacyManual ? target.training.sessionName : ""));
-      target.training.manualPhase = String(target.training.manualPhase || target.training.phaseFilter || target.profile?.phase || "");
+      target.training.manualPhase = String(target.training.manualPhase || target.training.phaseFilter || "");
       target.training.workoutView = "tabs-compact";
       target.training.exerciseTabs = target.training.exerciseTabs && typeof target.training.exerciseTabs === "object" ? target.training.exerciseTabs : {};
       target.training.setDone = target.training.setDone && typeof target.training.setDone === "object" ? target.training.setDone : {};
