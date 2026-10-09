@@ -65,7 +65,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
 context.window = context;
 context.globalThis = context;
 vm.createContext(context);
-new vm.Script(applicationScript, { filename: "v14801-classificazione.js" }).runInContext(context);
+new vm.Script(applicationScript, { filename: "v14802-classificazione.js" }).runInContext(context);
 
 const rows = vm.runInContext(`(() => {
   state = clone(baseState);
@@ -94,4 +94,15 @@ assert.equal(byName["Macchina fantastica di Alice"].categoria, "Full body");
 assert.notEqual(byName["Macchina fantastica di Alice"].categoria, "non classificato");
 assert.equal(byName["Macchina fantastica di Alice"].primari, "Full body");
 
-console.log(JSON.stringify({ ok: true, classificazione: true, autoRiparati: true, customInferiti: true, nessunOrfano: true, statisticheEsercizi: true, robottinaAnimataEDraggibile: true }));
+// ---- FIX 4 — workout: niente più valori "a casaccio" ----
+// Il re-seed non cancella più le correzioni della coach a ogni cambio build.
+assert.doesNotMatch(mainJs, /sheets: replacement\.sheets/);
+assert.match(mainJs, /i dati della coach[\s\S]{0,80}non vengono MAI più sovrascritti/);
+// Le note del workout seguono la stessa priorità della scheda (settimana → Excel → esercizio).
+assert.match(mainJs, /note: String\(raw\.notes \|\| raw\.note \|\| \[exercise\.metadata\?\.excelNote1, exercise\.metadata\?\.excelNote2\]/);
+// Trasparenza: il workout dichiara la settimana del metodo e la scheda base quando divergono.
+assert.match(mainJs, /workout-week-source/);
+assert.match(mainJs, /workout-base-hint/);
+assert.match(inlineCss, /\.workout-mini-badge\.workout-week-source/);
+
+console.log(JSON.stringify({ ok: true, classificazione: true, autoRiparati: true, customInferiti: true, nessunOrfano: true, statisticheEsercizi: true, robottinaAnimataEDraggibile: true, workoutOnesto: true }));

@@ -3524,6 +3524,10 @@
       .workout-mascot-bubble { max-width:min(210px,60vw); top:4px; font-size:.7rem; }
       .workout-mascot-menu { top:76px; width:min(220px,72vw); }
     }
+    /* v148.02 — il badge "sett. N · dal metodo" rende visibile DA DOVE nasce
+       la prescrizione del workout (progressione settimanale vs scheda base). */
+    .workout-mini-badge.workout-week-source,.workout-mini-badge.workout-base-hint { border:1px solid color-mix(in srgb,var(--pink-primary) 45%,transparent); color:var(--pink-primary); }
+    .workout-mini-badge.workout-base-hint { border-color:color-mix(in srgb,var(--text-muted) 45%,transparent); color:var(--text-muted); }
     @media(prefers-reduced-motion:reduce){
       /* FIX v148.01 — la robottina segue la scelta DENTRO l'app: solo se Alice
          ha scelto "Ridotte"/"Disattivate" (o il tema lo richiede) le animazioni

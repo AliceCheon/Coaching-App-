@@ -3623,12 +3623,16 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
             // e il timestamp: stato, flag attivo, cartella e nome restano quelli
             // decisi dall'utente.
             const seededIds = new Set([seeded.id].filter(Boolean));
-            const replacedPrograms = (loaded.programs || []).map((program) => (seededIds.has(program.id) ? {
-              ...program,
-              phase: program.phase || replacement.phase,
-              sheets: replacement.sheets,
-              updatedAt: replacement.updatedAt
-            } : program));
+            // v148.02 · CAUSA DEL "MI ESCE 2x6 INVECE DI 3x8": il re-seed
+            // sostituiva le schede del programma con la copia del workbook a
+            // OGNI cambio di build, cancellando le correzioni scritte a mano
+            // da Alice (prescrizioni, note, progressioni) e facendole tornare
+            // ai valori vecchi dell'Excel. Le riparazioni del 10-06 hanno già
+            // fatto il loro dovere sul dispositivo; ora il seed entra SOLO se
+            // il programma non esiste ancora in locale: i dati della coach
+            // non vengono MAI più sovrascritti in automatico.
+            const replacedPrograms = (loaded.programs || []);
+            if (!replacedPrograms.some((program) => seededIds.has(program.id))) replacedPrograms.push(replacement);
             if (!replacedPrograms.some((program) => program.id === seeded.id)) replacedPrograms.push(replacement);
             loaded.programs = replacedPrograms;
             loaded.meta = {
@@ -3667,12 +3671,16 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
             // e il timestamp: stato, flag attivo, cartella e nome restano quelli
             // decisi dall'utente.
             const seededIds = new Set([seeded.id].filter(Boolean));
-            const replacedPrograms = (loaded.programs || []).map((program) => (seededIds.has(program.id) ? {
-              ...program,
-              phase: program.phase || replacement.phase,
-              sheets: replacement.sheets,
-              updatedAt: replacement.updatedAt
-            } : program));
+            // v148.02 · CAUSA DEL "MI ESCE 2x6 INVECE DI 3x8": il re-seed
+            // sostituiva le schede del programma con la copia del workbook a
+            // OGNI cambio di build, cancellando le correzioni scritte a mano
+            // da Alice (prescrizioni, note, progressioni) e facendole tornare
+            // ai valori vecchi dell'Excel. Le riparazioni del 10-06 hanno già
+            // fatto il loro dovere sul dispositivo; ora il seed entra SOLO se
+            // il programma non esiste ancora in locale: i dati della coach
+            // non vengono MAI più sovrascritti in automatico.
+            const replacedPrograms = (loaded.programs || []);
+            if (!replacedPrograms.some((program) => seededIds.has(program.id))) replacedPrograms.push(replacement);
             if (!replacedPrograms.some((program) => program.id === seeded.id)) replacedPrograms.push(replacement);
             loaded.programs = replacedPrograms;
             loaded.meta = {
@@ -6389,6 +6397,11 @@ function sanitizeForFirestore(value) {
         rir: "",
         rest: rest || exercise.rest,
         tempo,
+        // v148.02 · la NOTE del workout segue la STESSA priorità della scheda
+        // (settimana → note Excel note1+note2 → nota esercizio): prima il
+        // workout pescava exercise.note, che nelle schede importate contiene
+        // la DESCRIZIONE DEL METODO — ecco le "note a caso".
+        note: String(raw.notes || raw.note || [exercise.metadata?.excelNote1, exercise.metadata?.excelNote2].filter(Boolean).join(" ") || exercise.note || "").trim(),
         activeWeek: Number(weekNumber),
         activeWeekPrescription: week
       };
@@ -8025,6 +8038,7 @@ function sanitizeForFirestore(value) {
               <small>${escapeHtml(item.muscle || session.code)} - ${escapeHtml(displayLabel(item.rest || "recupero libero"))}</small>
             </span>
             <span class="workout-toggle-badges">
+              ${item.activeWeek != null ? `<span class="workout-mini-badge workout-week-source" title="Valore della settimana ${item.activeWeek} dal metodo di progressione">sett. ${item.activeWeek} · dal metodo</span>` : ""}
               <span class="workout-mini-badge">${escapeHtml(displayLabel(item.sets || "--"))} serie</span>
               <span class="workout-mini-badge">${escapeHtml(displayLabel(item.reps || "--"))}</span>
               <span class="workout-toggle-icon">${isOpen ? "-" : "+"}</span>
@@ -8040,7 +8054,7 @@ function sanitizeForFirestore(value) {
                   <div><h3>${escapeHtml(displayExerciseName(item.name))}</h3><p>${escapeHtml(item.muscle || session.focus || session.code)}${item.rir ? ` · RIR ${escapeHtml(displayLabel(item.rir))}` : ""}</p></div>
                   <span class="workout-heart" aria-hidden="true">♥</span>
                 </div>
-                <div class="workout-compact-meta"><span>${escapeHtml(displayLabel(item.sets || "--"))} serie</span><span>${escapeHtml(displayLabel(item.reps || "--"))} reps</span><span>${escapeHtml(displayLabel(item.rest || "recupero libero"))}</span></div>
+                <div class="workout-compact-meta"><span>${escapeHtml(displayLabel(item.sets || "--"))} serie</span><span>${escapeHtml(displayLabel(item.reps || "--"))} reps</span><span>${escapeHtml(displayLabel(item.rest || "recupero libero"))}</span>${item.activeWeek != null && (String(item.prescription?.sets ?? "") !== String(item.sets ?? "") || formatReps(item.prescription?.reps) !== String(item.reps ?? "")) ? `<span class="workout-mini-badge workout-base-hint" title="Prescrizione base della scheda, senza la progressione settimanale">scheda base: ${escapeHtml(displayLabel(item.prescription?.sets || "--"))}×${escapeHtml(displayLabel(formatReps(item.prescription?.reps) || "--"))}</span>` : ""}</div>
                 ${activeTab === "execution" ? `
                   <div class="compact-set-list">
                     ${values.map((value, setIndex) => { const done = setIsDone(context, item, setIndex, value); return `

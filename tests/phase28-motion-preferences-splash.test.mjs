@@ -14,7 +14,7 @@ assert.match(html, /effectiveAnimationMode\(\) !== "full"/);
 assert.match(html, /const remaining = Math\.max\(0, 600 - \(Date\.now\(\) - premiumBootStartedAt\)\)/);
 assert.match(html, /setTimeout\(\(\) => \{ premiumBootReady = true; finishPremiumBoot\(\); \}, 1800\)/);
 assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14801-classifica-robottina"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14802-workout-prescrizioni-oneste"/);
 console.log(JSON.stringify({ok:true,modes:true,glow:true,haptic:true,bootManaged:true}));
 
 
