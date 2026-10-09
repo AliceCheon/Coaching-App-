@@ -97,7 +97,7 @@ assert.equal(byName["Macchina fantastica di Alice"].primari, "Full body");
 // ---- FIX 4 — workout: niente più valori "a casaccio" ----
 // Il re-seed non cancella più le correzioni della coach a ogni cambio build.
 assert.doesNotMatch(mainJs, /sheets: replacement\.sheets/);
-assert.match(mainJs, /i dati della coach[\s\S]{0,80}non vengono MAI più sovrascritti/);
+assert.match(mainJs, /il seed RIPARA il contenuto anche quando il programma[\s\S]{0,160}le copie vecchie dei dispositivi tornano alla scheda/);
 // Le note del workout seguono la stessa priorità della scheda (settimana → Excel → esercizio).
 assert.match(mainJs, /note: String\(raw\.notes \|\| raw\.note \|\| \[exercise\.metadata\?\.excelNote1, exercise\.metadata\?\.excelNote2\]/);
 // Settimane fuori metodo: il fallback mappa la prescrizione base sui campi del

@@ -60,7 +60,7 @@ test("il boot ripristina le progressioni IOD reali al posto di settimane generic
   })()`, context);
   assert.deepEqual(res.corrupted, ["1", "1-12", "1-12", "1-12", "1-12", "1-12", "1-12", "1-12"], "precondizione: salvataggio sporco");
   assert.deepEqual(res.restored, EXPECTED_LAT, "le progressioni Excel devono tornare al boot");
-  assert.equal(res.build, "2026-10-06-iod-progressioni-ripristinate-v1");
+  assert.equal(res.build, "2026-10-09-riparazione-contenuto-workbook-v14810");
 });
 
 test("le altre fasi (es. B program 1) non vengono toccate dal re-seed IOD", () => {
