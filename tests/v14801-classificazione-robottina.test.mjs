@@ -65,7 +65,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
 context.window = context;
 context.globalThis = context;
 vm.createContext(context);
-new vm.Script(applicationScript, { filename: "v14802-classificazione.js" }).runInContext(context);
+new vm.Script(applicationScript, { filename: "v14803-classificazione.js" }).runInContext(context);
 
 const rows = vm.runInContext(`(() => {
   state = clone(baseState);
@@ -100,6 +100,9 @@ assert.doesNotMatch(mainJs, /sheets: replacement\.sheets/);
 assert.match(mainJs, /i dati della coach[\s\S]{0,80}non vengono MAI più sovrascritti/);
 // Le note del workout seguono la stessa priorità della scheda (settimana → Excel → esercizio).
 assert.match(mainJs, /note: String\(raw\.notes \|\| raw\.note \|\| \[exercise\.metadata\?\.excelNote1, exercise\.metadata\?\.excelNote2\]/);
+// Settimane fuori metodo: il fallback mappa la prescrizione base sui campi del
+// workout (sets/reps/rest) e mantiene la stessa priorità delle note della scheda.
+assert.match(mainJs, /if \(!raw\) \{\s*\n\s*const base = exercise\.prescription \|\| \{\};[\s\S]{0,300}sets: String\(base\.sets \?\? ""\),[\s\S]{0,300}excelNote1, exercise\.metadata\?\.excelNote2/);
 // Trasparenza: il workout dichiara la settimana del metodo e la scheda base quando divergono.
 assert.match(mainJs, /workout-week-source/);
 assert.match(mainJs, /workout-base-hint/);

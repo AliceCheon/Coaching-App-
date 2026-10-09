@@ -355,3 +355,10 @@ Obiettivo:
 - **Guardia**: `tests/v14801-classificazione-robottina.test.mjs` esteso (niente `sheets: replacement.sheets`, priorità note, badge settimana/base). Suite: **239 test, 230 pass, 0 fail, 9 skipped, EXIT:0**.
 - **Bump**: `node tools/bump-version.mjs v148.02-workout-prescrizioni-oneste` (30 file).
 - **APK**: TWA = guscio che carica il sito live: nessun aggiornamento da installare; il SW con CACHE_NAME nuovo rinnova il contenuto alla riapertura dell'app.
+
+## Checkpoint 26 — Verifica estesa a tutte le settimane + fallback fuori metodo (v148.03-parita-settimane)
+- **Richiesta Alice**: "Estendi la verifica a tutte le settimane del metodo, non solo la sett. 6".
+- **Verifica VM su TUTTE le 8 schede reali dei due metodi (AO A-D, IOD A-D) × settimane 1-8**: **496 confronti (62 esercizi × 8 settimane), 0 scontri** tra workout e scheda su serie, ripetizioni e note. Divergenze dalla base solo dove il metodo cambia i numeri (picchi sett. 4 test 10rm/12rm e sett. 8 scarico: 4-8 esercizi per scheda — ora dichiarati dal badge).
+- **Scoperta dalla sonda sett. 9 (fuori metodo)**: dopo `consolidateLegacyWeeklyProgram` gli esercizi non hanno più `sets`/`reps` al top-level (vanno in `prescription`): il fallback `return exercise` (anche pre-esistente) restituiva campi display vuoti → workout "--" vs scheda "3×12-8". Fix: il fallback mappa la prescrizione base sui campi visualizzati (sets/reps/rest/tempo) e applica la priorità note Excel → nota esercizio. Sonda 9: ok su 8/8 schede.
+- **Guardia**: regex del fallback estesa nel test v14801. Suite: **239 test, 230 pass, 0 fail, 9 skipped, EXIT:0**.
+- **Bump**: `node tools/bump-version.mjs v148.03-parita-settimane` (30 file).

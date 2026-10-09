@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v148.02-workout-prescrizioni-oneste` |
-| `cache` | `atlas-app-v14802-workout-prescrizioni-oneste` |
+| `build` | `v148.03-parita-settimane` |
+| `cache` | `atlas-app-v14803-parita-settimane` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

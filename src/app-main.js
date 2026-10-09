@@ -6382,7 +6382,22 @@ function sanitizeForFirestore(value) {
     function exercisePrescriptionForTrainingWeek(exercise = {}, weekNumber = 1) {
       const weeks = Array.isArray(exercise.progression?.weeks) ? exercise.progression.weeks : [];
       const raw = weeks.find((item) => Number(item?.weekNumber || item?.week) === Number(weekNumber)) || weeks[Number(weekNumber) - 1];
-      if (!raw) return exercise;
+      // v148.03 · settimana FUORI dal metodo (es. selettore manuale oltre l'ultima
+      // settimana): i valori tornano alla PRESCRIZIONE BASE mappata sui campi che
+      // il workout visualizza (consolidate li sposta in prescription), la NOTE segue
+      // la stessa priorità della scheda (note Excel → nota esercizio): workout e
+      // scheda restano identici anche oltre l'ultima settimana del metodo.
+      if (!raw) {
+        const base = exercise.prescription || {};
+        return {
+          ...exercise,
+          sets: String(base.sets ?? ""),
+          reps: formatReps(base.reps),
+          rest: formatRest(base.rest) || (base.rest?.seconds ? `${base.rest.seconds}s` : exercise.rest),
+          tempo: String(exercise.metadata?.note2 || exercise.tempo || "").trim(),
+          note: String([exercise.metadata?.excelNote1, exercise.metadata?.excelNote2].filter(Boolean).join(" ") || exercise.note || "").trim()
+        };
+      }
       const week = parseWeekPrescription(raw, Number(weekNumber), exercise.prescription || exercise);
       const reps = formatReps(week.reps);
       const rest = formatRest(week.rest) || (week.restSeconds ? `${week.restSeconds}s` : "");
