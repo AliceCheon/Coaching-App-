@@ -2794,10 +2794,6 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
       const migrated = clone(input || {});
       migrated.training = migrated.training || {};
       if (!Object.prototype.hasOwnProperty.call(migrated.training, "activeWorkout")) migrated.training.activeWorkout = null;
-      // v148.07 · il fossile profile.phase viene rimosso da OGNI stato caricato
-      // (locale, cloud, backup): nessuno lo legge più — la fase efficace è
-      // calcolata da effectiveTrainingPhase() (programma attivo / scelta manuale).
-      if (migrated.profile) delete migrated.profile.phase;
       migrated.meta = { ...(migrated.meta || {}), schemaVersion:5, workoutProMigrationAt:new Date().toISOString() };
       return migrated;
     }
@@ -2900,6 +2896,10 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
           working.meta = { ...(working.meta || {}), schemaVersion: version };
           applied.push(`${version - 1}->${version}`);
         }
+        // v148.08 · il fossile profile.phase viene rimosso da OGNI stato caricato
+        // (locale, cloud, backup, con QUALSIASI schemaVersion di partenza):
+        // nessuno lo legge più — la fase efficace è calcolata da effectiveTrainingPhase().
+        if (working.profile) delete working.profile.phase;
         hydrateStateModel(working);
         const validation = validateProgramCollection(working.programs || []);
         working.meta = { ...(working.meta || {}), schemaVersion: targetVersion, migrationIssues: validation.errors.slice(0, 200) };
