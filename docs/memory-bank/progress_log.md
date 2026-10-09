@@ -313,3 +313,15 @@ Obiettivo:
 - **Suite**: **238 test, 229 pass, 0 fail, 9 skipped, EXIT:0**.
 - **Bump**: `node tools/bump-version.mjs v147.99-torta-frecce` (29 file).
 - **Prossimo step**: feedback di Alice sull'app pubblicata; poi (in coda) Coach AI su reps/note/RIR/RPE.
+
+## Checkpoint 22 — FASE 4-ter: nomi schede, confronto selezionabile e fix "torna a bozza" (v148.00-nomi-schede-confronto-stato)
+- **Richiesta Alice**: (1) le freccette della torta non si vedono → si possono togliere; (2) la scheda "Intensità ottobre-dicembre" non compare e quella che compare si chiama solo "Intensità" → **nomi completi**; (3) il tastino "tutte le schede" non funziona → renderlo una **selezione multipla** (confronto tra 2/3/n schede a piacere); (4) di default il confronto deve mostrare la **scheda attiva** ("Intensità Agosto-Ottobre"); (5) BUG: mette "Attivo"/"Archiviata" sulle schede ma **tornano tutte a "bozza"**.
+- **Nomi/fasi**: `VOLUME_HISTORY` **calcolato** da `PROGRAM_LIBRARY` (`volumeHistoryFromProgramLibrary()`), non più tabella a mano (che aveva "B program 3" fantasma e non aveva "Intensità ottobre-dicembre"). Nomi con `volumeSheetLabel()` (completi; rimossa `shortVolumeTitle`).
+- **Torta**: `drawVolumePie()` senza callout (`edge()` eliminato), raggio ripristinato; legenda sotto.
+- **Confronto**: chip multi-selezione (`volumeCompareChipHtml`, `data-volume-compare`, `state.ui.volumeCompare`), griglia `--cols`.
+- **Default attiva**: `activeVolumeBlockIndex()` ← fase di `explicitActiveTrainingProgram()`; senza scelta salvata → `[activeIndex]`.
+- **BUG "bozza" (radice provata con harness VM)**: i re-seed forzati in `loadState()` (Aug-Ott e Ott-Dic) sostituivano **tutto** il programma con la copia workbook (`status:"available"` → label "Bozza"). Repro: con i flag `meta.intensitaNuovoBuild`/`intensitaOdBuild` assenti, dopo `loadState()` le status tornavano `available`. Fix: aggiorno dal workbook SOLO fase mancante + schede + timestamp; status/active/folder/name restano dell'utente. Repro post-fix: status preservati.
+- **Guardia**: `tests/phase30-statistiche-volume.test.mjs` esteso (`activeVolumeBlockIndex`, default attiva).
+- **Suite**: **238 test, 229 pass, 0 fail, 9 skipped, EXIT:0**.
+- **Bump**: `node tools/bump-version.mjs v148.00-nomi-schede-confronto-stato` (29 file).
+- **Prossimo step**: feedback di Alice; poi (in coda) Coach AI su reps/note/RIR/RPE.
