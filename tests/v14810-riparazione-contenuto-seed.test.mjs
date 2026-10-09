@@ -8,7 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const mainJs = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 
-// --- v148.10: il workbook RIPARA il contenuto dei seed anche su copie esistenti ---
+// --- v148.11: il workbook RIPARA il contenuto dei seed anche su copie esistenti ---
 // Alice: "continuano a uscire ripetizioni e serie a casaccio su mobile, anche se
 // ora la scheda giusta c'è". Il telefono custodiva una copia VECCHIA del programma
 // (id già presente → il re-seed la saltava; cancello con stamp fissa → mai più
@@ -25,8 +25,8 @@ assert.doesNotMatch(mainJs, /seededIds\.has\(program\.id\)/);
 
 // 3. I cancelli sono RIARMATI con la stamp nuova (la riparazione parte su ogni
 //    dispositivo al primo avvio di questa build).
-assert.match(mainJs, /const INTENSITA_NUOVO_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810"/);
-assert.match(mainJs, /const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810"/);
+assert.match(mainJs, /const INTENSITA_NUOVO_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14811"/);
+assert.match(mainJs, /const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14811"/);
 
 // 4. Verifica VIVA in VM: la copia vecchia del telefono viene riparata dal seed.
 const vmLibs = await Promise.all(["exercise-library-19.8.js","master-exercise-library.js","app-config-v144.js","athlete-context.js","coach-ai-engine-2.js","knowledge-graph.js","decision-rules.js","decision-engine.js","coach-ai3-programming.js","coach-studio.js"].map((p) => fs.readFileSync(path.join(root, p), "utf8")));
@@ -40,7 +40,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
 context.window = context;
 context.globalThis = context;
 vm.createContext(context);
-new vm.Script(applicationScript, { filename: "v14810-riparazione.js" }).runInContext(context);
+new vm.Script(applicationScript, { filename: "v14811-riparazione.js" }).runInContext(context);
 
 const out = vm.runInContext(`(() => {
   const esito = {};
@@ -74,4 +74,4 @@ assert.equal(out.nomeECreazionePresi, true, "nome e creazione restano");
 assert.equal(out.stampAggiornato, true, "il timestamp avanza (così il cloud propaga la riparazione)");
 assert.equal(out.idMancanteNonTocca, true, "id mancante: nessun tocco (il push lo fa il blocco)");
 
-console.log(JSON.stringify({ ok: true, v: "v148.10", riparazione: "contenuto seed su copie esistenti" }));
+console.log(JSON.stringify({ ok: true, v: "v148.11", riparazione: "contenuto seed su copie esistenti" }));

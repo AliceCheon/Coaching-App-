@@ -3592,16 +3592,27 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
     // decisi dall'utente (stato, attivo, cartella, nome, creazione).
     function repairSeededProgramContent(programs, seeded, stamp) {
       if (!Array.isArray(programs) || !seeded?.id) return false;
-      const index = programs.findIndex((program) => program.id === seeded.id);
-      if (index < 0) return false;
-      const existing = programs[index];
-      programs[index] = {
-        ...existing,
-        phase: seeded.phase || existing.phase,
-        sheets: clone(seeded.sheets || []),
-        updatedAt: stamp
-      };
-      return true;
+      // v148.11 · "AVVIO VERO": la copia del dispositivo può avere l'id del seed
+      // OPPURE una copia semi-nata con la STESSA fase ma patina diversa (ed è
+      // spesso QUELLA attiva: il telefono mostrava i numeri di luglio finché il
+      // cloud non arrivava dopo minuti). Ripariamo TUTTE le copie nate dal seed
+      // (source "imported") con fase identica; i programmi CUSTOM della coach non
+      // vengono mai toccati. Status, active, cartella, nome e creazione restano.
+      const seedPhase = String(seeded.phase || "");
+      let touched = false;
+      programs.forEach((program, index) => {
+        const sameSeed = program.id === seeded.id;
+        const samePhaseImported = !!seedPhase && program.phase === seedPhase && program.source !== "custom";
+        if (!sameSeed && !samePhaseImported) return;
+        programs[index] = {
+          ...program,
+          phase: seeded.phase || program.phase,
+          sheets: clone(seeded.sheets || []),
+          updatedAt: stamp
+        };
+        touched = true;
+      });
+      return touched;
     }
 
     function loadState() {
@@ -13386,6 +13397,14 @@ function sanitizeForFirestore(value) {
         ctx.beginPath(); ctx.arc(X(w), Y(value), 3.5, 0, Math.PI * 2);
         ctx.fillStyle = color; ctx.fill();
         ctx.strokeStyle = "rgba(20,10,30,.55)"; ctx.lineWidth = 1.5; ctx.stroke();
+      });
+      // v148.11 · il NUMERO delle serie sopra ogni punto: la linea parla ad alta
+      // voce, settimana per settimana (gruppo scelto o totale in "Tutti i gruppi").
+      ctx.font = "700 10px Segoe UI, sans-serif";
+      ctx.textAlign = "center";
+      weeks.forEach((value, w) => {
+        ctx.fillStyle = "rgba(255,247,252,.92)";
+        ctx.fillText(String(value), X(w), Y(value) - 9);
       });
 
       // etichetta del gruppo (o del totale) in alto a sinistra

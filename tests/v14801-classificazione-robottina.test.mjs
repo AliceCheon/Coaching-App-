@@ -65,7 +65,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
 context.window = context;
 context.globalThis = context;
 vm.createContext(context);
-new vm.Script(applicationScript, { filename: "v14810-classificazione.js" }).runInContext(context);
+new vm.Script(applicationScript, { filename: "v14811-classificazione.js" }).runInContext(context);
 
 const rows = vm.runInContext(`(() => {
   state = clone(baseState);
