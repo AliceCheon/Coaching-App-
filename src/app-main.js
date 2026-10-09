@@ -1163,6 +1163,7 @@ const DATA_SCHEMA_VERSION = 11;
         timerEndsAt: 0,
         activeWorkout: null,
         contextMode: "auto",
+        manualModeDate: "",
         manualWeek: null,
         manualSessionCode: "",
         manualPhase: ""
@@ -1302,6 +1303,7 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
     try { releaseObsoleteLocalBackups(); } catch (error) {}
 
     state.training.date = todayInput();
+    try { normalizeManualContextForDate(); } catch (error) {} // v148.09: a giorno nuovo, manuale scaduto → automatico
     state.training.sessionName = "auto";
     hydrateStateModel(state);
     let programmingEngineRuntime = null;
@@ -6489,7 +6491,26 @@ function sanitizeForFirestore(value) {
           : (activePhase || state.training?.phaseFilter || "Intensificazione")
       ).trim()) || "Intensificazione";
     }
+    // v148.09 · il giro Automatica→Manuale→Automatica è AUTOMATICO: la modalità
+    // manuale è un override DI GIORNO (vale per la data in cui è stata scelta).
+    // Al giorno nuovo l'app torna DA SOLA su Automatica e ripulisce la scelta
+    // manuale: la fase riparte dal programma attivo senza che Alice debba
+    // ricordarsi di riswitchare (niente più contesti stantii di ieri).
+    function normalizeManualContextForDate() {
+      if (state.training?.contextMode !== "manual") return false;
+      const today = state.training.date || todayInput();
+      const since = String(state.training.manualModeDate || "");
+      if (!since || since === today) return false;
+      state.training.contextMode = "auto";
+      state.training.manualModeDate = "";
+      state.training.manualPhase = "";
+      state.training.manualSessionCode = "";
+      state.training.manualWeek = 0;
+      return true;
+    }
+
     function currentTrainingContext() {
+      normalizeManualContextForDate();
       const date = state.training.date || todayInput();
       const isManual = state.training.contextMode === "manual";
       const activeProgram = explicitActiveTrainingProgram();
@@ -13564,7 +13585,7 @@ function sanitizeForFirestore(value) {
       document.querySelectorAll("[data-training-context]").forEach((input) => input.addEventListener("change", () => {
         const field = input.dataset.trainingContext;
         state.training = state.training || {};
-        if (field === "mode") state.training.contextMode = input.value;
+        if (field === "mode") { state.training.contextMode = input.value; state.training.manualModeDate = input.value === "manual" ? (state.training.date || todayInput()) : ""; }
         if (field === "phase") { state.training.manualPhase = input.value; state.training.phaseFilter = input.value; state.training.manualSessionCode = ""; }
         if (field === "week") state.training.manualWeek = Number(input.value) || null;
         if (field === "session") state.training.manualSessionCode = input.value;

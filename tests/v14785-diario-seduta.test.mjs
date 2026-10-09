@@ -45,7 +45,7 @@ assert.match(css, /\.journal-mood\.active/, "mancano gli stili del mood attivo")
 assert.match(css, /html\[data-theme="light"\] \.journal-note/, "mancano gli stili chiari del diario");
 
 // 7) Versione allineata alla build corrente
-assert.ok(config.includes('build: "v148.08-fossile-fuori-da-ogni-stato"'), "build non aggiornata alla build corrente");
-assert.match(sw, /const CACHE_NAME = "atlas-app-v14808-fossile-fuori-da-ogni-stato"/, "cache PWA non aggiornata alla build corrente");
+assert.ok(config.includes('build: "v148.09-giro-automatico"'), "build non aggiornata alla build corrente");
+assert.match(sw, /const CACHE_NAME = "atlas-app-v14809-giro-automatico"/, "cache PWA non aggiornata alla build corrente");
 
 console.log(JSON.stringify({ ok: true, fase: 1, feature: "diario-seduta", moods: 5, fields: ["note", "mood", "energy", "rpe"] }));

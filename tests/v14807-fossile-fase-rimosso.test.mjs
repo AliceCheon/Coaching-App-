@@ -7,7 +7,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const app = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 
-// --- v148.08: il campo fossile profile.phase è RIMOSSO del tutto ---
+// --- v148.09: il campo fossile profile.phase è RIMOSSO del tutto ---
 // Richiesta Alice dopo il bug dell'intestazione ("Intensificazione" sopra,
 // "Intensità Agosto-Ottobre" nella card): niente letture residue, niente
 // default, e lo stato salvato lo perde al primo caricamento.
@@ -25,11 +25,11 @@ assert.doesNotMatch(app, /state\.profile\?\.phase/);
 assert.doesNotMatch(app, /state\.profile\.phase\b/);
 
 // 3. La migrazione strappa il fossile da ogni stato esistente, a prescindere dalla
-//    schemaVersion (corpo sempre eseguito di runSchemaMigrations, v148.08).
+//    schemaVersion (corpo sempre eseguito di runSchemaMigrations, v148.09).
 assert.match(app, /if \(working\.profile\) delete working\.profile\.phase;\s*\n\s*hydrateStateModel\(working\)/);
 
-// 4. La fase efficace resta l'unica fonte (helper v148.08 in uso).
+// 4. La fase efficace resta l'unica fonte (helper v148.09 in uso).
 assert.match(app, /function effectiveTrainingPhase\(\)/);
 assert.match(app, /training: \["Workout del giorno", effectiveTrainingPhase\(\)\]/);
 
-console.log(JSON.stringify({ ok: true, v: "v148.08", fossile: "profile.phase rimosso del tutto" }));
+console.log(JSON.stringify({ ok: true, v: "v148.09", fossile: "profile.phase rimosso del tutto" }));

@@ -68,7 +68,7 @@ assert.match(app, /const row = currentVolumeGroupRow\(\)/);
 assert.match(app, /state\.ui\.volumeGroup = clampVolumeGroup\(/);
 assert.match(app, /state\.ui\.volumeGroup = -1; \/\/ cambiando scheda/);
 
-// --- v148.08: torta a fuoco sul muscolo scelto a destra + legenda cliccabile ---
+// --- v148.09: torta a fuoco sul muscolo scelto a destra + legenda cliccabile ---
 assert.match(app, /<option value="-1" \$\{groupIndex === -1 \? "selected" : ""\}>Tutti i gruppi<\/option>/);
 assert.match(app, /function volumeFocusIndex\(\)/);
 assert.match(app, /function volumeWeeklyTotals\(\)/);
