@@ -340,3 +340,10 @@ Obiettivo:
   - Ultima spiaggia onesta: zero segnali → **"Full body"** (categoria reale, correttabile a mano in un tocco) — nessun esercizio resta più con un segnaposto.
   - Fallback primari consolidato: `primaryMuscles` vuoti → prendono la categoria effettiva (fine del "Muscolo da definire" con categoria vera a fianco).
   - Test VM esteso (harness phase4): auto-riparo stacchi → femorali; ereditarietà "Topo Forte di Alice" → Quadricipiti; "Macchina fantastica di Alice" → Full body (mai segnaposto). Suite: **239 test, 230 pass, 0 fail, 9 skipped, EXIT:0**.
+
+## Checkpoint 24 — Rilascio v148.01 su main (push autorizzato da Alice, completato ~10:21)
+- **Contesto**: il sandbox era stato riciclato senza credenziali GitHub — primo tentativo di push fallito (`could not read Username`). Alice ha fornito un PAT (usato SOLO per il push via URL one-shot, mai salvato su file né in configurazione; da revocare dopo l'uso).
+- **Push**: `main` → GitHub (commits `440330a` + `00bd0b0` + checkpoint): classifica vera, esercizi nelle statistiche, robottina animata e trascinabile, inferenza muscoli per custom.
+- **Backup di transito**: `coaching-app-v14801.bundle` (storia completa, verificato) consegnato ad Alice e caricato in AI Drive finché il push era bloccato.
+- **Deploy**: GitHub Pages serve la v148.01; il cache-bust (`CACHE_NAME` nuovo) fa scaricare subito la versione nuova alla PWA sul telefono.
+- **Da verificare sul dispositivo**: stacchi riconosciuti "femorali" senza intervento; colonna esercizi in Statistiche scheda; robottina animata e spostabile.
