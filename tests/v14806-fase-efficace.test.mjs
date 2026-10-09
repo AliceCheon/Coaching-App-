@@ -7,7 +7,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const app = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 
-// --- v148.09: l'intestazione del Workout usa la FASE EFFICACE, non il fossile ---
+// --- v148.10: l'intestazione del Workout usa la FASE EFFICACE, non il fossile ---
 // Alice: "dice Intensificazione e sotto Intensità agosto ottobre, che succede?"
 // Il sottotitolo leggeva `state.profile.phase` (mai più scritto: rimasto a
 // "Intensificazione") mentre la card e la derivazione usano il programma attivo.
@@ -24,4 +24,4 @@ assert.match(app, /const phase = effectiveTrainingPhase\(\);/);
 assert.match(app, /training: \["Workout del giorno", effectiveTrainingPhase\(\)\]/);
 assert.doesNotMatch(app, /training: \["Workout del giorno", state\.profile\.phase\]/);
 
-console.log(JSON.stringify({ ok: true, v: "v148.09", intestazione: "fase efficace" }));
+console.log(JSON.stringify({ ok: true, v: "v148.10", intestazione: "fase efficace" }));

@@ -1282,14 +1282,14 @@ const DATA_SCHEMA_VERSION = 11;
       }
     };
 
-const INTENSITA_NUOVO_BUILD = "2026-10-06-note-excel-som-separati-v9";
+const INTENSITA_NUOVO_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
 // Build del seed "Intensità ottobre-dicembre" (IOD). Come per "Intensità
 // Agosto-Ottobre", quando questo valore cambia il workbook IOD (con le
 // progressioni reali dell'Excel) sostituisce il seed locale salvato a ogni
 // avvio. Serve perché `repairImportedProgressions` conserva qualunque settimana
 // non vuota: un salvataggio con settimane IOD generiche/corrotte non veniva mai
 // riparato, quindi le progressioni reali non tornavano più.
-const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
+const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
 
     let recoveryBootError = null;
     let recoveryBootPayload = "";
@@ -3584,6 +3584,26 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
       try { localStorage.setItem(PRE_MERGE_BACKUP_KEY, String(raw || "")); } catch (error) { /* storage pieno: non bloccare */ }
     }
 
+    // v148.10 · RIPARA IL CONTENUTO dei programmi semi-nati dal workbook: le copie
+    // dei dispositivi possono essere rimaste a estrazioni vecchie (le "serie a
+    // casaccio" di Alice: scheda giusta, numeri di luglio — il telefono custodiva
+    // la copia del programma di quando l'estrazione era sbagliata). Sostituisce
+    // schede+esercizi+progressioni con il seed aggiornato, preservando i campi
+    // decisi dall'utente (stato, attivo, cartella, nome, creazione).
+    function repairSeededProgramContent(programs, seeded, stamp) {
+      if (!Array.isArray(programs) || !seeded?.id) return false;
+      const index = programs.findIndex((program) => program.id === seeded.id);
+      if (index < 0) return false;
+      const existing = programs[index];
+      programs[index] = {
+        ...existing,
+        phase: seeded.phase || existing.phase,
+        sheets: clone(seeded.sheets || []),
+        updatedAt: stamp
+      };
+      return true;
+    }
+
     function loadState() {
       let saved = "";
       try {
@@ -3628,18 +3648,13 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
             // Ora dal workbook si aggiornano SOLO la fase (se mancante), le schede
             // e il timestamp: stato, flag attivo, cartella e nome restano quelli
             // decisi dall'utente.
-            const seededIds = new Set([seeded.id].filter(Boolean));
-            // v148.02 · CAUSA DEL "MI ESCE 2x6 INVECE DI 3x8": il re-seed
-            // sostituiva le schede del programma con la copia del workbook a
-            // OGNI cambio di build, cancellando le correzioni scritte a mano
-            // da Alice (prescrizioni, note, progressioni) e facendole tornare
-            // ai valori vecchi dell'Excel. Le riparazioni del 10-06 hanno già
-            // fatto il loro dovere sul dispositivo; ora il seed entra SOLO se
-            // il programma non esiste ancora in locale: i dati della coach
-            // non vengono MAI più sovrascritti in automatico.
+            // v148.02 · (storico) il re-seed non doveva cancellare le correzioni
+            // scritte a mano. Dalla v148.10 il workbook È la fonte del contenuto
+            // (estrazione onesta, verifica 496/496 contro la scheda): a ogni
+            // cambio build il seed RIPARA il contenuto anche quando il programma
+            // esiste già — le copie vecchie dei dispositivi tornano alla scheda.
             const replacedPrograms = (loaded.programs || []);
-            if (!replacedPrograms.some((program) => seededIds.has(program.id))) replacedPrograms.push(replacement);
-            if (!replacedPrograms.some((program) => program.id === seeded.id)) replacedPrograms.push(replacement);
+            if (!repairSeededProgramContent(replacedPrograms, seeded, stamp)) replacedPrograms.push(replacement);
             loaded.programs = replacedPrograms;
             loaded.meta = {
               ...(loaded.meta || {}),
@@ -3676,18 +3691,10 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
             // Ora dal workbook si aggiornano SOLO la fase (se mancante), le schede
             // e il timestamp: stato, flag attivo, cartella e nome restano quelli
             // decisi dall'utente.
-            const seededIds = new Set([seeded.id].filter(Boolean));
-            // v148.02 · CAUSA DEL "MI ESCE 2x6 INVECE DI 3x8": il re-seed
-            // sostituiva le schede del programma con la copia del workbook a
-            // OGNI cambio di build, cancellando le correzioni scritte a mano
-            // da Alice (prescrizioni, note, progressioni) e facendole tornare
-            // ai valori vecchi dell'Excel. Le riparazioni del 10-06 hanno già
-            // fatto il loro dovere sul dispositivo; ora il seed entra SOLO se
-            // il programma non esiste ancora in locale: i dati della coach
-            // non vengono MAI più sovrascritti in automatico.
+            // v148.02 · (storico) vedi il blocco AO: dalla v148.10 il seed RIPARA
+            // il contenuto anche quando il programma esiste già.
             const replacedPrograms = (loaded.programs || []);
-            if (!replacedPrograms.some((program) => seededIds.has(program.id))) replacedPrograms.push(replacement);
-            if (!replacedPrograms.some((program) => program.id === seeded.id)) replacedPrograms.push(replacement);
+            if (!repairSeededProgramContent(replacedPrograms, seeded, stamp)) replacedPrograms.push(replacement);
             loaded.programs = replacedPrograms;
             loaded.meta = {
               ...(loaded.meta || {}),

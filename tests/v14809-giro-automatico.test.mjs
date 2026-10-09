@@ -8,7 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const mainJs = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 
-// --- v148.09: il giro Automatica→Manuale→Automatica avviene DA SOLO ---
+// --- v148.10: il giro Automatica→Manuale→Automatica avviene DA SOLO ---
 // La modalità manuale è un override di giorno: cambiando giorno l'app torna
 // automaticamente su Automatica (con la scelta manuale ripulita), così la fase
 // riparte sempre dal programma attivo — senza che Alice riswitchi a mano.
@@ -33,7 +33,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
 context.window = context;
 context.globalThis = context;
 vm.createContext(context);
-new vm.Script(applicationScript, { filename: "v14809-giro-automatico.js" }).runInContext(context);
+new vm.Script(applicationScript, { filename: "v14810-giro-automatico.js" }).runInContext(context);
 
 const out = vm.runInContext(`(() => {
   const esito = {};
@@ -71,4 +71,4 @@ assert.equal(out.manualePulito, true, "la scelta manuale di ieri va ripulita");
 assert.equal(out.sessioneETimanaGiuste, true, "sessione e settimana dal programma attivo");
 assert.equal(out.manualeDiOggiResta, true, "il manuale di OGGI resta (override del giorno)");
 
-console.log(JSON.stringify({ ok: true, v: "v148.09", giro: "Automatica→Manuale→Automatica automatico" }));
+console.log(JSON.stringify({ ok: true, v: "v148.10", giro: "Automatica→Manuale→Automatica automatico" }));
