@@ -1297,6 +1297,7 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
     // v14745 · se la scheda e' stata riavviata (o i dati locali erano vecchi) il workout
     // in corso viene recuperato dalla rete di sicurezza dedicata.
     try { if (restoreActiveWorkoutRescue(state)) persistStateToLocalStorage(state, { touch: false }); } catch (error) {}
+    try { if (closeStaleActiveWorkout(state)) persistStateToLocalStorage(state, { touch: false }); } catch (error) {} // v148.05: il tab Workout parte sempre dalla giornata di oggi
     try { resumeRestTimerIfNeeded(); } catch (error) {} // v14748: il recupero riprende da dove era
 
     try { releaseObsoleteLocalBackups(); } catch (error) {}
@@ -4008,13 +4009,38 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
       } catch (error) { return false; }
     }
 
+    // v148.05 · workout STANTIO: un in-corso il cui ultimo aggiornamento non è di
+    // OGGI non deve più accogliere Alice al rientro (si apriva sempre il vecchio,
+    // costringendola a "Termina workout" ogni volta). Chiusura automatica: stessa
+    // cosa che fare a mano, senza però salvare una sessione completata.
+    function activeWorkoutIsStale(workout) {
+      if (!workout || !["active", "paused"].includes(workout.status)) return false;
+      const stamp = Date.parse(workout.updatedAt || workout.startedAt || workout.createdAt || "");
+      if (!Number.isFinite(stamp)) return false; // senza data affidabile NON tocco: ripresa come prima
+      const day = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      return day(new Date(stamp)) !== day(new Date());
+    }
+
+    function closeStaleActiveWorkout(targetState) {
+      const active = targetState?.training?.activeWorkout;
+      if (!activeWorkoutIsStale(active)) return false;
+      targetState.training.activeWorkout = null;
+      try { if (localStorage.getItem(WORKOUT_ACTIVE_RESCUE_KEY)) localStorage.removeItem(WORKOUT_ACTIVE_RESCUE_KEY); } catch (error) {}
+      return true;
+    }
+
     function restoreActiveWorkoutRescue(targetState) {
       try {
         const raw = localStorage.getItem(WORKOUT_ACTIVE_RESCUE_KEY);
         if (!raw) return false;
         const parsed = JSON.parse(raw);
-        const resume = parsed?.workout;
-        if (!resume || !resume.id || !["active", "paused"].includes(resume.status)) return false;
+      const resume = parsed?.workout;
+      if (!resume || !resume.id || !["active", "paused"].includes(resume.status)) return false;
+      // v148.05 · la rete di sicurezza non riporta in vita workout dei giorni scorsi
+      if (activeWorkoutIsStale(resume)) {
+        try { localStorage.removeItem(WORKOUT_ACTIVE_RESCUE_KEY); } catch (error) {}
+        return false;
+      }
         const current = targetState.training?.activeWorkout;
         const currentStamp = Date.parse(current?.updatedAt || "") || 0;
         const resumeStamp = Date.parse(resume.updatedAt || "") || 0;
@@ -4594,6 +4620,8 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
         const mergedActiveStamp = Date.parse(merged.training.activeWorkout?.updatedAt || "") || 0;
         if (localActiveStamp >= mergedActiveStamp) merged.training.activeWorkout = clone(localActiveWorkout);
       }
+      // v148.05 · e nemmeno il merge cloud fa rientrare un workout stantio
+      closeStaleActiveWorkout(merged);
       merged.training.sessions = deduplicateWorkoutSessions([
         ...(older.training?.sessions || []),
         ...(newer.training?.sessions || [])

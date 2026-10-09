@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v148.04-torta-focus-muscoli` |
-| `cache` | `atlas-app-v14804-torta-focus-muscoli` |
+| `build` | `v148.05-workout-stantio-autochiuso` |
+| `cache` | `atlas-app-v14805-workout-stantio-autochiuso` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |
