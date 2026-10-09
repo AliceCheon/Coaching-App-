@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import assert from "node:assert/strict";
 
-// Fase 2 (v148.00) — UI POLISH: pulsanti, tab, card e pagine più curati.
+// Fase 2 (v148.01) — UI POLISH: pulsanti, tab, card e pagine più curati.
 // Anti-regressione: lo stile deve esistere e NON deve toccare le variabili
 // dei due temi base (Midnight/Lavender Diva), che restano invariati.
 const css = await fs.readFile(new URL("../coach-studio-inline.css", import.meta.url), "utf8");
@@ -36,8 +36,8 @@ assert.ok(!/\.card::before/.test(css), "non aggiungere .card::before generico");
 assert.ok(!/\.card::after/.test(css), "non aggiungere .card::after generico");
 
 // Versione allineata.
-assert.ok(config.includes('build: "v148.00-nomi-schede-confronto-stato"'), "build non aggiornata");
-assert.ok(config.includes('cache: "atlas-app-v14800-nomi-schede-confronto-stato"'), "cache non aggiornata");
-assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14800-nomi-schede-confronto-stato"'), "CACHE_NAME non aggiornata");
+assert.ok(config.includes('build: "v148.01-classifica-robottina"'), "build non aggiornata");
+assert.ok(config.includes('cache: "atlas-app-v14801-classifica-robottina"'), "cache non aggiornata");
+assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14801-classifica-robottina"'), "CACHE_NAME non aggiornata");
 
-console.log(JSON.stringify({ ok: true, build: "v148.00-nomi-schede-confronto-stato", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));
+console.log(JSON.stringify({ ok: true, build: "v148.01-classifica-robottina", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));

@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v148.00-nomi-schede-confronto-stato` |
-| `cache` | `atlas-app-v14800-nomi-schede-confronto-stato` |
+| `build` | `v148.01-classifica-robottina` |
+| `cache` | `atlas-app-v14801-classifica-robottina` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

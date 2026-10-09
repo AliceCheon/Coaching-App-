@@ -18,13 +18,21 @@
     let equipment=String(legacy.equipment||"");if(!equipment){if(has(/cavo|cable|pulley|lat machine|pulldown/))equipment="Cavi";else if(has(/macchin|machine|leg press|leg extension|leg curl|pendulum/))equipment="Macchinario";else if(has(/multipower/))equipment="Multipower";else if(has(/bilanciere|barbell/))equipment="Bilanciere";else if(has(/manubri|manubrio|dumbbell/))equipment="Manubri";else if(has(/kettlebell/))equipment="Kettlebell";else if(has(/elastico|banda/))equipment="Elastico";else equipment="Attrezzatura variabile";}
     return{group,pattern,equipment};
   }
+  const PLACEHOLDER_CATEGORIES=["da classificare","non classificato","unclassified","da definire","muscolo da definire",""];
+  function isPlaceholderCategory(value){return PLACEHOLDER_CATEGORIES.includes(norm(value));}
   function normalizeMuscles(value,identity={}){
     const source=Array.isArray(value)?value:[];
-    const rows=source.map(item=>typeof item==="string"?{name:item,role:"primary",weight:1}:item).filter(item=>item&&item.name).map(item=>({name:String(item.name),role:MUSCLE_ROLES.includes(item.role)?item.role:"primary",weight:clamp(item.weight??WEIGHTS[item.contribution]??1,0,1)}));
-    if(!rows.length&&identity.category)rows.push({name:identity.category,role:"primary",weight:1});return rows;
+    // FIX v148.01 — "Da classificare" è un SEGNAPOSTO, non un muscolo: prima
+    // restava intrappolato nei primari anche dopo che il coach corretta la
+    // categoria, e le card/Libreria continuavano a mostrare "Da classificare".
+    const rows=source.map(item=>typeof item==="string"?{name:item,role:"primary",weight:1}:item).filter(item=>item&&item.name).filter(item=>!isPlaceholderCategory(item.name)).map(item=>({name:String(item.name),role:MUSCLE_ROLES.includes(item.role)?item.role:"primary",weight:clamp(item.weight??WEIGHTS[item.contribution]??1,0,1)}));
+    if(!rows.length&&identity.category&&!isPlaceholderCategory(identity.category))rows.push({name:identity.category,role:"primary",weight:1});return rows;
   }
   function normalizeRecord(source={},options={}){
     const legacy=source.identity?{}:source,identity={name:String(source.identity?.name||source.name||"Esercizio senza nome").trim(),aliases:uniq(source.identity?.aliases||source.aliases),category:String(source.identity?.category||source.category||source.muscle||source.som||"Da classificare"),family:String(source.identity?.family||source.family||""),type:String(source.identity?.type||source.exerciseType||(source.compound?"compound":"isolation")),description:String(source.identity?.description||source.description||""),technicalLevel:String(source.identity?.technicalLevel||source.level||"unclassified"),recommendedExperience:String(source.identity?.recommendedExperience||source.recommendedExperience||"")};
+    // FIX v148.01 — riparo inverso: se la categoria è un segnaposto ma esiste
+    // un muscolo primario vero, la categoria eredita il muscolo.
+    if(isPlaceholderCategory(identity.category)){const realMuscle=[...list(source.primaryMuscles),...(Array.isArray(source.muscles)?source.muscles.map((m)=>m&&m.name):[]),source.muscle,source.som].find((m)=>m&&!isPlaceholderCategory(m));if(realMuscle)identity.category=String(realMuscle);}
     const guessed=infer(identity.name,{...legacy,muscle:identity.category}),created=source.createdAt||options.now||new Date().toISOString();
     const muscles=normalizeMuscles(source.muscles||[
       ...list(source.primaryMuscles).map(name=>({name,role:"primary",weight:1})),...list(source.secondaryMuscles).map(name=>({name,role:"secondary",weight:.5})),...list(source.stabilizers).map(name=>({name,role:"stabilizer",weight:.25}))

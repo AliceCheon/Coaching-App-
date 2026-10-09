@@ -3525,10 +3525,13 @@
       .workout-mascot-menu { top:76px; width:min(220px,72vw); }
     }
     @media(prefers-reduced-motion:reduce){
-      .diva-bot,.diva-bot-body,.diva-bot-antenna,.diva-bot-heart-shape,.diva-bot-barbell,.coach-avatar[data-coach-state="happy"] .diva-bot-arm-left,.coach-avatar[data-coach-state="celebrate"] .diva-bot,.workout-mascot-bubble { animation:none !important; }
-      .diva-bot-arm { transition:none; }
-      .diva-bot-particles { display:none; }
-      .workout-mascot-anchor { transition:none; }
+      /* FIX v148.01 — la robottina segue la scelta DENTRO l'app: solo se Alice
+         ha scelto "Ridotte"/"Disattivate" (o il tema lo richiede) le animazioni
+         della Diva Bot si spengono anche con prefers-reduced-motion attivo. */
+      body:not([data-animation-mode="full"]) .diva-bot,body:not([data-animation-mode="full"]) .diva-bot-body,body:not([data-animation-mode="full"]) .diva-bot-antenna,body:not([data-animation-mode="full"]) .diva-bot-heart-shape,body:not([data-animation-mode="full"]) .diva-bot-barbell,body:not([data-animation-mode="full"]) .coach-avatar[data-coach-state="happy"] .diva-bot-arm-left,body:not([data-animation-mode="full"]) .coach-avatar[data-coach-state="celebrate"] .diva-bot,body:not([data-animation-mode="full"]) .workout-mascot-bubble { animation:none !important; }
+      body:not([data-animation-mode="full"]) .diva-bot-arm { transition:none; }
+      body:not([data-animation-mode="full"]) .diva-bot-particles { display:none; }
+      body:not([data-animation-mode="full"]) .workout-mascot-anchor { transition:none; }
     }
     .coach-ai-sidebar .coach-ai-panel > .row { align-items:flex-start; }
     .coach-ai-sidebar .coach-ai-panel > .row .coach-ai-toolbar { display:none; }

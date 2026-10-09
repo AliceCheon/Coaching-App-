@@ -2037,6 +2037,12 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
       };
     }
 
+    // FIX v148.01 — i segnaposto di classificazione ("Da classificare", ecc.)
+    // non sono muscoli: ogni funzione di proiezione li ignora.
+    const MUSCLE_PLACEHOLDERS = ["da classificare","non classificato","da definire","muscolo da definire","unclassified",""];
+    function isPlaceholderMuscleLabel(value = "") { return MUSCLE_PLACEHOLDERS.includes(String(value || "").trim().toLowerCase()); }
+    function technicalRealMuscleList(values) { return (Array.isArray(values) ? values : []).map((value) => String(value || "").trim()).filter(Boolean).filter((name) => !isPlaceholderMuscleLabel(name)); }
+
     function technicalExerciseProfile(source = {}, context = {}) {
       const evidence = technicalEvidenceProfile(source);
       const bio = biomechanicsForExercise(source.name || "", source.biomechanics || source.metadata?.biomechanics);
@@ -2048,6 +2054,16 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
       const lengthened = technicalScore(source.stimulusProfile?.lengthened, bio.lengthenedBias === "high" ? 5 : bio.lengthenedBias === "medium" ? 3 : bio.lengthenedBias === "low" ? 1 : 0);
       const shortened = technicalScore(source.stimulusProfile?.shortened, bio.shortenedBias === "high" ? 5 : bio.shortenedBias === "medium" ? 3 : bio.shortenedBias === "low" ? 1 : 0);
       const midRange = technicalScore(source.stimulusProfile?.midRange, resistanceType === "bell-shaped" ? 5 : resistanceType === "constant" ? 3 : 2);
+      // FIX v148.01 — "Da classificare"/"non classificato" sono SEGNAPOSTI, non
+      // classificazioni: non devono più vincere su un gruppo muscolare vero né
+      // sopravvivere nei primari di Libreria, schede e statistiche.
+      const categoryCandidate = String(source.category || source.metadata?.category || "");
+      const realPrimary = technicalRealMuscleList(source.primaryMuscles).length ? technicalRealMuscleList(source.primaryMuscles)
+        : technicalRealMuscleList([categoryCandidate]).length ? technicalRealMuscleList([categoryCandidate])
+        : technicalRealMuscleList(bio.primaryMuscles).length ? technicalRealMuscleList(bio.primaryMuscles)
+        : technicalRealMuscleList(evidence.primaryMuscles).length ? technicalRealMuscleList(evidence.primaryMuscles)
+        : technicalRealMuscleList([source.muscle || source.som]);
+      const categoryValue = technicalRealMuscleList([categoryCandidate]).length ? technicalRealMuscleList([categoryCandidate])[0] : (realPrimary[0] || "non classificato");
       const normalized = {
         ...clone(source),
         id: source.id || stableId("technical-exercise", context.origin || "system", source.name || "exercise", context.index || 0),
@@ -2055,11 +2071,11 @@ const INTENSITA_OD_BUILD = "2026-10-06-iod-progressioni-ripristinate-v1";
         variant: String(source.variant || source.metadata?.variant || ""),
         isCustom: !!(source.isCustom ?? source.custom ?? source.metadata?.custom),
         origin: source.origin || context.origin || "system",
-        category: String(source.category || source.metadata?.category || bio.exerciseType || "non classificato"),
+        category: categoryValue,
         description: String(source.description || source.metadata?.description || source.note || ""),
         equipment: inferExerciseEquipment(source.name, source.equipment && source.equipment !== "Non indicata" ? source.equipment : source.metadata?.equipment || evidence.equipment),
         machineModel: String(source.machineModel || source.metadata?.machineModel || ""),
-        primaryMuscles: technicalStringList(source.primaryMuscles?.length ? source.primaryMuscles : bio.primaryMuscles?.length ? bio.primaryMuscles : evidence.primaryMuscles?.length ? evidence.primaryMuscles : source.muscle || source.som),
+        primaryMuscles: realPrimary,
         secondaryMuscles: technicalStringList(source.secondaryMuscles?.length ? source.secondaryMuscles : source.metadata?.secondaryMuscles?.length ? source.metadata.secondaryMuscles : bio.secondaryMuscles?.length ? bio.secondaryMuscles : evidence.secondaryMuscles),
         stabilizers: technicalStringList(source.stabilizers || source.metadata?.stabilizers),
         targetRegion: String(source.targetRegion || source.metadata?.targetRegion || source.muscle || source.som || ""),
@@ -7738,14 +7754,17 @@ function sanitizeForFirestore(value) {
     }
 
     function applyExperiencePreferences() {
-      const systemReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-      const mode = systemReduced ? "reduced" : (state.ui?.animationMode || "full");
+      // FIX v148.01 — la scelta DENTRO l'app (default "Complete") decide le
+      // animazioni: il suggerimento del sistema non spegne più la robottina
+      // alle spalle di Alice (prima prefers-reduced-motion forzava "reduced"
+      // e Diva Bot restava di ghiaccio su telefoni con "rimuovi animazioni").
+      const mode = state.ui?.animationMode || "full";
       document.body.dataset.animationMode = mode;
       document.body.classList.toggle("reduced-glow", !!state.ui?.reduceGlow);
     }
 
     function effectiveAnimationMode() {
-      return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "reduced" : (state.ui?.animationMode || "full");
+      return state.ui?.animationMode || "full";
     }
 
     function premiumMotionEnabled() { return effectiveAnimationMode() !== "off"; }
@@ -8413,6 +8432,18 @@ function sanitizeForFirestore(value) {
       return `<section class="coach-board-volume"><div class="row"><div><span class="section-eyebrow">VOLUME DINAMICO</span><h3>Settimana ${weekNumber}</h3></div><strong>${total} serie totali</strong></div><div class="coach-volume-grid">${all.map((item)=>`<div class="coach-live-volume-row"><span>${escapeHtml(item.muscle)}</span><div class="coach-live-volume-track"><div class="coach-live-volume-fill" style="width:${Math.max(4,item.sets/max*100)}%"></div></div><strong>${item.sets}</strong></div>`).join("")||`<span class="micro-copy">Inserisci le serie per vedere il volume.</span>`}</div></section>`;
     }
 
+    // FIX v148.01 — da quali esercizi nasce il volume di un gruppo: riga per
+    // esercizio (nome, scheda, serie della settimana) per la modale Statistiche.
+    function coachProgramMuscleExerciseRows(program, weekNumber) {
+      const rows = [];
+      programRepository.getSheets(program.id).forEach((sheet) => programRepository.getExercises(program.id, sheet.id).forEach((exercise) => {
+        const muscle = String(exercise.muscle || exercise.som || "Altro").trim() || "Altro";
+        const sets = Math.max(0, Number(coachWeekPrescription(exercise, weekNumber).sets) || 0);
+        rows.push({ muscle, name: displayExerciseName(exercise.name), sheet: sheet.name || sheet.code || "Scheda", sets });
+      }));
+      return rows;
+    }
+
     function coachProgramStatisticsModalHtml(program, weekNumber) {
       const muscles=coachProgramVolumeRows(program,weekNumber),maxMuscle=Math.max(1,...muscles.map((item)=>item.sets));
       const weekCount=Math.max(1,Number(program.durationWeeks)||1);
@@ -8426,7 +8457,14 @@ function sanitizeForFirestore(value) {
       const maxWeek=Math.max(1,...weeks.map((item)=>item.total));
       const points=weeks.map((item,index)=>`${34+(index*Math.max(1,532/Math.max(1,weeks.length-1)))},${170-(item.total/maxWeek*125)}`).join(" ");
       const total=muscles.reduce((sum,item)=>sum+item.sets,0);
-      return `<div class="coach-statistics-modal-backdrop" data-coach-stats-close><section class="coach-statistics-modal" role="dialog" aria-modal="true" aria-labelledby="coachStatisticsTitle" onclick="event.stopPropagation()" tabindex="-1"><header><div><span class="section-eyebrow">STATISTICHE PROGRAMMA</span><h2 id="coachStatisticsTitle">${escapeHtml(program.name)} · Settimana ${weekNumber}</h2><p>Seleziona un gruppo muscolare per aggiornare il grafico settimanale in tempo reale.</p></div><button type="button" class="round-button" data-coach-stats-close aria-label="Chiudi statistiche">×</button></header><div class="coach-statistics-kpis"><article><span>Serie totali</span><strong>${total}</strong></article><article><span>Gruppi coinvolti</span><strong>${muscles.length}</strong></article><article><span>Settimane</span><strong>${weekCount}</strong></article></div><div class="coach-statistics-charts"><article><div class="coach-statistics-chart-head"><h3>Volume per gruppo muscolare</h3><button type="button" class="${selected==="all"?"active":""}" data-coach-stats-muscle="all">Tutti</button></div><div class="coach-statistics-muscles">${muscles.map((item)=>`<button type="button" class="${selected===item.muscle?"active":""}" data-coach-stats-muscle="${escapeHtml(item.muscle)}"><span>${escapeHtml(item.muscle)}</span><span class="coach-statistics-muscle-track"><i style="width:${Math.max(4,item.sets/maxMuscle*100)}%"></i></span><strong>${item.sets}</strong></button>`).join("")||`<p class="micro-copy">Inserisci le serie per visualizzare il grafico.</p>`}</div></article><article><h3>${selected==="all"?"Serie totali":escapeHtml(selected)} per settimana</h3><svg class="coach-statistics-line" viewBox="0 0 600 210" role="img" aria-label="Andamento delle serie nelle settimane"><line x1="34" y1="170" x2="566" y2="170"></line><line x1="34" y1="35" x2="34" y2="170"></line><polyline points="${points}"></polyline>${weeks.map((item,index)=>{const x=34+(index*Math.max(1,532/Math.max(1,weeks.length-1))),y=170-(item.total/maxWeek*125);return `<circle cx="${x}" cy="${y}" r="5"></circle><text x="${x}" y="195">S${item.week}</text><text x="${x}" y="${Math.max(18,y-10)}">${item.total}</text>`}).join("")}</svg></article></div></section></div>`;
+      // FIX v148.01 — colonna a sinistra: gli esercizi che compongono il volume
+      // del gruppo selezionato (richiesta Alice: "una colonna a lato sx").
+      const exerciseRows=coachProgramMuscleExerciseRows(program,weekNumber);
+      const grouped=selected==="all"?[]:exerciseRows.filter((row)=>row.muscle===selected).sort((a,b)=>b.sets-a.sets||a.name.localeCompare(b.name,"it"));
+      const exercisesArticle=selected==="all"
+        ? `<article class="coach-statistics-exercises is-empty"><h3>Esercizi del gruppo</h3><p class="micro-copy">Tocca un gruppo muscolare: qui compaiono tutti gli esercizi che compongono quel volume.</p></article>`
+        : `<article class="coach-statistics-exercises"><h3>${escapeHtml(selected)} · ${grouped.length} ${grouped.length===1?"esercizio":"esercizi"}</h3><ul>${grouped.map((row)=>`<li><span>${escapeHtml(row.name)}</span><small>${escapeHtml(row.sheet)}</small><strong>${row.sets} serie</strong></li>`).join("")||`<li class="micro-copy">Nessuna serie inserita per questa settimana.</li>`}</ul></article>`;
+      return `<div class="coach-statistics-modal-backdrop" data-coach-stats-close><section class="coach-statistics-modal${selected==="all"?"":" has-muscle-selection"}" role="dialog" aria-modal="true" aria-labelledby="coachStatisticsTitle" onclick="event.stopPropagation()" tabindex="-1"><header><div><span class="section-eyebrow">STATISTICHE PROGRAMMA</span><h2 id="coachStatisticsTitle">${escapeHtml(program.name)} · Settimana ${weekNumber}</h2><p>Seleziona un gruppo muscolare per aggiornare il grafico settimanale in tempo reale.</p></div><button type="button" class="round-button" data-coach-stats-close aria-label="Chiudi statistiche">×</button></header><div class="coach-statistics-kpis"><article><span>Serie totali</span><strong>${total}</strong></article><article><span>Gruppi coinvolti</span><strong>${muscles.length}</strong></article><article><span>Settimane</span><strong>${weekCount}</strong></article></div><div class="coach-statistics-charts${selected==="all"?"":" with-exercises"}">${exercisesArticle}<article><div class="coach-statistics-chart-head"><h3>Volume per gruppo muscolare</h3><button type="button" class="${selected==="all"?"active":""}" data-coach-stats-muscle="all">Tutti</button></div><div class="coach-statistics-muscles">${muscles.map((item)=>`<button type="button" class="${selected===item.muscle?"active":""}" data-coach-stats-muscle="${escapeHtml(item.muscle)}"><span>${escapeHtml(item.muscle)}</span><span class="coach-statistics-muscle-track"><i style="width:${Math.max(4,item.sets/maxMuscle*100)}%"></i></span><strong>${item.sets}</strong></button>`).join("")||`<p class="micro-copy">Inserisci le serie per visualizzare il grafico.</p>`}</div></article><article><h3>${selected==="all"?"Serie totali":escapeHtml(selected)} per settimana</h3><svg class="coach-statistics-line" viewBox="0 0 600 210" role="img" aria-label="Andamento delle serie nelle settimane"><line x1="34" y1="170" x2="566" y2="170"></line><line x1="34" y1="35" x2="34" y2="170"></line><polyline points="${points}"></polyline>${weeks.map((item,index)=>{const x=34+(index*Math.max(1,532/Math.max(1,weeks.length-1))),y=170-(item.total/maxWeek*125);return `<circle cx="${x}" cy="${y}" r="5"></circle><text x="${x}" y="195">S${item.week}</text><text x="${x}" y="${Math.max(18,y-10)}">${item.total}</text>`}).join("")}</svg></article></div></section></div>`;
     }
 
     function bindCoachProgramStatisticsModal(modal,program,week) {
@@ -10580,6 +10618,27 @@ function sanitizeForFirestore(value) {
       }
     }
 
+    // FIX v148.01 — avvio trascinamento UNICO, usato sia dalla delega sul
+    // document sia dal binding diretto sul bottone: due strade, un solo drag.
+    function startWorkoutMascotDrag(event) {
+      const button = event.target?.closest?.("#workoutMascotButton");
+      if (!button) return;
+      if (event.button != null && event.button !== 0) return;
+      if (workoutMascotUi.drag?.pointerId === event.pointerId) return; // stessa gesto già avviata dall'altra strada
+      clearTimeout(workoutMascotUi.longPressTimer);
+      const anchor = button.closest(".workout-mascot-anchor");
+      const current = currentWorkoutMascotLeftTop();
+      workoutMascotUi.drag = { pointerId:event.pointerId, startX:event.clientX, startY:event.clientY, originLeft:current.left, originTop:current.top, left:current.left, top:current.top, moved:false, anchor };
+      anchor.classList.add("is-dragging");
+      document.addEventListener("pointermove", workoutMascotDragMove);
+      document.addEventListener("pointerup", workoutMascotDragEnd);
+      document.addEventListener("pointercancel", workoutMascotDragEnd);
+      // Pointer capture: anche se il dito esce dal bottone, il movimento resta nostro.
+      try { button.setPointerCapture?.(event.pointerId); } catch (error) { /* ambienti senza capture */ }
+      // Tocco lungo → apre il menu (su ogni dispositivo).
+      workoutMascotUi.longPressTimer = setTimeout(() => { workoutMascotUi.suppressClick = true; showWorkoutMascotMenu(); }, 620);
+    }
+
     // FASE 3-ter-bis — "compagnia": rotazione lenta e discreta. Diva Bot cambia
     // faccia SOLO quando è libera (nessuna reazione in corso) e ogni tanto scrive
     // un messaggino nel fumetto. Niente più tutte le espressioni tutte insieme.
@@ -10646,10 +10705,19 @@ function sanitizeForFirestore(value) {
         }, { passive:true });
       }
       if (!button) return;
+      // FIX v148.01 — AGGANCIO DIRETTO oltre alla delega: due strade per il drag.
+      // Se qualcosa blocca la propagazione verso il document (overlay, listener
+      // di terze parti), il trascinamento resta comunque vivo.
+      if (!button.dataset.wmDragDirectBound) {
+        button.dataset.wmDragDirectBound = "true";
+        button.addEventListener("pointerdown", (event) => startWorkoutMascotDrag(event));
+      }
       const anchor = button.closest(".workout-mascot-anchor");
       anchor?.classList.add("is-restoring");
       requestAnimationFrame(() => {
-        moveWorkoutMascot(state.ui.workoutMascotPosition || "top-right");
+        // A metà trascinamento la posizione scelta a mano ha priorità: niente
+        // snap-back mentre il dito/mouse è ancora giù.
+        if (!workoutMascotUi.drag) moveWorkoutMascot(state.ui.workoutMascotPosition || "top-right");
         requestAnimationFrame(() => anchor?.classList.remove("is-restoring"));
       });
       if (!workoutMascotUi.companionshipTimer) startWorkoutMascotCompanionship();
@@ -10673,19 +10741,8 @@ function sanitizeForFirestore(value) {
         // Click/tocco FUORI dal menu → il menu si chiude (prima restava aperto).
         const menu = document.getElementById("workoutMascotMenu");
         if (menu && !menu.hidden && !menu.contains(event.target) && !fromMascot(event)) showWorkoutMascotMenuHide();
-        const button = fromMascot(event);
-        if (!button) return;
-        if (event.button != null && event.button !== 0) return;
-        clearTimeout(workoutMascotUi.longPressTimer);
-        const anchor = button.closest(".workout-mascot-anchor");
-        const current = currentWorkoutMascotLeftTop();
-        workoutMascotUi.drag = { pointerId:event.pointerId, startX:event.clientX, startY:event.clientY, originLeft:current.left, originTop:current.top, left:current.left, top:current.top, moved:false, anchor };
-        anchor.classList.add("is-dragging");
-        document.addEventListener("pointermove", workoutMascotDragMove);
-        document.addEventListener("pointerup", workoutMascotDragEnd);
-        document.addEventListener("pointercancel", workoutMascotDragEnd);
-        // Tocco lungo → apre il menu (su ogni dispositivo).
-        workoutMascotUi.longPressTimer = setTimeout(() => { workoutMascotUi.suppressClick = true; showWorkoutMascotMenu(); }, 620);
+        if (!fromMascot(event)) return;
+        startWorkoutMascotDrag(event);
       }, true);
       document.addEventListener("pointerup", (event) => { if (fromMascot(event)) clearTimeout(workoutMascotUi.longPressTimer); });
       document.addEventListener("pointercancel", (event) => { if (fromMascot(event)) clearTimeout(workoutMascotUi.longPressTimer); });
@@ -15567,6 +15624,14 @@ function sanitizeForFirestore(value) {
         rememberExerciseState(program.id, sheet.id);
         const result = type === "exercise-custom" ? programRepository.createExercise(program.id, sheet.id, data, { immediate: true }) : programRepository.updateExercise(program.id, sheet.id, id, data, { immediate: true, forceLocked: true });
         if (!result.ok) return showToast("Esercizio non salvato.");
+        // FIX v148.01 — classificare un esercizio dalla Scheda tecnica aggiorna
+        // anche la Master Library: la Libreria non deve continuare a mostrare
+        // "Da classificare" per un esercizio appena classificato da Alice.
+        const masterRecord = window.BarbellDivaMasterLibrary.resolve(state.masterExerciseLibrary, current?.masterExerciseId || current?.metadata?.masterExerciseId || current?.metadata?.technicalProfileId || current?.name);
+        if (masterRecord && data.muscle && data.muscle !== "Custom" && isPlaceholderMuscleLabel(masterRecord.identity?.category)) {
+          state.masterExerciseLibrary = window.BarbellDivaMasterLibrary.upsert(state.masterExerciseLibrary, { ...masterRecord, identity: { ...(masterRecord.identity || {}), category: data.muscle }, muscles: [{ name: data.muscle, role: "primary", weight: 1 }], provenance: { ...(masterRecord.provenance || {}), reviewStatus: "reviewed" }, manualOverrides: { ...(masterRecord.manualOverrides || {}), category: data.muscle, confirmedByCoach: true } });
+          invalidateTechnicalLibraryCache();
+        }
         discardCoachDraft(program.id, sheet.id);
         // Questa matita viene aperta dal board locale: senza refresh la riga
         // resta sul DOM con la vecchia categoria (es. "Da classificare").

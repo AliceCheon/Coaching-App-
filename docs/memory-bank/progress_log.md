@@ -325,3 +325,12 @@ Obiettivo:
 - **Suite**: **238 test, 229 pass, 0 fail, 9 skipped, EXIT:0**.
 - **Bump**: `node tools/bump-version.mjs v148.00-nomi-schede-confronto-stato` (29 file).
 - **Prossimo step**: feedback di Alice; poi (in coda) Coach AI su reps/note/RIR/RPE.
+
+## Checkpoint 23 — Classificazione vera, esercizi nelle statistiche, robottina viva (v148.01-classifica-robottina)
+- **Richieste Alice**: (1) "Da classificare" sotto gli esercizi: sostituirla col gruppo effettivo dentro l'esercizio non prende le modifiche; (2) nelle statistiche scheda, cliccando un gruppo muscolare devono comparire tutti gli esercizi da cui nasce quel volume (colonna a lato sx); (3) la robottina non si lascia più spostare e non si anima più.
+- **FIX 1 (radice)**: "Da classificare" era un segnaposto intrappolato in `muscles/primaryMuscles` del record Master Library: correggere la Categoria lasciava il segnaposto come primario → card Libreria, schede e statistiche continuavano a mostrare "Da classificare". Ora `master-exercise-library.js` (`isPlaceholderCategory`, riparo bidirezionale in `normalizeRecord`/`normalizeMuscles`) e `technicalExerciseProfile` (`technicalRealMuscleList`, priorità espliciti → categoria coach → bio → evidenze) trattano i segnaposto come vuoti. In più: classificare un esercizio dalla Scheda tecnica (`exercise-details`) aggiorna anche il record Master Library (con `manualOverrides.confirmedByCoach`).
+- **FIX 2**: `coachProgramStatisticsModalHtml` ha la colonna `.coach-statistics-exercises` a sinistra: tocchi un gruppo → compaiono TUTTI i suoi esercizi (nome, scheda di appartenenza, serie della settimana), griglia a 3 colonne (`with-exercises`, single column ≤800px). Con "Tutti" mostra l'invito al tocco.
+- **FIX 3**: (a) `effectiveAnimationMode()`/`applyExperiencePreferences()` ora seguono la scelta DENTRO l'app (default "Complete") — `prefers-reduced-motion` del telefono non spenge più Diva Bot alle spalle di Alice; CSS media block limitato a `body:not([data-animation-mode="full"])`. (b) Drag su due strade: delega document + binding diretto sul bottone (`wmDragDirectBound`), avvio unico `startWorkoutMascotDrag` con `setPointerCapture`, guard anti-snap-back a drag in corso.
+- **Guardia**: `tests/v14801-classificazione-robottina.test.mjs`. Suite: **239 test, 230 pass, 0 fail, 9 skipped, EXIT:0**.
+- **Bump**: `node tools/bump-version.mjs v148.01-classifica-robottina` (29 file) → nuovo `CACHE_NAME` del SW.
+- Prossimi step: feedback di Alice; in coda Coach AI su reps/note/RIR/RPE.
