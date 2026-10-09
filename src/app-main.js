@@ -6470,15 +6470,29 @@ function sanitizeForFirestore(value) {
       if(!program)return [];
       return (program.sheets||[]).filter((sheet)=>!sheet.deletedAt).slice().sort((a,b)=>Number(a.order||0)-Number(b.order||0)).map((sheet)=>({...sheet,phase:program.phase||sheet.phase||"",exercises:(sheet.exercises||[]).filter((exercise)=>!exercise.deletedAt).sort((a,b)=>Number(a.order||0)-Number(b.order||0))}));
     }
+    // v148.06 · FASE EFFICACE del workout, in un punto SOLO: il programma attivo
+    // vince sempre (in automatico), in manuale decide la fase scelta. Prima il
+    // sottotitolo dell'intestazione leggeva `profile.phase` — un fossile mai più
+    // aggiornato, rimasto a "Intensificazione" — mentre la card giusta diceva
+    // "Intensità Agosto-Ottobre": titolo e contenuti si odiano. Ora leggono tutti
+    // e due qui.
+    function effectiveTrainingPhase() {
+      const isManual = state.training?.contextMode === "manual";
+      const activeProgram = explicitActiveTrainingProgram();
+      const activePhase = activeProgram ? String(activeProgram.phase || "") : "";
+      return (String(
+        isManual
+          ? (state.training?.manualPhase || activePhase || state.training?.phaseFilter || "Intensificazione")
+          : (activePhase || state.training?.phaseFilter || "Intensificazione")
+      ).trim()) || "Intensificazione";
+    }
     function currentTrainingContext() {
       const date = state.training.date || todayInput();
       const isManual = state.training.contextMode === "manual";
       const activeProgram = explicitActiveTrainingProgram();
       const activePhase = activeProgram ? String(activeProgram.phase||"") : "";
       const programSheets = projectProgramSheets(activeProgram);
-      const phase = isManual
-        ? (state.training.manualPhase || activePhase || state.training.phaseFilter || "Intensificazione")
-        : (activePhase || state.training.phaseFilter || "Intensificazione");
+      const phase = effectiveTrainingPhase();
       const autoWeek = weekFromLatestWorkout(date, phase);
       const autoCode = autoSessionCodeForDate(date, phase);
       const phaseSessions = programSheets.length ? (activePhase ? programSheets.filter((sheet)=>sheet.phase===activePhase) : programSheets) : sessionsForPhase(phase);
@@ -7350,7 +7364,7 @@ function sanitizeForFirestore(value) {
       }
       const titleMap = {
         dashboard: [APP_NAME, OPENING_QUOTE],
-        training: ["Workout del giorno", state.profile.phase],
+        training: ["Workout del giorno", effectiveTrainingPhase()],
         progress: ["Statistiche", "Analisi progressi e volume"],
         logbook: ["Logbook", "Storico allenamenti e PR"],
         volume: ["Volume", "Programmazione annuale"],

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import assert from "node:assert/strict";
 
-// Fase 2 (v148.05) — UI POLISH: pulsanti, tab, card e pagine più curati.
+// Fase 2 (v148.06) — UI POLISH: pulsanti, tab, card e pagine più curati.
 // Anti-regressione: lo stile deve esistere e NON deve toccare le variabili
 // dei due temi base (Midnight/Lavender Diva), che restano invariati.
 const css = await fs.readFile(new URL("../coach-studio-inline.css", import.meta.url), "utf8");
@@ -36,8 +36,8 @@ assert.ok(!/\.card::before/.test(css), "non aggiungere .card::before generico");
 assert.ok(!/\.card::after/.test(css), "non aggiungere .card::after generico");
 
 // Versione allineata.
-assert.ok(config.includes('build: "v148.05-workout-stantio-autochiuso"'), "build non aggiornata");
-assert.ok(config.includes('cache: "atlas-app-v14805-workout-stantio-autochiuso"'), "cache non aggiornata");
-assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14805-workout-stantio-autochiuso"'), "CACHE_NAME non aggiornata");
+assert.ok(config.includes('build: "v148.06-fase-efficace-intestazione"'), "build non aggiornata");
+assert.ok(config.includes('cache: "atlas-app-v14806-fase-efficace-intestazione"'), "cache non aggiornata");
+assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14806-fase-efficace-intestazione"'), "CACHE_NAME non aggiornata");
 
-console.log(JSON.stringify({ ok: true, build: "v148.05-workout-stantio-autochiuso", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));
+console.log(JSON.stringify({ ok: true, build: "v148.06-fase-efficace-intestazione", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));

@@ -7,7 +7,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const app = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 
-// --- v148.05: workout in corso STANTIO chiuso in automatico ---
+// --- v148.06: workout in corso STANTIO chiuso in automatico ---
 // Alice: "ogni volta che apro l'app da telefono e clicco workout si apre un
 // workout in corso vecchio che non c'entra un cavolo": i tre punti che
 // resuscitavano il vecchio (rescue al boot, merge cloud, stato caricato)
@@ -32,4 +32,4 @@ assert.match(app, /\/\/ v148\.05 · e nemmeno il merge cloud fa rientrare un wor
 // 5. Boot: dopo il restore dello stato, workout stantio = chiuso e stato ripersistito.
 assert.match(app, /try \{ if \(closeStaleActiveWorkout\(state\)\) persistStateToLocalStorage\(state, \{ touch: false \}\); \} catch \(error\) \{\} \/\/ v148\.05/);
 
-console.log(JSON.stringify({ ok: true, v: "v148.05", workoutStantio: "auto-chiuso" }));
+console.log(JSON.stringify({ ok: true, v: "v148.06", workoutStantio: "auto-chiuso" }));

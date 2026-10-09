@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v148.05-workout-stantio-autochiuso` |
-| `cache` | `atlas-app-v14805-workout-stantio-autochiuso` |
+| `build` | `v148.06-fase-efficace-intestazione` |
+| `cache` | `atlas-app-v14806-fase-efficace-intestazione` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

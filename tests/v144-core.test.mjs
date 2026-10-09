@@ -24,7 +24,7 @@ for (const marker of ["function logbookHtml", "saveWorkoutSession", "function ex
 }
 
 // Sync: locale prima, coda, cloud dopo conferma.
-for (const marker of ["queueReliableWorkoutSession", "reliableSyncQueue.enqueue", "flushReliableSync", "reconcileSessionVersions", "sync-reliability.js?v=v14805"]) {
+for (const marker of ["queueReliableWorkoutSession", "reliableSyncQueue.enqueue", "flushReliableSync", "reconcileSessionVersions", "sync-reliability.js?v=v14806"]) {
   check(html.includes(marker) || sync.includes(marker), `sync marker mancante: ${marker}`);
 }
 
@@ -36,9 +36,9 @@ for (const marker of ["function createBackupEnvelope", "function verifyBackupEnv
 // Firebase e cache PWA.
 for (const marker of ["function initFirebase", "saveCloudState", "FIREBASE_CONFIG"]) check(html.includes(marker), `Firebase marker mancante: ${marker}`);
 check(html.includes("const APP_BUILD = window.BarbellDivaV144Config?.build || \"v146.1\""), "build v146.1 non uniforme nell'app");
-check(config.includes('build: "v148.05-workout-stantio-autochiuso"') && config.includes('cache: "atlas-app-v14805-workout-stantio-autochiuso"'), "configurazione v147.54 non caricata correttamente");
-check(sw.includes('const CACHE_NAME = "atlas-app-v14805-workout-stantio-autochiuso"'), "cache service worker non allineata alla build v147.54");
-check(manifest.includes("index.html?v=v14805"), "manifest non allineato alla build v147.54");
+check(config.includes('build: "v148.06-fase-efficace-intestazione"') && config.includes('cache: "atlas-app-v14806-fase-efficace-intestazione"'), "configurazione v147.54 non caricata correttamente");
+check(sw.includes('const CACHE_NAME = "atlas-app-v14806-fase-efficace-intestazione"'), "cache service worker non allineata alla build v147.54");
+check(manifest.includes("index.html?v=v14806"), "manifest non allineato alla build v147.54");
 
 // I moduli esclusi non devono più essere caricati o consegnati.
 for (const removed of ["./nutrizione/", "workout-pro.js", "workout-pro.css", "food-backup.js", "photo-store.js"]) {
