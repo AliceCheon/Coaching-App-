@@ -167,7 +167,7 @@ assert.equal(rete.cancellaSuChiusura, true, "un workout chiuso esplicitamente s√
 
 // --- 4. Guardie statiche (la correzione deve restare nel codice) -------------
 assert.match(mainJs, /const WORKOUT_ACTIVE_STORE = "activeWorkout"/);
-assert.match(mainJs, /indexedDB\.open\(WORKOUT_DB_NAME, 2\)/);
+assert.match(mainJs, /indexedDB\.open\(WORKOUT_DB_NAME, [23]\)/); // v148.13: il DB sale a v3
 assert.match(mainJs, /async function persistActiveWorkoutDurable\(snapshot = state\)/);
 assert.match(mainJs, /async function readActiveWorkoutDurable\(\)/);
 assert.match(mainJs, /async function restoreActiveWorkoutDurable\(targetState = state\)/);

@@ -112,6 +112,11 @@ const esito = await vm.runInContext(`(async () => {
   out.bytePrima = JSON.stringify(grande).length;
   out.byteDopo = JSON.stringify(localStorageSnapshotFor(grande)).length;
 
+  // 3-bis) la quota è DAVVERO piena: una scrittura locale fallisce
+  let scrittureFallite = 0;
+  try { localStorage.setItem("prova-quota", "x"); } catch (error) { scrittureFallite += 1; }
+  quotaAttiva = false; // da qui guardo la copia su disco, non più la quota
+
   // 4) copia locale durabile: con localStorage che rifiuta tutto, il disco la custodisce
   const statoNuovo = { meta: { updatedAt: "2026-10-12T08:00:00.000Z" }, profile: { account: { uid: "alice-test" } }, programs: [], training: { sessions: [{ id: "seduta-disco" }], activeWorkout: null } };
   out.scrittaSulDisco = await persistLocalStateDurable(statoNuovo);
@@ -122,7 +127,7 @@ const esito = await vm.runInContext(`(async () => {
   state = migrateStateSchema(JSON.parse(JSON.stringify({ meta: { updatedAt: "2026-10-11T08:00:00.000Z" }, profile: { account: { uid: "alice-test" } }, programs: [], training: { sessions: [], activeWorkout: null } })));
   out.idratata = await hydrateFromLocalDurableSnapshot();
   out.sedutaArrivata = (state.training.sessions || []).some((s) => s.id === "seduta-disco");
-  out.quotaFallite = ${"quotaErrors"};
+  out.scrittureFallite = scrittureFallite;
   return out;
 })()`, ctx);
 
@@ -137,7 +142,7 @@ assert.equal(esito.scrittaSulDisco, true, "la copia locale deve finire in Indexe
 assert.equal(esito.lettaDalDisco, true, "la copia locale deve essere rileggibile");
 assert.equal(esito.idratata, true, "il boot deve idratare dal disco quando il localStorage è fermo");
 assert.equal(esito.sedutaArrivata, true, "i dati della copia durabile devono entrare nello stato");
-assert.ok(quotaErrors > 0, "il test deve simulare davvero un localStorage pieno");
+assert.equal(esito.scrittureFallite, 1, "il test deve simulare davvero un localStorage pieno (QuotaExceededError)");
 
 // --- guardie statiche -------------------------------------------------------
 assert.match(mainJs, /function compactArchivedSheets\(programs = \[\]\)/);
@@ -147,7 +152,9 @@ assert.match(mainJs, /compactStateForStorage\(loaded\);/);
 assert.match(mainJs, /compactStateForStorage\(merged\);/);
 assert.match(mainJs, /async function persistLocalStateDurable\(snapshot = state\)/);
 assert.match(mainJs, /async function hydrateFromLocalDurableSnapshot\(\)/);
-assert.match(mainJs, /hydrateFromLocalDurableSnapshot\(\)\.catch\(\(\) => false\), \/\/ v148\.13/);
+// v148.13 · il disco si idrata DENTRO la corsa del boot (contratto v14759 intatto)
+assert.match(mainJs, /async function hydrateFromCloudSnapshotCache\(\) \{\s*\n\s*\/\/ v148\.13[\s\S]{0,260}?await hydrateFromLocalDurableSnapshot\(\);/);
+assert.match(mainJs, /Promise\.race\(\s*\[\s*hydrateFromCloudSnapshotCache\(\)\.catch\(\(\) => false\),\s*new Promise\(\(resolve\) => \{ setTimeout\(resolve, 400\); \}\)\s*\]\)\.then\(\(\) => \{ render\(\); \}\);/);
 assert.match(mainJs, /indexedDB\.open\(WORKOUT_DB_NAME, 3\)/);
 
 console.log(JSON.stringify({ ok: true, v: "v148.13", archiviatePrima: esito.archiviatePrima, archiviateDopo: esito.archiviateDopo, recordNelloSnapshot: esito.recordNelloSnapshot, bytePrima: esito.bytePrima, byteDopo: esito.byteDopo, copiaSulDisco: esito.scrittaSulDisco, idratataDalDisco: esito.idratata }));

@@ -5169,6 +5169,11 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
     }
 
     async function hydrateFromCloudSnapshotCache() {
+      // v148.13 · PRIMA DI TUTTO la copia locale su DISCO (IndexedDB: mai sotto il tetto
+      // dei 5 MB di localStorage). Anche offline, e con la copia locale ferma perché lo
+      // stato non ci sta più, il primo paint parte dai dati buoni. La corsa del boot con
+      // il tetto di 400ms resta quella di sempre: questa attesa è dentro di lei.
+      try { await hydrateFromLocalDurableSnapshot(); } catch (error) {}
       try {
         const savedUid = String(state.profile.account?.uid || "");
         if (!savedUid || !navigator.onLine) return false;
@@ -16954,7 +16959,6 @@ function sanitizeForFirestore(value) {
     // l'avvio a freddo: senza cache valide (o offline, dove il locale è la
     // fonte giusta) l'idratazione termina subito e il render parte come prima.
     Promise.race([
-      hydrateFromLocalDurableSnapshot().catch(() => false), // v148.13: prima il disco, poi il cloud
       hydrateFromCloudSnapshotCache().catch(() => false),
       new Promise((resolve) => { setTimeout(resolve, 400); })
     ]).then(() => { render(); });

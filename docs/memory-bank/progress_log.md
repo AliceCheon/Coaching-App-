@@ -429,3 +429,5 @@ Obiettivo:
 - **Verifica**: `tests/v14813-stato-leggero.test.mjs` — ROSSO prima della patch, poi VERDE: 5 schede archiviate → 3 (2 copie esatte tolte, la più recente conservata, scheda viva intatta); snapshot locale con soli record custom; copia durabile scritta/riletta con `QuotaExceededError` su ogni scrittura locale e idratazione dal disco al boot.
 - **Suite**: vedi riga "SUITE COMPLETA" nel commit; i 2 rossi noti (`v14810-riparazione-contenuto-seed`, `v14789-iod-progressioni-ripristinate`) restano PRE-ESISTENTI.
 - **Nota**: `quotaErrors`/la simulazione di quota piena è nel test; la potatura non tocca né schede vive né versioni diverse, quindi nessun contenuto di Alice viene eliminato.
+
+- **Allineamento guardie (v148.13-b)**: la corsa del boot resta **identica** (contratto di `v14759-primo-paint-fresco`, regex invariata): l'idratazione dal disco locale è la PRIMA riga di `hydrateFromCloudSnapshotCache`, quindi dentro il tetto di 400 ms. Guardia di versione DB di `v14812` aggiornata a `[23]` e guardia di quota del nuovo test resa esplicita (dimostra il `QuotaExceededError`, poi spegne la quota per le parti pure).
