@@ -133,6 +133,8 @@ const esito2 = await vm.runInContext(`(async () => {
 
   // 5) idratazione: il localStorage è FERMO (più vecchio), il disco ha la versione buona
   state = migrateStateSchema(JSON.parse(JSON.stringify({ meta: { updatedAt: "2026-10-11T08:00:00.000Z" }, profile: { account: { uid: "alice-test" } }, programs: [], training: { sessions: [], activeWorkout: null } })));
+  // il locale è CONGELATO nel passato: è il telefono che non riesce più a scrivere
+  state.meta = { ...(state.meta || {}), updatedAt: "2026-10-11T08:00:00.000Z" };
   out.idratata = await hydrateFromLocalDurableSnapshot();
   out.sedutaArrivata = (state.training.sessions || []).some((s) => s.id === "seduta-disco");
   return out;
