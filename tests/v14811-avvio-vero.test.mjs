@@ -8,7 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const mainJs = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 
-// --- v148.14 "AVVIO VERO": il primo render del telefono è già quello giusto ---
+// --- v148.15 "AVVIO VERO": il primo render del telefono è già quello giusto ---
 // Sintomo Alice: apro l'app → workout con le rip di luglio ("12+4+2") → dopo ~3
 // minuti arriva la sync e "Arrivato nuovo allenamento" → finalmente quello giusto.
 // Cioè: il CLOUD è giusto, ma il telefono disegna subito la COPIA LOCALE stantia
@@ -35,7 +35,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
 context.window = context;
 context.globalThis = context;
 vm.createContext(context);
-new vm.Script(applicationScript, { filename: "v14814-avvio-vero.js" }).runInContext(context);
+new vm.Script(applicationScript, { filename: "v14815-avvio-vero.js" }).runInContext(context);
 
 const out = vm.runInContext(`(() => {
   const esito = {};
@@ -66,4 +66,4 @@ assert.equal(out.numeriLuglioSpariti, true, "le rip di luglio devono tornare al 
 assert.equal(out.attivoPreso, true, "status attivo, nome e creazione restano");
 assert.equal(out.customIntatto, true, "il custom della coach NON viene toccato");
 
-console.log(JSON.stringify({ ok: true, v: "v148.14", avvio: "vero al primo render" }));
+console.log(JSON.stringify({ ok: true, v: "v148.15", avvio: "vero al primo render" }));

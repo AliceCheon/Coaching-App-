@@ -8,7 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const mainJs = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 
-// --- v148.14: il workbook RIPARA il contenuto dei seed anche su copie esistenti ---
+// --- v148.15: il workbook RIPARA il contenuto dei seed anche su copie esistenti ---
 // Alice: "continuano a uscire ripetizioni e serie a casaccio su mobile, anche se
 // ora la scheda giusta c'è". Il telefono custodiva una copia VECCHIA del programma
 // (id già presente → il re-seed la saltava; cancello con stamp fissa → mai più
@@ -27,7 +27,7 @@ assert.doesNotMatch(mainJs, /seededIds\.has\(program\.id\)/);
 //    dispositivo al primo avvio di questa build).
 assert.match(mainJs, /const INTENSITA_NUOVO_BUILD = "2026-10-09-riparazione-contenuto-workbook"/);
 assert.match(mainJs, /const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook"/);
-// v148.14 · ANTI-DERIVA: lo stamp non deve tornare a portare un token di versione
+// v148.15 · ANTI-DERIVA: lo stamp non deve tornare a portare un token di versione
 // (il tool di release lo riscrive nei test e la guardia diventa rossa da sola).
 assert.doesNotMatch(mainJs, /riparazione-contenuto-workbook-v\d+/);
 
@@ -43,7 +43,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
 context.window = context;
 context.globalThis = context;
 vm.createContext(context);
-new vm.Script(applicationScript, { filename: "v14814-riparazione.js" }).runInContext(context);
+new vm.Script(applicationScript, { filename: "v14815-riparazione.js" }).runInContext(context);
 
 const out = vm.runInContext(`(() => {
   const esito = {};
@@ -77,4 +77,4 @@ assert.equal(out.nomeECreazionePresi, true, "nome e creazione restano");
 assert.equal(out.stampAggiornato, true, "il timestamp avanza (così il cloud propaga la riparazione)");
 assert.equal(out.idMancanteNonTocca, true, "id mancante: nessun tocco (il push lo fa il blocco)");
 
-console.log(JSON.stringify({ ok: true, v: "v148.14", riparazione: "contenuto seed su copie esistenti" }));
+console.log(JSON.stringify({ ok: true, v: "v148.15", riparazione: "contenuto seed su copie esistenti" }));

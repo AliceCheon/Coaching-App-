@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import assert from "node:assert/strict";
 
-// Fase 2 (v148.14) — UI POLISH: pulsanti, tab, card e pagine più curati.
+// Fase 2 (v148.15) — UI POLISH: pulsanti, tab, card e pagine più curati.
 // Anti-regressione: lo stile deve esistere e NON deve toccare le variabili
 // dei due temi base (Midnight/Lavender Diva), che restano invariati.
 const css = await fs.readFile(new URL("../coach-studio-inline.css", import.meta.url), "utf8");
@@ -36,8 +36,8 @@ assert.ok(!/\.card::before/.test(css), "non aggiungere .card::before generico");
 assert.ok(!/\.card::after/.test(css), "non aggiungere .card::after generico");
 
 // Versione allineata.
-assert.ok(config.includes('build: "v148.14-manutenzione-suite-verde"'), "build non aggiornata");
-assert.ok(config.includes('cache: "atlas-app-v14814-manutenzione-suite-verde"'), "cache non aggiornata");
-assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14814-manutenzione-suite-verde"'), "CACHE_NAME non aggiornata");
+assert.ok(config.includes('build: "v148.15-sedute-sync-affidabile"'), "build non aggiornata");
+assert.ok(config.includes('cache: "atlas-app-v14815-sedute-sync-affidabile"'), "cache non aggiornata");
+assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14815-sedute-sync-affidabile"'), "CACHE_NAME non aggiornata");
 
-console.log(JSON.stringify({ ok: true, build: "v148.14-manutenzione-suite-verde", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));
+console.log(JSON.stringify({ ok: true, build: "v148.15-sedute-sync-affidabile", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));

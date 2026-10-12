@@ -3960,6 +3960,38 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook";
       } catch (error) { return []; }
     }
 
+    // === v148.15 · LA SEDUTA DEVE ARRIVARE AL CLOUD ANCHE SE IL SALVATAGGIO LOCALE FALLISCE ===
+    // Causa del "sul telefono ho le sedute C e D, sul PC non ci sono": lo stato supera la
+    // quota di localStorage (~5 MB), quindi la scrittura del registro locale fallisce e la
+    // coda cloud veniva riempita SOLO dopo una scrittura locale VERIFICATA — cioè mai. In
+    // più la coda persistente vive lei stessa in localStorage: piena la quota, non riesce
+    // nemmeno a scrivere le operazioni. Quindi due rimedi: la coda non dipende più
+    // dall'esito della scrittura locale, e il lavoro da fare è l'UNIONE fra la coda e le
+    // sedute di stato non ancora sincronizzate (se la coda non si scrive, si carica lo stesso).
+    function armSessionCloudQueue(session) {
+      try {
+        if (!session || session.status !== "completed") return false;
+        if (session.syncStatus === "synced") return false;
+        queueReliableWorkoutSession(session);
+        return true;
+      } catch (error) { return false; }
+    }
+
+    function pendingSessionOperations() {
+      const operations = reliableSyncQueue ? reliableSyncQueue.pending() : [];
+      const known = new Set(operations.map((operation) => String(operation.entityId || "")));
+      (state.training?.sessions || []).forEach((session) => {
+        try {
+          if (!session || session.status !== "completed" || session.syncStatus === "synced") return;
+          const operation = window.BarbellDivaSyncEngine.createSyncOperation(session, { userId: cloudUser?.uid || "", deviceId: reliableDeviceId(), now: new Date().toISOString() });
+          if (known.has(String(operation.entityId || ""))) return;
+          known.add(String(operation.entityId || ""));
+          operations.push(operation);
+        } catch (error) {}
+      });
+      return operations;
+    }
+
     function persistWorkoutJournalSession(session) {
       if (!session) return false;
       const key = workoutSessionKey(session);
@@ -3969,12 +4001,13 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook";
       try {
         localStorage.setItem(WORKOUT_JOURNAL_KEY, JSON.stringify(bounded));
         const verified = readWorkoutJournal().some((row) => workoutSessionKey(row) === key);
-        if (verified && session.status === "completed") queueReliableWorkoutSession(session);
+        if (verified) armSessionCloudQueue(session); // v148.15: non più solo se la copia locale riesce
         return verified;
       } catch (error) {
         if (isStorageQuotaError(error) && releaseObsoleteLocalBackups()) {
-          try { localStorage.setItem(WORKOUT_JOURNAL_KEY, JSON.stringify(bounded)); return true; } catch (retryError) {}
+          try { localStorage.setItem(WORKOUT_JOURNAL_KEY, JSON.stringify(bounded)); armSessionCloudQueue(session); return true; } catch (retryError) {}
         }
+        armSessionCloudQueue(session); // quota piena: la copia durabile c'è, il cloud deve partire comunque
         return false;
       }
     }
@@ -4403,6 +4436,7 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook";
     async function recoverDurableWorkoutJournal() {
       const indexedRows = await readWorkoutJournalIndexedDb();
       indexedRows.forEach((row) => persistWorkoutJournalSession(row));
+      indexedRows.forEach((row) => armSessionCloudQueue(row)); // v148.15: anche le sedute recuperate dal disco vanno al cloud
       const recovered = recoverWorkoutJournal(state);
       const correctedWorkoutFDates = correctAliceWorkoutF16Jul2026(state);
       state.migrations = state.migrations || {};
@@ -6045,9 +6079,24 @@ function sanitizeForFirestore(value) {
       });
     }
 
+    // v148.15 · L'ID DISPOSITIVO NON DEVE PIÙ DIPENDERE DALLA QUOTA DI localStorage ===
+    // `reliableDeviceId()` persisteva il proprio id con localStorage.setItem: con la quota
+    // piena quella scrittura lanciava QuotaExceededError e faceva fallire IN SILENZIO ogni
+    // accodamento al cloud (la coda, il flush e la lettura delle sedute passano tutti da
+    // qui). È il vero motivo per cui le sedute C e D restavano sul telefono: la sync si
+    // dichiarava attiva ma non era mai partito nulla. Ora l'id vive in MEMORIA per tutta
+    // la sessione (stabile, quindi le sedute non si duplicano) e la persistenza è un
+    // tentativo best-effort che non può più far cadere la sincronizzazione.
+    let reliableDeviceIdCache = "";
+    function safeDeviceIdPersist(key, value) { try { localStorage.setItem(key, value); } catch (error) {} }
     function reliableDeviceId() {
+      if (reliableDeviceIdCache) return reliableDeviceIdCache;
+      reliableDeviceIdCache = reliableDeviceIdUncached();
+      return reliableDeviceIdCache;
+    }
+    function reliableDeviceIdUncached() {
       const key = `${STORE_KEY}.device-id.v1`; let value = localStorage.getItem(key);
-      if (!value) { value = `device-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,9)}`; localStorage.setItem(key, value); }
+      if (!value) { value = `device-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,9)}`; safeDeviceIdPersist(key, value); }
       return value;
     }
 
@@ -6123,7 +6172,7 @@ function sanitizeForFirestore(value) {
       initReliableSync(); const collection = reliableSessionsCollection();
       if (!reliableSyncQueue || !collection || !cloudUser || !state.profile.account?.syncReady || !navigator.onLine) { refreshReliableSyncStatus(); if (!options.silent) showToast(navigator.onLine ? "Accedi al cloud prima di sincronizzare." : "Offline: le modifiche restano in coda.", "warning"); return { ok:false, synced:0 }; }
       let synced=0, failed=0, conflicts=0; reliableSyncUi.status="syncing"; reliableSyncUi.lastError="";
-      for (const operation of reliableSyncQueue.pending()) {
+      for (const operation of pendingSessionOperations()) { // v148.15: coda ∪ sedute non sincronizzate
         reliableSyncQueue.markSyncing(operation.operationId);
         try {
           const ref=collection.doc(reliableSessionDocId(operation.entityId)), snapshot=await withTimeout(ref.get(), 30000);
