@@ -13,6 +13,10 @@
     const WORKOUT_ACTIVE_RESCUE_KEY = `${STORE_KEY}.workoutActiveRescue.v1`; // v14745
     const LAST_ACCOUNT_UID_KEY = `${STORE_KEY}.lastAccountUid`; // Fase 4: isolamento per account
     const WORKOUT_DB_STORE = "sessions";
+    // v148.12 · copia durabile del workout IN CORSO (IndexedDB: quota sul disco,
+    // non i ~5 MB di localStorage) — vedi la nota su persistActiveWorkoutRescue.
+    const WORKOUT_ACTIVE_STORE = "activeWorkout";
+    const WORKOUT_ACTIVE_RECORD_ID = "active";
     const APP_BUILD = window.BarbellDivaV144Config?.build || "v146.1";
     const FIREBASE_CONFIG = window.BarbellDivaV144Config?.firebase || {};
     const CLOUD_COLLECTION = "barbellDivaAccounts";
@@ -1298,6 +1302,10 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
     // in corso viene recuperato dalla rete di sicurezza dedicata.
     try { if (restoreActiveWorkoutRescue(state)) persistStateToLocalStorage(state, { touch: false }); } catch (error) {}
     try { if (closeStaleActiveWorkout(state)) persistStateToLocalStorage(state, { touch: false }); } catch (error) {} // v148.05: il tab Workout parte sempre dalla giornata di oggi
+    // v148.12 · se il salvataggio locale è fallito (localStorage pieno: lo stato
+    // supera la quota del browser) il workout in corso si recupera dalla copia
+    // durabile in IndexedDB, scritta a ogni modifica e allo spegnimento dello schermo.
+    try { restoreActiveWorkoutDurable(state).then((restored) => { if (restored) render(); }).catch(() => {}); } catch (error) {}
     try { resumeRestTimerIfNeeded(); } catch (error) {} // v14748: il recupero riprende da dove era
 
     try { releaseObsoleteLocalBackups(); } catch (error) {}
@@ -4018,13 +4026,23 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
         if (!snapshot || !snapshot.training) return false;
         const active = snapshot.training.activeWorkout;
         if (!active || !["active", "paused"].includes(active.status)) {
-          if (localStorage.getItem(WORKOUT_ACTIVE_RESCUE_KEY)) localStorage.removeItem(WORKOUT_ACTIVE_RESCUE_KEY);
+          // v148.12 · solo un workout ESPLICITAMENTE chiuso (campo presente e null)
+          // cancella la rete di sicurezza: un'istantanea parziale che non porta
+          // affatto il campo non deve distruggere l'ultima copia del workout.
+          const explicitClose = Object.prototype.hasOwnProperty.call(snapshot.training, "activeWorkout");
+          if (explicitClose) {
+            try { persistActiveWorkoutDurable(snapshot); } catch (error) {}
+            if (localStorage.getItem(WORKOUT_ACTIVE_RESCUE_KEY)) localStorage.removeItem(WORKOUT_ACTIVE_RESCUE_KEY);
+          }
           return false;
         }
         const sets = activeWorkoutRescueSets(snapshot.training);
         const signature = activeWorkoutSignature(active, sets);
         const now = Date.now();
         if (signature === lastActiveRescueSignature && (now - lastActiveRescueWriteAt) < 4000) return true;
+        // v148.12 · la stessa istantanea va in IndexedDB PRIMA del tentativo locale:
+        // l'esito di localStorage non può più decidere se il workout si salva o no.
+        try { persistActiveWorkoutDurable(snapshot); } catch (error) {}
         localStorage.setItem(WORKOUT_ACTIVE_RESCUE_KEY, JSON.stringify({ schema: 2, savedAt: new Date().toISOString(), workout: active, sets }));
         lastActiveRescueSignature = signature;
         lastActiveRescueWriteAt = now;
@@ -4064,12 +4082,21 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
         try { localStorage.removeItem(WORKOUT_ACTIVE_RESCUE_KEY); } catch (error) {}
         return false;
       }
+        // v14746 · tolleranza al vecchio formato: senza "sets" si ripristina solo il workout
+        const sets = (parsed && typeof parsed.sets === "object" && parsed.sets) ? parsed.sets : {};
+        return applyActiveWorkoutSnapshot(targetState, resume, sets);
+      } catch (error) { return false; }
+    }
+
+    // v148.12 · il cuore del ripristino, condiviso fra la rete di sicurezza in
+    // localStorage e la copia durabile in IndexedDB: workout + serie + note + timer.
+    function applyActiveWorkoutSnapshot(targetState, resume, sets = {}) {
+      try {
+        if (!targetState || !resume || !resume.id || !["active", "paused"].includes(resume.status)) return false;
         const current = targetState.training?.activeWorkout;
         const currentStamp = Date.parse(current?.updatedAt || "") || 0;
         const resumeStamp = Date.parse(resume.updatedAt || "") || 0;
         if (current && current.id && currentStamp >= resumeStamp) return false;
-        // v14746 · tolleranza al vecchio formato: senza "sets" si ripristina solo il workout
-        const sets = (parsed && typeof parsed.sets === "object" && parsed.sets) ? parsed.sets : {};
         targetState.training = targetState.training || {};
         targetState.training.activeWorkout = clone(resume);
         const mergeBag = (local, extra) => ({ ...(local && typeof local === "object" ? local : {}), ...(extra && typeof extra === "object" ? extra : {}) });
@@ -4107,10 +4134,12 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
     function openWorkoutJournalDb() {
       return new Promise((resolve, reject) => {
         if (typeof indexedDB === "undefined") { resolve(null); return; }
-        const request = indexedDB.open(WORKOUT_DB_NAME, 1);
+        const request = indexedDB.open(WORKOUT_DB_NAME, 2); // v148.12: v2 = store dell'istanza workout
         request.onupgradeneeded = () => {
           const db = request.result;
           if (!db.objectStoreNames.contains(WORKOUT_DB_STORE)) db.createObjectStore(WORKOUT_DB_STORE, { keyPath: "journalId" });
+          // v148.12 · istanza del workout in corso
+          if (!db.objectStoreNames.contains(WORKOUT_ACTIVE_STORE)) db.createObjectStore(WORKOUT_ACTIVE_STORE, { keyPath: "journalId" });
         };
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error || new Error("IndexedDB non disponibile"));
@@ -4151,6 +4180,63 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
         db.close();
         return rows;
       } catch (error) { return []; }
+    }
+
+    // === v148.12 · IL WORKOUT IN CORSO NON DIPENDE PIÙ DAL localStorage PIENO ===
+    // Causa vera del "workout sparito": lo stato serializzato supera la quota di
+    // localStorage (~5 MB per origine), quindi con il cloud attivo OGNI scrittura
+    // locale falliva in silenzio; in allenamento l'app scrive SOLO in locale
+    // (cloud:false, di proposito), per cui bastava che Android scartasse la scheda
+    // in standby per perdere tutto — serie, note e timer compresi. La copia del
+    // workout in corso va ora anche in IndexedDB, come già il registro di emergenza.
+    async function persistActiveWorkoutDurable(snapshot = state) {
+      try {
+        if (!snapshot || !snapshot.training) return false;
+        const active = snapshot.training.activeWorkout;
+        if (!Object.prototype.hasOwnProperty.call(snapshot.training, "activeWorkout")) return false;
+        const db = await openWorkoutJournalDb();
+        if (!db) return false;
+        const record = active && ["active", "paused"].includes(active.status)
+          ? { journalId: WORKOUT_ACTIVE_RECORD_ID, savedAt: new Date().toISOString(), workout: clone(active), sets: activeWorkoutRescueSets(snapshot.training) }
+          : null;
+        await new Promise((resolve, reject) => {
+          const transaction = db.transaction(WORKOUT_ACTIVE_STORE, "readwrite");
+          const store = transaction.objectStore(WORKOUT_ACTIVE_STORE);
+          if (record) store.put(record); else store.delete(WORKOUT_ACTIVE_RECORD_ID);
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error || new Error("Istanza workout non salvata"));
+          transaction.onabort = () => reject(transaction.error || new Error("Istanza workout interrotta"));
+        });
+        db.close();
+        return true;
+      } catch (error) { return false; }
+    }
+
+    async function readActiveWorkoutDurable() {
+      try {
+        const db = await openWorkoutJournalDb();
+        if (!db) return null;
+        const record = await new Promise((resolve, reject) => {
+          const request = db.transaction(WORKOUT_ACTIVE_STORE, "readonly").objectStore(WORKOUT_ACTIVE_STORE).get(WORKOUT_ACTIVE_RECORD_ID);
+          request.onsuccess = () => resolve(request.result || null);
+          request.onerror = () => reject(request.error || new Error("Lettura istanza workout non riuscita"));
+        });
+        db.close();
+        return record && record.workout ? record : null;
+      } catch (error) { return null; }
+    }
+
+    // Ultima spiaggia al boot: se la copia locale non c'è (localStorage pieno), il
+    // workout in corso si riprende da IndexedDB — stessa logica di ripristino.
+    async function restoreActiveWorkoutDurable(targetState = state) {
+      try {
+        const record = await readActiveWorkoutDurable();
+        if (!record) return false;
+        if (activeWorkoutIsStale(record.workout)) { await persistActiveWorkoutDurable({ training: { activeWorkout: null } }); return false; }
+        if (!applyActiveWorkoutSnapshot(targetState, record.workout, record.sets || {})) return false;
+        try { persistActiveWorkoutRescue(targetState); persistStateToLocalStorage(targetState, { touch: false }); } catch (error) {}
+        return true;
+      } catch (error) { return false; }
     }
 
     async function removeWorkoutJournalRecords(ids = []) {
@@ -4350,6 +4436,11 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
             localStorage.removeItem(BACKUP_HISTORY_KEY);
             localStorage.removeItem(PRE_V55_BACKUP_KEY);
             localStorage.removeItem(PRE_WEEK_CONSOLIDATION_BACKUP_KEY);
+            // v148.12 · anche le copie "pre-merge": sono duplicati giganti dello
+            // stesso stato (più della quota intera) e sono la ragione per cui su
+            // certi telefoni lo stato non si riusciva più a scrivere.
+            localStorage.removeItem(PRE_MERGE_BACKUP_KEY);
+            localStorage.removeItem(PRE_MERGE_PREV_BACKUP_KEY);
             localStorage.setItem(STORE_KEY, JSON.stringify(localStorageSnapshotFor(snapshot)));
             lastPersistenceError = null;
             return true;
@@ -4642,6 +4733,19 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
         const localActiveStamp = Date.parse(localActiveWorkout.updatedAt || "") || 0;
         const mergedActiveStamp = Date.parse(merged.training.activeWorkout?.updatedAt || "") || 0;
         if (localActiveStamp >= mergedActiveStamp) merged.training.activeWorkout = clone(localActiveWorkout);
+        // v148.12 · un cloud più vecchio non può RISCRIVERE le serie/note del workout
+        // che Alice sta facendo su questo dispositivo: le chiavi della seduta aperta
+        // restano quelle locali (era il "mi tocca riscrivere serie e note da capo").
+        const openSessionPrefix = `${localActiveWorkout.date || ""}|${localActiveWorkout.sessionCode || ""}|`;
+        if (openSessionPrefix.length > 2) {
+          ["draft", "setDone", "noteDraft", "actualRir"].forEach((bag) => {
+            const localBag = localState.training?.[bag];
+            if (!localBag || typeof localBag !== "object") return;
+            const mergedBag = { ...(merged.training[bag] || {}) };
+            Object.keys(localBag).forEach((key) => { if (String(key).startsWith(openSessionPrefix)) mergedBag[key] = localBag[key]; });
+            merged.training[bag] = mergedBag;
+          });
+        }
       }
       // v148.05 · e nemmeno il merge cloud fa rientrare un workout stantio
       closeStaleActiveWorkout(merged);
