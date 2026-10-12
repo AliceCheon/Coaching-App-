@@ -115,8 +115,15 @@ const esito = await vm.runInContext(`(async () => {
   // 3-bis) la quota è DAVVERO piena: una scrittura locale fallisce
   let scrittureFallite = 0;
   try { localStorage.setItem("prova-quota", "x"); } catch (error) { scrittureFallite += 1; }
-  quotaAttiva = false; // da qui guardo la copia su disco, non più la quota
+  return { ...out, scrittureFallite };
+})()`, ctx);
 
+// La quota si spegne FUORI dalla VM (dentro sarebbe una variabile della VM e il finto
+// localStorage continuerebbe a lanciare): da qui guardo la copia locale su DISCO.
+quotaAttiva = false;
+
+const esito2 = await vm.runInContext(`(async () => {
+  const out = {};
   // 4) copia locale durabile: con localStorage che rifiuta tutto, il disco la custodisce
   const statoNuovo = { meta: { updatedAt: "2026-10-12T08:00:00.000Z" }, profile: { account: { uid: "alice-test" } }, programs: [], training: { sessions: [{ id: "seduta-disco" }], activeWorkout: null } };
   out.scrittaSulDisco = await persistLocalStateDurable(statoNuovo);
@@ -127,7 +134,6 @@ const esito = await vm.runInContext(`(async () => {
   state = migrateStateSchema(JSON.parse(JSON.stringify({ meta: { updatedAt: "2026-10-11T08:00:00.000Z" }, profile: { account: { uid: "alice-test" } }, programs: [], training: { sessions: [], activeWorkout: null } })));
   out.idratata = await hydrateFromLocalDurableSnapshot();
   out.sedutaArrivata = (state.training.sessions || []).some((s) => s.id === "seduta-disco");
-  out.scrittureFallite = scrittureFallite;
   return out;
 })()`, ctx);
 
@@ -138,10 +144,10 @@ assert.equal(esito.vivaIntatta, true, "le schede vive non si toccano");
 assert.deepEqual(esito.recordNelloSnapshot, ["mio-1"], "nello snapshot locale restano solo i record di Alice");
 assert.equal(esito.catalogoRicostruibile, true, "il catalogo di sistema è ricostruibile al boot");
 assert.ok(esito.byteDopo < esito.bytePrima * 0.5, `lo snapshot deve dimezzarsi (prima ${esito.bytePrima}, dopo ${esito.byteDopo})`);
-assert.equal(esito.scrittaSulDisco, true, "la copia locale deve finire in IndexedDB anche con localStorage pieno");
-assert.equal(esito.lettaDalDisco, true, "la copia locale deve essere rileggibile");
-assert.equal(esito.idratata, true, "il boot deve idratare dal disco quando il localStorage è fermo");
-assert.equal(esito.sedutaArrivata, true, "i dati della copia durabile devono entrare nello stato");
+assert.equal(esito2.scrittaSulDisco, true, "la copia locale deve finire in IndexedDB anche con localStorage pieno");
+assert.equal(esito2.lettaDalDisco, true, "la copia locale deve essere rileggibile");
+assert.equal(esito2.idratata, true, "il boot deve idratare dal disco quando il localStorage è fermo");
+assert.equal(esito2.sedutaArrivata, true, "i dati della copia durabile devono entrare nello stato");
 assert.equal(esito.scrittureFallite, 1, "il test deve simulare davvero un localStorage pieno (QuotaExceededError)");
 
 // --- guardie statiche -------------------------------------------------------
@@ -157,4 +163,4 @@ assert.match(mainJs, /async function hydrateFromCloudSnapshotCache\(\) \{\s*\n\s
 assert.match(mainJs, /Promise\.race\(\s*\[\s*hydrateFromCloudSnapshotCache\(\)\.catch\(\(\) => false\),\s*new Promise\(\(resolve\) => \{ setTimeout\(resolve, 400\); \}\)\s*\]\)\.then\(\(\) => \{ render\(\); \}\);/);
 assert.match(mainJs, /indexedDB\.open\(WORKOUT_DB_NAME, 3\)/);
 
-console.log(JSON.stringify({ ok: true, v: "v148.13", archiviatePrima: esito.archiviatePrima, archiviateDopo: esito.archiviateDopo, recordNelloSnapshot: esito.recordNelloSnapshot, bytePrima: esito.bytePrima, byteDopo: esito.byteDopo, copiaSulDisco: esito.scrittaSulDisco, idratataDalDisco: esito.idratata }));
+console.log(JSON.stringify({ ok: true, v: "v148.13", archiviatePrima: esito.archiviatePrima, archiviateDopo: esito.archiviateDopo, recordNelloSnapshot: esito.recordNelloSnapshot, bytePrima: esito.bytePrima, byteDopo: esito.byteDopo, copiaSulDisco: esito2.scrittaSulDisco, idratataDalDisco: esito2.idratata }));
