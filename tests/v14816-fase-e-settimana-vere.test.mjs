@@ -8,13 +8,13 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const mainJs = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 
-// --- v148.17 · in AUTOMATICO fase e settimana vengono dal PROGRAMMA, non da un fossile ---
-// Alice: "in automatico non mi dà mai la seduta giusta: o Intensificazione o B program 1 a
-// caso, e mi segna settimana 8 invece della 7; per questo devo mettere sempre il manuale".
-// Causa: `effectiveTrainingPhase()` in automatico ripiegava su `state.training.phaseFilter`,
-// scritto SOLO dal selettore manuale, e `currentTrainingContext()` risolveva le schede solo
-// dal programma ESPLICITAMENTE attivo: senza, `programSheets` restava vuoto e la settimana
-// cadeva sulla fase sbagliata.
+// --- v148.18 · il programma che Alice sta allenando torna ATTIVO ---
+// Alice: "in automatico o 'Intensificazione' o 'B program 1' a caso, e settimana 8 invece
+// di 7: devo mettere sempre il manuale". Causa: dopo i "torna a bozza" non resta quasi mai
+// un programma marcato attivo, quindi la fase in automatico ripiegava sull'ultima scelta
+// MANUALE e le schede venivano da un programma che non stava allenando.
+// Cura dal lato del DATO (la catena di derivazione resta quella sorvegliata dai test):
+// l'ultimo allenamento dice qual è il programma vero e quel programma torna "attivo".
 
 const vmLibs = await Promise.all([
   "exercise-library-19.8.js", "master-exercise-library.js", "app-config-v144.js", "athlete-context.js",
@@ -35,58 +35,55 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
   addEventListener() {}, removeEventListener() {}, matchMedia() { return { matches: true }; }, window: null, globalThis: null };
 context.window = context; context.globalThis = context;
 vm.createContext(context);
-new vm.Script(vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + bootPart, { filename: "v14817.js" }).runInContext(context);
+new vm.Script(vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + bootPart, { filename: "v14818.js" }).runInContext(context);
 
 const esito = vm.runInContext(`(() => {
   const out = {};
-  const scheda = (code, nome) => ({ id: "sheet-" + code, code, letter: code, order: code.charCodeAt(0) - 64, name: nome, exercises: [{ id: "ex-" + code, name: "Hip_Thrust", prescription: { sets: 3, reps: "8" } }] });
-  const programma = (id, phase, updatedAt, extra = {}) => ({ id, name: phase, phase, status: "available", updatedAt, sheets: [scheda("A", "Scheda A"), scheda("B", "Scheda B")], ...extra });
+  const scheda = (code) => ({ id: "sheet-" + code, code, letter: code, order: code.charCodeAt(0) - 64, name: "Scheda " + code, exercises: [{ id: "ex-" + code, name: "Hip_Thrust", prescription: { sets: 3, reps: "8" } }] });
+  const programma = (id, phase, updatedAt) => ({ id, name: phase, phase, status: "available", updatedAt, sheets: [scheda("A"), scheda("B")] });
 
-  // Nessun programma marcato "attivo" (la storia dei "torna a bozza"): il fossile manuale
-  // phaseFilter punta al programma SBAGLIATO e più vecchio.
-  state.programs = [
-    programma("p-b1", "B program 1", "2026-07-01T00:00:00.000Z"),
-    programma("p-int", "Intensità Agosto-Ottobre", "2026-10-09T00:00:00.000Z")
-  ];
-  state.training.contextMode = "auto";
-  state.training.sessionName = "auto";
-  state.training.date = todayInput();
-  state.training.phaseFilter = "B program 1";   // FOSSILE: ultima scelta manuale
-  state.training.manualPhase = "B program 1";
+  // Nessun programma "attivo" (i "torna a bozza"), fossile manuale su "B program 1",
+  // e l'ULTIMO ALLENAMENTO è su "Intensità Agosto-Ottobre": è quello il programma vero.
+  state.programs = [programma("p-b1", "B program 1", "2026-07-01T00:00:00.000Z"), programma("p-int", "Intensità Agosto-Ottobre", "2026-09-01T00:00:00.000Z")];
+  state.profile.phaseStart = "2026-09-01"; state.profile.phaseLength = 12;
+  state.training.contextMode = "auto"; state.training.sessionName = "auto"; state.training.date = todayInput();
+  state.training.phaseFilter = "B program 1"; state.training.manualPhase = "B program 1";
+  state.training.sessions = [{ id: 1700000000001, source: "App", status: "completed", phase: "Intensità Agosto-Ottobre", dateInput: "2026-10-10", sessionCode: "B", week: 7, exercises: [] }];
 
-  out.faseEfficace = effectiveTrainingPhase();
+  out.primaFase = effectiveTrainingPhase();
+  out.riparato = ensureActiveProgramFromLastWorkout();
+  out.faseDopo = effectiveTrainingPhase();
+  out.phaseFilterDopo = state.training.phaseFilter;
+  out.attivo = (state.programs.find((row) => String(row.status) === "active") || {}).phase || null;
   const contesto = currentTrainingContext();
-  out.faseContesto = contesto.phase;
   out.scheda = contesto.session ? contesto.session.code : null;
   out.esercizi = contesto.session ? (contesto.session.exercises || []).length : 0;
   out.settimana = contesto.week;
-  out.faseScelta = contesto.phase === "Intensità Agosto-Ottobre" && !!contesto.session;
-
-  // Un programma marcato ATTIVO vince su tutto (automatico)
-  state.programs = state.programs.map((programma) => programma.id === "p-b1" ? { ...programma, status: "active", active: true } : programma);
-  out.programmaAttivoVince = effectiveTrainingPhase() === "B program 1";
-
-  // MANUALE: la scelta di Alice resta sovrana
-  state.training.contextMode = "manual";
-  state.training.manualModeDate = state.training.date;
-  state.training.manualPhase = "Intensificazione";
+  // idempotente: la seconda volta non cambia più nulla
+  out.secondaVolta = ensureActiveProgramFromLastWorkout();
+  // in MANUALE non si tocca niente e la scelta di Alice resta sovrana
+  state.training.contextMode = "manual"; state.training.manualModeDate = state.training.date; state.training.manualPhase = "Intensificazione";
+  out.manualeNonTocca = ensureActiveProgramFromLastWorkout();
   out.manualeVince = effectiveTrainingPhase() === "Intensificazione";
   return out;
 })()`, context);
 
-assert.equal(esito.faseEfficace, "Intensità Agosto-Ottobre", "in automatico la fase deve venire dal programma, non dal fossile phaseFilter");
-assert.equal(esito.faseContesto, "Intensità Agosto-Ottobre", "il contesto deve usare la stessa fase");
-assert.ok(esito.scheda, "in automatico deve esserci una scheda (prima restava senza: programSheets vuoto)");
-assert.ok(esito.esercizi >= 1, "la scheda risolta deve portare i suoi esercizi");
-assert.ok(esito.settimana > 0 && esito.settimana <= 12, "la settimana deve essere un numero sensato");
-assert.equal(esito.faseScelta, true, "fase e scheda devono essere coerenti col programma giusto");
-assert.equal(esito.programmaAttivoVince, true, "un programma marcato attivo deve vincere sulla recenza");
+assert.equal(esito.primaFase, "B program 1", "precondizione: senza riparazione la fase è il fossile manuale");
+assert.equal(esito.riparato, true, "il programma dell'ultimo allenamento deve tornare attivo");
+assert.equal(esito.attivo, "Intensità Agosto-Ottobre", "deve essere attivo il programma allenato, non il fossile");
+assert.equal(esito.faseDopo, "Intensità Agosto-Ottobre", "in automatico la fase è quella del programma vero");
+assert.equal(esito.phaseFilterDopo, "Intensità Agosto-Ottobre", "anche il ripiego phaseFilter si riallinea");
+assert.ok(esito.scheda, "il contesto deve risolvere una scheda");
+assert.ok(esito.esercizi >= 1, "la scheda risolta deve portare esercizi");
+assert.ok(Number.isFinite(esito.settimana) && esito.settimana >= 1 && esito.settimana <= 12, "settimana sensata (era: " + esito.settimana + ")");
+assert.equal(esito.secondaVolta, false, "la riparazione è idempotente");
+assert.equal(esito.manualeNonTocca, false, "in manuale non si tocca il programma attivo");
 assert.equal(esito.manualeVince, true, "in manuale la scelta di Alice resta sovrana");
 
 // guardie statiche
-assert.match(mainJs, /const phasedProgram = activeProgram \|\| activeTrainingProgram\(\);/);
-assert.match(mainJs, /: \(phasedActivePhase \|\| activePhase \|\| "Intensificazione"\)/);
-assert.match(mainJs, /const activeProgram = explicitActiveTrainingProgram\(\);/); // v148.17: bacino schede invariato
-assert.doesNotMatch(mainJs, /: \(activePhase \|\| state\.training\?\.phaseFilter \|\| "Intensificazione"\)/);
+assert.match(mainJs, /function ensureActiveProgramFromLastWorkout\(\)/);
+assert.match(mainJs, /function latestSessionPhase\(\)/);
+assert.match(mainJs, /try \{ ensureActiveProgramFromLastWorkout\(\); \} catch \(error\) \{\} \/\/ v148\.18/);
+assert.match(mainJs, /: \(activePhase \|\| state\.training\?\.phaseFilter \|\| "Intensificazione"\)/);
 
-console.log(JSON.stringify({ ok: true, v: "v148.17", faseEfficace: esito.faseEfficace, scheda: esito.scheda, settimana: esito.settimana, manualeVince: esito.manualeVince }));
+console.log(JSON.stringify({ ok: true, v: "v148.18", prima: esito.primaFase, dopo: esito.faseDopo, attivo: esito.attivo, settimana: esito.settimana }));

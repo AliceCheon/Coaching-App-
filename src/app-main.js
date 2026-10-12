@@ -1320,6 +1320,7 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook";
 
     state.training.date = todayInput();
     try { normalizeManualContextForDate(); } catch (error) {} // v148.09: a giorno nuovo, manuale scaduto → automatico
+    try { ensureActiveProgramFromLastWorkout(); } catch (error) {} // v148.18: il programma allenato torna attivo (persistenza nei flussi normali)
     state.training.sessionName = "auto";
     hydrateStateModel(state);
     let programmingEngineRuntime = null;
@@ -6808,22 +6809,61 @@ function sanitizeForFirestore(value) {
       const isManual = state.training?.contextMode === "manual";
       const activeProgram = explicitActiveTrainingProgram();
       const activePhase = activeProgram ? String(activeProgram.phase || "") : "";
-      // v148.16 · IN AUTOMATICO LA FASE NON PUÒ VENIRE DA UN FOSSILE ===
-      // `state.training.phaseFilter` è scritto SOLO dal selettore MANUALE: senza un
-      // programma marcato "attivo" (dopo la storia dei "torna a bozza" non ce n'è
-      // quasi mai uno) l'app mostrava la fase dell'ULTIMA scelta a mano —
-      // "Intensificazione", "B program 1" — anche col programma giusto in casa.
-      // È il motivo per cui Alice doveva mettere sempre il MANUALE per avere la
-      // scheda giusta. Ora, se nessun programma è marcato attivo, si risolve come
-      // fa activeTrainingProgram(): il programma non archiviato più recente.
-      const phasedProgram = activeProgram || activeTrainingProgram();
-      const phasedActivePhase = phasedProgram ? String(phasedProgram.phase || "") : "";
       return (String(
         isManual
           ? (state.training?.manualPhase || activePhase || state.training?.phaseFilter || "Intensificazione")
-          : (phasedActivePhase || activePhase || "Intensificazione")
+          : (activePhase || state.training?.phaseFilter || "Intensificazione")
       ).trim()) || "Intensificazione";
     }
+    // v148.18 · IL PROGRAMMA CHE ALICE STA ALLENANDO TORNA ATTIVO ===
+    // "In automatico o Intensificazione o B program 1 a caso, e settimana sbagliata:
+    // devo mettere sempre il manuale." Dopo la storia dei "torna a bozza" (v148.00)
+    // NON resta quasi mai un programma marcato attivo: la fase in automatico ripiegava
+    // sulla scelta MANUALE precedente e le schede venivano da un programma che Alice non
+    // stava allenando (di qui anche la settimana sbagliata). Invece di toccare la catena
+    // di derivazione (tre test la sorvegliano: avanzamento E->F, dashboard, fase efficace)
+    // si ripara il DATO: l'ultimo allenamento dice qual è il programma vero, e quel
+    // programma torna "attivo". Scrittura-side, una volta per avvio.
+    function ensureActiveProgramFromLastWorkout() {
+      try {
+        if (state.training?.contextMode === "manual") return false;  // in manuale decide Alice
+        if (explicitActiveTrainingProgram()) return false;           // c'è già un attivo: non si tocca
+        const phase = latestSessionPhase();
+        if (!phase) return false;
+        const program = (state.programs || []).find((row) => !row.archivedAt && String(row.status || "") !== "archived" && String(row.phase || "").trim() === phase);
+        if (!program) return false;
+        let changed = false;
+        // v148.18 · NON DISTRUTTIVA: si marca attivo il programma allenato e basta.
+        // Declassare gli altri cambiava stati che non ci riguardano (e il test di
+        // affidabilità del cloud lo ha colto subito).
+        (state.programs || []).forEach((row) => {
+          if (row.id !== program.id) return;
+          if (String(row.status || "") !== "active" || row.active !== true) { row.status = "active"; row.active = true; changed = true; }
+        });
+        if (String(state.training.phaseFilter || "").trim() !== phase) { state.training.phaseFilter = phase; changed = true; }
+        return changed;
+      } catch (error) { return false; }
+    }
+
+    // v148.17 · LA FASE DELL'ULTIMO ALLENAMENTO È LA VERITÀ ===
+    // Con più programmi non archiviati e nessuno marcato "attivo" (la storia dei
+    // "torna a bozza"), l'ordine per data di modifica è inaffidabile: le riparazioni
+    // del workbook avanzano i timestamp (v148.10/v148.11), quindi "il più recente"
+    // può essere un programma che Alice non sta allenando. La fase giusta è quella
+    // che si è allenata per ultima: è esattamente "cosa sto facendo adesso".
+    function latestSessionPhase() {
+      try {
+        const rows = (state.training?.sessions || []).filter((session) => session && session.phase && !session.deletedAt);
+        if (!rows.length) return "";
+        const latest = rows.slice().sort((a, b) => String(b.dateInput || b.date || "").localeCompare(String(a.dateInput || a.date || "")) || workoutSessionRecordedAt(b) - workoutSessionRecordedAt(a))[0];
+        const phase = String(latest.phase || "").trim();
+        // ...ma solo se è una fase che ESISTE ancora su un programma non archiviato:
+        // una seduta vecchia di un programma cancellato non deve dirottare il contesto.
+        const esistente = (state.programs || []).some((program) => !program.archivedAt && String(program.status || "") !== "archived" && String(program.phase || "").trim() === phase);
+        return esistente ? phase : "";
+      } catch (error) { return ""; }
+    }
+
     // v148.09 · il giro Automatica→Manuale→Automatica è AUTOMATICO: la modalità
     // manuale è un override DI GIORNO (vale per la data in cui è stata scelta).
     // Al giorno nuovo l'app torna DA SOLA su Automatica e ripulisce la scelta

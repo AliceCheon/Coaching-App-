@@ -12,8 +12,8 @@ const checks = [
   [css.includes("col.col-tut      { width: 76px !important; }"), "colonna SOM non ampliata"],
   [css.includes("min-height: 30px !important"), "campi ancora troppo bassi"],
   [css.includes("font-size: 12px !important"), "testo dei campi ancora troppo piccolo"],
-  [html.includes("coach-schede-restyle-v146.css?v=v14817"), "cache bust CSS c10 mancante"],
-  [sw.includes('const CACHE_NAME = "atlas-app-v14817-fase-vera-senza-bacino"'), "cache PWA c10 mancante"]
+  [html.includes("coach-schede-restyle-v146.css?v=v14818"), "cache bust CSS c10 mancante"],
+  [sw.includes('const CACHE_NAME = "atlas-app-v14818-fase-dall-ultimo-allenamento"'), "cache PWA c10 mancante"]
 ];
 
 for (const [passed, message] of checks) {

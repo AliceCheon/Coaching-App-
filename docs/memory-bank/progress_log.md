@@ -465,3 +465,12 @@ Obiettivo:
 - **Fix (v148.17)**: ripristinato il bacino schede di sempre (programma esplicitamente attivo); la rimozione del fossile `phaseFilter` resta SOLO in automatico, mentre la catena manuale torna quella storica. La settimana è giusta comunque, perché è la FASE corretta a guidare schede e settimana: la correzione della fase basta da sola.
 - **Lezione**: quando si corregge una derivazione (fase → schede → settimana) si tocca UN punto per volta e si guarda la suite prima di pushare: allargare il bacino ha cambiato la sequenza delle schede, che è un comportamento sorvegliato da tre test diversi.
 - **Suite**: 249 test, 237 pass, 3 fail, 9 skipped.
+
+
+## Checkpoint 39-d — FASE 2 chiusa: il programma allenato torna attivo (v148.18)
+- **Segnalazione Alice**: "in automatico o 'Intensificazione' o 'B program 1' a caso, e settimana 8 invece di 7: devo mettere sempre il manuale".
+- **Percorso (lezione)**: correggere la CATENA di derivazione della fase ha rotto l'avanzamento delle schede E->F, sorvegliato da tre test (`dashboard-workout-corrections`, `phase18-workout-cloud-reliability`, `program-repository`): la catena resta INTATTA e la cura passa dal DATO.
+- **Fix v148.18**: `ensureActiveProgramFromLastWorkout()` al boot (solo fuori dal manuale, NON distruttiva: marca attivo il programma allenato senza declassare gli altri): se nessun programma è attivo, quello dell'ULTIMO ALLENAMENTO torna `status:"active"` e `phaseFilter` si riallinea. `latestSessionPhase()` accetta la fase solo se esiste ancora su un programma non archiviato.
+- **Effetto**: niente più fase a caso in automatico, niente più settimana sbagliata, il manuale non serve più per avere la scheda giusta (e in manuale la scelta di Alice resta sovrana).
+- **Guardia**: `tests/v14816-fase-e-settimana-vere.test.mjs` (fossile ignorato, programma riparato, idempotenza, manuale non toccato) + i tre test storici dell'avanzamento schede verdi.
+- **Suite**: 249 test, 240 pass, 0 fail, 9 skipped — VERDE, pushato.
