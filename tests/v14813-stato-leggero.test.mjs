@@ -139,7 +139,7 @@ const esito2 = await vm.runInContext(`(async () => {
 })()`, ctx);
 
 assert.equal(esito.archiviatePrima, 5);
-assert.equal(esito.archiviateDopo, 3, "devono restare solo le versioni DIVERSE (2 copie esatte in meno)");
+assert.equal(esito.archiviateDopo, 2, "devono restare solo le versioni DIVERSE (3 copie esatte in meno)");
 assert.deepEqual(esito.tenute.slice().sort(), ["unica-nuova-bis", "unica-vecchia"], "fra copie identiche resta la più recente");
 assert.equal(esito.vivaIntatta, true, "le schede vive non si toccano");
 assert.deepEqual(esito.recordNelloSnapshot, ["mio-1"], "nello snapshot locale restano solo i record di Alice");

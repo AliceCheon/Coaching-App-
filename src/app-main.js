@@ -4021,7 +4021,17 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
           perFirma.get(firma).push(index);
         });
         const daTenere = new Set();
-        perFirma.forEach((indici, firma) => { if (!firmaDelVivo.has(firma)) daTenere.add(indici[indici.length - 1]); });
+        perFirma.forEach((indici, firma) => {
+          if (firmaDelVivo.has(firma)) return; // identica alla scheda viva: nessuna informazione in più
+          // fra copie identiche resta la PIÙ RECENTE per data (a parità di data, l'ultima in ordine)
+          let custode = indici[0];
+          let stampCustode = -Infinity;
+          indici.forEach((index) => {
+            const stamp = Date.parse(archived[index]?.updatedAt || archived[index]?.deletedAt || archived[index]?.createdAt || "") || 0;
+            if (stamp >= stampCustode) { stampCustode = stamp; custode = index; }
+          });
+          daTenere.add(custode);
+        });
         if (daTenere.size === archived.length) return program;
         removed += archived.length - daTenere.size;
         return { ...program, archivedSheets: archived.filter((sheet, index) => daTenere.has(index)) };
