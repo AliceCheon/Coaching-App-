@@ -13,8 +13,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v148.18-fase-dall-ultimo-allenamento` |
-| `cache` | `atlas-app-v14818-fase-dall-ultimo-allenamento` |
+| `build` | `v148.19-volume-dal-vivo` |
+| `cache` | `atlas-app-v14819-volume-dal-vivo` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

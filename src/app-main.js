@@ -117,7 +117,8 @@
 
     const ANNUAL_PHASES = [{"phase":"1.Volume","objective":"Ipertrofia e Basi","scheme":"3x6 -\u003e 6x6 (o 5x8)","load":"Carico iniziale basato su 10 RM","duration":"6 - 8 Settimane","current":true},{"phase":"2.Intensificazione","objective":"Forza Submassimale","scheme":"4x6 Costante","load":"Incremento dei kg ogni settimana","duration":"6 - 8/12 Settimane","current":false},{"phase":"3.Intensità","objective":"Forza Massima","scheme":"8 - X - X (a scalare)","load":"Massimo sforzo (RPE molto alto)","duration":"3 - 4 Settimane (Picco)","current":false},{"phase":"4. Stabilizzazione","objective":"Consolidamento","scheme":"2 - 10/x","load":"Controllo tecnico e tenuta","duration":"2 - 3 Settimane","current":false},{"phase":"5. Restart Tecnico","objective":"Scarico e Reset","scheme":"3x8 Leggero","load":"Pulizia dei difetti esecutivi","duration":"1 - 2 Settimane (Reset)","current":false}];
 
-    // FASE 4-ter — VOLUME_HISTORY è ora CALCOLATO dalla PROGRAM_LIBRARY (fonte unica).
+    // FASE 4-ter — il volume è CALCOLATO dalle schede (v148.19: dallo stato VIVO
+    // state.programs, con ripiego sul seed quando non c'è ancora un programma).
     // Così i blocchi sono sempre quelli reali e completi (incluse TUTTE le fasi
     // "Intensità ...") e non possono più restare disallineati come la vecchia tabella
     // scritta a mano (che mostrava un "B program 3" inesistente e nascondeva
@@ -174,7 +175,63 @@
       }).filter((block) => block.rows.length);
     }
 
-    const VOLUME_HISTORY = volumeHistoryFromProgramLibrary(PROGRAM_LIBRARY);
+    // v148.19 — FASE 3 · il volume legge lo stato VIVO.
+    // Prima VOLUME_HISTORY era una costante calcolata UNA VOLTA al boot dal
+    // letterale PROGRAM_LIBRARY (seed congelato): ogni modifica di Alice
+    // (esercizi spostati, gruppi corretti, schede nuove) restava invisibile e i
+    // numeri si fermavano al fossile — glutei 9 invece di 14/12 e la
+    // "Pendulum focus glutei" mai contata. Ora il volume si ricostruisce dalle
+    // schede reali in state.programs e il gruppo muscolare mancante o segnaposto
+    // viene risolto dalla Master Library per nome/ID: la classificazione di Alice
+    // conta subito.
+    function liveVolumeLibrary() {
+      const store = state.masterExerciseLibrary || {};
+      const muscleFor = (exercise) => {
+        const raw = String(exercise?.muscle || "").trim();
+        // Il gruppo scritto nella scheda è la fonte primaria; si interpella la
+        // Master Library solo quando manca o è un segnaposto ("Da classificare").
+        if (raw && !isPlaceholderMuscleLabel(raw)) return raw;
+        const record = window.BarbellDivaMasterLibrary?.resolve
+          ? window.BarbellDivaMasterLibrary.resolve(store, exercise?.masterExerciseId || exercise?.metadata?.masterExerciseId || exercise?.name)
+          : null;
+        const category = String(record?.identity?.category || "").trim();
+        return category && !isPlaceholderMuscleLabel(category) ? category : (raw || category || "");
+      };
+      const cards = [];
+      (state.programs || []).forEach((program) => {
+        if (program?.deletedAt) return;
+        const phase = String(program?.phase || program?.name || "").trim();
+        if (!phase) return;
+        // Le schede archiviate (storico consolidato) non sono allenamento
+        // corrente: contarle gonfierebbe il volume con copie dei dati.
+        (program.sheets || []).forEach((sheet) => {
+          if (sheet?.deletedAt) return;
+          const exercises = (sheet.exercises || [])
+            .filter((exercise) => !exercise?.deletedAt)
+            .map((exercise) => ({ muscle: muscleFor(exercise), sets: exercise?.prescription?.sets ?? exercise?.sets ?? 0 }));
+          if (!exercises.length) return;
+          cards.push({ phase, week: Number(sheet?.week) || 1, code: String(sheet?.code || ""), exercises });
+        });
+      });
+      return cards;
+    }
+
+    // Cache leggera invalidata da: cambio dei programmi (nuovo array), cambio
+    // della Master Library o incremento di technicalLibraryRevision (che
+    // commitProgramCollection e la libreria fanno già scattare). La funzione è
+    // chiamata solo nel render delle Statistiche, quindi il costo è trascurabile.
+    let volumeHistoryCache = { programs: null, master: null, revision: -1, blocks: null };
+    function volumeHistory() {
+      const programs = state.programs || [];
+      const master = state.masterExerciseLibrary || null;
+      if (volumeHistoryCache.blocks && volumeHistoryCache.programs === programs && volumeHistoryCache.master === master && volumeHistoryCache.revision === technicalLibraryRevision) return volumeHistoryCache.blocks;
+      const cards = liveVolumeLibrary();
+      // Primo avvio / stato ancora vuoto: si ripiega sul seed, la sezione non
+      // resta mai senza blocchi.
+      const blocks = volumeHistoryFromProgramLibrary(cards.length ? cards : PROGRAM_LIBRARY);
+      volumeHistoryCache = { programs, master, revision: technicalLibraryRevision, blocks };
+      return blocks;
+    }
     const COACH_EXERCISE_LIBRARY = {
     "Spalle":  [
                    {
@@ -8743,7 +8800,7 @@ function sanitizeForFirestore(value) {
           <article class="coach-tile"><span>Schede custom</span><strong>${customCount}</strong><span>create dal builder</span></article>
           <article class="coach-tile"><span>Blocchi importati</span><strong>${importedGroups}</strong><span>schede base modificabili</span></article>
           <article class="coach-tile"><span>Check-in</span><strong>${p.level}</strong><span>${escapeHtml(p.label)}</span></article>
-          <article class="coach-tile"><span>Volume</span><strong>${VOLUME_HISTORY.length + customCount}</strong><span>blocchi monitorati</span></article>
+          <article class="coach-tile"><span>Volume</span><strong>${volumeHistory().length + customCount}</strong><span>blocchi monitorati</span></article>
         </div>
         ${coachWorkbenchHtml()}
         <section class="coach-section">${coachVolumePanelHtml()}</section>
@@ -12828,10 +12885,10 @@ function sanitizeForFirestore(value) {
     function volumeHistoryHtml() {
       return `
         <section class="card">
-          <div class="row"><h3>Storico volume</h3><span class="chip">${VOLUME_HISTORY.length} blocchi</span></div>
+          <div class="row"><h3>Storico volume</h3><span class="chip">${volumeHistory().length} blocchi</span></div>
           ${annualPhaseHtml()}
           <div class="volume-grid">
-            ${VOLUME_HISTORY.map((block) => {
+            ${volumeHistory().map((block) => {
               const topRows = block.rows.slice().sort((a, b) => b.total - a.total);
               const max = Math.max(1, ...topRows.map((row) => row.total));
               return `<article class="volume-block">
@@ -13413,12 +13470,12 @@ function sanitizeForFirestore(value) {
     function clampVolumeIndex(value) {
       const index = Math.round(Number(value) || 0);
       if (!Number.isFinite(index) || index < 0) return 0;
-      return Math.min(index, Math.max(0, VOLUME_HISTORY.length - 1));
+      return Math.min(index, Math.max(0, volumeHistory().length - 1));
     }
 
     function currentVolumeBlock() {
-      if (!VOLUME_HISTORY.length) return null;
-      return VOLUME_HISTORY[clampVolumeIndex(state.ui?.volumeSheet)];
+      if (!volumeHistory().length) return null;
+      return volumeHistory()[clampVolumeIndex(state.ui?.volumeSheet)];
     }
 
     function currentVolumeRows() {
@@ -13456,7 +13513,7 @@ function sanitizeForFirestore(value) {
     }
 
     function statisticsVolumeHtml() {
-      const blocks = VOLUME_HISTORY;
+      const blocks = volumeHistory();
       const index = clampVolumeIndex(state.ui?.volumeSheet);
       const block = blocks[index];
       const rows = currentVolumeRows();
@@ -13509,7 +13566,7 @@ function sanitizeForFirestore(value) {
       const activePhase = String((explicitActiveTrainingProgram()?.phase) || "").trim();
       if (!activePhase) return -1;
       const target = normalizeExerciseName(activePhase);
-      return VOLUME_HISTORY.findIndex((block) => normalizeExerciseName(volumeSheetLabel(block.title)) === target || normalizeExerciseName(block.title.replace(/^Volume\s*/i, "")) === target);
+      return volumeHistory().findIndex((block) => normalizeExerciseName(volumeSheetLabel(block.title)) === target || normalizeExerciseName(block.title.replace(/^Volume\s*/i, "")) === target);
     }
 
     // Indici delle schede scelte per il confronto. Se non c'è ancora una scelta
@@ -13521,9 +13578,9 @@ function sanitizeForFirestore(value) {
       if (!raw) {
         const activeIndex = activeVolumeBlockIndex();
         if (activeIndex >= 0) return [activeIndex];
-        return VOLUME_HISTORY.map((_, i) => i);
+        return volumeHistory().map((_, i) => i);
       }
-      return [...new Set(raw.map((value) => Math.round(Number(value))).filter((value) => Number.isFinite(value) && value >= 0 && value < VOLUME_HISTORY.length))];
+      return [...new Set(raw.map((value) => Math.round(Number(value))).filter((value) => Number.isFinite(value) && value >= 0 && value < volumeHistory().length))];
     }
 
     function volumeCompareChipHtml(blocks) {

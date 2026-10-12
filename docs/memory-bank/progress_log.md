@@ -474,3 +474,11 @@ Obiettivo:
 - **Effetto**: niente più fase a caso in automatico, niente più settimana sbagliata, il manuale non serve più per avere la scheda giusta (e in manuale la scelta di Alice resta sovrana).
 - **Guardia**: `tests/v14816-fase-e-settimana-vere.test.mjs` (fossile ignorato, programma riparato, idempotenza, manuale non toccato) + i tre test storici dell'avanzamento schede verdi.
 - **Suite**: 249 test, 240 pass, 0 fail, 9 skipped — VERDE, pushato.
+
+
+## Checkpoint 40 — FASE 3 chiusa: il volume legge le schede vere (v148.19)
+- **Segnalazione Alice**: "i volumi mi danno 9 invece di 14/12 e la Pendulum focus glutei non me la conta".
+- **Causa**: `VOLUME_HISTORY` era una `const` calcolata UNA VOLTA al boot dal letterale `PROGRAM_LIBRARY` (seed congelato): le schede reali di Alice (esercizi spostati, gruppi corretti, schede nuove) non entravano mai nel calcolo e vinceva sempre il fossile — nel seed ogni "Pendulum" è `Quadricipiti`, quindi una Pendulum tenuta come gluteo non poteva contare.
+- **Fix v148.19**: `liveVolumeLibrary()` ricostruisce i blocchi da `state.programs` (programmi/schede/esercizi cancellati esclusi, schede archiviate fuori) e `volumeHistory()` li passa a `volumeHistoryFromProgramLibrary`; il gruppo della scheda è la fonte primaria e, se manca o è un segnaposto ("Da classificare"), viene risolto dalla Master Library per nome/ID. Cache leggera invalidata da cambio `state.programs` / Master Library / `technicalLibraryRevision`. Senza programmi reali si ripiega sul seed (sezione mai vuota).
+- **Guardia**: `tests/v14819-volume-dal-vivo.test.mjs` (i dati vivi vincono sul seed; la Pendulum focus glutei conta nei Glutei; segnaposto risolto; cancellati esclusi; ripiego sul seed; render Storico + Statistiche). `tests/phase30-statistiche-volume.test.mjs` aggiornato al nuovo contratto (non più la `const` dal seed, ma la lettura dal vivo).
+- **Suite**: 250 test, 241 pass, 0 fail, 9 skipped — VERDE, pushato.
