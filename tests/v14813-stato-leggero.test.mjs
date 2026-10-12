@@ -26,11 +26,12 @@ const script = vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + bootPart;
 
 // localStorage che rifiuta TUTTO (telefono con la quota esaurita), IndexedDB condiviso
 const storage = new Map();
+let quotaAttiva = true; // interruttore: ON = la quota è piena (ogni scrittura locale fallisce)
 let quotaErrors = 0;
 const quotaError = () => { const error = new Error("QuotaExceededError"); error.name = "QuotaExceededError"; error.code = 22; return error; };
 const localStorageFake = {
   getItem: (key) => storage.get(key) ?? null,
-  setItem: (key, value) => { quotaErrors += 1; throw quotaError(); },
+  setItem: (key, value) => { if (quotaAttiva) { quotaErrors += 1; throw quotaError(); } storage.set(key, String(value)); },
   removeItem: (key) => storage.delete(key), key: (i) => Array.from(storage.keys())[i], get length() { return storage.size; }
 };
 function makeIndexedDb() {
