@@ -450,3 +450,11 @@ Obiettivo:
 - **Guardia**: `tests/v14815-sedute-sync-affidabile.test.mjs` — quota piena reale (`QuotaExceededError`), copia locale che fallisce, e ciononostante la seduta entra in coda; le sedute già sincronizzate non rientrano (nessun ciclo); le sedute non completate non vanno al cloud.
 - **Suite**: 248 test, 239 pass, 0 fail, 9 skipped.
 - **Nota**: le sedute C e D già salvate sul telefono partiranno da sole al primo avvio con questa build (il recupero dal registro durabile arma la coda).
+
+
+## Checkpoint 39 — FASE 2: fase e settimana vere in AUTOMATICO (v148.16-fase-e-settimana-vere)
+- **Segnalazione Alice**: "perché devo mettere sempre il manuale? In automatico non mi dà mai la seduta giusta: o 'Intensificazione' o 'B program 1' a caso, anche se il programma è giusto; e mi segna settimana 8 invece della 7".
+- **Causa (due punti, entrambi in automatico)**: (1) `effectiveTrainingPhase()` ripiegava su `state.training.phaseFilter` quando nessun programma è marcato `status:"active"` — e `phaseFilter` è scritto SOLO dal selettore MANUALE (`if (field === "phase") state.training.phaseFilter = input.value`): quindi in automatico l'app mostrava l'ULTIMA scelta a mano, non il programma di casa. Dopo la storia dei "torna a bozza" (v148.00) non c'è quasi mai un programma marcato attivo → sintomo garantito. (2) `currentTrainingContext()` risolveva le schede solo da `explicitActiveTrainingProgram()`: senza programma attivo `programSheets` restava VUOTO e la settimana cadeva su `sessionsForPhase(phase)` con la fase sbagliata → la "settimana 8 invece di 7".
+- **Fix**: in automatico la fase si risolve come `activeTrainingProgram()` (programma non archiviato aggiornato più di recente) in ENTRAMBI i punti, eliminando il ripiego sul fossile `phaseFilter`; in manuale la scelta di Alice resta sovrana (invariata).
+- **Guardia**: `tests/v14816-fase-e-settimana-vere.test.mjs` — con `phaseFilter` fossile su "B program 1" e nessun programma attivo, la fase efficace e il contesto danno "Intensità Agosto-Ottobre" con scheda, esercizi e settimana sensata; un programma marcato attivo vince sulla recenza; in manuale vince la scelta di Alice.
+- **Suite**: 249 test, 236 pass, 4 fail, 9 skipped.

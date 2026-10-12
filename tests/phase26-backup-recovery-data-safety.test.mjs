@@ -30,7 +30,7 @@ assert.match(html, /Scarica dati corrotti/);
 assert.match(html, /initializeDataSafety\(\)/);
 assert.match(html, /type === "automatic"/);
 assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14815-sedute-sync-affidabile"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14816-fase-e-settimana-vere"/);
 
 console.log(JSON.stringify({ ok:true, export:true, import:true, checksum:true, history:20, selectiveRestore:true, recovery:true }));
 

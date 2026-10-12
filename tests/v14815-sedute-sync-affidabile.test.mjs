@@ -8,7 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const mainJs = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 
-// --- v148.15 · le sedute arrivano al cloud anche con la quota piena ---
+// --- v148.16 · le sedute arrivano al cloud anche con la quota piena ---
 // Alice: "sul telefono ho salvate le sedute C e D (7-10 ottobre), sul PC non escono,
 // anche se la sincronizzazione dice attiva". Causa doppia: (1) la coda cloud veniva
 // riempita SOLO dopo una scrittura locale VERIFICATA — e con la quota piena la scrittura
@@ -38,7 +38,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
   addEventListener() {}, removeEventListener() {}, matchMedia() { return { matches: true }; }, window: null, globalThis: null };
 context.window = context; context.globalThis = context;
 vm.createContext(context);
-new vm.Script(script, { filename: "v14815.js" }).runInContext(context);
+new vm.Script(script, { filename: "v14816.js" }).runInContext(context);
 
 const esito = vm.runInContext(`(() => {
   const out = {};
@@ -95,4 +95,4 @@ assert.match(mainJs, /armSessionCloudQueue\(session\); \/\/ quota piena: la copi
 assert.match(mainJs, /indexedRows\.forEach\(\(row\) => armSessionCloudQueue\(row\)\);/);
 assert.match(mainJs, /for \(const operation of pendingSessionOperations\(\)\) \{ \/\/ v148\.15/);
 
-console.log(JSON.stringify({ ok: true, v: "v148.15", quotaPiena: esito.scritturaLocale, inCodaAlCloud: esito.inCodaAlCloud, daFare: esito.daFare }));
+console.log(JSON.stringify({ ok: true, v: "v148.16", quotaPiena: esito.scritturaLocale, inCodaAlCloud: esito.inCodaAlCloud, daFare: esito.daFare }));

@@ -6808,10 +6808,20 @@ function sanitizeForFirestore(value) {
       const isManual = state.training?.contextMode === "manual";
       const activeProgram = explicitActiveTrainingProgram();
       const activePhase = activeProgram ? String(activeProgram.phase || "") : "";
+      // v148.16 · IN AUTOMATICO LA FASE NON PUÒ VENIRE DA UN FOSSILE ===
+      // `state.training.phaseFilter` è scritto SOLO dal selettore MANUALE: senza un
+      // programma marcato "attivo" (dopo la storia dei "torna a bozza" non ce n'è
+      // quasi mai uno) l'app mostrava la fase dell'ULTIMA scelta a mano —
+      // "Intensificazione", "B program 1" — anche col programma giusto in casa.
+      // È il motivo per cui Alice doveva mettere sempre il MANUALE per avere la
+      // scheda giusta. Ora, se nessun programma è marcato attivo, si risolve come
+      // fa activeTrainingProgram(): il programma non archiviato più recente.
+      const phasedProgram = activeProgram || activeTrainingProgram();
+      const phasedActivePhase = phasedProgram ? String(phasedProgram.phase || "") : "";
       return (String(
         isManual
-          ? (state.training?.manualPhase || activePhase || state.training?.phaseFilter || "Intensificazione")
-          : (activePhase || state.training?.phaseFilter || "Intensificazione")
+          ? (state.training?.manualPhase || activePhase || phasedActivePhase || "Intensificazione")
+          : (phasedActivePhase || activePhase || "Intensificazione")
       ).trim()) || "Intensificazione";
     }
     // v148.09 · il giro Automatica→Manuale→Automatica è AUTOMATICO: la modalità
@@ -6836,7 +6846,13 @@ function sanitizeForFirestore(value) {
       normalizeManualContextForDate();
       const date = state.training.date || todayInput();
       const isManual = state.training.contextMode === "manual";
-      const activeProgram = explicitActiveTrainingProgram();
+      const explicitProgram = explicitActiveTrainingProgram();
+      // v148.16 · stesso criterio della fase efficace: senza un programma marcato attivo
+      // si prende quello non archiviato aggiornato più di recente (MAI il fossile
+      // phaseFilter). Prima `programSheets` restava VUOTO in automatico, quindi la
+      // settimana cadeva su sessionsForPhase(phase) con la fase sbagliata: è la
+      // "settimana 8 invece di 7" che Alice vedeva senza toccare il manuale.
+      const activeProgram = explicitProgram || activeTrainingProgram();
       const activePhase = activeProgram ? String(activeProgram.phase||"") : "";
       const programSheets = projectProgramSheets(activeProgram);
       const phase = effectiveTrainingPhase();
