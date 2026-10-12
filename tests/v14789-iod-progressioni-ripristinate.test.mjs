@@ -1,4 +1,4 @@
-// v148.13 — "Intensità ottobre-dicembre": le progressioni reali dell'Excel
+// v148.14 — "Intensità ottobre-dicembre": le progressioni reali dell'Excel
 // devono tornare anche quando lo stato salvato conteneva settimane generiche.
 //
 // Bug: la riparazione (repairImportedProgressions) CONSERVA qualunque settimana
@@ -26,9 +26,12 @@ const context = { console, structuredClone, Date, Math, JSON, Intl, Map, Set, We
 context.window = context;
 context.globalThis = context;
 vm.createContext(context);
-new vm.Script(script, { filename: "v14813-iod.js" }).runInContext(context);
+new vm.Script(script, { filename: "v14814-iod.js" }).runInContext(context);
 
 const EXPECTED_LAT = ["test 12rm, poi 1x8", "10-8-x", "10-x", "10", "10-8-x", "10-x-x", "10-x-x", "10"];
+
+// v148.14 · ANTI-DERIVA: lo stamp di riparazione non deve portare un token di versione.
+assert.doesNotMatch(appMain, /riparazione-contenuto-workbook-v\d+/);
 
 test("la libreria IOD contiene la sequenza Excel reale di Lat machine", () => {
   const res = vm.runInContext(`(() => {
@@ -60,7 +63,7 @@ test("il boot ripristina le progressioni IOD reali al posto di settimane generic
   })()`, context);
   assert.deepEqual(res.corrupted, ["1", "1-12", "1-12", "1-12", "1-12", "1-12", "1-12", "1-12"], "precondizione: salvataggio sporco");
   assert.deepEqual(res.restored, EXPECTED_LAT, "le progressioni Excel devono tornare al boot");
-  assert.equal(res.build, "2026-10-09-riparazione-contenuto-workbook-v14813");
+  assert.equal(res.build, "2026-10-09-riparazione-contenuto-workbook");
 });
 
 test("le altre fasi (es. B program 1) non vengono toccate dal re-seed IOD", () => {
@@ -78,4 +81,4 @@ test("le altre fasi (es. B program 1) non vengono toccate dal re-seed IOD", () =
   assert.equal(res.hipWeeks[0], "15", "i valori storici restano intatti");
 });
 
-console.log("v14813: re-seed IOD ripristina le progressioni Excel reali");
+console.log("v14814: re-seed IOD ripristina le progressioni Excel reali");

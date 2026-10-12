@@ -1288,14 +1288,20 @@ const DATA_SCHEMA_VERSION = 11;
       }
     };
 
-const INTENSITA_NUOVO_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
+// v148.14 · lo stamp di riparazione contenuto NON deve contenere un token di
+    // versione (v14810, v14811, ...): il tool di release riscrive i token dentro i FILE
+    // DI TEST, e le due guardie (v14810-riparazione-contenuto-seed,
+    // v14789-iod-progressioni-ripristinate) derivavano da sole — rosse senza che nulla
+    // fosse rotto. Cambiare lo stamp fa ri-eseguire la riparazione UNA volta per
+    // dispositivo: è idempotente, quindi è anche una garanzia in più.
+    const INTENSITA_NUOVO_BUILD = "2026-10-09-riparazione-contenuto-workbook";
 // Build del seed "Intensità ottobre-dicembre" (IOD). Come per "Intensità
 // Agosto-Ottobre", quando questo valore cambia il workbook IOD (con le
 // progressioni reali dell'Excel) sostituisce il seed locale salvato a ogni
 // avvio. Serve perché `repairImportedProgressions` conserva qualunque settimana
 // non vuota: un salvataggio con settimane IOD generiche/corrotte non veniva mai
 // riparato, quindi le progressioni reali non tornavano più.
-const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
+const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook";
 
     let recoveryBootError = null;
     let recoveryBootPayload = "";
