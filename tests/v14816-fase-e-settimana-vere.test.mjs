@@ -8,7 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const mainJs = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 
-// --- v148.16 · in AUTOMATICO fase e settimana vengono dal PROGRAMMA, non da un fossile ---
+// --- v148.17 · in AUTOMATICO fase e settimana vengono dal PROGRAMMA, non da un fossile ---
 // Alice: "in automatico non mi dà mai la seduta giusta: o Intensificazione o B program 1 a
 // caso, e mi segna settimana 8 invece della 7; per questo devo mettere sempre il manuale".
 // Causa: `effectiveTrainingPhase()` in automatico ripiegava su `state.training.phaseFilter`,
@@ -35,7 +35,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
   addEventListener() {}, removeEventListener() {}, matchMedia() { return { matches: true }; }, window: null, globalThis: null };
 context.window = context; context.globalThis = context;
 vm.createContext(context);
-new vm.Script(vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + bootPart, { filename: "v14816.js" }).runInContext(context);
+new vm.Script(vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + bootPart, { filename: "v14817.js" }).runInContext(context);
 
 const esito = vm.runInContext(`(() => {
   const out = {};
@@ -86,7 +86,7 @@ assert.equal(esito.manualeVince, true, "in manuale la scelta di Alice resta sovr
 // guardie statiche
 assert.match(mainJs, /const phasedProgram = activeProgram \|\| activeTrainingProgram\(\);/);
 assert.match(mainJs, /: \(phasedActivePhase \|\| activePhase \|\| "Intensificazione"\)/);
-assert.match(mainJs, /const activeProgram = explicitProgram \|\| activeTrainingProgram\(\);/);
+assert.match(mainJs, /const activeProgram = explicitActiveTrainingProgram\(\);/); // v148.17: bacino schede invariato
 assert.doesNotMatch(mainJs, /: \(activePhase \|\| state\.training\?\.phaseFilter \|\| "Intensificazione"\)/);
 
-console.log(JSON.stringify({ ok: true, v: "v148.16", faseEfficace: esito.faseEfficace, scheda: esito.scheda, settimana: esito.settimana, manualeVince: esito.manualeVince }));
+console.log(JSON.stringify({ ok: true, v: "v148.17", faseEfficace: esito.faseEfficace, scheda: esito.scheda, settimana: esito.settimana, manualeVince: esito.manualeVince }));

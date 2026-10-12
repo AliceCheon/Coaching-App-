@@ -6820,7 +6820,7 @@ function sanitizeForFirestore(value) {
       const phasedActivePhase = phasedProgram ? String(phasedProgram.phase || "") : "";
       return (String(
         isManual
-          ? (state.training?.manualPhase || activePhase || phasedActivePhase || "Intensificazione")
+          ? (state.training?.manualPhase || activePhase || state.training?.phaseFilter || "Intensificazione")
           : (phasedActivePhase || activePhase || "Intensificazione")
       ).trim()) || "Intensificazione";
     }
@@ -6846,13 +6846,13 @@ function sanitizeForFirestore(value) {
       normalizeManualContextForDate();
       const date = state.training.date || todayInput();
       const isManual = state.training.contextMode === "manual";
-      const explicitProgram = explicitActiveTrainingProgram();
-      // v148.16 · stesso criterio della fase efficace: senza un programma marcato attivo
-      // si prende quello non archiviato aggiornato più di recente (MAI il fossile
-      // phaseFilter). Prima `programSheets` restava VUOTO in automatico, quindi la
-      // settimana cadeva su sessionsForPhase(phase) con la fase sbagliata: è la
-      // "settimana 8 invece di 7" che Alice vedeva senza toccare il manuale.
-      const activeProgram = explicitProgram || activeTrainingProgram();
+      // v148.17 · il bacino delle schede resta quello di SEMPRE (il programma
+      // ESPLICITAMENTE attivo): allargarlo al programma aggiornato più di recente
+      // cambiava la sequenza delle schede (E -> F) e rompeva l'avanzamento — tre test
+      // lo hanno colto subito. La settimana ora è giusta comunque, perché
+      // `effectiveTrainingPhase()` non ripiega più sul fossile phaseFilter: è la FASE
+      // corretta a guidare schede e settimana. La correzione della fase basta da sola.
+      const activeProgram = explicitActiveTrainingProgram();
       const activePhase = activeProgram ? String(activeProgram.phase||"") : "";
       const programSheets = projectProgramSheets(activeProgram);
       const phase = effectiveTrainingPhase();

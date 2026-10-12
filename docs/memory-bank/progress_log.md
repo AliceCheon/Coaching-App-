@@ -458,3 +458,10 @@ Obiettivo:
 - **Fix**: in automatico la fase si risolve come `activeTrainingProgram()` (programma non archiviato aggiornato più di recente) in ENTRAMBI i punti, eliminando il ripiego sul fossile `phaseFilter`; in manuale la scelta di Alice resta sovrana (invariata).
 - **Guardia**: `tests/v14816-fase-e-settimana-vere.test.mjs` — con `phaseFilter` fossile su "B program 1" e nessun programma attivo, la fase efficace e il contesto danno "Intensità Agosto-Ottobre" con scheda, esercizi e settimana sensata; un programma marcato attivo vince sulla recenza; in manuale vince la scelta di Alice.
 - **Suite**: 249 test, 236 pass, 4 fail, 9 skipped.
+
+
+## Checkpoint 39-b — v148.17: la correzione della fase basta da sola (tre test l'hanno insegnato)
+- **Cosa è successo**: la v148.16 correggeva la fase automatica in DUE punti, e il secondo (allargare il bacino delle schede di `currentTrainingContext()` dal programma esplicitamente attivo al programma più recente) ha rotto l'avanzamento delle schede: `dashboard-workout-corrections` ("dashboard non apre Scheda F"), `phase18-workout-cloud-reliability` ("Dopo E non viene proposta la scheda F"), `program-repository` e `v14806-fase-efficace` (che pinna la catena manuale storica). **v148.16 era già stato pushato: difetto in produzione per pochi minuti, corretto subito in avanti con la v148.17.**
+- **Fix (v148.17)**: ripristinato il bacino schede di sempre (programma esplicitamente attivo); la rimozione del fossile `phaseFilter` resta SOLO in automatico, mentre la catena manuale torna quella storica. La settimana è giusta comunque, perché è la FASE corretta a guidare schede e settimana: la correzione della fase basta da sola.
+- **Lezione**: quando si corregge una derivazione (fase → schede → settimana) si tocca UN punto per volta e si guarda la suite prima di pushare: allargare il bacino ha cambiato la sequenza delle schede, che è un comportamento sorvegliato da tre test diversi.
+- **Suite**: 249 test, 237 pass, 3 fail, 9 skipped.

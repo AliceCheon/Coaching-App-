@@ -8,7 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const mainJs = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 
-// --- v148.16 · STATO LEGGERO ---
+// --- v148.17 · STATO LEGGERO ---
 // Alice: "partiamo dall'alleggerire lo stato da 7 MB, così il salvataggio locale non
 // finisce più in quota piena". Misure sulla sua app: totale 7,05 MB, di cui
 // `programs` 6,22 MB (oltre metà erano schede ARCHIVIATE, con molte copie esatte) e
@@ -78,7 +78,7 @@ function boot(label) {
   return context;
 }
 
-const ctx = boot("v14816");
+const ctx = boot("v14817");
 const esito = await vm.runInContext(`(async () => {
   const out = {};
   const scheda = (nome, nota, quando) => ({ code: "A", name: nome, updatedAt: quando, exercises: [{ name: "Hip_Thrust", progression: { weeks: [{ sets: "3", reps: "8", notes: nota }] } }] });
@@ -166,9 +166,9 @@ assert.match(mainJs, /compactStateForStorage\(loaded\);/);
 assert.match(mainJs, /compactStateForStorage\(merged\);/);
 assert.match(mainJs, /async function persistLocalStateDurable\(snapshot = state\)/);
 assert.match(mainJs, /async function hydrateFromLocalDurableSnapshot\(\)/);
-// v148.16 · il disco si idrata DENTRO la corsa del boot (contratto v14759 intatto)
+// v148.17 · il disco si idrata DENTRO la corsa del boot (contratto v14759 intatto)
 assert.match(mainJs, /async function hydrateFromCloudSnapshotCache\(\) \{\s*\n\s*\/\/ v148\.13[\s\S]{0,700}?await hydrateFromLocalDurableSnapshot\(\);/);
 assert.match(mainJs, /Promise\.race\(\s*\[\s*hydrateFromCloudSnapshotCache\(\)\.catch\(\(\) => false\),\s*new Promise\(\(resolve\) => \{ setTimeout\(resolve, 400\); \}\)\s*\]\)\.then\(\(\) => \{ render\(\); \}\);/);
 assert.match(mainJs, /indexedDB\.open\(WORKOUT_DB_NAME, 3\)/);
 
-console.log(JSON.stringify({ ok: true, v: "v148.16", archiviatePrima: esito.archiviatePrima, archiviateDopo: esito.archiviateDopo, recordNelloSnapshot: esito.recordNelloSnapshot, bytePrima: esito.bytePrima, byteDopo: esito.byteDopo, copiaSulDisco: esito2.scrittaSulDisco, idratataDalDisco: esito2.idratata }));
+console.log(JSON.stringify({ ok: true, v: "v148.17", archiviatePrima: esito.archiviatePrima, archiviateDopo: esito.archiviateDopo, recordNelloSnapshot: esito.recordNelloSnapshot, bytePrima: esito.bytePrima, byteDopo: esito.byteDopo, copiaSulDisco: esito2.scrittaSulDisco, idratataDalDisco: esito2.idratata }));
