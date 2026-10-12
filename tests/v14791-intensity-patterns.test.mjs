@@ -1,4 +1,4 @@
-// v148.19 → v148.19 — I metodi "Intensità:" (ottobre-dicembre) devono PRODURRE
+// v148.20 → v148.20 — I metodi "Intensità:" (ottobre-dicembre) devono PRODURRE
 // la loro sequenza reale di ripetizioni a prescindere dall'esercizio.
 //
 // Bug: i tre metodi erano dichiarati con parametri vuoti `{}` e la loro sequenza
@@ -30,7 +30,7 @@ const context = { console, structuredClone, Date, Math, JSON, Intl, Map, Set, We
 context.window = context;
 context.globalThis = context;
 vm.createContext(context);
-new vm.Script(script, { filename: "v14819-intensity-patterns.js" }).runInContext(context);
+new vm.Script(script, { filename: "v14820-intensity-patterns.js" }).runInContext(context);
 
 // Sequenze reali, lette dal foglio "Intensità ottobre-dicembre".
 const EXPECTED = {
@@ -86,4 +86,4 @@ test("i metodi NON-Intensità continuano a usare le reps dell'esercizio (nessuna
   assert.equal(res[1], "6-10", "le settimane successive mantengono le reps dell'esercizio");
 });
 
-console.log("v14819: i metodi Intensità: producono la sequenza reale a prescindere dall'esercizio");
+console.log("v14820: i metodi Intensità: producono la sequenza reale a prescindere dall'esercizio");

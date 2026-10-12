@@ -51,7 +51,7 @@ assert.match(app, /function animateVolumePie\(\)/);
 // --- ask#13: VOLUME_HISTORY calcolato dalla PROGRAM_LIBRARY (fonte unica) ---
 assert.match(app, /function volumeHistoryFromProgramLibrary\(library\)/);
 assert.match(app, /function volumeSetsToNumber\(value\)/);
-// v148.19: il volume non è più una costante calcolata al boot dal seed, ma
+// v148.20: il volume non è più una costante calcolata al boot dal seed, ma
 // legge le schede VIVE (state.programs) con ripiego sul seed quando è vuoto.
 assert.match(app, /function liveVolumeLibrary\(\)/);
 assert.match(app, /function volumeHistory\(\)/);
@@ -74,7 +74,7 @@ assert.match(app, /const row = currentVolumeGroupRow\(\)/);
 assert.match(app, /state\.ui\.volumeGroup = clampVolumeGroup\(/);
 assert.match(app, /state\.ui\.volumeGroup = -1; \/\/ cambiando scheda/);
 
-// --- v148.19: torta a fuoco sul muscolo scelto a destra + legenda cliccabile ---
+// --- v148.20: torta a fuoco sul muscolo scelto a destra + legenda cliccabile ---
 assert.match(app, /<option value="-1" \$\{groupIndex === -1 \? "selected" : ""\}>Tutti i gruppi<\/option>/);
 assert.match(app, /function volumeFocusIndex\(\)/);
 assert.match(app, /function volumeWeeklyTotals\(\)/);

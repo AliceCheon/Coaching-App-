@@ -8,7 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const mainJs = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 
-// --- v148.19 · il programma che Alice sta allenando torna ATTIVO ---
+// --- v148.20 · il programma che Alice sta allenando torna ATTIVO ---
 // Alice: "in automatico o 'Intensificazione' o 'B program 1' a caso, e settimana 8 invece
 // di 7: devo mettere sempre il manuale". Causa: dopo i "torna a bozza" non resta quasi mai
 // un programma marcato attivo, quindi la fase in automatico ripiegava sull'ultima scelta
@@ -35,7 +35,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
   addEventListener() {}, removeEventListener() {}, matchMedia() { return { matches: true }; }, window: null, globalThis: null };
 context.window = context; context.globalThis = context;
 vm.createContext(context);
-new vm.Script(vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + bootPart, { filename: "v14819.js" }).runInContext(context);
+new vm.Script(vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + bootPart, { filename: "v14820.js" }).runInContext(context);
 
 const esito = vm.runInContext(`(() => {
   const out = {};
@@ -86,4 +86,4 @@ assert.match(mainJs, /function latestSessionPhase\(\)/);
 assert.match(mainJs, /try \{ ensureActiveProgramFromLastWorkout\(\); \} catch \(error\) \{\} \/\/ v148\.18/);
 assert.match(mainJs, /: \(activePhase \|\| state\.training\?\.phaseFilter \|\| "Intensificazione"\)/);
 
-console.log(JSON.stringify({ ok: true, v: "v148.19", prima: esito.primaFase, dopo: esito.faseDopo, attivo: esito.attivo, settimana: esito.settimana }));
+console.log(JSON.stringify({ ok: true, v: "v148.20", prima: esito.primaFase, dopo: esito.faseDopo, attivo: esito.attivo, settimana: esito.settimana }));

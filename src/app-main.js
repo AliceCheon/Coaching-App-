@@ -11723,9 +11723,9 @@ function sanitizeForFirestore(value) {
         return `<div class="coach-modal-backdrop"><section class="coach-modal"><h3>Confronta esercizi</h3><p class="micro-copy">Seleziona da 2 a 4 esercizi. Le differenze sono evidenziate senza dichiarare un vincitore assoluto.</p><div class="form-grid"><label class="full">Aggiungi esercizio<select id="compareExerciseSelect"><option value="">Seleziona...</option>${candidates.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("")}</select></label></div><div class="comparison-grid">${selected.map((item) => { const bio=item.biomechanics || biomechanicsForExercise(item.name); const rating=contextualExerciseRating(item,{goal:item.muscle}); return `<article class="comparison-card"><h4>${escapeHtml(item.name)}</h4><strong>${rating.tier} · ${rating.score}/5</strong><span>${escapeHtml((bio.primaryMuscles || []).join(", "))}</span><span>Azione: ${escapeHtml((bio.jointActions || []).join(", "))}</span><span>Resistenza: ${escapeHtml(biomechanicsResistanceLabel(bio.resistanceProfile))}</span><span>Allungamento: ${escapeHtml(bio.lengthenedBias || "n/d")} · Accorciamento: ${escapeHtml(bio.shortenedBias || "n/d")}</span><span>Stabilità ${biomechanicsScaleLabel(bio.stability)} · Fatica ${biomechanicsScaleLabel(bio.systemicFatigue)}</span><span>Caricabilità ${biomechanicsScaleLabel(bio.loadability)} · Progressione ${biomechanicsScaleLabel(bio.progressionEase)}</span></article>`; }).join("") || `<p class="micro-copy">Scegli almeno due esercizi.</p>`}</div><div class="coach-modal-actions">${close}</div></section></div>`;
       }
       if (type === "exercise-custom" || type === "exercise-details") {
-        const exercise = type === "exercise-details" ? programRepository.getExerciseById(program?.id, sheet?.id, coachProgramUi.modalData.exerciseId) : null;
+        const exercise = type === "exercise-details" ? findCoachExerciseById(coachProgramUi.modalData.exerciseId) : null;
         const metadata = exercise?.metadata || {};
-        return `<div class="coach-modal-backdrop" data-coach-portal-modal><section class="coach-modal phase4-details-modal"><div class="row"><div><span class="section-eyebrow">SCHEDA TECNICA ESERCIZIO</span><h3>${type==="exercise-custom"?"Esercizio personalizzato":"Dettagli esercizio"}</h3><p class="micro-copy">Identità, biomeccanica e richiesta allenante in un’unica scheda professionale.</p></div>${close}</div><div class="exercise-detail-status"><span><b>1</b> Classifica</span><span><b>2</b> Descrivi il movimento</span><span><b>3</b> Valuta la richiesta</span></div><fieldset class="coach-details-section detail-identity"><legend>1 · Identità, muscoli e movimento</legend><div class="form-grid"><label class="full">Nome<input id="exerciseModalName" value="${escapeHtml(exercise?.name||"")}"></label><label>Gruppo principale<select id="exerciseModalMuscle">${coachExerciseGroups().map((group)=>`<option ${normalizeMuscleCategory(exercise?.muscle||"Full body")===group?"selected":""}>${escapeHtml(group)}</option>`).join("")}</select></label><label>Muscoli secondari<input id="exerciseModalSecondary" value="${escapeHtml((metadata.secondaryMuscles||[]).join(", "))}" placeholder="Separati da virgola"></label><label>Attrezzatura<input id="exerciseModalEquipment" value="${escapeHtml(metadata.equipment||"")}"></label><label>Pattern di movimento<input id="exerciseModalPattern" value="${escapeHtml(metadata.pattern||"")}"></label><label>Tipo di esercizio<select id="exerciseModalType"><option value="">Da definire</option><option value="compound" ${metadata.exerciseType==="compound"?"selected":""}>Multiarticolare</option><option value="isolation" ${metadata.exerciseType==="isolation"?"selected":""}>Isolamento</option><option value="cardio" ${metadata.exerciseType==="cardio"?"selected":""}>Cardio</option><option value="mobility" ${metadata.exerciseType==="mobility"?"selected":""}>Mobilità</option></select></label></div></fieldset><fieldset class="coach-details-section detail-analysis"><legend>2 · Richiesta allenante e programmazione</legend><div class="form-grid"><label>Stabilità richiesta<input id="exerciseModalStability" type="number" min="1" max="5" value="${escapeHtml(metadata.stability||"")}"></label><label>Caricabilità<input id="exerciseModalLoadability" type="number" min="1" max="5" value="${escapeHtml(metadata.loadability||"")}"></label><label>Richiesta sistemica<input id="exerciseModalSystemic" type="number" min="1" max="5" value="${escapeHtml(metadata.systemicDemand||"")}"></label><label>Richiesta articolare<input id="exerciseModalJoint" value="${escapeHtml(metadata.jointDemand||"")}" placeholder="Es. ginocchio 3/5"></label><label>Profilo di resistenza<input id="exerciseModalResistance" value="${escapeHtml(metadata.resistanceProfile||"")}"></label><label>ROM<input id="exerciseModalRom" value="${escapeHtml(metadata.rangeOfMotion||"")}"></label><label>Difficoltà tecnica<input id="exerciseModalDifficulty" type="number" min="1" max="5" value="${escapeHtml(metadata.technicalDifficulty||"")}"></label><label>Compatibilità progressioni<input id="exerciseModalCompatibility" value="${escapeHtml(metadata.progressionCompatibility||"")}"></label><label>Fatica locale<input id="exerciseModalLocalFatigue" type="number" min="1" max="5" value="${escapeHtml(metadata.localFatigue||"")}"></label><label class="full">Note<textarea id="exerciseModalNotes">${escapeHtml(exercise?.note||"")}</textarea></label><label><input id="exerciseModalMain" type="checkbox" ${metadata.mainLift?"checked":""}> Esercizio principale</label><label><input id="exerciseModalLocked" type="checkbox" ${metadata.locked?"checked":""}> Proteggi da modifiche</label></div></fieldset>${type==="exercise-details"?`<p class="micro-copy">ID stabile: ${escapeHtml(exercise?.id||"")} · aggiornato ${escapeHtml(exercise?.updatedAt||"n/d")}</p><button type="button" class="ghost-button" data-details-progression-open="${escapeHtml(exercise?.id||"")}">Apri progressione settimanale</button>${exerciseAnalysisHtml(exercise)}`:""}<div class="coach-modal-actions"><button class="ghost-button" data-coach-modal-close>Annulla</button><button class="gold-button" data-coach-modal-save>${type==="exercise-custom"?"Aggiungi":"Salva dettagli"}</button></div></section></div>`;
+        return `<div class="coach-modal-backdrop" data-coach-portal-modal><section class="coach-modal phase4-details-modal"><div class="row"><div><span class="section-eyebrow">SCHEDA TECNICA ESERCIZIO</span><h3>${type==="exercise-custom"?"Esercizio personalizzato":"Dettagli esercizio"}</h3><p class="micro-copy">Identità, biomeccanica e richiesta allenante in un’unica scheda professionale.</p></div>${close}</div><div class="exercise-detail-status"><span><b>1</b> Classifica</span><span><b>2</b> Descrivi il movimento</span><span><b>3</b> Valuta la richiesta</span></div><fieldset class="coach-details-section detail-identity"><legend>1 · Identità, muscoli e movimento</legend><div class="form-grid"><label class="full">Nome<input id="exerciseModalName" value="${escapeHtml(exercise?.name||"")}"></label><label>Gruppo principale<select id="exerciseModalMuscle">${coachExerciseGroupOptions(exercise)}</select></label><label>Muscoli secondari<input id="exerciseModalSecondary" value="${escapeHtml((metadata.secondaryMuscles||[]).join(", "))}" placeholder="Separati da virgola"></label><label>Attrezzatura<input id="exerciseModalEquipment" value="${escapeHtml(metadata.equipment||"")}"></label><label>Pattern di movimento<input id="exerciseModalPattern" value="${escapeHtml(metadata.pattern||"")}"></label><label>Tipo di esercizio<select id="exerciseModalType"><option value="">Da definire</option><option value="compound" ${metadata.exerciseType==="compound"?"selected":""}>Multiarticolare</option><option value="isolation" ${metadata.exerciseType==="isolation"?"selected":""}>Isolamento</option><option value="cardio" ${metadata.exerciseType==="cardio"?"selected":""}>Cardio</option><option value="mobility" ${metadata.exerciseType==="mobility"?"selected":""}>Mobilità</option></select></label></div></fieldset><fieldset class="coach-details-section detail-analysis"><legend>2 · Richiesta allenante e programmazione</legend><div class="form-grid"><label>Stabilità richiesta<input id="exerciseModalStability" type="number" min="1" max="5" value="${escapeHtml(metadata.stability||"")}"></label><label>Caricabilità<input id="exerciseModalLoadability" type="number" min="1" max="5" value="${escapeHtml(metadata.loadability||"")}"></label><label>Richiesta sistemica<input id="exerciseModalSystemic" type="number" min="1" max="5" value="${escapeHtml(metadata.systemicDemand||"")}"></label><label>Richiesta articolare<input id="exerciseModalJoint" value="${escapeHtml(metadata.jointDemand||"")}" placeholder="Es. ginocchio 3/5"></label><label>Profilo di resistenza<input id="exerciseModalResistance" value="${escapeHtml(metadata.resistanceProfile||"")}"></label><label>ROM<input id="exerciseModalRom" value="${escapeHtml(metadata.rangeOfMotion||"")}"></label><label>Difficoltà tecnica<input id="exerciseModalDifficulty" type="number" min="1" max="5" value="${escapeHtml(metadata.technicalDifficulty||"")}"></label><label>Compatibilità progressioni<input id="exerciseModalCompatibility" value="${escapeHtml(metadata.progressionCompatibility||"")}"></label><label>Fatica locale<input id="exerciseModalLocalFatigue" type="number" min="1" max="5" value="${escapeHtml(metadata.localFatigue||"")}"></label><label class="full">Note<textarea id="exerciseModalNotes">${escapeHtml(exercise?.note||"")}</textarea></label><label><input id="exerciseModalMain" type="checkbox" ${metadata.mainLift?"checked":""}> Esercizio principale</label><label><input id="exerciseModalLocked" type="checkbox" ${metadata.locked?"checked":""}> Proteggi da modifiche</label></div></fieldset>${type==="exercise-details"?`<p class="micro-copy">ID stabile: ${escapeHtml(exercise?.id||"")} · aggiornato ${escapeHtml(exercise?.updatedAt||"n/d")}</p><button type="button" class="ghost-button" data-details-progression-open="${escapeHtml(exercise?.id||"")}">Apri progressione settimanale</button>${exerciseAnalysisHtml(exercise)}`:""}<div class="coach-modal-actions"><button class="ghost-button" data-coach-modal-close>Annulla</button><button class="gold-button" data-coach-modal-save>${type==="exercise-custom"?"Aggiungi":"Salva dettagli"}</button></div></section></div>`;
       }
       if (type === "progression-editor") {
         const progressionSheet = targetSheet || sheet;
@@ -11903,6 +11903,20 @@ function sanitizeForFirestore(value) {
        ].map((value)=>String(value||"").trim()).filter(Boolean))];
      }
     function coachExerciseGroups() { return [...COACH_MUSCLE_CATEGORIES]; }
+    // v148.20 — opzioni del "Gruppo principale" della matitina. Prima la voce
+    // selezionata era decisa da normalizeMuscleCategory(exercise.muscle): un
+    // gruppo che non entrava nell'elenco canonico non veniva mai selezionato e
+    // il browser ripiegava sulla PRIMA voce, così il muscolo scelto da Alice
+    // spariva. Ora il gruppo scritto sulla scheda è la fonte: se non è
+    // nell'elenco si aggiunge lui (e non un segnaposto).
+    function coachExerciseGroupOptions(exercise) {
+      const raw = String(exercise?.muscle || exercise?.som || "").trim();
+      const placeholder = isPlaceholderMuscleLabel(raw);
+      const groups = coachExerciseGroups().slice();
+      if (raw && !placeholder && !groups.includes(raw)) groups.unshift(raw);
+      const selected = raw && !placeholder ? raw : normalizeMuscleCategory(raw || "Full body");
+      return groups.map((group) => `<option ${group === selected ? "selected" : ""}>${escapeHtml(group)}</option>`).join("");
+    }
     function coachSpecificMuscles() {
       return [...new Set(technicalExerciseLibrary().flatMap((item)=>[...(item.primaryMuscles||[]),...(item.secondaryMuscles||[])]).map((item)=>String(item||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"it"));
     }
@@ -16153,6 +16167,32 @@ function sanitizeForFirestore(value) {
       document.querySelectorAll("[data-modal-error]").forEach((node) => node.remove());
     }
 
+    // v148.20 — quale scheda contiene davvero un esercizio. La matitina e il
+    // pannello Coach AI possono aprire "exercise-details" senza indicare la
+    // scheda (o indicandone un'altra): fidarsi di coachProgramUi.sheetId faceva
+    // cercare l'esercizio nella scheda sbagliata, updateExercise rispondeva
+    // "non trovato" e il salvataggio svaniva senza salvare nulla.
+    function sheetContainingExercise(programId, exerciseId, preferredSheetId = "") {
+      if (!programId || !exerciseId) return programRepository.getSheetById(programId, preferredSheetId || coachProgramUi.sheetId);
+      if (preferredSheetId && programRepository.getExerciseById(programId, preferredSheetId, exerciseId)) return programRepository.getSheetById(programId, preferredSheetId);
+      return programRepository.getSheets(programId).find((item) => programRepository.getExerciseById(programId, item.id, exerciseId)) || null;
+    }
+
+    // v148.20 — l'esercizio si trova per ID in TUTTI i programmi. Il render del
+    // modale non deve dipendere da quale scheda o programma risulta "selezionato":
+    // era la causa della finestra che si apriva vuota (e che faceva sembrare che
+    // la matitina non salvasse nulla).
+    function findCoachExerciseById(exerciseId) {
+      if (!exerciseId) return null;
+      for (const program of programRepository.getPrograms()) {
+        for (const sheet of (program.sheets || [])) {
+          const found = programRepository.getExerciseById(program.id, sheet.id, exerciseId);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+
     function saveCoachUiModal() {
       const type = coachProgramUi.modal;
       const { program, sheets } = ensureCoachProgramSelection();
@@ -16266,8 +16306,11 @@ function sanitizeForFirestore(value) {
         return showToast("Programma eliminato.");
       }
       if (type === "exercise-custom" || type === "exercise-details") {
-        const sheet = programRepository.getSheetById(program?.id, coachProgramUi.modalData.sheetId||coachProgramUi.sheetId);
         const id = coachProgramUi.modalData.exerciseId;
+        const sheet = type === "exercise-details"
+          ? sheetContainingExercise(program?.id, id, coachProgramUi.modalData.sheetId)
+          : programRepository.getSheetById(program?.id, coachProgramUi.modalData.sheetId || coachProgramUi.sheetId);
+        if (!sheet) return showToast("Scheda non trovata: riapri l’esercizio dalla sua scheda.", "error");
         const current = id ? programRepository.getExerciseById(program.id, sheet.id, id) : null;
         const data = {
           name: document.getElementById("exerciseModalName")?.value.trim(),
@@ -16408,7 +16451,7 @@ function sanitizeForFirestore(value) {
           } else result = { ok: false };
         } else if (action.type === "details") {
           closeCoachModal();
-          openCoachModal("exercise-details", { exerciseId: action.exerciseId });
+          openCoachModal("exercise-details", { exerciseId: action.exerciseId, sheetId: programRepository.getExerciseById(program.id, targetSheet.id, action.exerciseId) ? targetSheet.id : coachProgramUi.sheetId });
           return showToast("Completa i metadati dell’esercizio.");
         }
         if (!result.ok) return showToast("Suggerimento non applicato: dati insufficienti o esercizio bloccato.");

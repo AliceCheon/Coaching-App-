@@ -8,7 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const mainJs = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 
-// --- v148.19 · FASE 3 — il volume legge lo stato VIVO (state.programs) ---
+// --- v148.20 · FASE 3 — il volume legge lo stato VIVO (state.programs) ---
 // Alice: "glutei 9 invece di 14/12, e la Pendulum focus glutei non me la conta".
 // Causa: VOLUME_HISTORY era una costante calcolata UNA VOLTA al boot dal letterale
 // PROGRAM_LIBRARY (seed congelato): ogni modifica alle schede reali restava
@@ -35,7 +35,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
   addEventListener() {}, removeEventListener() {}, matchMedia() { return { matches: true }; }, window: null, globalThis: null };
 context.window = context; context.globalThis = context;
 vm.createContext(context);
-new vm.Script(vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + bootPart, { filename: "v14819.js" }).runInContext(context);
+new vm.Script(vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + bootPart, { filename: "v14820.js" }).runInContext(context);
 
 const esito = vm.runInContext(`(() => {
   const out = {};
@@ -109,4 +109,4 @@ assert.equal(esito.renderStorico, "ok", "lo Storico volume deve renderizzare con
 assert.equal(esito.renderStatistiche, "ok", "le Statistiche (tab Volume) devono renderizzare con i dati vivi");
 assert.equal(esito.totalSerie, 5, "il totale serie della scheda viva");
 
-console.log("v148.19 volume dal vivo: OK", JSON.stringify({ titoli: esito.titoli, glutei: esito.liveGluteiTotale, settimane: esito.liveGluteiSettimane }));
+console.log("v148.20 volume dal vivo: OK", JSON.stringify({ titoli: esito.titoli, glutei: esito.liveGluteiTotale, settimane: esito.liveGluteiSettimane }));
