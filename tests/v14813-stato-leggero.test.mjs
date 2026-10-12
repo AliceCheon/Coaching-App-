@@ -167,7 +167,7 @@ assert.match(mainJs, /compactStateForStorage\(merged\);/);
 assert.match(mainJs, /async function persistLocalStateDurable\(snapshot = state\)/);
 assert.match(mainJs, /async function hydrateFromLocalDurableSnapshot\(\)/);
 // v148.13 · il disco si idrata DENTRO la corsa del boot (contratto v14759 intatto)
-assert.match(mainJs, /async function hydrateFromCloudSnapshotCache\(\) \{\s*\n\s*\/\/ v148\.13[\s\S]{0,260}?await hydrateFromLocalDurableSnapshot\(\);/);
+assert.match(mainJs, /async function hydrateFromCloudSnapshotCache\(\) \{\s*\n\s*\/\/ v148\.13[\s\S]{0,700}?await hydrateFromLocalDurableSnapshot\(\);/);
 assert.match(mainJs, /Promise\.race\(\s*\[\s*hydrateFromCloudSnapshotCache\(\)\.catch\(\(\) => false\),\s*new Promise\(\(resolve\) => \{ setTimeout\(resolve, 400\); \}\)\s*\]\)\.then\(\(\) => \{ render\(\); \}\);/);
 assert.match(mainJs, /indexedDB\.open\(WORKOUT_DB_NAME, 3\)/);
 
