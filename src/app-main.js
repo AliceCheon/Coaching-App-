@@ -17,6 +17,8 @@
     // non i ~5 MB di localStorage) — vedi la nota su persistActiveWorkoutRescue.
     const WORKOUT_ACTIVE_STORE = "activeWorkout";
     const WORKOUT_ACTIVE_RECORD_ID = "active";
+    const WORKOUT_LOCAL_STORE = "state"; // v148.13
+    const WORKOUT_LOCAL_RECORD_ID = "localState";
     const APP_BUILD = window.BarbellDivaV144Config?.build || "v146.1";
     const FIREBASE_CONFIG = window.BarbellDivaV144Config?.firebase || {};
     const CLOUD_COLLECTION = "barbellDivaAccounts";
@@ -3641,6 +3643,9 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
         // senza toccare quelle già presenti/modificate dall'utente.
         const seededPrograms = buildProgramsFromLegacy(PROGRAM_LIBRARY, []).map(consolidateLegacyWeeklyProgram);
         loaded.programs = mergeProgramCollections(loaded.programs || [], seededPrograms);
+        // v148.13 · pulizia dei duplicati archiviati: si paga una volta al caricamento,
+        // non ad ogni salvataggio (il percorso di salvataggio resta leggero).
+        compactStateForStorage(loaded);
         // Aggiornamento esplicito del programma Intensità: il workbook nuovo
         // deve sostituire il seed precedente anche quando esiste già uno stato
         // locale, mentre gli altri programmi e lo storico restano intatti.
@@ -3986,6 +3991,54 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
       return parts.join(";");
     }
 
+    // === v148.13 · STATO LEGGERO ===
+    // Il 10% di Alice era ~7 MB: `programs` ne faceva 6,2 e oltre metà erano schede
+    // ARCHIVIATE, di cui moltissime copie identiche (la stessa scheda archiviata più
+    // volte, o identica alla scheda viva). Sopra la quota di localStorage (~5 MB per
+    // origine) ogni scrittura locale falliva: da qui i "dati vecchi" e i workout
+    // persi in standby. Qui si tolgono SOLO le copie esatte: nessun contenuto
+    // originale viene toccato.
+    function sheetContentSignature(sheet) {
+      return compactHash(JSON.stringify((sheet?.exercises || []).map((exercise) => [
+        String(exercise?.name || ""),
+        (exercise?.progression?.weeks || []).map((week) => [
+          week?.sets ?? "", week?.reps ?? "", week?.rest ?? "", week?.tempo ?? "", week?.notes ?? week?.note ?? ""
+        ])
+      ])));
+    }
+
+    function compactArchivedSheets(programs = []) {
+      let removed = 0;
+      const next = (programs || []).map((program) => {
+        const archived = Array.isArray(program?.archivedSheets) ? program.archivedSheets : [];
+        if (archived.length < 2) return program;
+        const firmaDelVivo = new Set((program.sheets || []).map(sheetContentSignature));
+        // fra copie identiche si tiene la PIÙ RECENTE (l'ordine a schermo non cambia)
+        const perFirma = new Map();
+        archived.forEach((sheet, index) => {
+          const firma = sheetContentSignature(sheet);
+          if (!perFirma.has(firma)) perFirma.set(firma, []);
+          perFirma.get(firma).push(index);
+        });
+        const daTenere = new Set();
+        perFirma.forEach((indici, firma) => { if (!firmaDelVivo.has(firma)) daTenere.add(indici[indici.length - 1]); });
+        if (daTenere.size === archived.length) return program;
+        removed += archived.length - daTenere.size;
+        return { ...program, archivedSheets: archived.filter((sheet, index) => daTenere.has(index)) };
+      });
+      return next;
+    }
+
+    function compactStateForStorage(targetState) {
+      try {
+        if (!targetState || !Array.isArray(targetState.programs)) return 0;
+        const before = targetState.programs.reduce((total, program) => total + (program.archivedSheets || []).length, 0);
+        targetState.programs = compactArchivedSheets(targetState.programs);
+        const after = targetState.programs.reduce((total, program) => total + (program.archivedSheets || []).length, 0);
+        return before - after;
+      } catch (error) { return 0; }
+    }
+
     function compactHash(text) {
       let hash = 5381;
       const source = String(text || "");
@@ -4134,12 +4187,14 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
     function openWorkoutJournalDb() {
       return new Promise((resolve, reject) => {
         if (typeof indexedDB === "undefined") { resolve(null); return; }
-        const request = indexedDB.open(WORKOUT_DB_NAME, 2); // v148.12: v2 = store dell'istanza workout
+        const request = indexedDB.open(WORKOUT_DB_NAME, 3); // v148.13: v3 = store della copia locale dello stato
         request.onupgradeneeded = () => {
           const db = request.result;
           if (!db.objectStoreNames.contains(WORKOUT_DB_STORE)) db.createObjectStore(WORKOUT_DB_STORE, { keyPath: "journalId" });
           // v148.12 · istanza del workout in corso
           if (!db.objectStoreNames.contains(WORKOUT_ACTIVE_STORE)) db.createObjectStore(WORKOUT_ACTIVE_STORE, { keyPath: "journalId" });
+          // v148.13 · copia locale dello stato intero, senza il tetto dei 5 MB
+          if (!db.objectStoreNames.contains(WORKOUT_LOCAL_STORE)) db.createObjectStore(WORKOUT_LOCAL_STORE, { keyPath: "journalId" });
         };
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error || new Error("IndexedDB non disponibile"));
@@ -4224,6 +4279,59 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
         db.close();
         return record && record.workout ? record : null;
       } catch (error) { return null; }
+    }
+
+    // === v148.13 · LA COPIA LOCALE NON HA PIÙ IL TETTO DEI 5 MB ===
+    // Lo stato di Alice (~7 MB) non entrava in localStorage: ogni scrittura locale
+    // falliva e l'app restava ferma sulle foto vecchie. La copia primaria ora vive
+    // in IndexedDB (quota sul disco, structured clone: niente serializzazione).
+    async function persistLocalStateDurable(snapshot = state) {
+      try {
+        if (!snapshot || !snapshot.training || !snapshot.programs) return false;
+        const db = await openWorkoutJournalDb();
+        if (!db) return false;
+        const record = { journalId: WORKOUT_LOCAL_RECORD_ID, savedAt: new Date().toISOString(), updatedAt: String(snapshot.meta?.updatedAt || ""), uid: String(snapshot.profile?.account?.uid || ""), state: snapshot };
+        await new Promise((resolve, reject) => {
+          const transaction = db.transaction(WORKOUT_LOCAL_STORE, "readwrite");
+          transaction.objectStore(WORKOUT_LOCAL_STORE).put(record);
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error || new Error("Copia locale non salvata"));
+          transaction.onabort = () => reject(transaction.error || new Error("Copia locale interrotta"));
+        });
+        db.close();
+        return true;
+      } catch (error) { return false; }
+    }
+
+    async function readLocalStateDurable() {
+      try {
+        const db = await openWorkoutJournalDb();
+        if (!db) return null;
+        const record = await new Promise((resolve, reject) => {
+          const request = db.transaction(WORKOUT_LOCAL_STORE, "readonly").objectStore(WORKOUT_LOCAL_STORE).get(WORKOUT_LOCAL_RECORD_ID);
+          request.onsuccess = () => resolve(request.result || null);
+          request.onerror = () => reject(request.error || new Error("Lettura copia locale non riuscita"));
+        });
+        db.close();
+        return record && record.state ? record : null;
+      } catch (error) { return null; }
+    }
+
+    // Idratazione dal disco (IndexedDB): se il localStorage è pieno e la sua copia è
+    // FERMA, il primo paint parte dalla copia buona invece che dalla foto vecchia.
+    async function hydrateFromLocalDurableSnapshot() {
+      try {
+        const record = await readLocalStateDurable();
+        if (!record) return false;
+        const savedUid = String(state.profile?.account?.uid || "");
+        if (record.uid && savedUid && record.uid !== savedUid) { console.info("[locale-durabile] Copia di un altro account: saltata."); return false; }
+        const durableStamp = Date.parse(record.updatedAt || record.state?.meta?.updatedAt || "") || 0;
+        const localStamp = Date.parse(state.meta?.updatedAt || "") || 0;
+        if (!durableStamp || durableStamp <= localStamp) return false;
+        state = mergeCloudAndLocalState(state, clone(record.state));
+        console.info("[locale-durabile] Idratata dal disco locale:", record.updatedAt);
+        return true;
+      } catch (error) { return false; }
     }
 
     // Ultima spiaggia al boot: se la copia locale non c'è (localStorage pieno), il
@@ -4393,7 +4501,20 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
       // syncPausedUntil è runtime-only: non deve sopravvivere a un ricaricamento
       // (una pausa anti-flood "stale", ricaricata da localStorage/cloud al boot,
       // bloccava le scritture anche quando la quota era tornata disponibile).
-      return { ...snapshot, meta: snapshot?.meta ? { ...snapshot.meta, syncPausedUntil: 0 } : snapshot?.meta };
+      const compacted = { ...snapshot, meta: snapshot?.meta ? { ...snapshot.meta, syncPausedUntil: 0 } : snapshot?.meta };
+      // v148.13 · il catalogo tecnico degli esercizi (~740 KB) è DERIVATO: viene
+      // ricostruito al boot da hydrateStateModel (bootstrapStore) a partire dalle
+      // librerie spedite col sito. Nello snapshot locale restano solo i record
+      // creati da Alice (custom/program-editor/coach): zero perdite, ~740 KB in meno.
+      try {
+        const library = compacted.masterExerciseLibrary;
+        const records = Array.isArray(library?.records) ? library.records : null;
+        if (records) {
+          const propri = records.filter((record) => record?.provenance?.origin !== "system");
+          if (propri.length !== records.length) compacted.masterExerciseLibrary = { ...library, records: propri };
+        }
+      } catch (error) {}
+      return compacted;
     }
 
     function echoLocalStateQuietly(options = {}) {
@@ -4457,6 +4578,9 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
     }
 
     function writeLocalStateSnapshot(snapshot, options = {}) {
+      // v148.13 · la copia primaria va su IndexedDB (senza tetto di quota): fire-and-forget,
+      // l'esito di localStorage non decide più se i dati di Alice si salvano o no.
+      try { persistLocalStateDurable(snapshot); } catch (error) {}
       // Cloud-only per scelta: quando sei loggata e il cloud è pronto, il dispositivo NON scrive
       // I salvataggi espliciti dell'utente devono lasciare subito una copia
       // locale verificabile. Il cloud resta la sincronizzazione successiva:
@@ -4756,6 +4880,7 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
       hydrateStateModel(merged);
       repairSequentialWorkoutWeeks(merged);
       merged.training.exercises = buildExerciseIndex(allProgramSheets(merged), merged.training.sessions);
+      compactStateForStorage(merged); // v148.13: anche il mergine cloud non re-importa i duplicati
       return merged;
     }
 
@@ -16829,6 +16954,7 @@ function sanitizeForFirestore(value) {
     // l'avvio a freddo: senza cache valide (o offline, dove il locale è la
     // fonte giusta) l'idratazione termina subito e il render parte come prima.
     Promise.race([
+      hydrateFromLocalDurableSnapshot().catch(() => false), // v148.13: prima il disco, poi il cloud
       hydrateFromCloudSnapshotCache().catch(() => false),
       new Promise((resolve) => { setTimeout(resolve, 400); })
     ]).then(() => { render(); });

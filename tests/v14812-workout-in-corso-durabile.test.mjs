@@ -9,7 +9,7 @@ const root = path.resolve(here, "..");
 const mainJs = fs.readFileSync(path.join(root, "src/app-main.js"), "utf8");
 const flowJs = fs.readFileSync(path.join(root, "workout-flow-v147.js"), "utf8");
 
-// --- v148.12: il workout in corso non deve più dipendere dal localStorage PIENO ---
+// --- v148.13: il workout in corso non deve più dipendere dal localStorage PIENO ---
 // Alice: "metto il telefono in standby, riapro l'app dopo qualche minuto e il workout
 // che stavo facendo è sparito: mi tocca riscrivere serie e note". Causa: lo stato
 // serializzato supera la quota di localStorage (~5 MB per origine), quindi la copia
@@ -178,7 +178,7 @@ assert.match(mainJs, /const explicitClose = Object\.prototype\.hasOwnProperty\.c
 assert.match(mainJs, /const openSessionPrefix = `\$\{localActiveWorkout\.date \|\| ""\}\|\$\{localActiveWorkout\.sessionCode \|\| ""\}\|`;/);
 
 console.log(JSON.stringify({
-  ok: true, v: "v148.12",
+  ok: true, v: "v148.13",
   istantaneaDurabile: avvio.istantaneaDurabile,
   workoutRecuperato: esito.workout && esito.workout.id,
   serieRecuperate: esito.serie,
