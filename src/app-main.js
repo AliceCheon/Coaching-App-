@@ -4338,7 +4338,13 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook-v14810";
         const durableStamp = Date.parse(record.updatedAt || record.state?.meta?.updatedAt || "") || 0;
         const localStamp = Date.parse(state.meta?.updatedAt || "") || 0;
         if (!durableStamp || durableStamp <= localStamp) return false;
-        state = mergeCloudAndLocalState(state, clone(record.state));
+        try {
+          state = mergeCloudAndLocalState(state, clone(record.state));
+        } catch (mergeError) {
+          // una migrazione ostica non deve far perdere la copia più recente: la si adotta
+          console.warn("[locale-durabile] Mergine non riuscito, adotto la copia del disco:", mergeError?.message || mergeError);
+          state = clone(record.state);
+        }
         console.info("[locale-durabile] Idratata dal disco locale:", record.updatedAt);
         return true;
       } catch (error) { return false; }

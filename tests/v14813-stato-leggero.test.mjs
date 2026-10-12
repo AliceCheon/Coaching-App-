@@ -126,13 +126,18 @@ quotaAttiva = false;
 const esito2 = await vm.runInContext(`(async () => {
   const out = {};
   // 4) copia locale durabile: con localStorage che rifiuta tutto, il disco la custodisce
-  const statoNuovo = { meta: { updatedAt: "2026-10-12T08:00:00.000Z" }, profile: { account: { uid: "alice-test" } }, programs: [], training: { sessions: [{ id: "seduta-disco" }], activeWorkout: null } };
+  const statoNuovo = migrateStateSchema(clone(baseState));
+  statoNuovo.meta = { ...(statoNuovo.meta || {}), updatedAt: "2026-10-12T08:00:00.000Z" };
+  statoNuovo.profile = { ...(statoNuovo.profile || {}), account: { uid: "alice-test" } };
+  statoNuovo.training = { ...(statoNuovo.training || {}), sessions: [{ id: "seduta-disco" }], activeWorkout: null };
   out.scrittaSulDisco = await persistLocalStateDurable(statoNuovo);
   const letto = await readLocalStateDurable();
   out.lettaDalDisco = !!letto && letto.state.training.sessions[0].id === "seduta-disco";
 
   // 5) idratazione: il localStorage è FERMO (più vecchio), il disco ha la versione buona
-  state = migrateStateSchema(JSON.parse(JSON.stringify({ meta: { updatedAt: "2026-10-11T08:00:00.000Z" }, profile: { account: { uid: "alice-test" } }, programs: [], training: { sessions: [], activeWorkout: null } })));
+  state = migrateStateSchema(clone(baseState));
+  state.profile = { ...(state.profile || {}), account: { uid: "alice-test" } };
+  state.training = { ...(state.training || {}), sessions: [], activeWorkout: null };
   // il locale è CONGELATO nel passato: è il telefono che non riesce più a scrivere
   state.meta = { ...(state.meta || {}), updatedAt: "2026-10-11T08:00:00.000Z" };
   out.idratata = await hydrateFromLocalDurableSnapshot();
