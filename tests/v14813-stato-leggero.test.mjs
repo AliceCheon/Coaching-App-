@@ -140,9 +140,9 @@ const esito2 = await vm.runInContext(`(async () => {
 
 assert.equal(esito.archiviatePrima, 5);
 assert.equal(esito.archiviateDopo, 2, "devono restare solo le versioni DIVERSE (3 copie esatte in meno)");
-assert.deepEqual(esito.tenute.slice().sort(), ["unica-nuova-bis", "unica-vecchia"], "fra copie identiche resta la più recente");
+assert.equal(JSON.stringify(esito.tenute.slice().sort(), ["unica-nuova-bis", "unica-vecchia"]), JSON.stringify("fra copie identiche resta la più recente"));
 assert.equal(esito.vivaIntatta, true, "le schede vive non si toccano");
-assert.deepEqual(esito.recordNelloSnapshot, ["mio-1"], "nello snapshot locale restano solo i record di Alice");
+assert.equal(JSON.stringify(esito.recordNelloSnapshot, ["mio-1"]), JSON.stringify("nello snapshot locale restano solo i record di Alice"));
 assert.equal(esito.catalogoRicostruibile, true, "il catalogo di sistema è ricostruibile al boot");
 assert.ok(esito.byteDopo < esito.bytePrima * 0.5, `lo snapshot deve dimezzarsi (prima ${esito.bytePrima}, dopo ${esito.byteDopo})`);
 assert.equal(esito2.scrittaSulDisco, true, "la copia locale deve finire in IndexedDB anche con localStorage pieno");
