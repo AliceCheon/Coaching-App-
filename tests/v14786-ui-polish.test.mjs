@@ -36,8 +36,8 @@ assert.ok(!/\.card::before/.test(css), "non aggiungere .card::before generico");
 assert.ok(!/\.card::after/.test(css), "non aggiungere .card::after generico");
 
 // Versione allineata.
-assert.ok(config.includes('build: "v148.20-matitina-muscolo"'), "build non aggiornata");
-assert.ok(config.includes('cache: "atlas-app-v14820-matitina-muscolo"'), "cache non aggiornata");
-assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14820-matitina-muscolo"'), "CACHE_NAME non aggiornata");
+assert.ok(config.includes('build: "v148.21-manuale-schede-giuste"'), "build non aggiornata");
+assert.ok(config.includes('cache: "atlas-app-v14821-manuale-schede-giuste"'), "cache non aggiornata");
+assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14821-manuale-schede-giuste"'), "CACHE_NAME non aggiornata");
 
-console.log(JSON.stringify({ ok: true, build: "v148.20-matitina-muscolo", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));
+console.log(JSON.stringify({ ok: true, build: "v148.21-manuale-schede-giuste", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));

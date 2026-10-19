@@ -135,8 +135,13 @@ const merge = vm.runInContext(`(() => {
   const esercizio = (c.session.exercises || [])[0];
   const chiave = draftKey(c, esercizio);
   const base = { meta: { updatedAt: "2026-10-12T07:00:00.000Z" }, profile: {}, programs: [] };
+  // v148.21 · il workout locale è APERTO ORA: updatedAt va preso dal GIORNO CORRENTE
+  // (prima era cablato a "2026-10-12", il giorno della release: da allora la chiusura
+  // dei workout stanti lo considera vecchio e il test marciva da solo col passare dei
+  // giorni — date-rot). Il senso della guardia non cambia: il cloud, pure più recente
+  // come stato, non riscrive serie/note/workout di una seduta aperta su questo dispositivo.
   const locale = { ...base, training: { date: c.date, draft: { [chiave]: ["60", "65"] }, setDone: {}, noteDraft: { [chiave + "|note"]: "glutei in spinta" },
-    activeWorkout: { id: "workout-VIVE", status: "active", date: c.date, sessionCode: c.session.code, updatedAt: "2026-10-12T07:00:00.000Z" } } };
+    activeWorkout: { id: "workout-VIVE", status: "active", date: c.date, sessionCode: c.session.code, updatedAt: new Date().toISOString() } } };
   const cloud = { meta: { updatedAt: "2026-10-12T09:00:00.000Z" }, profile: {}, programs: [], training: { date: c.date, draft: { [chiave]: ["40", "40"] }, setDone: {}, noteDraft: { [chiave + "|note"]: "nota vecchia" }, activeWorkout: null } };
   const merged = mergeCloudAndLocalState(JSON.parse(JSON.stringify(locale)), JSON.parse(JSON.stringify(cloud)));
   return { serie: JSON.stringify(merged.training.draft), note: JSON.stringify(merged.training.noteDraft), workout: merged.training.activeWorkout ? merged.training.activeWorkout.id : null };

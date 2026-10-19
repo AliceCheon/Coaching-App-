@@ -6951,13 +6951,28 @@ function sanitizeForFirestore(value) {
       // corretta a guidare schede e settimana. La correzione della fase basta da sola.
       const activeProgram = explicitActiveTrainingProgram();
       const activePhase = activeProgram ? String(activeProgram.phase||"") : "";
-      const programSheets = projectProgramSheets(activeProgram);
       const phase = effectiveTrainingPhase();
+      // v148.21 · IN MANUALE la fase scelta da Alice guida anche le SCHEDE, non solo
+      // l'etichetta. Alice: "oggi inizio la scheda nuova (ottobre-dicembre), ma nel
+      // workout escono gli esercizi della vecchia (agosto-ottobre)". Causa: le schede
+      // erano SEMPRE quelle del programma ESPLICITAMENTE attivo (v148.18 rende attivo
+      // l'ultimo allenato: agosto-ottobre) e la ricerca filtrava per activePhase — le
+      // lettere A/B/C/D esistono in entrambe le fasi, quindi la scheda vecchia si
+      // trovava sempre, in silenzio (nessun contextWarning). In manuale, se la fase
+      // scelta esiste su un programma non archiviato DIVERSO dall'attivo, le schede
+      // vengono da QUEL programma. In automatico non cambia nulla: il bacino resta il
+      // programma attivo (avanzamento E->F sorvegliato dai tre test storici).
+      const manualProgram = isManual && activeProgram && phase && phase !== activePhase
+        ? coachAiAvailablePrograms().find((program) => !program.archivedAt && String(program.status||"") !== "archived" && String(program.phase||"").trim() === phase) || null
+        : null;
+      const contextProgram = manualProgram || activeProgram;
+      const contextPhase = manualProgram ? String(manualProgram.phase||"") : activePhase;
+      const programSheets = projectProgramSheets(contextProgram);
       const autoWeek = weekFromLatestWorkout(date, phase);
       const autoCode = autoSessionCodeForDate(date, phase);
-      const phaseSessions = programSheets.length ? (activePhase ? programSheets.filter((sheet)=>sheet.phase===activePhase) : programSheets) : sessionsForPhase(phase);
+      const phaseSessions = programSheets.length ? (contextPhase ? programSheets.filter((sheet)=>sheet.phase===contextPhase) : programSheets) : sessionsForPhase(phase);
       const selectedCode = isManual ? state.training.manualSessionCode : (state.training.sessionName === "auto" ? autoCode : state.training.sessionName);
-      let session = (programSheets.length?programSheets:allProgramSheets()).find((item) => item.code === selectedCode && (programSheets.length?(!activePhase || item.phase === activePhase):item.phase === phase));
+      let session = (programSheets.length?programSheets:allProgramSheets()).find((item) => item.code === selectedCode && (programSheets.length?(!contextPhase || item.phase === contextPhase):item.phase === phase));
       const contextWarning = isManual && selectedCode && !session ? `La scheda ${selectedCode} non è disponibile nella fase ${phase}.` : "";
       if (!session && !isManual) session = phaseSessions.find((item) => item.code === autoCode) || phaseSessions[0] || programByCode(autoCode || "");
       if (!session) session = phaseSessions[0] || programByCode(autoCode || "");
