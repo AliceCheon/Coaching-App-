@@ -1,5 +1,5 @@
 /* Barbell Diva v116 - reliable sync primitives. Pure except for injected storage. */
-export const SYNC_ENGINE_VERSION = "19.3.0-conflitti-risolti";
+export const SYNC_ENGINE_VERSION = "19.4.0-coda-stabile";
 export const SYNC_STATUSES = Object.freeze(["pending","syncing","synced","failed","conflict"]);
 
 const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
@@ -41,6 +41,24 @@ export function reconcileSessionVersions(local={},remote={}){
   return{status:"conflict",value:null,classification,versions:[clone(local),clone(remote)],reason:"Stesso record e revisione, contenuti differenti."};
 }
 
-const api=Object.freeze({SYNC_ENGINE_VERSION,SYNC_STATUSES,stableStringify,dataHash,stableEntityId,normalizeSyncSession,createSyncOperation,createPersistentSyncQueue,classifySessionPair,deduplicateSessions,reconcileSessionVersions,sessionStamp});
+const api=Object.freeze({SYNC_ENGINE_VERSION,SYNC_STATUSES,stableStringify,dataHash,stableEntityId,normalizeSyncSession,createSyncOperation,createPersistentSyncQueue,createConfirmedLedger,classifySessionPair,deduplicateSessions,reconcileSessionVersions,sessionStamp});
 if(typeof window!=="undefined"){window.BarbellDivaSyncEngine=api;document.documentElement.dataset.syncEngine=SYNC_ENGINE_VERSION;window.dispatchEvent(new CustomEvent("barbell-diva:sync-engine-ready"));}
+// v148.24 · REGISTRO DEI CONFERMATI.
+// Il flag session.syncStatus vive DENTRO la seduta, che viene copiata in due posti
+// (root state nel cloud + documento nella collezione sessions) con timbri diversi.
+// Al boot il merge del root state può riportare una copia più vecchia con
+// syncStatus "pending": la seduta, già scritta sul cloud, torna in coda. All'infinito.
+// Questo registro vive nella stessa localStorage della coda (l'unica che ha sempre
+// retto) e dice: "questo contenuto, con questo hash, è già sul cloud". Se il
+// contenuto cambia l'hash cambia e la seduta torna in coda — nessuna perdita.
+export function createConfirmedLedger({storage=null,key="barbell-diva.sync-confirmed.v1",max=800,now=()=>new Date().toISOString()}={}){
+  let memory={};
+  const readAll=()=>{try{const parsed=JSON.parse(storage?.getItem(key)||"null");return parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?parsed:memory;}catch{return memory;}};
+  const writeAll=rows=>{memory=clone(rows)||{};try{storage?.setItem(key,JSON.stringify(memory));}catch(error){}};
+  const mark=(id,sessionHash,revision)=>{const entityId=text(id),hash=text(sessionHash);if(!entityId||!hash)return null;const rows=readAll();rows[entityId]={hash,revision:Number(revision)||0,at:now()};const keys=Object.keys(rows);if(keys.length>max)keys.sort((a,b)=>String(rows[a]?.at||"").localeCompare(String(rows[b]?.at||""))).slice(0,keys.length-max).forEach(k=>{delete rows[k];});writeAll(rows);return clone(rows[entityId]);};
+  const has=(id,sessionHash)=>{const row=readAll()[text(id)];return !!row&&text(row.hash)===text(sessionHash);};
+  const entries=()=>clone(readAll());
+  const forget=id=>{const rows=readAll();delete rows[text(id)];writeAll(rows);return true;};
+  return Object.freeze({mark,has,entries,forget,key});
+}
 export default api;

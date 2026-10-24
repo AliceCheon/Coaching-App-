@@ -5,8 +5,8 @@
 // fallisce se anche un solo punto resta indietro.
 (function (root) {
   root.BarbellDivaV144Config = Object.freeze({
-    build: "v148.23-conflitti-e-coda",
-    cache: "atlas-app-v14823-conflitti-e-coda",
+    build: "v148.24-coda-che-non-torna",
+    cache: "atlas-app-v14824-coda-che-non-torna",
     backupAutomaticLimit: 5,
     legacyModulesRemoved: ["nutrizione", "workout-pro"],
     // App Check: incolla qui la site key reCAPTCHA registrata in

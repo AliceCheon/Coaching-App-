@@ -17,7 +17,7 @@ assert.match(html, /const APP_BUILD = window\.BarbellDivaV144Config\?\.build/);
 
 // Test service worker
 const serviceWorker = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
-assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14823-conflitti-e-coda"/);
+assert.match(serviceWorker, /const CACHE_NAME = "atlas-app-v14824-coda-che-non-torna"/);
 
 console.log(JSON.stringify({ ok:true, fontPreload:true, versioning:true }));
 

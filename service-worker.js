@@ -8,7 +8,7 @@
    - Match con ignoreSearch: resiste ai bump di versione (?v=...) e ai doppioni in cache
    - Cache key normalizzate per pathname (niente duplicati per ogni ?v=)
 */
-const CACHE_NAME = "atlas-app-v14823-conflitti-e-coda";
+const CACHE_NAME = "atlas-app-v14824-coda-che-non-torna";
 const APP_SHELL = [
   "./",
   "./index.html",

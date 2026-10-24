@@ -4041,7 +4041,7 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook";
       const known = new Set(operations.map((operation) => String(operation.entityId || "")));
       (state.training?.sessions || []).forEach((session) => {
         try {
-          if (!session || session.status !== "completed" || session.syncStatus === "synced") return;
+          if (!session || session.status !== "completed" || session.syncStatus === "synced" || sessionConfirmedInCloud(session)) return;
           const operation = window.BarbellDivaSyncEngine.createSyncOperation(session, { userId: cloudUser?.uid || "", deviceId: reliableDeviceId(), now: new Date().toISOString() });
           if (known.has(String(operation.entityId || ""))) return;
           known.add(String(operation.entityId || ""));
@@ -6183,6 +6183,8 @@ function sanitizeForFirestore(value) {
     function initReliableSync() {
       if (reliableSyncQueue || !window.BarbellDivaSyncEngine?.createPersistentSyncQueue) return reliableSyncQueue;
       reliableSyncQueue = window.BarbellDivaSyncEngine.createPersistentSyncQueue({ storage:localStorage, key:`${STORE_KEY}.sync-queue.v1`, auditKey:`${STORE_KEY}.sync-audit.v1` });
+      // v148.24 · il registro che impedisce alla coda di risorgere a ogni avvio.
+      try { reliableSyncLedger = window.BarbellDivaSyncEngine.createConfirmedLedger({ storage:localStorage, key:`${STORE_KEY}.sync-confirmed.v1` }); } catch (error) { reliableSyncLedger = null; }
       // v148.22 · un flush interrotto (standby Android a metà invio, scheda
       // scartata) lasciava le operazioni in "syncing" per SEMPRE: la card le
       // contava in "In coda" come se stessero lavorando, e nessuno le ritentava
@@ -6193,13 +6195,40 @@ function sanitizeForFirestore(value) {
           reliableSyncQueue.markFailed(row.operationId, "invio interrotto (app sospesa) — da riprovare");
         });
       } catch (error) {}
-      (state.training.sessions || []).filter(item => item.status === "completed" && item.syncStatus !== "synced").forEach(queueReliableWorkoutSession);
+      // v148.24 · syncStatus da solo non basta: la copia del root state può essere
+      // più vecchia della scrittura nella collezione sessions e riportare "pending"
+      // una seduta già sul cloud. Il registro dei confermati non si può smentire.
+      (state.training.sessions || []).filter(item => item.status === "completed" && item.syncStatus !== "synced" && !sessionConfirmedInCloud(item)).forEach(queueReliableWorkoutSession);
       document.documentElement.dataset.reliableSync = "ready";
       return reliableSyncQueue;
     }
 
     function reliableSyncStats() {
       return reliableSyncQueue?.stats?.() || { pending:0, syncing:0, failed:0, conflict:0 };
+    }
+
+    // === v148.24 · IL REGISTRO DEI CONFERMATI ===
+    // Una seduta è "da mandare" solo se il suo CONTENUTO non è già stato scritto
+    // sul cloud con successo. L'hash esclude updatedAt/deviceId/revision, quindi
+    // è identico su telefono e PC per lo stesso contenuto.
+    function sessionContentHash(session = {}) {
+      try {
+        if (session && typeof session.dataHash === "string" && session.dataHash) return session.dataHash;
+        return window.BarbellDivaSyncEngine.normalizeSyncSession(session, { userId:session?.userId || "", deviceId:session?.deviceId || "", now:session?.completedAt || session?.startedAt || session?.createdAt || "" }).dataHash;
+      } catch (error) { return ""; }
+    }
+
+    function sessionConfirmedInCloud(session = {}) {
+      if (!reliableSyncLedger || !session) return false;
+      const hash = sessionContentHash(session);
+      if (!hash) return false;
+      try { return reliableSyncLedger.has(session.id, hash); } catch (error) { return false; }
+    }
+
+    function confirmSessionInCloud(session = {}) {
+      const hash = sessionContentHash(session);
+      if (!reliableSyncLedger || !session?.id || !hash) return false;
+      try { reliableSyncLedger.mark(session.id, hash, Number(session.revision || 0)); return true; } catch (error) { return false; }
     }
 
     function refreshReliableSyncStatus() {
@@ -6210,6 +6239,7 @@ function sanitizeForFirestore(value) {
 
     function queueReliableWorkoutSession(session = {}) {
       initReliableSync(); if (!reliableSyncQueue || !session) return session;
+      if (sessionConfirmedInCloud(session)) return session;
       const normalized = window.BarbellDivaSyncEngine.normalizeSyncSession(session, { userId:cloudUser?.uid || state.profile.account?.uid || "", deviceId:reliableDeviceId(), now:new Date().toISOString(), syncStatus:"pending" });
       const localIndex = (state.training.sessions || []).findIndex(item => String(item.id) === String(session.id));
       if (localIndex >= 0) state.training.sessions[localIndex] = { ...state.training.sessions[localIndex], ...normalized };
@@ -6233,6 +6263,7 @@ function sanitizeForFirestore(value) {
         if (result.status === "conflict") { reliableSyncUi.status="conflict"; reliableSyncUi.lastError="La stessa seduta è stata modificata su due dispositivi."; return false; }
         if (result.value) sessions[index] = result.value;
       }
+      try { confirmSessionInCloud(index < 0 ? remote : sessions[index]); } catch (error) {}
       state.training.sessions = deduplicateWorkoutSessions(sessions).sessions;
       reliableSyncUi.remoteDevice = remote.deviceId || ""; state.training.exercises = buildExerciseIndex(allProgramSheets(), state.training.sessions); return true;
     }
@@ -6272,6 +6303,12 @@ function sanitizeForFirestore(value) {
       const operations = [];
       pendingSessionOperations().forEach((operation) => {
         const existing = queueRows.find((row) => String(row.entityId) === String(operation.entityId)) || queueRows.find((row) => row.operationId === operation.operationId);
+        // v148.24 · un conflitto VERO resta fermo in attesa della scelta. Ritentarlo
+        // a ogni giro lo faceva tornare "syncing" e poi di nuovo "conflict": nella
+        // card il conteggio dei conflitti era zero nel momento del render e il
+        // pulsante "Tieni la piu' recente" non compariva MAI. Si riprende da solo
+        // solo se il contenuto locale e' cambiato davvero (hash diverso).
+        if (existing && existing.status === "conflict" && String(existing?.payload?.dataHash || "") === String(operation.payload?.dataHash || "")) return;
         if (existing) { operations.push({ ...operation, operationId:existing.operationId }); return; }
         const queued = reliableSyncQueue.enqueue(operation);
         if (queued) operations.push({ ...operation, operationId:queued.operationId });
@@ -6290,13 +6327,14 @@ function sanitizeForFirestore(value) {
             // si scrive con revisione +1, così il confronto successivo non trova
             // più due revisioni uguali (era la radice dei conflitti eterni).
             const winnerHash=String(result.value?.dataHash||"");
-            if (result.status === "merged" && winnerHash && winnerHash === String(remote.dataHash||"") && winnerHash !== String(operation.payload.dataHash||"")) { mergeReliableRemoteSession(remote); reliableSyncQueue.markSynced(operation.operationId); synced++; continue; }
+            if (result.status === "merged" && winnerHash && winnerHash === String(remote.dataHash||"") && winnerHash !== String(operation.payload.dataHash||"")) { mergeReliableRemoteSession(remote); confirmSessionInCloud(remote); reliableSyncQueue.markSynced(operation.operationId); synced++; continue; }
             if (result.status === "merged") {
               payload={ ...payload, ...(result.value || {}), userId:cloudUser.uid, syncStatus:"synced", cloudSyncedAt:new Date().toISOString() };
               payload.revision=Math.max(Number(remote.revision||0),Number(operation.payload.revision||0),Number(result.value?.revision||0))+1;
             }
           }
           await withTimeout(ref.set({ session:sanitizeForFirestore(payload), entityId:sanitizeForFirestore(payload.id), userId:cloudUser.uid, revision:payload.revision, dataHash:payload.dataHash, deviceId:payload.deviceId, updatedAt:payload.updatedAt, serverUpdatedAt:window.firebase.firestore.FieldValue.serverTimestamp() },{ merge:true }),40000);
+          confirmSessionInCloud(payload);
           const local=(state.training.sessions||[]).find(item=>String(item.id)===String(payload.id)); if(local) Object.assign(local,{ syncStatus:"synced",cloudSyncedAt:payload.cloudSyncedAt,dataHash:payload.dataHash,deviceId:payload.deviceId,revision:payload.revision });
           reliableSyncQueue.markSynced(operation.operationId); reliableSyncQueue.audit("confirmed-cloud",{entityId:payload.id,deviceId:payload.deviceId}); synced++;
         } catch(error) {
@@ -6409,6 +6447,7 @@ function sanitizeForFirestore(value) {
             await withTimeout(ref.set({ session:sanitizeForFirestore(payload), entityId:sanitizeForFirestore(payload.id), userId:cloudUser?.uid || payload.userId, revision:payload.revision, dataHash:payload.dataHash, deviceId:payload.deviceId || reliableDeviceId(), updatedAt:payload.updatedAt, serverUpdatedAt:window.firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }), 25000);
             const index = (state.training.sessions || []).findIndex((item) => String(item.id) === String(row.entityId));
             if (index >= 0) state.training.sessions[index] = { ...state.training.sessions[index], ...payload };
+            confirmSessionInCloud(payload);
             reliableSyncQueue.markSynced(row.operationId);
             reliableSyncQueue.audit("conflict-resolved", { entityId:row.entityId, choice, revision:payload.revision });
             resolved += 1;
