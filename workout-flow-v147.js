@@ -458,7 +458,10 @@
       ? `Hai completato ${snapshot.completedSets} serie su ${snapshot.totalSets}. Salvare comunque il workout nel Logbook?`
       : "Workout completato! Salvarlo nel Logbook?";
     if (!window.confirm(message)) return;
-    const saved = await saveWorkoutSession();
+    // v148.22 · si salva con lo STESSO contesto appuntato con cui la schermata
+    // ha scritto kg, serie e note: niente più "inserisci almeno un carico o una
+    // nota" su un workout compilato per intero.
+    const saved = await saveWorkoutSession(context);
     if (saved) {
       state.training.activeWorkout = null;
       scheduleLocalSave(true);
@@ -585,6 +588,13 @@
       if (!active) return;
       const exercise = context.session.exercises[Number(active.currentExercise) || 0];
       state.training.noteDraft[draftNoteKey(context, exercise)] = event.target.value;
+      // v148.22 · la nota viaggia ANCHE dentro il workout in corso: così resta
+      // valida pure se le chiavi delle bozze dovessero cambiare (data/scheda) e
+      // finisce nella copia durabile in IndexedDB insieme alle serie.
+      try {
+        const currentLog = ensureExerciseLog(active, context, exercise, Number(active.currentExercise) || 0);
+        currentLog.note = event.target.value;
+      } catch (error) {}
       active.updatedAt = new Date().toISOString();
       scheduleLocalSave();
     });

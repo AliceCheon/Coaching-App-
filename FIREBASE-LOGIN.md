@@ -1,3 +1,5 @@
+> Build documentata: v148.23-conflitti-e-coda
+
 # Firebase e Login — Barbell Diva
 
 > ⚠️ **Documento ricostruito.** Il contenuto precedente di questo file era una copia byte per
@@ -13,8 +15,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v148.21-manuale-schede-giuste` |
-| `cache` | `atlas-app-v14821-manuale-schede-giuste` |
+| `build` | `v148.23-conflitti-e-coda` |
+| `cache` | `atlas-app-v14823-conflitti-e-coda` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

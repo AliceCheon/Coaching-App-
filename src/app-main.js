@@ -1376,6 +1376,7 @@ const INTENSITA_OD_BUILD = "2026-10-09-riparazione-contenuto-workbook";
     try { releaseObsoleteLocalBackups(); } catch (error) {}
 
     state.training.date = todayInput();
+    state.training.todayStamp = todayInput(); // v148.22: il "giorno di riferimento" per il rollover
     try { normalizeManualContextForDate(); } catch (error) {} // v148.09: a giorno nuovo, manuale scaduto → automatico
     try { ensureActiveProgramFromLastWorkout(); } catch (error) {} // v148.18: il programma allenato torna attivo (persistenza nei flussi normali)
     state.training.sessionName = "auto";
@@ -5642,7 +5643,7 @@ function sanitizeForFirestore(value) {
       if (code.includes("unauthenticated")) return "Sessione Google scaduta: accedi di nuovo per sincronizzare.";
       if (code.includes("resource-exhausted")) return "Il backup cloud è troppo grande: esporta un backup e riprova.";
       if (code.includes("invalid-argument") && /size|byte|large/i.test(String(error?.message || ""))) return `Una scheda è troppo grande per essere salvata sul cloud così com'è (${String(error?.message || "").slice(0, 260)}). Resta salvata solo su questo dispositivo.`;
-      if (code.includes("unavailable") || code.includes("deadline") || String(error?.message || "").includes("timeout")) return `Cloud non raggiungibile: verifica la connessione internet. I dati sono salvati localmente.`;
+      if (code.includes("unavailable") || code.includes("deadline") || String(error?.message || "").includes("timeout")) return `Il cloud non ha risposto in tempo (rete lenta o assente): riprovo da solo. I dati sono salvati localmente.`;
       return `Cloud non disponibile durante ${action}${code ? ` (${code.replace("firestore/", "")})` : ""}. I dati sono salvati localmente. Dettaglio: ${String(error?.message || "n/d").slice(0, 220)}`;
     }
 
@@ -6182,6 +6183,16 @@ function sanitizeForFirestore(value) {
     function initReliableSync() {
       if (reliableSyncQueue || !window.BarbellDivaSyncEngine?.createPersistentSyncQueue) return reliableSyncQueue;
       reliableSyncQueue = window.BarbellDivaSyncEngine.createPersistentSyncQueue({ storage:localStorage, key:`${STORE_KEY}.sync-queue.v1`, auditKey:`${STORE_KEY}.sync-audit.v1` });
+      // v148.22 · un flush interrotto (standby Android a metà invio, scheda
+      // scartata) lasciava le operazioni in "syncing" per SEMPRE: la card le
+      // contava in "In coda" come se stessero lavorando, e nessuno le ritentava
+      // davvero. Al boot tornano "failed", così vengono riprese e il numero in
+      // card è onesto.
+      try {
+        reliableSyncQueue.list().filter((row) => row.status === "syncing").forEach((row) => {
+          reliableSyncQueue.markFailed(row.operationId, "invio interrotto (app sospesa) — da riprovare");
+        });
+      } catch (error) {}
       (state.training.sessions || []).filter(item => item.status === "completed" && item.syncStatus !== "synced").forEach(queueReliableWorkoutSession);
       document.documentElement.dataset.reliableSync = "ready";
       return reliableSyncQueue;
@@ -6228,18 +6239,63 @@ function sanitizeForFirestore(value) {
 
     async function flushReliableSync(options = {}) {
       initReliableSync(); const collection = reliableSessionsCollection();
-      if (!reliableSyncQueue || !collection || !cloudUser || !state.profile.account?.syncReady || !navigator.onLine) { refreshReliableSyncStatus(); if (!options.silent) showToast(navigator.onLine ? "Accedi al cloud prima di sincronizzare." : "Offline: le modifiche restano in coda.", "warning"); return { ok:false, synced:0 }; }
+      if (!reliableSyncQueue || !collection || !cloudUser || !state.profile.account?.syncReady || !navigator.onLine) {
+        // v148.22 · il flush usciva in SILENZIO: la card poteva dire "In coda 25" e
+        // "Ultimo successo" fresco (lo aggiorna anche il download) mentre nessun
+        // invio partiva. Ora il motivo vero resta scritto nella card.
+        reliableSyncUi.blockedReason = !navigator.onLine
+          ? "Offline: gli invii ripartono appena torni in rete."
+          : !cloudUser
+            ? "Invii fermi: accedi con Google su questo dispositivo."
+            : !state.profile.account?.syncReady
+              ? "Invii fermi: il cloud non è ancora pronto su questo dispositivo."
+              : "Coda di sincronizzazione non inizializzata.";
+        // v148.22 · anche il MOTIVO del blocco finisce nel registro tecnico.
+        // Dal telefono di Alice il flush usciva in silenzio: il registro mostrava
+        // solo "queued", senza dire quale porta fosse chiusa (login, syncReady,
+        // rete). Ora la riga "sync-blocked" lo dice esplicitamente.
+        try { reliableSyncQueue?.audit?.("sync-blocked", { reason: reliableSyncUi.blockedReason }); } catch (error) {}
+        refreshReliableSyncStatus();
+        if (!options.silent) showToast(navigator.onLine ? "Accedi al cloud prima di sincronizzare." : "Offline: le modifiche restano in coda.", "warning");
+        return { ok:false, synced:0 };
+      }
+      reliableSyncUi.blockedReason = "";
       let synced=0, failed=0, conflicts=0; reliableSyncUi.status="syncing"; reliableSyncUi.lastError="";
-      for (const operation of pendingSessionOperations()) { // v148.15: coda ∪ sedute non sincronizzate
+      // v148.23 · due trappole chiuse qui.
+      // 1) Le sedute ricavate dallo stato locale non avevano una riga in coda:
+      //    markSyncing/markConflict non trovavano nulla da aggiornare, quindi il
+      //    conflitto restava invisibile e irrisolvibile (nessun pulsante poteva
+      //    toccarlo). Ora ogni operazione ha la sua riga PRIMA di partire.
+      // 2) 26 sedute in un solo giro = 26 letture + 26 scritture: l'app sembrava
+      //    piantata e ogni timeout ripartiva da capo. Si invia a blocchi di 8.
+      const queueRows = reliableSyncQueue.list();
+      const operations = [];
+      pendingSessionOperations().forEach((operation) => {
+        const existing = queueRows.find((row) => String(row.entityId) === String(operation.entityId)) || queueRows.find((row) => row.operationId === operation.operationId);
+        if (existing) { operations.push({ ...operation, operationId:existing.operationId }); return; }
+        const queued = reliableSyncQueue.enqueue(operation);
+        if (queued) operations.push({ ...operation, operationId:queued.operationId });
+      });
+      const batch = operations.slice(0, 8);
+      if (operations.length > batch.length) scheduleReliableSync(1500);
+      for (const operation of batch) { // v148.15: coda ∪ sedute non sincronizzate
         reliableSyncQueue.markSyncing(operation.operationId);
         try {
-          const ref=collection.doc(reliableSessionDocId(operation.entityId)), snapshot=await withTimeout(ref.get(), 30000);
+          const ref=collection.doc(reliableSessionDocId(operation.entityId)), snapshot=await withTimeout(ref.get(), 15000);
+          let payload={ ...operation.payload, userId:cloudUser.uid, syncStatus:"synced", cloudSyncedAt:new Date().toISOString() };
           if (snapshot.exists) {
             const remote=snapshot.data()?.session || snapshot.data(), result=window.BarbellDivaSyncEngine.reconcileSessionVersions(operation.payload,remote);
             if (result.status === "conflict") { reliableSyncQueue.markConflict(operation.operationId,result.reason); reliableSyncUi.lastError="Conflitto: confronta la seduta locale con quella cloud."; conflicts++; continue; }
-            if (result.status === "merged" && Number(remote.revision||0)>Number(operation.payload.revision||0)) { mergeReliableRemoteSession(remote); reliableSyncQueue.markSynced(operation.operationId); synced++; continue; }
+            // v148.23 · se vince il cloud la si adotta; se vince questo dispositivo
+            // si scrive con revisione +1, così il confronto successivo non trova
+            // più due revisioni uguali (era la radice dei conflitti eterni).
+            const winnerHash=String(result.value?.dataHash||"");
+            if (result.status === "merged" && winnerHash && winnerHash === String(remote.dataHash||"") && winnerHash !== String(operation.payload.dataHash||"")) { mergeReliableRemoteSession(remote); reliableSyncQueue.markSynced(operation.operationId); synced++; continue; }
+            if (result.status === "merged") {
+              payload={ ...payload, ...(result.value || {}), userId:cloudUser.uid, syncStatus:"synced", cloudSyncedAt:new Date().toISOString() };
+              payload.revision=Math.max(Number(remote.revision||0),Number(operation.payload.revision||0),Number(result.value?.revision||0))+1;
+            }
           }
-          const payload={ ...operation.payload, userId:cloudUser.uid, syncStatus:"synced", cloudSyncedAt:new Date().toISOString() };
           await withTimeout(ref.set({ session:sanitizeForFirestore(payload), entityId:sanitizeForFirestore(payload.id), userId:cloudUser.uid, revision:payload.revision, dataHash:payload.dataHash, deviceId:payload.deviceId, updatedAt:payload.updatedAt, serverUpdatedAt:window.firebase.firestore.FieldValue.serverTimestamp() },{ merge:true }),40000);
           const local=(state.training.sessions||[]).find(item=>String(item.id)===String(payload.id)); if(local) Object.assign(local,{ syncStatus:"synced",cloudSyncedAt:payload.cloudSyncedAt,dataHash:payload.dataHash,deviceId:payload.deviceId,revision:payload.revision });
           reliableSyncQueue.markSynced(operation.operationId); reliableSyncQueue.audit("confirmed-cloud",{entityId:payload.id,deviceId:payload.deviceId}); synced++;
@@ -6254,7 +6310,7 @@ function sanitizeForFirestore(value) {
           }
         }
       }
-      reliableSyncQueue.removeSynced(); if(synced) { reliableSyncUi.lastSuccess=new Date().toISOString(); lastCloudWriteSuccessAt = Date.now(); updateUnsyncedCloudBanner(); notifyDeviceSync("Allenamento sincronizzato ✅", "Salvato sul cloud, sarà visibile su tutti i tuoi dispositivi."); } refreshReliableSyncStatus(); echoLocalStateQuietly();
+      reliableSyncQueue.removeSynced();       if(synced) { reliableSyncUi.lastSuccess=new Date().toISOString(); lastCloudWriteSuccessAt = Date.now(); if (state.profile?.account) state.profile.account.lastCloudSyncAt = reliableSyncUi.lastSuccess; updateUnsyncedCloudBanner(); notifyDeviceSync("Allenamento sincronizzato ✅", "Salvato sul cloud, sarà visibile su tutti i tuoi dispositivi."); } refreshReliableSyncStatus(); echoLocalStateQuietly();
       if(failed) scheduleReliableSync(Math.min(30000,1500*Math.max(1,reliableSyncStats().failed)));
       if(!options.silent) showToast(conflicts?"C'è un conflitto da controllare.":failed?"Cloud in attesa: riproverò automaticamente.":"Sincronizzazione completata.",conflicts||failed?"warning":"success");
       return {ok:!failed&&!conflicts,synced,failed,conflicts};
@@ -6323,6 +6379,57 @@ function sanitizeForFirestore(value) {
         reliableSyncUi.resolving = false;
         render();
       }
+    }
+
+    async function resolveReliableConflicts(choice = "newest") {
+      initReliableSync();
+      const collection = reliableSessionsCollection();
+      const rows = reliableSyncQueue?.conflicts?.() || [];
+      if (!collection || !rows.length) { showToast("Nessun conflitto da risolvere.", "info"); return 0; }
+      reliableSyncUi.resolving = true; render();
+      let resolved = 0;
+      try {
+        for (const row of rows) {
+          try {
+            const ref = collection.doc(reliableSessionDocId(row.entityId));
+            const snapshot = await withTimeout(ref.get(), 15000);
+            const remote = snapshot.exists ? (snapshot.data()?.session || snapshot.data()) : null;
+            const local = (state.training.sessions || []).find((item) => String(item.id) === String(row.entityId)) || row.payload || null;
+            let winner = null;
+            if (choice === "local") winner = local;
+            else if (choice === "cloud") winner = remote;
+            else {
+              const localAt = window.BarbellDivaSyncEngine.sessionStamp(local || {});
+              const remoteAt = window.BarbellDivaSyncEngine.sessionStamp(remote || {});
+              winner = remoteAt > localAt ? remote : local;
+            }
+            if (!winner) { reliableSyncQueue.removeOperation(row.operationId); continue; }
+            const stamp = new Date().toISOString();
+            const payload = { ...winner, id:row.entityId, userId:cloudUser?.uid || winner.userId || "", syncStatus:"synced", cloudSyncedAt:stamp, updatedAt:winner.updatedAt || stamp, revision:Math.max(Number(local?.revision||0), Number(remote?.revision||0), Number(winner.revision||0)) + 1 };
+            await withTimeout(ref.set({ session:sanitizeForFirestore(payload), entityId:sanitizeForFirestore(payload.id), userId:cloudUser?.uid || payload.userId, revision:payload.revision, dataHash:payload.dataHash, deviceId:payload.deviceId || reliableDeviceId(), updatedAt:payload.updatedAt, serverUpdatedAt:window.firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }), 25000);
+            const index = (state.training.sessions || []).findIndex((item) => String(item.id) === String(row.entityId));
+            if (index >= 0) state.training.sessions[index] = { ...state.training.sessions[index], ...payload };
+            reliableSyncQueue.markSynced(row.operationId);
+            reliableSyncQueue.audit("conflict-resolved", { entityId:row.entityId, choice, revision:payload.revision });
+            resolved += 1;
+          } catch (error) {
+            reliableSyncUi.lastError = cloudErrorText(error, "risoluzione conflitto");
+          }
+        }
+        reliableSyncQueue.removeSynced();
+        reliableSyncUi.lastError = "";
+        if (resolved) {
+          reliableSyncUi.lastSuccess = new Date().toISOString();
+          if (state.profile?.account) state.profile.account.lastCloudSyncAt = reliableSyncUi.lastSuccess;
+          echoLocalStateQuietly({ touch:true });
+          showToast(`${resolved} conflitt${resolved === 1 ? "o risolto" : "i risolti"}: PC e telefono ora hanno la stessa versione.`, "success");
+        }
+      } finally {
+        reliableSyncUi.resolving = false;
+        refreshReliableSyncStatus(); render();
+      }
+      if (resolved) scheduleReliableSync(300);
+      return resolved;
     }
 
     async function runReliableDiagnostics(){
@@ -6937,6 +7044,30 @@ function sanitizeForFirestore(value) {
       state.training.manualSessionCode = "";
       state.training.manualWeek = 0;
       return true;
+    }
+
+    // === v148.22 · IL GIORNO CAMBIA MENTRE L'APP È ANCORA APERTA ===
+    // La PWA non si riavvia in standby: `state.training.date` veniva scritta a
+    // "oggi" SOLO al boot. Se l'app restava viva due giorni, il campo Data
+    // mostrava ancora il 22 e il workout nasceva con la data sbagliata — Alice:
+    // "oggi ho registrato il workout D il 24 e nel Logbook esce al 22, prima di C".
+    // Qui il giorno viene riconosciuto al ritorno in primo piano (o al focus).
+    // La data si sposta a oggi SOLO se era ancora "il vecchio oggi": se Alice
+    // l'ha scelta a mano per una seduta arretrata, resta la sua.
+    function refreshTrainingDateOnDayChange() {
+      const today = todayInput();
+      const training = state.training || (state.training = {});
+      const previous = String(training.todayStamp || "");
+      const current = String(training.date || "");
+      // Il workout in corso ha la SUA data appuntata: non si tocca il contesto
+      // sotto i piedi (cambierebbe le chiavi delle bozze).
+      const running = ["active", "paused"].includes(training.activeWorkout?.status);
+      training.todayStamp = today;
+      if (running) return false;
+      if (!current) { training.date = today; return true; }
+      if (current === today) return false;
+      if (!previous || current === previous) { training.date = today; return true; }
+      return false;
     }
 
     function currentTrainingContext() {
@@ -8190,7 +8321,7 @@ function sanitizeForFirestore(value) {
     function reliableSyncPanelHtml(options = {}){
       initReliableSync();const stats=reliableSyncStats(),status=refreshReliableSyncStatus(),labels={synced:"Sincronizzato",syncing:"Sincronizzazione in corso",offline:"Offline: salvo in coda",error:"Cloud in attesa",conflict:"Conflitto da controllare",local:"Solo su questo dispositivo"},diag=reliableSyncUi.diagnostics;
       const candidates=(diag?.pairs||[]).map((pair,index)=>`<article class="duplicate-resolution-card"><div><strong>Confronto ${index+1}</strong><p>${escapeHtml(pair.left.label)}</p><small>${escapeHtml(pair.left.details||"")} · ${escapeHtml(backupDateLabel(pair.left.completedAt))}</small></div><div><p>${escapeHtml(pair.right.label)}</p><small>${escapeHtml(pair.right.details||"")} · ${escapeHtml(backupDateLabel(pair.right.completedAt))}</small></div><div class="quick-actions"><button class="ghost-button" data-duplicate-keep="${escapeHtml(pair.left.id)}" data-duplicate-remove="${escapeHtml(pair.right.id)}">Mantieni la prima</button><button class="ghost-button" data-duplicate-keep="${escapeHtml(pair.right.id)}" data-duplicate-remove="${escapeHtml(pair.left.id)}">Mantieni la seconda</button></div></article>`).join("");
-      return `<section class="card reliable-sync-card"><div class="row"><div><span class="section-eyebrow">PC + telefono</span><h3>Sincronizzazione sedute</h3></div><span class="chip">${escapeHtml(labels[status]||status)}</span></div><div class="training-context-grid"><div><strong>Ultimo successo</strong><p class="micro-copy">${reliableSyncUi.lastSuccess?escapeHtml(backupDateLabel(reliableSyncUi.lastSuccess)):"non ancora confermato"}</p></div><div><strong>In coda</strong><p class="micro-copy">${Number(stats.pending||0)+Number(stats.syncing||0)+Number(stats.failed||0)}</p></div><div><strong>Questo dispositivo</strong><p class="micro-copy">${escapeHtml(reliableDeviceId())}</p></div><div><strong>Ultimo dispositivo remoto</strong><p class="micro-copy">${escapeHtml(reliableSyncUi.remoteDevice||"nessuno")}</p></div></div>${reliableSyncUi.lastError?`<p class="sync-error">${escapeHtml(reliableSyncUi.lastError)}</p>`:""}<div class="quick-actions"><button class="gold-button" data-reliable-sync-now>Sincronizza ora</button>${options.retry?`<button type="button" data-cloud-retry-sync style="all:unset;cursor:pointer;background:var(--pink-hot,#ff5eb1);color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;text-align:center;">Riprova sincronizzazione</button>`:""}<button class="ghost-button" data-reliable-sync-check ${reliableSyncUi.loading||reliableSyncUi.resolving?"disabled":""}>${reliableSyncUi.loading?"Controllo in corso…":"Controlla e risolvi sedute"}</button></div>${diag?`<div class="training-context-grid"><div><strong>${diag.onlyLocal}</strong><p class="micro-copy">solo su questo dispositivo</p></div><div><strong>${diag.onlyCloud}</strong><p class="micro-copy">solo nel cloud</p></div><div><strong>${diag.possibleDuplicates}</strong><p class="micro-copy">confronti che richiedono la tua scelta</p></div></div>${diag.cleanedDuplicates?`<p class="sync-success">${diag.cleanedDuplicates} doppion${diag.cleanedDuplicates===1?"e identico rimosso":"i identici rimossi"} automaticamente da dispositivo e cloud.</p>`:""}${candidates?`<div class="duplicate-resolution-list"><h4>Sedute simili da confrontare</h4>${candidates}</div>`:""}${!diag.possibleDuplicates&&!diag.onlyLocal&&!diag.onlyCloud?'<p class="sync-success">Controllo completato: PC, telefono e Logbook sono allineati.</p>':""}`:""}<details><summary>Registro tecnico</summary><div class="history">${(reliableSyncQueue?.auditLog?.()||[]).slice(-6).reverse().map(row=>`<div class="history-row"><span><strong>${escapeHtml(row.event)}</strong><small>${escapeHtml(backupDateLabel(row.at))}</small></span><small>${escapeHtml(row.entityId||"")}</small></div>`).join("")||'<p class="micro-copy">Nessuna operazione registrata.</p>'}</div></details></section>`;
+      return `<section class="card reliable-sync-card"><div class="row"><div><span class="section-eyebrow">PC + telefono</span><h3>Sincronizzazione sedute</h3></div><span class="chip">${escapeHtml(labels[status]||status)}</span></div><div class="training-context-grid"><div><strong>Ultimo successo</strong><p class="micro-copy">${reliableSyncUi.lastSuccess?escapeHtml(backupDateLabel(reliableSyncUi.lastSuccess)):"non ancora confermato"}</p></div><div><strong>In coda</strong><p class="micro-copy">${Number(stats.pending||0)+Number(stats.syncing||0)+Number(stats.failed||0)+Number(stats.conflict||0)}</p></div><div><strong>Questo dispositivo</strong><p class="micro-copy">${escapeHtml(reliableDeviceId())}</p></div><div><strong>Cloud</strong><p class="micro-copy">${cloudUser ? escapeHtml(cloudUser.email || cloudUser.uid || "connesso") : "NON connesso"}</p></div><div><strong>Ultimo dispositivo remoto</strong><p class="micro-copy">${escapeHtml(reliableSyncUi.remoteDevice||"nessuno")}</p></div></div>${reliableSyncUi.blockedReason?`<p class="sync-error">${escapeHtml(reliableSyncUi.blockedReason)}</p>`:""}${reliableSyncUi.lastError?`<p class="sync-error">${escapeHtml(reliableSyncUi.lastError)}</p>`:""}${Number(stats.conflict||0)?`<div class="sync-error"><strong>${Number(stats.conflict)} sedut${Number(stats.conflict)===1?"a":"e"} modificat${Number(stats.conflict)===1?"a":"e"} sia qui sia sul cloud.</strong> Sono ferme in attesa di una scelta: senza di essa resterebbero così per sempre.</div><div class="quick-actions"><button class="gold-button" type="button" data-conflict-resolve="newest">Tieni la più recente</button><button class="ghost-button" type="button" data-conflict-resolve="local">Tieni questo dispositivo</button><button class="ghost-button" type="button" data-conflict-resolve="cloud">Tieni il cloud</button></div>`:""}<div class="quick-actions"><button class="gold-button" data-reliable-sync-now>Sincronizza ora</button>${options.retry?`<button type="button" data-cloud-retry-sync style="all:unset;cursor:pointer;background:var(--pink-hot,#ff5eb1);color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;text-align:center;">Riprova sincronizzazione</button>`:""}<button class="ghost-button" data-reliable-sync-check ${reliableSyncUi.loading||reliableSyncUi.resolving?"disabled":""}>${reliableSyncUi.loading?"Controllo in corso…":"Controlla e risolvi sedute"}</button></div>${diag?`<div class="training-context-grid"><div><strong>${diag.onlyLocal}</strong><p class="micro-copy">solo su questo dispositivo</p></div><div><strong>${diag.onlyCloud}</strong><p class="micro-copy">solo nel cloud</p></div><div><strong>${diag.possibleDuplicates}</strong><p class="micro-copy">confronti che richiedono la tua scelta</p></div></div>${diag.cleanedDuplicates?`<p class="sync-success">${diag.cleanedDuplicates} doppion${diag.cleanedDuplicates===1?"e identico rimosso":"i identici rimossi"} automaticamente da dispositivo e cloud.</p>`:""}${candidates?`<div class="duplicate-resolution-list"><h4>Sedute simili da confrontare</h4>${candidates}</div>`:""}${!diag.possibleDuplicates&&!diag.onlyLocal&&!diag.onlyCloud?'<p class="sync-success">Controllo completato: PC, telefono e Logbook sono allineati.</p>':""}`:""}<details><summary>Registro tecnico</summary><div class="history">${(reliableSyncQueue?.auditLog?.()||[]).slice(-6).reverse().map(row=>`<div class="history-row"><span><strong>${escapeHtml(row.event)}</strong><small>${escapeHtml(backupDateLabel(row.at))}</small></span><small>${escapeHtml(row.entityId||"")}</small></div>`).join("")||'<p class="micro-copy">Nessuna operazione registrata.</p>'}</div></details></section>`;
     }
 
     function cloudErrorLogCardHtml() {
@@ -15199,6 +15330,7 @@ function sanitizeForFirestore(value) {
         if (dump && navigator.clipboard?.writeText) navigator.clipboard.writeText(dump).then(() => showToast("Dettagli errore copiati: incollali nella chat."));
       });
       document.querySelector("[data-reliable-sync-check]")?.addEventListener("click", runReliableDiagnostics);
+      document.querySelectorAll("[data-conflict-resolve]").forEach((button) => button.addEventListener("click", () => { resolveReliableConflicts(button.dataset.conflictResolve || "newest"); }));
       document.querySelectorAll("[data-duplicate-keep][data-duplicate-remove]").forEach((button) => button.addEventListener("click", () => {
         resolveReliableDuplicate(button.dataset.duplicateKeep, button.dataset.duplicateRemove);
       }));
@@ -15274,18 +15406,58 @@ function sanitizeForFirestore(value) {
       });
     }
 
-    async function saveWorkoutSession() {
+    // === v148.22 · SI SALVA DAL WORKOUT, NON DAL CONTESTO RICALCOLATO ===
+    // `draftKey` è `data|scheda|esercizio`. La schermata allenamento scrive le
+    // bozze con il contesto APPUNTATO al workout (workout-flow-v147.js,
+    // pinnedContext), ma il salvataggio rileggeva con `currentTrainingContext()`:
+    // se nel frattempo cambiavano data o scheda, il salvataggio guardava in una
+    // cartella DIVERSA da quella in cui erano stati scritti kg e note. Risultato:
+    // "Inserisci almeno un carico o una nota" dopo aver compilato tutto, e
+    // "Annulla workout" come unica uscita (che è l'unica cosa che cancella davvero
+    // i dati). Ora i valori si leggono dal workout stesso, che è la sua verità.
+    function activeWorkoutLogFor(exercise) {
+      const active = state.training?.activeWorkout;
+      if (!active || !["active", "paused"].includes(active.status)) return null;
+      const norm = normalizeExerciseName(exercise?.name || "");
+      if (!norm) return null;
+      const logs = active.logs || {};
+      const direct = Object.keys(logs).find((key) => String(key).slice(String(key).indexOf(":") + 1) === norm);
+      return direct ? logs[direct] : null;
+    }
+
+    function workoutSetValuesForSave(context, exercise) {
+      const log = activeWorkoutLogFor(exercise);
+      if (log && Array.isArray(log.kg)) {
+        const fromLog = log.kg.map((value) => String(value ?? "").trim());
+        if (fromLog.some(Boolean)) {
+          // completa le serie vuote con la bozza, senza sovrascrivere il log
+          return fromLog.map((value, index) => value || String(draftSetsFor(context, exercise)[index] || "").trim());
+        }
+      }
+      return draftSetsFor(context, exercise);
+    }
+
+    function workoutNoteForSave(context, exercise) {
+      const draft = String(draftNoteFor(context, exercise) || "").trim();
+      if (draft) return draft;
+      const log = activeWorkoutLogFor(exercise);
+      return String(log?.note || log?.noteText || "").trim();
+    }
+
+    async function saveWorkoutSession(overrideContext = null) {
       const saveButton = document.getElementById("saveWorkout");
       if (saveButton) {
         saveButton.disabled = true;
         saveButton.textContent = "Salvataggio...";
         await new Promise((resolve) => requestAnimationFrame(resolve));
       }
-      const context = currentTrainingContext();
+      // v148.22 · il flusso workout passa il contesto APPUNTATO (stessa chiave
+      // con cui sono state scritte le bozze). Senza override resta il corrente.
+      const context = overrideContext || currentTrainingContext();
       const exercises = context.session.exercises
         .map((exercise) => {
-          const setValues = draftSetsFor(context, exercise).map((value) => String(value || "").trim());
-          const userNote = String(draftNoteFor(context, exercise) || "").trim();
+          const setValues = workoutSetValuesForSave(context, exercise).map((value) => String(value || "").trim());
+          const userNote = workoutNoteForSave(context, exercise);
           const numericValues = setValues
             .map((value) => number(value.replace(",", "."), null))
             .filter((value) => Number.isFinite(value));
@@ -17176,6 +17348,9 @@ function sanitizeForFirestore(value) {
         return;
       }
       scheduleCoachMascotBlink();
+      // v148.22 · sbloccando il telefono dopo la mezzanotte (o dopo due giorni)
+      // la data del contesto torna a oggi: il workout nasce con la data vera.
+      try { if (refreshTrainingDateOnDayChange()) { saveState({ cloud: false }); render(); } } catch (error) {}
       reliableForegroundSync();
       scheduleChartRedraw();
     });
@@ -17183,6 +17358,11 @@ function sanitizeForFirestore(value) {
       try { persistActiveWorkoutRescue(state); } catch (error) {} // v14747
       if (localSaveTimer) flushStateSave();
     }, { passive:true });
+    // v148.22 · su Android la PWA può essere ripristinata dalla back/forward cache
+    // senza mai passare da boot: il giorno va riconosciuto anche qui.
+    window.addEventListener("pageshow", (event) => {
+      try { if (refreshTrainingDateOnDayChange() && event.persisted) { saveState({ cloud: false }); render(); } } catch (error) {}
+    });
     // v14747 · la Page Lifecycle API puo' CONGELARE la pagina in background (freeze)
     // prima di scartarla: da quel momento nessun timer viene piu' eseguito.
     document.addEventListener("freeze", () => {

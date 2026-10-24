@@ -38,7 +38,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
   addEventListener() {}, removeEventListener() {}, matchMedia() { return { matches: true }; }, window: null, globalThis: null };
 context.window = context; context.globalThis = context;
 vm.createContext(context);
-new vm.Script(script, { filename: "v14821.js" }).runInContext(context);
+new vm.Script(script, { filename: "v14823.js" }).runInContext(context);
 
 const esito = vm.runInContext(`(() => {
   const out = {};
@@ -93,6 +93,6 @@ assert.match(mainJs, /function pendingSessionOperations\(\)/);
 assert.match(mainJs, /if \(verified\) armSessionCloudQueue\(session\); \/\/ v148\.15/);
 assert.match(mainJs, /armSessionCloudQueue\(session\); \/\/ quota piena: la copia durabile c'è, il cloud deve partire comunque/);
 assert.match(mainJs, /indexedRows\.forEach\(\(row\) => armSessionCloudQueue\(row\)\);/);
-assert.match(mainJs, /for \(const operation of pendingSessionOperations\(\)\) \{ \/\/ v148\.15/);
+assert.match(mainJs, /operations\.slice\(0, 8\)/);
 
 console.log(JSON.stringify({ ok: true, v: "v148.20", quotaPiena: esito.scritturaLocale, inCodaAlCloud: esito.inCodaAlCloud, daFare: esito.daFare }));

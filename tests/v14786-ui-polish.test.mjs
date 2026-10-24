@@ -36,8 +36,8 @@ assert.ok(!/\.card::before/.test(css), "non aggiungere .card::before generico");
 assert.ok(!/\.card::after/.test(css), "non aggiungere .card::after generico");
 
 // Versione allineata.
-assert.ok(config.includes('build: "v148.21-manuale-schede-giuste"'), "build non aggiornata");
-assert.ok(config.includes('cache: "atlas-app-v14821-manuale-schede-giuste"'), "cache non aggiornata");
-assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14821-manuale-schede-giuste"'), "CACHE_NAME non aggiornata");
+assert.ok(config.includes('build: "v148.23-conflitti-e-coda"'), "build non aggiornata");
+assert.ok(config.includes('cache: "atlas-app-v14823-conflitti-e-coda"'), "cache non aggiornata");
+assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14823-conflitti-e-coda"'), "CACHE_NAME non aggiornata");
 
-console.log(JSON.stringify({ ok: true, build: "v148.21-manuale-schede-giuste", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));
+console.log(JSON.stringify({ ok: true, build: "v148.23-conflitti-e-coda", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));
