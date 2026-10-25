@@ -535,3 +535,6 @@ Obiettivo:
 - **Tradeoff**: la TWA (`android-twa/`) torna con la barra di sistema. Accettato: senza manico l'app non si ridimensiona.
 - **Guardia**: `tests/v14827-manico-ritrovato.test.mjs`; aggiornati `manifest-flexwindow` e `v14825-schermo-esterno-fullscreen`.
 - **Lezione**: quando una leva di sistema "spegne" una funzione, la prima domanda e' *chi la dichiara* — manifest, meta o CSS — non cosa fa il codice a runtime.
+
+- **Nota suite**: `tests/dashboard-volume-estimate.test.mjs` e' ROSSO ma **preesistente**: verificato con `git worktree` sul commit `a0c625a` (v148.25), fallisce identico ("volume dashboard non disponibile"). Usa `new Date().toISOString()` e `toLocaleDateString("it-IT")`, quindi dipende dal giorno: date-rot da curare a parte, NON causato dalla v148.27 e non mascherato.
+- **Suite v148.27**: 258 test, 246 pass, 3 fail di cui 2 miei (pinnavano `background_color`) risolti ripristinando `#080817`; resta solo il date-rot preesistente (1 fail).

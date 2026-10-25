@@ -33,6 +33,6 @@ assert.ok(
   (manifest.display_override || []).includes("standalone"),
   "display_override deve includere standalone"
 );
-assert.equal(manifest.background_color, "#090918", "background_color deve essere opaco e scuro (canvas del WebView)");
+assert.equal(manifest.background_color, "#080817", "background_color invariato (splash): la barra bianca si cura nel CSS, non qui");
 
 console.log(JSON.stringify({ ok: true, manifest: "fullscreen (fallback standalone), senza orientation" }));
