@@ -1,4 +1,4 @@
-> Build documentata: v148.25-schermo-esterno
+> Build documentata: v148.26-manico-vivo
 
 # Firebase e Login — Barbell Diva
 
@@ -15,8 +15,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v148.25-schermo-esterno` |
-| `cache` | `atlas-app-v14825-schermo-esterno` |
+| `build` | `v148.26-manico-vivo` |
+| `cache` | `atlas-app-v14826-manico-vivo` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

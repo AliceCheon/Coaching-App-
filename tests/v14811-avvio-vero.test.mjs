@@ -35,7 +35,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
 context.window = context;
 context.globalThis = context;
 vm.createContext(context);
-new vm.Script(applicationScript, { filename: "v14825-avvio-vero.js" }).runInContext(context);
+new vm.Script(applicationScript, { filename: "v14826-avvio-vero.js" }).runInContext(context);
 
 const out = vm.runInContext(`(() => {
   const esito = {};

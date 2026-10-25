@@ -584,3 +584,36 @@ torna: per rientrare c'e' il pulsante. Test:
 
 **Da verificare sul dispositivo** (non verificabile in sandbox): posizione del
 pulsante sul cover screen e reazione del comando Samsung.
+
+
+## Schermo intero — il manico Samsung e il fullscreen nativo si escludono (v148.26)
+Sintomo (Alice, 25 ottobre sera, v148.25): "il tondino diventa rosa ma il
+pulsantino Samsung non compare proprio piu' sotto e non funziona".
+
+**Non e' un guasto, e' una incompatibilita' per definizione**: il fullscreen
+nativo (`requestFullscreen()`, tondino rosa) nasconde l'interfaccia di sistema,
+quindi si porta via anche il manico/la barretta di One UI del cover screen che
+serve a ridimensionare la finestra. Nella v148.24 il manico si vedeva solo
+perche' l'app non restava in fullscreen abbastanza a lungo (rientrava a ogni
+tocco: da li' il "freezato").
+
+**Scala a tre stati** (v148.26, `src/fullscreen-kiosk.js`):
+| stato | cosa fa | manico Samsung |
+| --- | --- | --- |
+| `off` | app nella finestra com'e' | vivo |
+| `fill` (**default**) | riempie il viewport via CSS, nessuna richiesta al sistema | **vivo** |
+| `native` | fullscreen vero (`requestFullscreen`) | **assente** |
+
+- Il tondino cicla `off -> fill -> native -> off`: non intrappola mai.
+- Al boot si applica solo la preferenza, **mai** il native: serve la scelta
+  esplicita col tondino (e comunque al primo gesto).
+- Uscita di sistema dal fullscreen (gesto, ridimensionamento One UI) => `fill`:
+  schermo pieno e manico vivo, la finestra non resta dimezzata.
+- Rifiuto del browser => `fill` + traccia in `diagnostics()`.
+- Preferenza `barbell-diva.fullscreen` = `off|fill|native` (migrazione: `0`->off,
+  `1`->fill). API: `enter/fill/exit/toggle/nextMode/pref/isInstalled`.
+
+**Regola da non disfare**: non si torna al "fullscreen a ogni tocco" e non si
+mette `native` come default. Se Alice vuole i ~35px del manico, tocca il tondino
+una seconda volta: e' una scelta, non un default.
+Test: `tests/v14826-manico-vivo.test.mjs`.

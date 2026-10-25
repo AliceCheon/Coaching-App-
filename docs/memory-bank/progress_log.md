@@ -515,3 +515,13 @@ Obiettivo:
 - **Suite**: 256 test, 247 pass, 0 fail, 9 skipped — VERDE (~296s).
 - **Prossimi step**: push dopo conferma di Alice; ricaricare la PWA due volte (CACHE_NAME nuovo svuota la cache); aprire `diagnostica-schermo.html` dallo stesso dispositivo e riportare `mode` + `ultimo errore`.
 - **Rischio residuo**: verifica solo statica (nessun dispositivo in sandbox). La resa del pulsante sul cover screen e la reazione del comando Samsung vanno confermate da Alice sul campo.
+
+
+## Checkpoint 44 — Il manico Samsung torna vivo: fill di default, native su scelta (v148.26)
+- **Segnalazione Alice (25 ottobre, sera)**: con la v148.25 il tondino diventa rosa (fullscreen nativo) ma il pulsantino Samsung "non compare proprio piu' sotto e non funziona".
+- **Diagnosi**: non e' un guasto. Il fullscreen nativo nasconde l'interfaccia di sistema, quindi rimuove anche il manico di One UI del cover screen. Nella v148.24 il manico si vedeva solo perche' l'app non restava in fullscreen (rientro a ogni tocco = "freezato"). Le due cose sono incompatibili per definizione: o schermo pieno senza manico, o manico vivo con ~35px di sistema.
+- **Fix v148.26 "manico-vivo"**: scala a tre stati `off -> fill -> native -> off` sul tondino, con **default `fill`** (riempimento CSS, nessuna richiesta al sistema, manico vivo). Al boot non si applica mai il native (solo la preferenza, e il native richiede la scelta esplicita + un gesto). Uscita di sistema dal fullscreen => `fill`, cosi' la finestra non resta dimezzata. Rifiuto browser => `fill` con `lastError` in `diagnostics()`. Preferenza `barbell-diva.fullscreen` = `off|fill|native` (migrazione `0`->off, `1`->fill). API estesa: `enter/fill/exit/toggle/nextMode/pref/isInstalled`.
+- **Guardia**: `tests/v14826-manico-vivo.test.mjs` (default fill, ciclo a tre stati, boot senza native, uscita di sistema => fill, rifiuto => fill, fill() non chiama requestFullscreen, migrazione).
+- **Suite**: 257 test, 248 pass, 0 fail, 9 skipped — VERDE.
+- **Compromesso dichiarato ad Alice**: in `fill` l'app riempie il visibile ma non dipinge dietro l'area del manico (~35px); in `native` guadagna quei pixel e perde il manico. Non esiste uno stato che abbia entrambi: e' One UI, non l'app.
+- **Prossimi step**: push dopo conferma; in caso di dubbio leggere `mode` e `pref` da `diagnostica-schermo.html`.

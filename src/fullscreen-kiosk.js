@@ -1,46 +1,45 @@
-/* Barbell Diva — Fullscreen / Kiosk (v148.25 "schermo-esterno")
+/* Barbell Diva — Fullscreen / Kiosk (v148.26 "manico-vivo")
    ---------------------------------------------------------------------------
    PERCHE' ESISTE
    Fino alla v148.24 il fullscreen era un `requestFullscreen()` cieco dentro
    index.html, riarmato su OGNI pointerdown/touchstart/keydown e protetto solo
    da un cancello di misura (altezza sotto 560px e larghezza sotto 760px).
 
-   Tre difetti veri, tutti visti sul campo:
-   1) SE LA RICHIESTA FALLISCE, NESSUNO LO SA. La promise veniva `.catch`-ata
-      nel vuoto: l'app restava in finestra e non c'era modo di riprovare.
-   2) IL PULSANTINO DI SISTEMA DIVENTA FREEZATO. Richiedendo il fullscreen a
-      ogni tocco, l'app rientrava in fullscreen subito dopo che One UI ne era
-      uscita (manico / "dimensione app" del cover screen): il comando di
-      sistema veniva annullato un istante dopo, quindi sembrava morto.
-   3) IL CANCELLO DI MISURA. Se One UI cambia le dimensioni della finestra
-      (aggiornamento, manico, "dimensione app"), la finestra esce dal recinto
-      560x760 e l'app non chiede PIU' il fullscreen: "non va piu' a schermo
-      intero", senza un solo messaggio.
+   v148.25 ha tolto il riarmo e aggiunto pulsante + stato + ripiego. Sul campo
+   e' emerso il conflitto vero:
 
-   COME FUNZIONA ORA
-   - Una sola richiesta automatica per caricamento (primo gesto), e solo se
-     l'app gira installata (standalone/fullscreen/minimal-ui), mai nel browser
-     normale. Nessun riarmo a ogni tocco: il comando di sistema resta sovrano.
-   - Pulsante in-app sempre visibile (`#bdFullscreenToggle`): funziona anche
-     quando il pulsantino di Samsung e' bloccato.
-   - Stato SEMPRE sincronizzato (`fullscreenchange` + prefissi vendor): se esci
-     dal fullscreen in qualunque modo, il pulsante lo sa.
-   - Se il browser rifiuta (permessi, gesture persa, TWA che ignora la
-     richiesta) l'app NON resta a meta': attiva `html.bd-fill`, la modalita'
-     "riempi schermo" via CSS, che non tocca lo stato di sistema (il manico
-     Samsung continua a funzionare).
-   - Ogni tentativo lascia traccia in `window.BarbellDivaFullscreen.diagnostics()`
-     (es. `reject:NotAllowedError ...`), leggibile anche da
-     `diagnostica-schermo.html`. Niente piu' fallimenti silenziosi.
+   FULLSCREEN NATIVO E MANICO DI SAMSUNG SI ESCLUDONO A VICENDA.
+   Con la v148.25 in fullscreen nativo (tondino rosa) il manico / la barretta
+   di One UI sul cover screen NON COMPARE PIU'. Non e' un guasto: il fullscreen
+   nativo nasconde l'interfaccia di sistema, quindi si porta via anche il
+   comando che serve a ridimensionare la finestra. Nella v148.24 il manico si
+   vedeva solo perche' l'app non restava in fullscreen abbastanza a lungo:
+   rientrava e usciva a ogni tocco ("pulsantino freezato").
 
-   API PUBBLICA — window.BarbellDivaFullscreen
-     supported() / isOn() / isNative() / isFill() / mode() / state()
-     enter() / exit() / toggle()
-     isAuto() / setAuto(bool)
+   SCALA A TRE STATI (default: fill)
+     off    -> app nella finestra com'e'
+     fill   -> l'app riempie il viewport via CSS; sistema intatto, MANICO VIVO,
+               nessuna richiesta al browser, nessun gesto necessario
+     native -> fullscreen vero: nessuna interfaccia di sistema, manico assente
+   Il tondino cicla off -> fill -> native -> off, quindi non intrappola mai.
+   Default = fill: il manico e' quello che serve per gestire la finestra.
+
+   ALTRE REGOLE
+   - Al boot non si forza MAI il fullscreen nativo: si applica la preferenza.
+   - Uscita di sistema dal fullscreen (gesto, ridimensionamento One UI) =>
+     si passa a "fill": schermo pieno, manico vivo, finestra mai dimezzata.
+   - Se il browser rifiuta il fullscreen, ripiego automatico su "fill" con
+     traccia dell'errore: niente fallimenti silenziosi.
+   - Ogni tentativo finisce in `window.BarbellDivaFullscreen.diagnostics()`.
+
+   API — window.BarbellDivaFullscreen
+     supported() / isOn() / isNative() / isFill() / mode() / pref() / state()
+     enter() / fill() / exit() / toggle() / nextMode() / isInstalled()
+     isAuto() / setAuto(bool)        (compatibilita' v148.25)
      diagnostics()
    Evento: `bd:fullscreenchange` su window, detail = state().
-   Preferenza: localStorage "barbell-diva.fullscreen" ("1" = automatico,
-   "0" = mai automatico; spegnere col pulsante scrive "0").
+   Preferenza: localStorage "barbell-diva.fullscreen" = "off" | "fill" | "native"
+   ("0" -> off, "1" -> fill, migrazione dalle versioni precedenti).
 */
 (function (root) {
   "use strict";
@@ -48,10 +47,10 @@
   var doc = root.document;
   if (!doc) return;
 
-  var VERSION = "v148.25";
+  var VERSION = "v148.26";
   var STORAGE_KEY = "barbell-diva.fullscreen";
-  var ICON_OFF = "\u2922";   /* ⤢ espandi  */
-  var ICON_ON = "\u2921";    /* ⤡ ripristina */
+  var ICON_OFF = "\u2922";   /* expand  */
+  var ICON_ON = "\u2921";    /* collapse */
 
   var html = doc.documentElement;
   var button = null;
@@ -109,7 +108,24 @@
   function isFill() { return fillOn; }
   function isOn() { return isNative() || fillOn; }
   function mode() { return isNative() ? "native" : (fillOn ? "fill" : "off"); }
-  function isAuto() { return storeGet(STORAGE_KEY) !== "0"; }
+
+  function pref() {
+    var raw = storeGet(STORAGE_KEY);
+    if (raw === "off" || raw === "fill" || raw === "native") return raw;
+    if (raw === "0") return "off";
+    if (raw === "1") return "fill";
+    return "fill";
+  }
+  function setPref(value) { storeSet(STORAGE_KEY, value); }
+
+  function nextMode() {
+    var m = mode();
+    if (m === "off") return "fill";
+    if (m === "fill") return "native";
+    return "off";
+  }
+
+  function isAuto() { return pref() !== "off"; }
 
   function state() {
     return {
@@ -118,6 +134,8 @@
       native: isNative(),
       fill: fillOn,
       mode: mode(),
+      pref: pref(),
+      next: nextMode(),
       auto: isAuto(),
       attempts: diag.attempts,
       lastReason: diag.lastReason,
@@ -133,10 +151,12 @@
     button.setAttribute("aria-pressed", isOn() ? "true" : "false");
     button.setAttribute("aria-label", isOn() ? "Esci da schermo intero" : "Schermo intero");
     button.title = isNative()
-      ? "Schermo intero attivo — tocca per uscire"
-      : (fillOn ? "Riempi schermo (senza fullscreen di sistema) — tocca per uscire" : "Schermo intero");
+      ? "Fullscreen nativo: il manico Samsung resta nascosto — tocca per uscire"
+      : (fillOn
+        ? "Riempi schermo, manico Samsung vivo — tocca per il fullscreen nativo"
+        : "Schermo intero");
     while (button.firstChild) button.removeChild(button.firstChild);
-    button.appendChild(doc.createTextNode(isOn() ? ICON_ON : ICON_OFF));
+    button.appendChild(doc.createTextNode(isNative() ? ICON_ON : ICON_OFF));
   }
 
   function emit() {
@@ -177,10 +197,21 @@
     } catch (e) { /* toast non disponibile */ }
   }
 
-  /* Sincrono per scelta: va chiamato DENTRO un gesto utente (click/pointerdown),
-     senza await prima, altrimenti il browser perde l'attivazione e rifiuta. */
+  function isInstalled() {
+    try {
+      if (root.matchMedia && (
+        root.matchMedia("(display-mode: standalone)").matches ||
+        root.matchMedia("(display-mode: fullscreen)").matches ||
+        root.matchMedia("(display-mode: minimal-ui)").matches)) return true;
+    } catch (e) { /* matchMedia assente */ }
+    return !!root.navigator.standalone;
+  }
+
+  /* Sincrono per scelta: va chiamato DENTRO un gesto utente, senza await prima,
+     altrimenti il browser perde l'attivazione e rifiuta. */
   function enter() {
     if (isNative()) { clearFill(); note("native:already"); emit(); return true; }
+    setPref("native");
 
     lastAttemptAt = Date.now();
     diag.attempts += 1;
@@ -189,7 +220,8 @@
     if (typeof fn !== "function") {
       note("unsupported");
       applyFill("unsupported");
-      hint("Questo browser non consente lo schermo intero: uso la modalita' riempi schermo.");
+      setPref("fill");
+      hint("Questo browser non consente il fullscreen: uso la modalita' riempi schermo.");
       emit();
       return false;
     }
@@ -200,6 +232,7 @@
     } catch (error) {
       note("throw", error);
       applyFill("throw");
+      setPref("fill");
       emit();
       return false;
     }
@@ -213,26 +246,42 @@
         } else {
           /* Risolta senza entrare: TWA/One UI che ignora la richiesta. */
           applyFill("silent-noop");
+          setPref("fill");
         }
         emit();
       }, function (error) {
         note("reject", error);
         applyFill("reject");
+        setPref("fill");
         emit();
       });
     } else {
       /* Motori vecchi: nessuna promise, si verifica dopo un attimo. */
       root.setTimeout(function () {
         if (nativeElement()) { clearFill(); diag.nativeOk += 1; note("native:on"); }
-        else { applyFill("silent-noop"); }
+        else { applyFill("silent-noop"); setPref("fill"); }
         emit();
       }, 320);
     }
     return true;
   }
 
+  /* "Riempi schermo": riempie il viewport via CSS e NON tocca lo stato di
+     sistema, quindi il manico di One UI resta visibile e funzionante.
+     Non richiede alcun gesto utente: si puo' applicare anche al boot. */
+  function fill() {
+    setPref("fill");
+    if (isNative()) {
+      var fn = exitFn();
+      try { if (typeof fn === "function") fn.call(doc); } catch (e) { note("fill-exit-throw", e); }
+    }
+    applyFill("manual");
+    emit();
+    return true;
+  }
+
   function exit() {
-    storeSet(STORAGE_KEY, "0");   /* l'uscita esplicita spegne anche l'automatico */
+    setPref("off");
     clearFill();
     var fn = exitFn();
     if (typeof fn !== "function" || !nativeElement()) { note("exit:fill-off"); emit(); return true; }
@@ -252,11 +301,17 @@
     return true;
   }
 
-  function toggle() { return isOn() ? exit() : enter(); }
+  /* Ciclo a tre stati: off -> fill -> native -> off. */
+  function toggle() {
+    var next = nextMode();
+    if (next === "fill") return fill();
+    if (next === "native") return enter();
+    return exit();
+  }
 
   function setAuto(enabled) {
-    storeSet(STORAGE_KEY, enabled ? "1" : "0");
-    if (!enabled && isOn()) exit();
+    if (!enabled) { setPref("off"); if (isOn()) exit(); }
+    else { setPref("fill"); }
     emit();
     return isAuto();
   }
@@ -288,11 +343,17 @@
     emit();
   }
 
-  /* --- Ascolto dello stato reale: qualunque fullscreen, anche di sistema --- */
   ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function (name) {
     doc.addEventListener(name, function () {
       diag.lastChangeAt = Date.now();
-      note(nativeElement() ? "change:native-on" : "change:native-off");
+      var stillNative = !!nativeElement();
+      note(stillNative ? "change:native-on" : "change:native-off");
+      /* Uscita NON chiesta dall'app (gesto di sistema, ridimensionamento One UI):
+         si passa a "fill". Schermo pieno, manico vivo, finestra mai dimezzata. */
+      if (!stillNative && pref() === "native") {
+        setPref("fill");
+        applyFill("system-exit");
+      }
       emit();
     });
   });
@@ -301,24 +362,26 @@
   root.addEventListener("orientationchange", paint);
   root.addEventListener("pageshow", paint);
 
-  /* --- Un solo tentativo automatico, per caricamento --- */
   function autoAllowed() {
     if (!isAuto()) return false;
     try {
       /* Nel browser normale il fullscreen sarebbe invadente: mai automatico. */
       if (root.matchMedia && root.matchMedia("(display-mode: browser)").matches) return false;
     } catch (e) { /* matchMedia assente */ }
-    try {
-      if (root.matchMedia && (
-        root.matchMedia("(display-mode: standalone)").matches ||
-        root.matchMedia("(display-mode: fullscreen)").matches ||
-        root.matchMedia("(display-mode: minimal-ui)").matches)) return true;
-    } catch (e) { /* matchMedia assente */ }
-    return !!root.navigator.standalone;
+    return isInstalled();
+  }
+
+  /* Al boot non si forza MAI il fullscreen nativo: si applica la modalita'
+     scelta. Con la preferenza "fill" (default) l'app riempie lo schermo via CSS
+     e il manico di One UI resta vivo. */
+  function applyBootMode() {
+    if (!isInstalled()) return;
+    if (pref() === "fill") applyFill("boot");
   }
 
   function armAuto() {
     if (typeof requestFn() !== "function" || !autoAllowed()) return;
+    if (pref() !== "native") return;
     var fired = false;
     var once = function () {
       if (fired) return;
@@ -337,9 +400,10 @@
   }
 
   if (doc.readyState === "loading") {
-    doc.addEventListener("DOMContentLoaded", function () { boot(); armAuto(); });
+    doc.addEventListener("DOMContentLoaded", function () { boot(); applyBootMode(); armAuto(); });
   } else {
     boot();
+    applyBootMode();
     armAuto();
   }
 
@@ -351,16 +415,22 @@
     isNative: isNative,
     isFill: isFill,
     mode: mode,
+    pref: pref,
+    nextMode: nextMode,
+    isInstalled: isInstalled,
     state: state,
     isAuto: isAuto,
     setAuto: setAuto,
     enter: enter,
+    fill: fill,
     exit: exit,
     toggle: toggle,
     diagnostics: function () {
       return {
         version: VERSION,
         state: state(),
+        pref: pref(),
+        nextMode: nextMode(),
         lastAttemptAt: lastAttemptAt,
         nativeSupported: supported(),
         displayModes: (function () {
