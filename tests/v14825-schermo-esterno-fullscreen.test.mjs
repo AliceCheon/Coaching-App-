@@ -63,6 +63,6 @@ assert.match(kiosk, /bd:fullscreenchange/, "kiosk: manca l'evento pubblico bd:fu
 
 // 6) Il manifest resta "fullscreen": e' la leva v147.84 che nasconde la barra
 //    di sistema della TWA. Nessuna regressione silenziosa su quel fronte.
-assert.equal(manifest.display, "fullscreen", "manifest: display non deve tornare standalone (barra di sistema TWA)");
+assert.equal(manifest.display, "standalone", "manifest: con display fullscreen One UI 9 nasconde il manico del cover screen (v148.27)");
 
 console.log(JSON.stringify({ ok: true, fullscreen: "v148.25 schermo-esterno" }));

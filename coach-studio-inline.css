@@ -5300,3 +5300,30 @@ html[data-theme="light"] .bd-fs-toggle[data-state="native"] { background: #ff72c
 html.bd-fill, html.bd-fill body { min-height: 100dvh; }
 html.bd-fill .stage { min-height: 100dvh; }
 html.bd-fill .phone-shell { min-height: 100dvh; }
+
+/* === v148.27 · La barra bianca sotto il manico del cover screen ============
+   Con `display: "fullscreen"` nel manifest (v147.84, per nascondere la barra
+   della TWA) One UI 9 tiene l'app in modalita' fullscreen di SISTEMA: il
+   layout viewport resta piu' basso dello schermo fisico e l'area del manico
+   finisce sul canvas del WebView, che e' BIANCO. Non e' un elemento della
+   pagina: nessun `background` del body puo' arrivarci se il root non copre.
+   `100lvh` (large viewport) include proprio l'area che il sistema riserva:
+   dipingendola, la fascia prende il colore del tema. Vale anche in "riempi
+   schermo", dove il fullscreen di sistema non c'e' ma la geometria e' la
+   stessa. Il colore viene PRIMA dei gradienti solo come fondo opaco: la
+   grafica non cambia, cambia cio' che si vede dove prima era bianco. */
+html {
+  min-height: 100lvh;
+  background-color: #090918;
+}
+html[data-theme="light"] {
+  min-height: 100lvh;
+  background-color: #fff7fb;
+}
+body { background-color: #090918; }
+html[data-theme="light"] body { background-color: #fff7fb; }
+html.bd-fill { min-height: 100lvh; background-color: #090918; }
+html.bd-fill[data-theme="light"] { background-color: #fff7fb; }
+html.bd-fill body,
+html.bd-fill .stage,
+html.bd-fill .phone-shell { min-height: 100lvh; }

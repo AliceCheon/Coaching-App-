@@ -525,3 +525,13 @@ Obiettivo:
 - **Suite**: 257 test, 248 pass, 0 fail, 9 skipped — VERDE.
 - **Compromesso dichiarato ad Alice**: in `fill` l'app riempie il visibile ma non dipinge dietro l'area del manico (~35px); in `native` guadagna quei pixel e perde il manico. Non esiste uno stato che abbia entrambi: e' One UI, non l'app.
 - **Prossimi step**: push dopo conferma; in caso di dubbio leggere `mode` e `pref` da `diagnostica-schermo.html`.
+
+
+## Checkpoint 45 — Il manico era il manifest, non il codice (v148.27)
+- **Segnalazione Alice (26 ottobre, One UI 9.0)**: "non mi esce il pulsantino samsung quando apro l'app, la barra e' completamente bianca e non ho modo di cambiare modalita'. Prima dell'aggiornamento a One UI 9.0 non c'era".
+- **Causa vera**: `"display": "fullscreen"` nel manifest (v147.84, per nascondere la barra della TWA). MDN: la modalita' `fullscreen` del manifest e' **separata** dalla Fullscreen API, quindi `document.fullscreenElement` resta `null`: il tondino riportava "fill", ma il sistema era in fullscreen di modo applicativo. One UI 9 — che ha rinnovato il cover screen con home screen, app drawer e recenti — lo applica alla lettera: il manico e' UI di sistema e sparisce. Nessun `exitFullscreen()` poteva rimediare.
+- **Barra bianca**: in fullscreen di sistema il layout viewport e' piu' basso dello schermo fisico; l'area del manico cade sul canvas del WebView (bianco). Il background del body non ci arriva se il root non copre.
+- **Fix v148.27 "manico-ritrovato"**: manifest `standalone` + `display_override: ["standalone","minimal-ui"]`, niente fullscreen, `background_color` opaco; CSS `min-height: 100lvh` su html/body/bd-fill con fondo opaco per tema. Il tondino resta come scelta (default `fill`).
+- **Tradeoff**: la TWA (`android-twa/`) torna con la barra di sistema. Accettato: senza manico l'app non si ridimensiona.
+- **Guardia**: `tests/v14827-manico-ritrovato.test.mjs`; aggiornati `manifest-flexwindow` e `v14825-schermo-esterno-fullscreen`.
+- **Lezione**: quando una leva di sistema "spegne" una funzione, la prima domanda e' *chi la dichiara* — manifest, meta o CSS — non cosa fa il codice a runtime.

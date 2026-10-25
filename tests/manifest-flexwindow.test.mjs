@@ -7,26 +7,32 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.webmanifest"), "utf8"));
 
 // FlexWindow (cover screen del Galaxy Z Flip) — storia:
-//  - v147.81: `orientation: portrait` + `fullscreen` nel manifest confinavano la
-//    PWA nell'area sopra la fotocamera, lasciando una fascia chiara.
-//  - v147.62/147.83: rimosso `fullscreen` dal manifest, risolto con
-//    `requestFullscreen()` + canvas a tema.
-//  - v147.84: installata come app Android (TWA), la striscetta in basso ERA la
-//    barra di navigazione di sistema: la TWA resta in `standalone` (barra
-//    visibile) finche' il manifest non chiede `fullscreen`. Le app native non
-//    hanno la barra perche' vanno a tutto schermo. Ora il manifest chiede
-//    `fullscreen` (con fallback `standalone`), cosi' la TWA nasconde la barra.
-//    Il cutout e' gestito (SHORT_EDGES sul tema Android della TWA e
-//    `requestFullscreen()` nella PWA), quindi niente fascia.
+//  - v147.81: `orientation: portrait` + `fullscreen` confinavano la PWA
+//    nell'area sopra la fotocamera, lasciando una fascia chiara.
+//  - v147.62/147.83: rimosso `fullscreen`, risolto con requestFullscreen().
+//  - v147.84: `fullscreen` era tornato per nascondere la barra di sistema
+//    della TWA.
+//  - v148.27: **ritirato definitivamente**. One UI 9 ha rinnovato il cover
+//    screen (home screen, app drawer, recenti): il manico/la barretta di
+//    sistema e' diventato parte dell'interfaccia. Con `display: fullscreen`
+//    One UI tiene l'app in fullscreen di SISTEMA, il manico NON compare piu'
+//    e la striscia sotto resta il canvas bianco del WebView. Il fullscreen
+//    del manifest e la Fullscreen API sono cose separate (MDN): nessun
+//    `exitFullscreen()` poteva rimediare. Ora `standalone` + `minimal-ui`.
 assert.equal(manifest.orientation, undefined, "il manifest non deve forzare orientation");
-assert.equal(manifest.display, "fullscreen", "display deve essere fullscreen (TWA a tutto schermo, niente barra di sistema)");
+assert.equal(
+  manifest.display,
+  "standalone",
+  "display deve essere standalone: con fullscreen One UI 9 nasconde il manico del cover screen"
+);
 assert.ok(
-  (manifest.display_override || []).includes("fullscreen"),
-  "display_override deve includere fullscreen"
+  !(manifest.display_override || []).includes("fullscreen"),
+  "display_override non deve contenere fullscreen (fullscreen di sistema = manico assente)"
 );
 assert.ok(
   (manifest.display_override || []).includes("standalone"),
-  "display_override deve mantenere standalone come fallback"
+  "display_override deve includere standalone"
 );
+assert.equal(manifest.background_color, "#090918", "background_color deve essere opaco e scuro (canvas del WebView)");
 
 console.log(JSON.stringify({ ok: true, manifest: "fullscreen (fallback standalone), senza orientation" }));

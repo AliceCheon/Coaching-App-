@@ -617,3 +617,38 @@ tocco: da li' il "freezato").
 mette `native` come default. Se Alice vuole i ~35px del manico, tocca il tondino
 una seconda volta: e' una scelta, non un default.
 Test: `tests/v14826-manico-vivo.test.mjs`.
+
+
+## Il manico Samsung non c'era piu': colpa del manifest (v148.27)
+Sintomo (Alice, 26 ottobre, One UI 9.0): "non mi esce il pulsantino samsung
+quando apro l'app, la barra e' completamente bianca, non ho modo di cambiare
+modalita'. Prima dell'aggiornamento a One UI 9.0 non c'era".
+
+**Causa**: `"display": "fullscreen"` nel manifest (messo in v147.84 per
+nascondere la barra di sistema della TWA). MDN: `fullscreen` apre l'app con la
+UI del browser nascosta e usa tutta l'area disponibile; **e' separato dalla
+Fullscreen API** (`document.fullscreenElement` resta `null`). One UI 9, che ha
+rinnovato il cover screen con home screen, app drawer e recenti (SamMobile), lo
+applica alla lettera: **il manico e' interfaccia di sistema e sparisce**. Non
+era un fullscreen da cui "uscire": era la modalita' con cui il sistema lancia
+l'app, quindi nessun `exitFullscreen()` poteva rimediare — il tondino diceva
+"fill" mentre il sistema era in fullscreen.
+
+**La barra bianca**: in fullscreen di sistema il layout viewport resta piu'
+basso dello schermo fisico e l'area del manico finisce sul canvas del WebView,
+che e' bianco. Nessun `background` del body ci arriva se il root non copre.
+
+Fix:
+- manifest `display: "standalone"`, `display_override: ["standalone",
+  "minimal-ui"]`, **niente fullscreen**; `background_color` opaco `#090918`.
+- CSS: `min-height: 100lvh` su `html` (+ `[data-theme=light]`, `body`, e le
+  regole `bd-fill`) e fondo opaco anche sul body: `100lvh` include proprio
+  l'area che il sistema riserva, quindi la fascia prende il colore del tema.
+- Il tondino resta come **scelta**: `fill` di default, `native` solo su tocco.
+
+**Tradeoff dichiarato**: chi usa la TWA (APK in `android-twa/`) avra' la barra
+di sistema visibile, perche' non c'e' piu' il fullscreen del manifest. Il manico
+del cover screen vale di piu': senza manico l'app non si ridimensiona e non si
+puo' cambiare modalita'. Non rimettere `fullscreen` nel manifest.
+Test: `tests/v14827-manico-ritrovato.test.mjs`, aggiornato
+`tests/manifest-flexwindow.test.mjs` e `tests/v14825-schermo-esterno-fullscreen`.
