@@ -24,9 +24,6 @@ assert.match(main, /document\.documentElement\.dataset\.theme = state\.profile\.
 // Fullscreen solo su finestra cover screen stretta/bassa (FlexWindow).
 // v147.83: NON si usa piu' `display-mode: standalone` come cancello (si
 // auto-disattivava entrando in fullscreen); si esclude solo il browser normale.
-assert.match(html, /display-mode: browser/, "il requestFullscreen non esclude il browser normale");
-assert.match(html, /innerHeight <= 560/, "manca il limite di altezza del cover screen");
-assert.match(html, /innerWidth <= 760/, "manca il limite di larghezza del cover screen");
-assert.match(html, /requestFullscreen/, "manca requestFullscreen per il cutout");
+assert.match(html, /src\/fullscreen-kiosk\.js/, "index.html non carica src/fullscreen-kiosk.js (fullscreen v148.25)");
 
 console.log(JSON.stringify({ ok: true, theme: "canvas a tema + pre-paint + fullscreen cover-screen" }));

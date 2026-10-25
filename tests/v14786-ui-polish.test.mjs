@@ -36,8 +36,8 @@ assert.ok(!/\.card::before/.test(css), "non aggiungere .card::before generico");
 assert.ok(!/\.card::after/.test(css), "non aggiungere .card::after generico");
 
 // Versione allineata.
-assert.ok(config.includes('build: "v148.24-coda-che-non-torna"'), "build non aggiornata");
-assert.ok(config.includes('cache: "atlas-app-v14824-coda-che-non-torna"'), "cache non aggiornata");
-assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14824-coda-che-non-torna"'), "CACHE_NAME non aggiornata");
+assert.ok(config.includes('build: "v148.25-schermo-esterno"'), "build non aggiornata");
+assert.ok(config.includes('cache: "atlas-app-v14825-schermo-esterno"'), "cache non aggiornata");
+assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14825-schermo-esterno"'), "CACHE_NAME non aggiornata");
 
-console.log(JSON.stringify({ ok: true, build: "v148.24-coda-che-non-torna", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));
+console.log(JSON.stringify({ ok: true, build: "v148.25-schermo-esterno", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));

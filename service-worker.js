@@ -8,7 +8,7 @@
    - Match con ignoreSearch: resiste ai bump di versione (?v=...) e ai doppioni in cache
    - Cache key normalizzate per pathname (niente duplicati per ogni ?v=)
 */
-const CACHE_NAME = "atlas-app-v14824-coda-che-non-torna";
+const CACHE_NAME = "atlas-app-v14825-schermo-esterno";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -28,6 +28,7 @@ const APP_SHELL = [
   "./diva-dashboard.css",
   "./src/utils-global.js",
   "./src/firebase-app-check.js",
+  "./src/fullscreen-kiosk.js",
   "./src/app-main.js",
   "./src/app-integration.js",
   "./src/pr-celebrations.js",

@@ -20,98 +20,51 @@
       document.documentElement.dataset.theme = theme;
     })();
   </script>
-  <link rel="manifest" href="manifest.webmanifest?v=v14824">
+  <link rel="manifest" href="manifest.webmanifest?v=v14825">
   <link rel="icon" href="app-icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <!-- Preload critical font for faster text rendering -->
   <link rel="preload" href="atlas-nunito-sans.ttf" as="font" type="font/ttf" crossorigin="crossorigin" fetchpriority="high">
-  <link rel="stylesheet" href="coach-studio.css?v=v14824">
-  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v14824">
-  <link rel="stylesheet" href="coach-tools-v1451.css?v=v14824">
-  <link rel="stylesheet" href="unified-sidebar-v1452.css?v=v14824">
-  <link rel="stylesheet" href="coach-schede-restyle-v146.css?v=v14824">
-  <link rel="stylesheet" href="workout-flow-v147.css?v=v14824">
-  <script src="src/utils-global.js?v=v14824"></script>
-  <script src="src/pr-celebrations.js?v=v14824"></script>
-  <script src="src/consistency-heatmap.js?v=v14824"></script>
-  <script src="src/progress-charts.js?v=v14824"></script>
-  <script src="src/quick-log.js?v=v14824"></script>
-  <script src="src/ui-enhancements.js?v=v14824"></script>
-    <script src="src/diva-personality.js?v=v14824"></script>
-    <script src="src/diva-bot-sounds.js?v=v14824"></script>
-  <script src="src/goals-stats.js?v=v14824"></script>
-  <script src="src/notifications.js?v=v14824"></script>
-  <script src="src/app-integration.js?v=v14824"></script>
-  <script src="exercise-library-19.8.js?v=v14824"></script>
-  <script src="master-exercise-library.js?v=v14824"></script>
-  <script src="athlete-context.js?v=v14824"></script>
-  <script src="coach-ai-engine-2.js?v=v14824"></script>
-  <script src="knowledge-graph.js?v=v14824"></script>
-  <script src="decision-rules.js?v=v14824"></script>
-  <script src="decision-engine.js?v=v14824"></script>
-  <script src="coach-ai3-programming.js?v=v14824"></script>
-  <script type="module" src="programming-engine.js?v=v14824"></script>
-  <script type="module" src="sync-reliability.js?v=v14824"></script>
-  <script src="app-config-v144.js?v=v14824"></script>
-  <script src="plate-calculator.js?v=v14824"></script>
-  <script src="coach-studio.js?v=v14824"></script>
-  <script defer src="coach-schede-v146-enhance.js?v=v14824"></script>
-  <script defer src="workout-flow-v147.js?v=v14824"></script>
+  <link rel="stylesheet" href="coach-studio.css?v=v14825">
+  <link rel="stylesheet" href="coach-program-editor-19.8.css?v=v14825">
+  <link rel="stylesheet" href="coach-tools-v1451.css?v=v14825">
+  <link rel="stylesheet" href="unified-sidebar-v1452.css?v=v14825">
+  <link rel="stylesheet" href="coach-schede-restyle-v146.css?v=v14825">
+  <link rel="stylesheet" href="workout-flow-v147.css?v=v14825">
+  <script src="src/utils-global.js?v=v14825"></script>
+  <script src="src/pr-celebrations.js?v=v14825"></script>
+  <script src="src/consistency-heatmap.js?v=v14825"></script>
+  <script src="src/progress-charts.js?v=v14825"></script>
+  <script src="src/quick-log.js?v=v14825"></script>
+  <script src="src/ui-enhancements.js?v=v14825"></script>
+    <script src="src/diva-personality.js?v=v14825"></script>
+    <script src="src/diva-bot-sounds.js?v=v14825"></script>
+  <script src="src/goals-stats.js?v=v14825"></script>
+  <script src="src/notifications.js?v=v14825"></script>
+  <script src="src/app-integration.js?v=v14825"></script>
+  <script src="exercise-library-19.8.js?v=v14825"></script>
+  <script src="master-exercise-library.js?v=v14825"></script>
+  <script src="athlete-context.js?v=v14825"></script>
+  <script src="coach-ai-engine-2.js?v=v14825"></script>
+  <script src="knowledge-graph.js?v=v14825"></script>
+  <script src="decision-rules.js?v=v14825"></script>
+  <script src="decision-engine.js?v=v14825"></script>
+  <script src="coach-ai3-programming.js?v=v14825"></script>
+  <script type="module" src="programming-engine.js?v=v14825"></script>
+  <script type="module" src="sync-reliability.js?v=v14825"></script>
+  <script src="app-config-v144.js?v=v14825"></script>
+  <script src="plate-calculator.js?v=v14825"></script>
+  <script src="coach-studio.js?v=v14825"></script>
+  <script defer src="coach-schede-v146-enhance.js?v=v14825"></script>
+  <script defer src="workout-flow-v147.js?v=v14825"></script>
   <title>Barbell diva</title>
-  <link rel="stylesheet" href="coach-studio-inline.css?v=v14824">
-  <link rel="stylesheet" href="diva-dashboard.css?v=v14824">
-  <script>
-    // Cover screen (FlexWindow Z Flip) — v147.84
-    // Il "standalone" del manifest NON sblocca il cutout fotocamere: in basso,
-    // dove stanno obiettivi e flash, la finestra non dipinge quell'area e resta
-    // una fascia chiara. requestFullscreen() invece la sblocca (cutout mode
-    // SHORT_EDGES). Il tasto "dimensione app" di Samsung puo' ridimensionare la
-    // finestra e far USCIRE dal fullscreen: la fascia chiara ritorna. Percio'
-    // il fullscreen va (ri)richiesto a OGNI gesto, non una sola volta.
-    //
-    // v147.84 — BUG: la vecchia guardia `(display-mode: standalone)` si
-    // auto-disattivava. Appena entri in fullscreen, display-mode diventa
-    // "fullscreen" e `(display-mode: standalone)` torna FALSO → ogni gesto
-    // successivo usciva dalla funzione e non rientrava mai piu': la fascia
-    // restava "immobile" per sempre. Ora NON si usa piu' display-mode come
-    // cancello: si controlla solo che sia una finestra cover-screen (stretta e
-    // bassa) e che NON sia il browser normale (dove il fullscreen sarebbe
-    // invadente), con guardia sulla dimensione fisica per non scattare su
-    // desktop/telefono aperto.
-    (function () {
-      var isCoverWindow = function () {
-        try {
-          return window.innerHeight <= 560 && window.innerWidth <= 760;
-        } catch (error) { return false; }
-      };
-      var isBrowser = function () {
-        try {
-          return window.matchMedia && window.matchMedia("(display-mode: browser)").matches;
-        } catch (error) { return false; }
-      };
-      if (!isCoverWindow() || isBrowser()) return;
-      var go = function () {
-        try {
-          if (!isCoverWindow() || isBrowser()) return;
-          if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
-            var pending = document.documentElement.requestFullscreen();
-            if (pending && pending.catch) pending.catch(function () {});
-          }
-        } catch (error) {}
-      };
-      var retry = null;
-      var schedule = function () {
-        if (retry) clearTimeout(retry);
-        retry = setTimeout(go, 60);
-      };
-      window.addEventListener("pointerdown", go, { passive: true });
-      window.addEventListener("keydown", go);
-      window.addEventListener("touchstart", go, { passive: true });
-      window.addEventListener("pageshow", schedule);
-      window.addEventListener("resize", schedule);
-      document.addEventListener("visibilitychange", function () { if (!document.hidden) schedule(); });
-    })();
-  </script>
+  <link rel="stylesheet" href="coach-studio-inline.css?v=v14825">
+  <link rel="stylesheet" href="diva-dashboard.css?v=v14825">
+  <!-- Fullscreen — v148.25: vive in src/fullscreen-kiosk.js.
+       Non si richiede piu' il fullscreen a ogni tocco (freezava il comando
+       di sistema) e non c'e' piu' il cancello di misura 560x760: una sola
+       richiesta automatica per caricamento, pulsante in-app sempre attivo,
+       stato sincronizzato e ripiego CSS "riempi schermo". -->
 </head>
 <body>
   <div id="premiumSplash" class="premium-splash" role="status" aria-live="polite"><div class="premium-splash-card"><div class="premium-monogram" aria-hidden="true">BD</div><h2>BARBELL DIVA</h2><p>Lift. Slay. Repeat.</p><small>Loading your empire…</small><div class="premium-loader" aria-hidden="true"></div></div></div>
@@ -223,8 +176,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-check-compat.js"></script>
-  <script src="src/firebase-app-check.js?v=v14824"></script>
-  <script src="src/app-main.js?v=v14824"></script>
-  <script defer src="keep-awake-v14742.js?v=v14824"></script>
+  <script src="src/firebase-app-check.js?v=v14825"></script>
+  <script src="src/app-main.js?v=v14825"></script>
+  <script src="src/fullscreen-kiosk.js?v=v14825"></script>
+  <script defer src="keep-awake-v14742.js?v=v14825"></script>
 </body>
 </html>

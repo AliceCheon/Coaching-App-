@@ -505,3 +505,13 @@ Obiettivo:
   - `version-single-source` — il bump script aggiorna il TOKEN numerico (`v14820`→`v14821`) ma lascia il SUFFISSO vecchio nel `CACHE_NAME` di `service-worker.js` e nei test che pinnano la cache (`atlas-app-v14821-matitina-muscolo`). Corretti a mano `service-worker.js`, `FIREBASE-LOGIN.md` e i test pinnanti. DA FARE: insegnare al bump script la sostituzione del suffisso anche nel CACHE_NAME.
 - **Suite**: 252 test, 243 pass, 0 fail, 9 skipped — VERDE.
 - **Prossimi step consigliati**: (1) push dopo conferma di Alice; (2) il telefono deve ricaricare la PWA (nuovo CACHE_NAME scarica subito la build nuova); (3) estendere `bump_version.sh` al suffisso del CACHE_NAME.
+
+
+## Checkpoint 43 — Schermo intero: pulsante in-app, niente fullscreen a ogni tocco (v148.25)
+- **Segnalazione Alice (25 ottobre 2026)**: "dopo l'aggiornamento l'app non si mette piu' a schermo intero sullo schermo esterno dello Z Flip 7 e il pulsantino e' freezato".
+- **Causa**: il fullscreen era un `requestFullscreen()` cieco in `index.html`, riarmato su OGNI tocco e protetto solo da un cancello di misura (altezza <= 560, larghezza <= 760). Conseguenze: (a) l'app rientrava in fullscreen subito dopo l'uscita di One UI, annullando il comando di sistema; (b) appena la finestra cambiava formato non chiedeva piu' il fullscreen, in silenzio; (c) promise rifiutata senza traccia, quindi nessun ripiego.
+- **Fix v148.25**: modulo `src/fullscreen-kiosk.js` con una sola richiesta automatica per caricamento (primo gesto, solo app installata, mai browser normale), pulsante in-app `#bdFullscreenToggle` sempre visibile, stato sincronizzato su `fullscreenchange`/`webkitfullscreenchange`, ripiego CSS `html.bd-fill` se il fullscreen viene rifiutato, diagnostica `window.BarbellDivaFullscreen.diagnostics()`. `diagnostica-schermo.html` ora legge il modulo. Manifest invariato (`display: fullscreen`, leva TWA v147.84).
+- **Guardia**: `tests/v14825-schermo-esterno-fullscreen.test.mjs`; aggiornati `tests/v14783-cover-screen-fullscreen.test.mjs` e `tests/theme-canvas-flexwindow.test.mjs` al nuovo contratto (il fullscreen non e' piu' inline).
+- **Suite**: 256 test, 247 pass, 0 fail, 9 skipped — VERDE (~296s).
+- **Prossimi step**: push dopo conferma di Alice; ricaricare la PWA due volte (CACHE_NAME nuovo svuota la cache); aprire `diagnostica-schermo.html` dallo stesso dispositivo e riportare `mode` + `ultimo errore`.
+- **Rischio residuo**: verifica solo statica (nessun dispositivo in sandbox). La resa del pulsante sul cover screen e la reazione del comando Samsung vanno confermate da Alice sul campo.

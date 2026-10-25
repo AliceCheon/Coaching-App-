@@ -58,6 +58,7 @@
     </div>
   </div>
 
+<script src="src/fullscreen-kiosk.js?v=v14824"></script>
 <script>
   var probe = document.createElement("div");
   probe.style.cssText =
@@ -83,6 +84,14 @@
     return "nessuna";
   }
 
+  function kiosk(){ try { return window.BarbellDivaFullscreen || null; } catch (e) { return null; } }
+  function kioskMode(){ var k = kiosk(); return k ? k.mode() : "modulo assente"; }
+  function kioskError(){
+    var k = kiosk(); if (!k) return "n/d";
+    var st = k.state();
+    return st.lastError ? (st.lastError.name + " — " + st.lastError.message) : "nessuno";
+  }
+
   function snapshot(){
     var vv = window.visualViewport, sa = safeArea(), de = document.documentElement;
     var L = [
@@ -102,6 +111,12 @@
       "fullscreenElement : " + (document.fullscreenElement ? document.fullscreenElement.tagName : "nessuno"),
       "requestFullscreen : " + (!!de.requestFullscreen),
       "",
+      "",
+      "--- KIOSK v148.25 ---",
+      "mode              : " + kioskMode(),
+      "ultimo errore     : " + kioskError(),
+      "tentativi         : " + (kiosk() ? kiosk().state().attempts : "n/d"),
+      "",
       "UA: " + navigator.userAgent
     ];
     document.getElementById("out").textContent = L.join("\n");
@@ -112,10 +127,10 @@
   }
 
   document.getElementById("fs").addEventListener("click", function(){
-    try {
-      var p = document.documentElement.requestFullscreen();
-      if (p && p.catch) p.catch(function(e){ alert("Fullscreen RIFIUTATO: " + (e && e.message ? e.message : e)); });
-    } catch (e) { alert("Errore fullscreen: " + e.message); }
+    var k = kiosk();
+    if (!k) { alert("Modulo fullscreen v148.25 assente: la pagina non ha caricato src/fullscreen-kiosk.js"); return; }
+    k.enter();
+    setTimeout(snapshot, 500);
   });
   document.getElementById("exit").addEventListener("click", function(){
     try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen(); } catch(e){}

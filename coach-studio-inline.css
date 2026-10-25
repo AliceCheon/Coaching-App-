@@ -5255,3 +5255,48 @@ html[data-theme="light"] .journal-rpe { background: #fff; color: #2b2233; }
     .vc-cell em { display:block; height:6px; border-radius:4px; background:var(--c,var(--pink-primary)); width:var(--w,0%); min-width:3px; opacity:.85; }
     .vc-cell b { font-size:.72rem; color:var(--text-primary); }
     @media (min-width:760px) { .volume-charts { grid-template-columns:1fr 1fr; } }
+
+/* === v148.25 — Pulsante schermo intero + modalita' "riempi schermo" =========
+   Il pulsante e' l'unico comando affidabile quando il pulsantino di sistema
+   (One UI / cover screen) resta freezato. E' fuori dal flusso e sul bordo
+   destro: non sposta header, tab o bottom-nav, quindi il layout FlexWindow
+   (400x365) non cambia di un pixel. */
+.bd-fs-toggle {
+  position: fixed;
+  right: 6px;
+  right: max(6px, env(safe-area-inset-right, 0px));
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 9400;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  background: rgba(12, 10, 30, .74);
+  color: #efe7ff;
+  font-size: 15px;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  backdrop-filter: blur(8px);
+  opacity: .82;
+}
+.bd-fs-toggle[data-state="native"] { background: #ff72c2; border-color: #ff9ad2; color: #1a0b2a; opacity: 1; }
+.bd-fs-toggle[data-state="fill"] { background: #8b6cf0; border-color: #b9a3ff; color: #120a24; opacity: 1; }
+.bd-fs-toggle:active { opacity: 1; }
+html[data-theme="light"] .bd-fs-toggle { background: rgba(255, 255, 255, .82); color: #2a1d4d; border-color: rgba(42, 29, 77, .25); }
+html[data-theme="light"] .bd-fs-toggle[data-state="native"] { background: #ff72c2; color: #1a0b2a; }
+@media (max-width: 420px) and (max-height: 430px) {
+  .bd-fs-toggle { width: 30px; height: 30px; min-width: 30px; font-size: 13px; right: 4px; }
+}
+
+/* Modalita' riempi schermo (v148.25): adatta l'app al viewport visibile SENZA
+   toccare il fullscreen di sistema, usata quando requestFullscreen viene
+   rifiutata. Cosi' l'app riempie lo schermo e il manico di One UI resta vivo. */
+html.bd-fill, html.bd-fill body { min-height: 100dvh; }
+html.bd-fill .stage { min-height: 100dvh; }
+html.bd-fill .phone-shell { min-height: 100dvh; }

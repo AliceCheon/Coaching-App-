@@ -8,6 +8,7 @@ const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
 const html = read("index.html");
 const inlineCss = read("coach-studio-inline.css");
 const studioCss = read("coach-studio.css");
+const kiosk = read("src/fullscreen-kiosk.js");
 
 // v147.83 — La fascia in basso sul cover screen (FlexWindow Z Flip) restava
 // "immobile" per sempre. Tre cause indipendenti, tutte bloccate qui:
@@ -29,10 +30,19 @@ assert.ok(
   !/matchMedia\(\s*["']\(display-mode:\s*standalone\)["']\s*\)/.test(html),
   "index.html: il gate fullscreen usa ancora matchMedia(display-mode: standalone) (si auto-disattiva)"
 );
-assert.match(html, /matchMedia\(\s*["']\(display-mode:\s*browser\)["']\s*\)/, "index.html: manca l'esclusione del browser normale");
-assert.match(html, /innerHeight <= 560/, "index.html: manca il limite di altezza cover screen");
-assert.match(html, /innerWidth <= 760/, "index.html: manca il limite di larghezza cover screen");
-assert.match(html, /requestFullscreen/, "index.html: manca requestFullscreen per il cutout");
+//    v148.25 — il fullscreen NON e' piu' inline: vive in src/fullscreen-kiosk.js.
+//    Qui si sorveglia che il modulo sia agganciato e che il vecchio riarmo a
+//    ogni tocco (che freezava il comando di sistema) non torni mai.
+assert.match(html, /src\/fullscreen-kiosk\.js/, "index.html: manca il modulo fullscreen v148.25");
+assert.ok(
+  !/window\.addEventListener\(\s*["']pointerdown["']\s*,\s*go/.test(html),
+  "index.html: e' tornato il riarmo del fullscreen a ogni tocco"
+);
+assert.match(kiosk, /requestFullscreen/, "kiosk: manca requestFullscreen");
+assert.match(kiosk, /webkitRequestFullscreen/, "kiosk: manca il prefisso webkit");
+assert.match(kiosk, /fullscreenchange/, "kiosk: stato del pulsante non sincronizzato (manca fullscreenchange)");
+assert.match(kiosk, /webkitfullscreenchange/, "kiosk: manca fullscreenchange con prefisso webkit");
+assert.match(kiosk, /bd-fill/, "kiosk: manca la modalita' riempi schermo");
 
 // 3) ELEMENTO FANTASMA: `#globalDivaBotHost` forzato `position: static` entra nel
 //    flusso e puo' allungare il documento oltre 100dvh. Deve restare fuori flusso.

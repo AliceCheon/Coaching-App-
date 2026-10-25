@@ -538,3 +538,49 @@ schede e archiviate dentro altre schede ma poi puntualmente tornano tutte a bozz
   `active`, cartella e nome restano quelli scelti dall'utente.
 - **Guardia**: `tests/phase30-statistiche-volume.test.mjs` esteso (default = scheda attiva).
 - **Bump `v148.00-nomi-schede-confronto-stato`** (29 file).
+
+
+## Schermo intero — pulsantino di sistema e schermo esterno (v148.25)
+Sintomo (Alice, 25 ottobre): "dopo l'aggiornamento l'app non si mette piu' a
+schermo intero sullo schermo esterno e il pulsantino e' freezato".
+
+Tre cause, tutte nel codice web (nessuna impostazione del telefono):
+1. **Riarmo a ogni tocco.** `index.html` chiamava `requestFullscreen()` su ogni
+   `pointerdown`/`touchstart`/`keydown`. Quando One UI usciva dal fullscreen
+   (manico / "dimensione app" del cover screen), l'app rientrava un istante
+   dopo: il comando di sistema veniva annullato subito e sembrava morto.
+2. **Cancello di misura.** L'auto-fullscreen era protetto da altezza <= 560 e
+   larghezza <= 760: se la finestra cambia formato (aggiornamento One UI,
+   manico, dimensioni diverse del cover), l'app non chiedeva piu' nulla, in
+   silenzio.
+3. **Fallimento silenzioso.** La promise veniva `.catch`-ata nel vuoto: nessun
+   messaggio, nessun modo di riprovare.
+
+Fix (v148.25 "schermo-esterno"), tutto in `src/fullscreen-kiosk.js`:
+- **Una sola** richiesta automatica per caricamento, al primo gesto, e solo se
+  l'app gira installata (`standalone`/`fullscreen`/`minimal-ui`); mai nel
+  browser normale. Niente riarmo: il comando di sistema resta sovrano.
+- **Pulsante in-app** `#bdFullscreenToggle` (`.bd-fs-toggle`, fixed sul bordo
+  destro, fuori dal flusso: il layout FlexWindow non si muove). Funziona anche
+  quando il pulsantino di Samsung e' bloccato. `click` = gesto fidato.
+- **Stato sincronizzato** su `fullscreenchange` + `webkitfullscreenchange`:
+  uscendo in qualunque modo il pulsante lo sa (era questo il "freezato" lato
+  UI).
+- **Ripiego `html.bd-fill`** (modalita' "riempi schermo"): se il browser
+  rifiuta, l'app riempie il viewport via CSS senza toccare lo stato di
+  sistema, cosi' il manico di One UI continua a funzionare.
+- **Diagnostica**: `window.BarbellDivaFullscreen.diagnostics()` e
+  `diagnostica-schermo.html` mostrano `mode`, `lastError` (nome + messaggio),
+  tentativi e display-mode. Non si indovina piu'.
+- API: `supported/isOn/isNative/isFill/mode/state/enter/exit/toggle/isAuto/setAuto`.
+  Evento `bd:fullscreenchange`. Preferenza `barbell-diva.fullscreen`
+  ("0" = mai automatico; spegnere col pulsante scrive "0").
+
+**Scelte da non disfare**: il manifest resta `display: fullscreen` (leva
+v147.84: nasconde la barra di sistema della TWA). Il riarmo a ogni tocco NON
+torna: per rientrare c'e' il pulsante. Test:
+`tests/v14825-schermo-esterno-fullscreen.test.mjs`, aggiornati
+`v14783-cover-screen-fullscreen` e `theme-canvas-flexwindow`.
+
+**Da verificare sul dispositivo** (non verificabile in sandbox): posizione del
+pulsante sul cover screen e reazione del comando Samsung.
