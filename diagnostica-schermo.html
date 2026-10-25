@@ -38,6 +38,16 @@
   button { font: inherit; font-size: .6rem; padding: 8px 10px; border-radius: 10px;
            border: 1px solid #6a4bd0; background: #2a1d4d; color: #fff; }
   button:active { background: #3d2a6e; }
+  /* v148.28 — verdetto grande: la modalita' di lancio la decide il manifest
+     (o l'APK), non il codice in pagina. Sul cover screen si legge da lontano. */
+  .verdict { position: fixed; left: 6px; right: 6px; bottom: 6px; z-index: 80;
+             border-radius: 12px; padding: 8px 10px; text-align: center;
+             font-size: .78rem; font-weight: 800; line-height: 1.25;
+             letter-spacing: .02em; border: 2px solid #ffd23f; }
+  .verdict[data-kind="system-fullscreen"] { background: #4a0d1e; color: #ffd7de; border-color: #ff4e70; }
+  .verdict[data-kind="ok"] { background: #0d3a24; color: #b8ffd9; border-color: #2bd67b; }
+  .verdict small { display: block; font-size: .56rem; font-weight: 600; margin-top: 3px; opacity: .85; letter-spacing: 0; }
+
 </style>
 </head>
 <body>
@@ -47,6 +57,8 @@
 
   <div class="probe" id="pTL"></div><div class="probe" id="pTR"></div>
   <div class="probe" id="pBL"></div><div class="probe" id="pBR"></div>
+
+  <div class="verdict" id="verdict" data-kind="ok">…<small></small></div>
 
   <div class="panel">
     <h1>DIAGNOSTICA SCHERMO — BARBELL DIVA</h1>
@@ -92,6 +104,38 @@
     return st.lastError ? (st.lastError.name + " — " + st.lastError.message) : "nessuno";
   }
 
+  /* Chi decide la modalita' di lancio: il manifest (PWA) o l'APK (TWA).
+     Se display-mode e' "fullscreen" ma document.fullscreenElement e' nullo,
+     l'app e' stata LANCIATA in fullscreen di modo applicativo: nessun
+     exitFullscreen() puo' uscirne, e l'interfaccia di sistema (manico
+     compreso) e' soppressa dal sistema, non dalla pagina. */
+  function verdict(){
+    var box = document.getElementById("verdict");
+    if (!box) return;
+    var dmFs = dm("(display-mode: fullscreen)") === "SI";
+    var native = !!document.fullscreenElement;
+    var kind, title, note;
+    if (dmFs && !native) {
+      kind = "system-fullscreen";
+      title = "FULLSCREEN DI SISTEMA";
+      note = "Lo chiede il manifest/APK, non la pagina: il manico Samsung resta nascosto. Impostare display: standalone nel manifest (e ricompilare l'APK se usi la TWA).";
+    } else if (dm("(display-mode: standalone)") === "SI") {
+      kind = "ok"; title = "STANDALONE (giusto)";
+      note = "Il sistema resta visibile: il manico Samsung puo' comparire.";
+    } else if (dm("(display-mode: browser)") === "SI") {
+      kind = "ok"; title = "BROWSER";
+      note = "Stai guardando il sito, non l'app installata.";
+    } else {
+      kind = "ok"; title = "MODALITA': " + firstDM();
+      note = "";
+    }
+    box.setAttribute("data-kind", kind);
+    box.textContent = title;
+    var small = document.createElement("small");
+    small.textContent = note;
+    box.appendChild(small);
+  }
+
   function snapshot(){
     var vv = window.visualViewport, sa = safeArea(), de = document.documentElement;
     var L = [
@@ -120,6 +164,7 @@
       "UA: " + navigator.userAgent
     ];
     document.getElementById("out").textContent = L.join("\n");
+    verdict();
     document.getElementById("pTL").style.cssText = "top:" + sa.top + "px;left:" + sa.left + "px";
     document.getElementById("pTR").style.cssText = "top:" + sa.top + "px;right:" + sa.right + "px";
     document.getElementById("pBL").style.cssText = "bottom:" + sa.bottom + "px;left:" + sa.left + "px";

@@ -77,18 +77,22 @@
                 android:name="android.support.customtabs.trusted.FALLBACK_TYPE"
                 android:value="customtabs" />
 
-            <!-- v1.0.4 — via la striscetta in basso: la TWA nasconde la barra di
-                 navigazione (modalita' "immersive"). Senza questo la TWA mostra
-                 la barra di sistema in basso (una striscia chiara), che le app
-                 native invece non mostrano. sticky-immersive = la barra resta
-                 nascosta e ricompare solo con uno swipe dal bordo.
-                 NB: la striscia era rimasta anche con "immersive" perche' il
-                 manifest del sito dichiarava "standalone" (che mostra la barra):
-                 ora il manifest chiede "fullscreen", cosi' la TWA va a tutto
-                 schermo davvero. -->
+            <!-- v1.0.5 (26 ottobre 2026) — IL MANICO DEL COVER SCREEN PRIMA DI TUTTO.
+                 Era "sticky-immersive": nasconde le barre di sistema, e sul cover
+                 screen dello Z Flip sparisce anche il MANICO di One UI ("dimensione
+                 app"), cioe' l'unico comando per ridimensionare la finestra. Con
+                 One UI 9 il manico e' diventato parte dell'interfaccia del cover
+                 screen: sopprimerlo lascia Alice senza modo di cambiare modalita'.
+                 Ora "standalone": niente barra del browser, ma l'interfaccia di
+                 sistema resta viva e il manico si vede.
+                 NOTA IMPORTANTE: questo valore e' COTTO NELL'APK. Non c'entra il
+                 manifest web: finche' non si ricompila e reinstalla l'APK, la
+                 vecchia app continua a girare in sticky-immersive. La PWA
+                 installata da Chrome (manifest del sito, display: standalone)
+                 non ha questo problema. -->
             <meta-data
                 android:name="android.support.customtabs.trusted.DISPLAY_MODE"
-                android:value="sticky-immersive" />
+                android:value="standalone" />
         </activity>
     </application>
 
