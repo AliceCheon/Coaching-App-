@@ -561,3 +561,8 @@ Obiettivo:
 - assetlinks.json aggiornato (terza impronta, le altre restano) e pushato su AliceCheon.github.io.
 - Build: Gradle 8.11.1 obbligatorio (AGP 8.9.1), SDK 36 + build-tools 35.0.0; `gradle assembleRelease` -> app-release.apk firmata, verificata con apksigner.
 - .gitignore: aggiunte keystore.jks e le password (buco reale chiuso).
+
+## Checkpoint 49 — APK 1.0.9: sticky-immersive, il fullscreen della TWA (26 ottobre pomeriggio)
+- Alice (14:45): "forza il fullscreen ovunque sia necessario per sovrascrivere i blocchi di One UI 9" (confermata la struttura reale dei file). Gli interruttori del piano erano GIA' pushati (ca5ae27) e la 1.0.8 compilata/consegnata; mancava solo la leva TWA: DISPLAY_MODE da `standalone` a **`sticky-immersive`** — la scelta v1.0.5 si reggeva sul manico, che One UI 9 ha eliminato (checkpoint 46): costo zero, superficie piena. Punto 3 di Alice: manifest web resta standalone, e' il wrapper a essere fullscreen (non legge il display del sito).
+- Build: gradle 8.11.1 + javac (apt), apksigner OK, stessa chiave 60:1C:...86:8C. Test di guardia android/webmanifest/temi verdi (5/5). versionCode 10 / 1.0.9. Consegna: `barbell-diva-1.0.9.apk` (sostituisce la 1.0.8 per l'installazione).
+- Primo tentativo interrotto da Alice a meta' pipeline (tests verdi, build non partita): recuperato integralmente senza rifare le modifiche.

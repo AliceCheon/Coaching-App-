@@ -91,9 +91,16 @@
                  vecchia app continua a girare in sticky-immersive. La PWA
                  installata da Chrome (manifest del sito, display: standalone)
                  non ha questo problema. -->
+            <!-- v1.0.9 (26 ottobre 2026) — Alice: "forza il fullscreen ovunque sia
+                 necessario". Il valore standalone era la scelta v1.0.5 per non
+                 sopprimere il manico del cover screen: ma One UI 9 il manico l'ha
+                 RIMOSSO a livello di sistema (checkpoint 46, non esiste nemmeno in
+                 Chrome). Il motivo dello standalone e' svanito: si torna a
+                 sticky-immersive, il fullscreen VERO della TWA (barre di sistema
+                 nascoste, la finestra usa tutta la superficie). -->
             <meta-data
                 android:name="android.support.customtabs.trusted.DISPLAY_MODE"
-                android:value="standalone" />
+                android:value="sticky-immersive" />
 
             <!-- v1.0.8 (26 ottobre 2026) — richiesta esplicita di Alice dopo One UI 9:
                  sbloccare l'aspect ratio e il cutout. NOTA DI ONESTA' TECNICA:
