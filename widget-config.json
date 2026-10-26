@@ -1,0 +1,10 @@
+{
+  "nota": "ESEMPIO da sostituire: questo file guida il widget 'Allenamento di oggi' sullo schermo esterno. Modifica i campi con la fase vera, o chiedi all'assistente di farlo. Giorni validi: LUN MAR MER GIO VEN SAB DOM. Ora in formato HH:MM.",
+  "fase": "Blocco Forza 1 — ESEMPIO",
+  "settimana": [
+    { "giorno": "LUN", "tipo": "Spinta", "dettaglio": "Panca piana 5x5 · Spalle 3x10", "ora": "18:30" },
+    { "giorno": "MAR", "tipo": "Tirata", "dettaglio": "Trazioni 4x max · Rematore 4x8", "ora": "18:30" },
+    { "giorno": "GIO", "tipo": "Gambe", "dettaglio": "Squat 5x5 · Stacco rumeno 3x8", "ora": "18:30" },
+    { "giorno": "SAB", "tipo": "Total body", "dettaglio": "Circuito full body 45 min", "ora": "09:30" }
+  ]
+}

@@ -737,3 +737,22 @@ il bordo fisico fino al buco fotocamere, senza inset del decor.
 versionCode 13 / versionName 1.1.2; stessa firma 601cfd….
 **Regola**: mai aggiungere metadati Samsung non documentati; la verifica di
 esistenza (2 ricerche indipendenti) viene SEMPRE prima del commit.
+
+## v1.2.0 APK — widget nativo "Allenamento di oggi" per la FlexWindow (26 ottobre sera)
+Dopo la conferma di Alice che Labs (rimossi in One UI 9) e MultiStar non tolgono la banda
+(verdetto finale: la zona fotocamere del cover e' dipinta da One UI sopra ogni app; la
+documentazione FlexWindow offre solo widget/notifiche/launch), si costruisce per la STRADA
+UFFICIALE: il widget.
+- Ricetta Samsung (codelab widget-flex-window): receiver AppWidgetProvider con meta-data
+  "android.appwidget.provider" (@xml/oggi_widget_info, widgetCategory="keyguard") + meta-data
+  "com.samsung.android.appwidget.provider" (@xml/oggi_widget_samsung, display="sub_screen").
+- OggiWidgetProvider.java: scarica widget-config.json da GitHub Pages (radice di questo repo),
+  cache offline in SharedPreferences ("oggi_widget"), calcola oggi + prossimo allenamento e
+  countdown, tasto AGGIORNA (ACTION_REFRESH), tap sulla card = apertura app. Aggiornamento
+  periodico 30 min (attributo XML android:updatePeriodMillis — il campo Java e' updatePeriodMs,
+  NON confonderli: updatePeriodMs come attributo fa fallire il link AAPT).
+- Attivazione: Impostazioni > Cover screen > Widget.
+- Dati: widget-config.json alla radice del repo (contenuto ESEMPIO da sostituire con la fase vera).
+- versionCode 14 / versionName 1.2.0; stessa firma.
+**Regola**: sul cover screen si lotta solo con widget e notifiche; se il fullscreen dell'app
+sul cover non arriva, e' One UI che lo decide, non il guscio.

@@ -612,3 +612,12 @@ Obiettivo:
 - Prossimo: conferma visiva di Alice + screenshot diagnostica DENTRO la TWA;
   se la banda resta, e' la maschera cover screen di One UI (Labs/sistema).
   Revert: git revert + rimuovere setDecorFitsSystemWindows(false).
+
+## Checkpoint 53 — v1.2.0 widget "Allenamento di oggi" per FlexWindow (26 ottobre 2026, sera)
+Verdetto banda cover: NON rimovibile (maschera One UI sopra ogni app; Labs assenti in One UI 9,
+MultiStar gia' impostato da Alice senza effetti). Leva ufficiale restante: il widget nativo.
+Implementato: OggiWidgetProvider (fetch widget-config.json + cache offline + oggi/prossimo/
+countdown + AGGIORNA + apertura app), card brand navy #090918 / rosa #FF6FCB, XML Samsung
+display="sub_screen", receiver nel manifest, widget-config.json di esempio in radice + test
+node di validazione. versionCode 14 / versionName 1.2.0, stessa firma 601cfd... Suite verde
+(fail 0, log /tmp/opencode/suite-120.log).

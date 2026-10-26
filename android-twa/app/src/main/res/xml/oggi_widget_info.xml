@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Proprietà widget standard: dimensioni compatte, ridimensionabile,
+     aggiornamento ogni 30 minuti (minimo di sistema), categoria keyguard
+     per lo schermo esterno + home_screen per la schermata interna. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="140dp"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="keyguard|home_screen"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/oggi_widget" />
