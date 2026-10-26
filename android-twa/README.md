@@ -34,7 +34,7 @@ gradle assembleRelease
 ```
 
 ## Impronta della chiave (SHA-256)
-`3B:7E:B4:37:36:84:DE:84:57:BF:CD:D7:27:94:D9:E0:90:49:94:9D:61:4B:6E:5B:C7:CC:17:7C:0D:EC:0A:22` (chiave nuova dalla 1.3.0; la 1.0.8–1.2.1 usava 60:1C:...:86:8C)
+`60:1C:FD:DB:A7:14:D7:66:21:DC:63:99:AB:87:E8:21:25:F0:04:0F:37:21:2D:D4:14:2D:94:CA:05:B0:86:8C` (stessa dalla 1.0.8; copia sul PC di Alice: `barbell-diva-keystore-1.0.8.jks`)
 
 Per i link verificati deve combaciare con quella in
 `https://alicecheon.github.io/.well-known/assetlinks.json`.

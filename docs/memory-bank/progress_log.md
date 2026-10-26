@@ -648,9 +648,8 @@ funzionare. Soluzione: addio TWA, MainActivity = Activity con WebView PROPRIA.
 - Web: makeButton() + CSS .bd-fs-toggle (pillola v148.28 + cerchio grande in basso v148.30)
   ripristinati; test v14831-pulsante-rimosso eliminato, v14828 riallineato, nuova guardia
   v14834-pulsantino-tornato. Bump v148.34-pulsantino.
-- FIRMA NUOVA (la 60:1C... non era in sandbox): SHA-256
-  3B:7E:B4:37:36:84:DE:84:57:BF:CD:D7:27:94:D9:E0:90:49:94:9D:61:4B:6E:5B:C7:CC:17:7C:0D:EC:0A:22
-  -> disinstallare UNA volta la 1.2.1 (dati salvi in Firestore). Con la WebView assetlinks non serve
-  piu' al fullscreen (solo all'apertura dei link verificati).
+- FIRMA: STESSA chiave 60:1C:...:86:8C (recuperata dalla workspace del PC di Alice,
+  barbell-diva-keystore-1.0.8.jks) -> si aggiorna SOPRA la 1.2.1, niente disinstallazione,
+  assetlinks gia' corretto.
 - versionCode 16 / 1.3.0. Suite: 262 test, 252 pass + guardia nuova verde dopo fix commento,
   0 fail, 9 skipped. Push in attesa del si' di Alice.
