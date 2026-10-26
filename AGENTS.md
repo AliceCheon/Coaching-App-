@@ -714,3 +714,26 @@ in fondo a index.html (v148.33, commit 05ac229) per provare DENTRO la TWA.
 versionCode 12 / versionName 1.1.1; stessa firma 601cfd… (aggiorna sopra senza
 disinstallare). **Regola**: la scomparsa delle barre la fa il GUSCIO, non solo la
 pagina — non rimuovere applyImmersiveFullscreen né il riarmo sul focus.
+
+## v1.1.2 APK — edge-to-edge del guscio + resizeableActivity globale (26 ottobre 2026)
+Alice ha riportato i metadati "Cover Screen Ready" Samsung da inserire nel manifest.
+Verificati e INESISTENTI (2 round di ricerca indipendenti, 26/10):
+- "com.samsung.android.knox.*.cover_screen_ready" e
+  "com.samsung.android.activity.show_on_cover_screen": ZERO risultati ovunque;
+  il nome Knox richiesto conteneva uno spazio corrotto ("knox. those.") = firma
+  classica di API inventata;
+- "Cover Screen Ready" come certificazione/flag app: non esiste;
+- il meta-dato "android.window.layoutInDisplayCutoutMode" richiesto era GIA' nel
+  manifest dalla v1.0.8 (non e' un meccanismo documentato: quello vero e' l'item
+  di tema android:windowLayoutInDisplayCutoutMode, gia' in values*/themes.xml).
+Leva REALE Samsung individuata: impostazione UTENTE Impostazioni > Funzioni
+avanzate > Labs > "Apps allowed on cover screen" (Samsung ANS10006881 e
+TSG10007290; su One UI 9 la voce risulta spostata/rimossa dai Labs secondo la
+community — verificare sul telefono).
+Implementato (reale): (1) android:resizeableActivity="true" a livello
+<application> (l'activity ce l'aveva gia'); (2) setDecorFitsSystemWindows(false)
+in applyImmersiveFullscreen() su API 30+ — il contenuto del guscio puo' occupare
+il bordo fisico fino al buco fotocamere, senza inset del decor.
+versionCode 13 / versionName 1.1.2; stessa firma 601cfd….
+**Regola**: mai aggiungere metadati Samsung non documentati; la verifica di
+esistenza (2 ricerche indipendenti) viene SEMPRE prima del commit.

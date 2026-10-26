@@ -98,6 +98,11 @@ public class MainActivity extends LauncherActivity {
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                // v1.1.2 — edge-to-edge del decor: il contenuto del guscio puo'
+                // arrivare fino al bordo fisico della finestra, buco fotocamere
+                // compreso. Senza questo, il decor "incassa" gli inset e lascia
+                // la zona del cutout alla maschera del sistema.
+                w.setDecorFitsSystemWindows(false);
                 // Via moderna (Android 11+): nascosta vera, transiente a swipe.
                 WindowInsetsController c = w.getInsetsController();
                 if (c != null) {

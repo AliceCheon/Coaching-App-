@@ -12,7 +12,24 @@
         android:supportsRtl="true"
         android:usesCleartextTraffic="false"
         android:manageSpaceActivity="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
-        android:theme="@style/Theme.BarbellDiva.EdgeToEdge">
+        android:theme="@style/Theme.BarbellDiva.EdgeToEdge"
+        android:resizeableActivity="true">
+
+        <!-- v1.1.2 (26 ottobre 2026) — richiesta "Cover Screen Ready" di Alice.
+             I metadati proposti NON esistono: "com.samsung.android.knox.*.cover_screen_ready"
+             e "com.samsung.android.activity.show_on_cover_screen" non risultano in
+             NESSUNA documentazione Android o Samsung (verificato 26/10, due round di
+             ricerca: zero risultati). Il meccanismo REALE di Samsung e' l'impostazione
+             UTENTE: Impostazioni > Funzioni avanzate > Labs > "Apps allowed on cover
+             screen" (supporto Samsung ANS10006881 / TSG10007290). Il meta-dato cutout
+             richiesto nell'activity (righe sotto, gia' presente dalla v1.0.8) NON e'
+             un meccanismo documentato: quello vero e' l'item
+             android:windowLayoutInDisplayCutoutMode nel tema (values*/themes.xml).
+             Leve REALI aggiunte in questa versione: resizeableActivity="true" globale
+             (questo tag) + setDecorFitsSystemWindows(false) in
+             applyImmersiveFullscreen() (MainActivity) cosi' il contenuto del guscio
+             puo' arrivare fino al bordo fisico, buco fotocamere compreso. -->
+
 
         <!-- ============================================================
              FIX v1.0.2 — PERCHE' L'APP SI CHIUDEVA SUBITO

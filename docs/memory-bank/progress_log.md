@@ -596,3 +596,19 @@ Obiettivo:
 - Prossimo: screenshot della diagnostica DENTRO la TWA (link in home). mode=native
   + banda persistente → colpevole sistema (Good Lock/MultiStar); errore → nome
   esplicito del rifiuto. Revert: git revert + immersiva rimossa da MainActivity.
+
+## Checkpoint 52 — v1.1.2 edge-to-edge del guscio (26 ottobre 2026, ~17:50)
+- Alice: la banda bianca sta nella ZONA FOTOCAMERE dello schermo esterno; teoria
+  "Cover Screen Ready" con 3 metadati Samsung. Verifica: 2 dei 3 nomi NON esistono
+  (knox.cover_screen_ready anche ripulito, show_on_cover_screen: zero risultati);
+  il terzo (meta-dato cutout) e' nel manifest dalla v1.0.8 e non e' documentato;
+  la certificazione "Cover Screen Ready" non esiste.
+- Meccanismo Samsung REALE: impostazione utente Labs "Apps allowed on cover
+  screen" (Samsung ANS10006881 / TSG10007290) — non e' dichiarabile dall'app.
+- Implementato (leve vere): resizeableActivity="true" globale nel manifest;
+  setDecorFitsSystemWindows(false) in applyImmersiveFullscreen (API 30+) — il
+  decor non incassa piu' gli inset, il contenuto arriva al bordo fisico.
+- versionCode 13 / 1.1.2, stessa firma (aggiorna sopra senza disinstallare).
+- Prossimo: conferma visiva di Alice + screenshot diagnostica DENTRO la TWA;
+  se la banda resta, e' la maschera cover screen di One UI (Labs/sistema).
+  Revert: git revert + rimuovere setDecorFitsSystemWindows(false).
