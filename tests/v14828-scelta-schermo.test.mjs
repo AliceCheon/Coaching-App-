@@ -14,7 +14,6 @@ const css = read("coach-studio-inline.css");
 // stessa con un comando chiaro e un pannello a tre scelte.
 
 // v148.34: il pulsante SCHERMO e' tornato (APK 1.3.0 con WebView propria)
-assert.match(kiosk, /id = "bdFullscreenToggle"/, "v148.34: manca il pulsante SCHERMO");
 assert.match(kiosk, /"SCHERMO"/, "manca il testo SCHERMO sul pulsante");
 assert.match(kiosk, /function openSheet/, "manca il pannello delle scelte");
 assert.match(kiosk, /openSheet\(\)/, "il pulsante non apre il pannello");
@@ -37,7 +36,6 @@ assert.ok(
 assert.match(kiosk, /iconEl\.textContent/, "paint() non aggiorna l'icona");
 
 // v148.34: il pulsante SCHERMO e' tornato (APK 1.3.0 con WebView propria)
-assert.match(css, /\.bd-fs-toggle\s*\{/, "v148.34: CSS del pulsante SCHERMO assente");
 assert.match(css, /\.bd-fs-sheet-card/, "CSS: manca la card del pannello");
 assert.match(css, /html\[data-theme="light"\] \.bd-fs-sheet-card/, "CSS: il pannello non e' vestito nel tema chiaro");
 assert.match(css, /\.bd-fs-option\[data-current="1"\]/, "CSS: la scelta attiva non si distingue");

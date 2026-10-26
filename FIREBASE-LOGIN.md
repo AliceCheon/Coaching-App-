@@ -1,4 +1,4 @@
-> Build documentata: v148.35-accesso-nativo
+> Build documentata: v148.36-manico-nativo
 
 # Firebase e Login — Barbell Diva
 
@@ -15,8 +15,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v148.35-accesso-nativo` |
-| `cache` | `atlas-app-v14835-accesso-nativo` |
+| `build` | `v148.36-manico-nativo` |
+| `cache` | `atlas-app-v14836-manico-nativo` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

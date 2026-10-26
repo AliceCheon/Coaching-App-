@@ -372,44 +372,12 @@
     sheet = wrap;
   }
 
-  /* ---- Pulsante "SCHERMO" ----------------------------------------------- */
-  /* v148.34 — TORNA il pulsantino (richiesta di Alice): con l'APK 1.3.0 a
-     WebView propria il "Fullscreen vero" funziona davvero (onShowCustomView
-     nativo), quindi il comando in-app ha di nuovo senso. */
-  function makeButton() {
-    if (button || !doc.body) return;
-    var b = doc.createElement("button");
-    b.type = "button";
-    b.id = "bdFullscreenToggle";
-    b.className = "bd-fs-toggle";
-    b.setAttribute("aria-pressed", "false");
-
-    var icon = doc.createElement("span");
-    icon.className = "bd-fs-icon";
-    icon.setAttribute("aria-hidden", "true");
-    var label = doc.createElement("span");
-    label.className = "bd-fs-label";
-    label.textContent = "SCHERMO";
-    b.appendChild(icon);
-    b.appendChild(label);
-
-    /* click = gesto fidato al 100% (serve a requestFullscreen). */
-    b.addEventListener("click", function (event) {
-      if (event && event.preventDefault) event.preventDefault();
-      openSheet();
-    });
-    b.addEventListener("pointerdown", function (event) {
-      if (event && event.stopPropagation) event.stopPropagation();
-    }, { passive: true });
-
-    doc.body.appendChild(b);
-    button = b;
-    iconEl = icon;
-    paint();
-  }
-
+  /* v148.36 — Pulsante "SCHERMO" RIMOSSO (per sempre? si vedra'): l'app e'
+     diventata un APK nativo e One UI le ha RESTITUITO il pulsantino di sistema
+     del fullscreen: quello vero. Il comando web era la stampella per la TWA
+     che non ne aveva: la stampella si butta. Restano le API (openSheet,
+     enter/fill/exit) per window.BarbellDiva. */
   function boot() {
-    makeButton();
     emit();
   }
 

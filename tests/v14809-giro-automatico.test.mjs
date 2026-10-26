@@ -33,7 +33,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
 context.window = context;
 context.globalThis = context;
 vm.createContext(context);
-new vm.Script(applicationScript, { filename: "v14835-giro-automatico.js" }).runInContext(context);
+new vm.Script(applicationScript, { filename: "v14836-giro-automatico.js" }).runInContext(context);
 
 const out = vm.runInContext(`(() => {
   const esito = {};

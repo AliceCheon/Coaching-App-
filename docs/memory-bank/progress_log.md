@@ -674,3 +674,19 @@ si perde; non esiste flag per disattivarlo. Fix di settore: accesso Google NATIV
   ricade sul flusso web rotto. Propagazione: pochi minuti. Poi 1.3.1 si installa sopra la
   1.3.0 (stessa firma).
 - Suite: 264 test, fail 0, 9 skipped. PUSH IN ATTESA del si' di Alice.
+
+## Checkpoint 57 — v148.36 il pallino SCHERMO va via: One UI e' tornato (26 ottobre 2026, notte)
+Alice su 1.3.1 + v148.35: "finalmente funziona tutto". E la notizia grande: da APP NATIVA, One UI
+le ha RESTITUITO il pulsantino di sistema del fullscreen (il traguardo del checkpoint 44 — da
+l' la nota v148.30: "One UI 9 non concede il pulsantino a un'app web/TWA, lo riserva alle app
+native": ora l'app E' nativa). Quindi il pallino web non serve piu', terza e definitiva rimozione.
+- Web v148.36-manico-nativo: boot() senza makeButton, CSS .bd-fs-toggle rimosso, API
+  (openSheet/enter/fill/exit/BarbellDivaFullscreen) intatte. Come la v148.31, ma stavolta con
+  il manico nativo vivo sul telefono.
+- Test: v14834-pulsantino-tornato sostituito da v14836-manico-nativo (assenza pulsante + API
+  vive + TUTTE le guardie APK della 14834: WebView, custom view, ponti nativi, versionCode 17,
+  play-services). Lezione lezione: l'assert regex sui ponti in MainActivity cerca le FIRME dei
+  metodi (public void googleSignIn), non le chiamate JS.
+- Suite: 264 test, 0 fail, 9 skipped. APK INVARIATO (1.3.1, versionCode 17): niente
+  reinstallazione, il telefono si aggiorna da solo al riavvio dell'app (cache SW bumped).
+- PUSH IN ATTESA del si' di Alice.
