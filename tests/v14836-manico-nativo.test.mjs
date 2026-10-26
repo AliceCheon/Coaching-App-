@@ -30,7 +30,8 @@ test("l'APK resta un app vera con WebView propria (guardie della v14834)", () =>
   assert.ok(!/LauncherActivity/.test(main), "MainActivity e' ancora una TWA");
   assert.match(main, /onShowCustomView/, "fullscreen della pagina non arriva al nativo");
   assert.match(main, /applyImmersiveFullscreen/, "manca l'immersiva della finestra");
-  assert.match(main, /window\.BarbellDivaNative\.googleSignIn\(\)|BarbellDivaNative\.setKeepAwake/, "ponti nativi persi");
+  assert.match(main, /public void googleSignIn/, "ponte Google perso");
+  assert.match(main, /public void setKeepAwake/, "ponte keep-awake perso");
   assert.ok(!/androidbrowserhelper/.test(manifest + gradle), "residui della libreria TWA");
   assert.match(gradle, /versionCode 17/, "versionCode inatteso");
   assert.match(gradle, /play-services-auth/, "manca GoogleSignIn");
