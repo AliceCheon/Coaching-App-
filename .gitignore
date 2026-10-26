@@ -26,3 +26,8 @@ backup/
 
 # Dipendenze
 node_modules/
+
+# Segreti app Android (mai versionare)
+keystore.jks
+keystore-pass*.txt
+.keystore-pass.txt

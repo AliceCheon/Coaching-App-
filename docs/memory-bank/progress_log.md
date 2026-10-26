@@ -554,3 +554,10 @@ Obiettivo:
 - **Modifiche**: `AndroidManifest.xml` (attributo + 3 meta-data su `.MainActivity`), `values/themes.xml` + `-v27/-v29/-v31` (3 item su `Theme.BarbellDiva.EdgeToEdge`), `build.gradle` versionCode 9 / versionName 1.0.8.
 - **Suite**: 262 test, 253 pass, 0 fail, 9 skipped (~264s) — VERDE; XML tutti ben formati.
 - **Prossimi step**: ricompilare l'APK (`android-twa/README.md`: JDK 17 + Android SDK + `BD_KEYSTORE_PASS`; stessa firma dalla 1.0.5, niente disinstallazione), installare sul Z Flip 7 e verificare banda bianca e manico/pulsantino; se One UI torna a nasconderlo, `git revert` immediato.
+
+## Checkpoint 48 — APK 1.0.8 compilato in sandbox, chiave nuova (26 ottobre pomeriggio)
+- La richiesta "fallo tu" ha svelato che la 1.0.7 NON era mai arrivata sul telefono: l'APK non era mai stato costruito/consegnato, spiegava i sintomi "vecchi" riportati da Alice alle 10:16.
+- Chiave di firma PERSA col riciclo della workspace (mai versionata): rigenerata; impronta 60:1C:...86:8C; password consegnata ad Alice (file separato, mai nel repo).
+- assetlinks.json aggiornato (terza impronta, le altre restano) e pushato su AliceCheon.github.io.
+- Build: Gradle 8.11.1 obbligatorio (AGP 8.9.1), SDK 36 + build-tools 35.0.0; `gradle assembleRelease` -> app-release.apk firmata, verificata con apksigner.
+- .gitignore: aggiunte keystore.jks e le password (buco reale chiuso).

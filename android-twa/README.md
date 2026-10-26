@@ -33,7 +33,7 @@ gradle assembleRelease
 ```
 
 ## Impronta della chiave (SHA-256)
-`E8:6C:A7:1A:C3:D3:83:43:A7:4A:D0:0D:6D:FB:62:88:0B:67:F5:A0:31:69:79:33:08:B1:76:48:23:13:EE:56`
+`60:1C:FD:DB:A7:14:D7:66:21:DC:63:99:AB:87:E8:21:25:F0:04:0F:37:21:2D:D4:14:2D:94:CA:05:B0:86:8C`
 
 Deve combaciare con quella in
 `https://alicecheon.github.io/.well-known/assetlinks.json`.
