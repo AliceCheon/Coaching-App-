@@ -29,7 +29,7 @@ assert.ok(
   "kiosk: riarmo del fullscreen a ogni pointerdown (freeza il comando di sistema)"
 );
 // Una sola richiesta automatica per caricamento: `once: true` sugli ascoltatori.
-assert.match(kiosk, /addEventListener\(\s*["']pointerdown["']\s*,\s*once\s*,\s*\{[^}]*once:\s*true/, "kiosk: l'auto-fullscreen non e' 'once'");
+assert.ok(!/requestFullscreen\(/.test((kiosk.split("function armAuto()")[1] || "").split("function")[0] || ""), "v148.30: niente fullscreen automatico al tocco — nasconderebbe pulsantino e barre di sistema");
 
 // 2) CANCELLO DI MISURA. `innerHeight <= 560 && innerWidth <= 760` spegneva il
 //    fullscreen appena One UI cambiava la finestra: via, per sempre.

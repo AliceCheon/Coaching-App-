@@ -5434,3 +5434,78 @@ html[data-theme="light"] .bd-fs-sheet-card { background: linear-gradient(160deg,
 html[data-theme="light"] .bd-fs-option { background: rgba(157, 124, 245, .10); border-color: rgba(157, 124, 245, .32); }
 html[data-theme="light"] .bd-fs-option[data-current="1"] { border-color: #b03a86; background: rgba(255, 114, 194, .22); }
 html[data-theme="light"] .bd-fs-close { border-color: rgba(47, 27, 77, .28); color: #4a2f74; }
+
+/* === v148.30 · Il pulsante SCHERMO diventa GRANDE e sta in basso a destra ====
+   Alice (cover screen Z Flip 7): "prepara la pillola come pulsante grande in
+   basso dove andrebbe quello di Samsung". Verdetto definitivo: One UI 9 non
+   concede il pulsantino di espansione a un'app web/TWA, nemmeno con la finestra
+   normale — lo riserva alle app native. Quindi il sostituto si mette ESATTAMENTE
+   dove lo cercherebbe il pollice: angolo in basso a destra, sopra la barra dei
+   gesti, 68px, cerchio pieno, due frecce. Il tocco apre il pannello a tre
+   scelte; resta fuori dall'area sicura (safe-area-inset) e non intercetta i
+   gesti di sistema. */
+.bd-fs-toggle {
+  top: auto;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  right: calc(12px + env(safe-area-inset-right, 0px));
+  left: auto;
+  transform: none;
+  width: 68px;
+  height: 68px;
+  min-width: 68px;
+  min-height: 68px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, .38);
+  background: radial-gradient(circle at 32% 26%, #ff9ad2 0%, #ff72c2 42%, #8b5cf6 100%);
+  color: #1a0b2a;
+  box-shadow: 0 10px 26px rgba(255, 114, 194, .38), 0 3px 10px rgba(0, 0, 0, .42);
+  opacity: .97;
+  z-index: 9400;
+}
+.bd-fs-toggle .bd-fs-icon {
+  font-size: 27px;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .35);
+}
+.bd-fs-toggle .bd-fs-label {
+  font-size: .4rem;
+  font-weight: 900;
+  letter-spacing: .1em;
+  opacity: .92;
+}
+.bd-fs-toggle[data-state="native"] {
+  background: radial-gradient(circle at 32% 26%, #ffd0ea 0%, #ff5cb5 55%, #b21f80 100%);
+  border-color: #fff2fa;
+  color: #2a0a1d;
+}
+.bd-fs-toggle[data-state="fill"] {
+  background: radial-gradient(circle at 32% 26%, #cfbcff 0%, #9d7cf5 55%, #6a3ff0 100%);
+  border-color: #efe6ff;
+  color: #150a28;
+}
+.bd-fs-toggle:active { transform: scale(.94); opacity: 1; }
+html[data-theme="light"] .bd-fs-toggle {
+  background: radial-gradient(circle at 32% 26%, #ffd9ee 0%, #ff72c2 55%, #8b5cf6 100%);
+  border-color: #ffffff;
+  color: #2a0a1d;
+  box-shadow: 0 10px 24px rgba(157, 124, 245, .45), 0 3px 10px rgba(0, 0, 0, .25);
+}
+/* Cover screen in orizzontale: resta grande ma senza mangiarsi il contenuto. */
+@media (max-height: 460px) {
+  .bd-fs-toggle {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    min-height: 56px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    right: calc(8px + env(safe-area-inset-right, 0px));
+  }
+  .bd-fs-toggle .bd-fs-icon { font-size: 22px; }
+  .bd-fs-toggle .bd-fs-label { font-size: .34rem; }
+}
