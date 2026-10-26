@@ -70,7 +70,7 @@
     </div>
   </div>
 
-<script src="src/fullscreen-kiosk.js?v=v14824"></script>
+<script src="src/fullscreen-kiosk.js?v=v14832"></script>
 <script>
   var probe = document.createElement("div");
   probe.style.cssText =
@@ -156,7 +156,7 @@
       "requestFullscreen : " + (!!de.requestFullscreen),
       "",
       "",
-      "--- KIOSK v148.25 ---",
+      "--- KIOSK v148.32 ---",
       "mode              : " + kioskMode(),
       "ultimo errore     : " + kioskError(),
       "tentativi         : " + (kiosk() ? kiosk().state().attempts : "n/d"),
@@ -173,7 +173,7 @@
 
   document.getElementById("fs").addEventListener("click", function(){
     var k = kiosk();
-    if (!k) { alert("Modulo fullscreen v148.25 assente: la pagina non ha caricato src/fullscreen-kiosk.js"); return; }
+    if (!k) { alert("Modulo fullscreen v148.32 assente: la pagina non ha caricato src/fullscreen-kiosk.js"); return; }
     k.enter();
     setTimeout(snapshot, 500);
   });
