@@ -628,3 +628,29 @@ reimmette nell'app dove la banda rimane) e link "Diagnostica schermo" tolto da i
 Web bumpato a v148.33-schermo-pieno, FIREBASE-LOGIN.md incluso (lezione: il test
 version-single-source esige la build anche lì). versionCode 15 / versionName 1.2.1, stessa
 firma 601cfd.... Suite verde (log /tmp/opencode/suite-121.log).
+
+## Checkpoint 55 — v1.3.0 "APK vero" + pulsantino SCHERMO tornato (v148.34) (26 ottobre 2026, sera)
+Alice rivuole il pulsantino e il full screen reale. Causa radice storica: in TWA la pagina gira
+dentro Chrome, che ignora requestFullscreen() -> il pannello "Fullscreen vero" non poteva mai
+funzionare. Soluzione: addio TWA, MainActivity = Activity con WebView PROPRIA.
+- Fullscreen: onShowCustomView/onHideCustomView (fullscreen nativo vero) + applyImmersiveFullscreen()
+  della 1.1.x (InsetsController sticky API 30+, legacy <=29, cutout ALWAYS, riarmo su focus/resume).
+- Login Google: UA senza "; wv" + cookie (anche terze parti) + setSupportMultipleWindows(false)
+  -> il popup fallisce e app-main.js ricade da solo sul redirect. Whitelist interna: github.io,
+  host google/firebase, gstatic; il resto si apre fuori.
+- Keep-awake: shim navigator.wakeLock (document-start via androidx.webkit 1.14.0, fallback
+  onPageStarted/Finished) -> bridge BarbellDivaNative.setKeepAwake -> FLAG_KEEP_SCREEN_ON.
+- Export backup: click su <a download href=blob:> intercettato -> saveBlob nativo in Download
+  (MediaStore su Android 10+). DownloadListener per http(s)/data:. File chooser per gli import.
+- Rimossi androidbrowserhelper e ManageDataLauncherActivity; CrashActivity finalmente dichiarata
+  (:crash, exported=false). Dipendenze: appcompat 1.7.0, webkit 1.14.0, kotlin-bom 1.8.22
+  (senza il BOM: classi kotlin-stdlib duplicate in checkReleaseDuplicateClasses).
+- Web: makeButton() + CSS .bd-fs-toggle (pillola v148.28 + cerchio grande in basso v148.30)
+  ripristinati; test v14831-pulsante-rimosso eliminato, v14828 riallineato, nuova guardia
+  v14834-pulsantino-tornato. Bump v148.34-pulsantino.
+- FIRMA NUOVA (la 60:1C... non era in sandbox): SHA-256
+  3B:7E:B4:37:36:84:DE:84:57:BF:CD:D7:27:94:D9:E0:90:49:94:9D:61:4B:6E:5B:C7:CC:17:7C:0D:EC:0A:22
+  -> disinstallare UNA volta la 1.2.1 (dati salvi in Firestore). Con la WebView assetlinks non serve
+  piu' al fullscreen (solo all'apertura dei link verificati).
+- versionCode 16 / 1.3.0. Suite: 262 test, 252 pass + guardia nuova verde dopo fix commento,
+  0 fail, 9 skipped. Push in attesa del si' di Alice.

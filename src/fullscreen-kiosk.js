@@ -33,7 +33,7 @@
   var doc = root.document;
   if (!doc) return;
 
-  var VERSION = "v148.33";
+  var VERSION = "v148.34";
   var STORAGE_KEY = "barbell-diva.fullscreen";
   var ICON_OFF = "\u2922";   /* expand   */
   var ICON_ON = "\u2921";    /* collapse */
@@ -372,10 +372,44 @@
     sheet = wrap;
   }
 
-  /* v148.31 — Pulsante "SCHERMO" RIMOSSO su richiesta di Alice: era inutile
-     e copriva l'app. Il modulo resta per le API (fill/native/off) ma non
-     disegna piu' nulla a schermo. */
+  /* ---- Pulsante "SCHERMO" ----------------------------------------------- */
+  /* v148.34 — TORNA il pulsantino (richiesta di Alice): con l'APK 1.3.0 a
+     WebView propria il "Fullscreen vero" funziona davvero (onShowCustomView
+     nativo), quindi il comando in-app ha di nuovo senso. */
+  function makeButton() {
+    if (button || !doc.body) return;
+    var b = doc.createElement("button");
+    b.type = "button";
+    b.id = "bdFullscreenToggle";
+    b.className = "bd-fs-toggle";
+    b.setAttribute("aria-pressed", "false");
+
+    var icon = doc.createElement("span");
+    icon.className = "bd-fs-icon";
+    icon.setAttribute("aria-hidden", "true");
+    var label = doc.createElement("span");
+    label.className = "bd-fs-label";
+    label.textContent = "SCHERMO";
+    b.appendChild(icon);
+    b.appendChild(label);
+
+    /* click = gesto fidato al 100% (serve a requestFullscreen). */
+    b.addEventListener("click", function (event) {
+      if (event && event.preventDefault) event.preventDefault();
+      openSheet();
+    });
+    b.addEventListener("pointerdown", function (event) {
+      if (event && event.stopPropagation) event.stopPropagation();
+    }, { passive: true });
+
+    doc.body.appendChild(b);
+    button = b;
+    iconEl = icon;
+    paint();
+  }
+
   function boot() {
+    makeButton();
     emit();
   }
 

@@ -10,8 +10,8 @@ android {
         applicationId "com.barbelldiva.app"
         minSdk 24
         targetSdk 34
-        versionCode 15
-        versionName "1.2.1"
+        versionCode 16
+        versionName "1.3.0"
     }
 
     // Firma di release: la password arriva dalla variabile d'ambiente
@@ -46,7 +46,12 @@ android {
 }
 
 dependencies {
-    // 2.7.3: la prima versione con supporto "edge-to-edge" (EdgeToEdgeController),
-    // che sblocca il rendering dietro il foro fotocamere e la barra di sistema.
-    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.7.3'
+    // v1.3.0 — niente piu' TWA (libreria browser-helper rimossa): WebView propria.
+    // appcompat serve al tema (Theme.AppCompat.NoActionBar), prima arrivava
+    // in modo transitivo dalla libreria TWA. webkit fornisce
+    // addDocumentStartJavaScript (shim navigator.wakeLock).
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.webkit:webkit:1.14.0'
+    // Allinea kotlin-stdlib / -jdk7 / -jdk8 (classi duplicate altrimenti).
+    implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.22')
 }

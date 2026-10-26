@@ -2,7 +2,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Solo per Android 9 e precedenti: il DownloadManager scrive in Download. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
+    <!-- v1.3.0 (26 ottobre 2026) — "APK VERO".
+         Addio Trusted Web Activity: in TWA la pagina gira dentro Chrome e il
+         fullscreen della pagina non e' mai arrivato. Ora l'app ha una WebView
+         propria (MainActivity): il "Fullscreen vero" del pulsantino SCHERMO
+         passa da onShowCustomView() e nasconde davvero le barre di sistema.
+         Rimossi: meta-data della libreria TWA, ManageDataLauncherActivity,
+         manageSpaceActivity. Dichiarata CrashActivity (prima mancava e la
+         schermata di emergenza falliva in silenzio). -->
     <application
         android:name=".DivaApp"
         android:allowBackup="true"
@@ -11,58 +24,18 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:usesCleartextTraffic="false"
-        android:manageSpaceActivity="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
+        android:hardwareAccelerated="true"
         android:theme="@style/Theme.BarbellDiva.EdgeToEdge"
         android:resizeableActivity="true">
 
-        <!-- v1.1.2 (26 ottobre 2026) — richiesta "Cover Screen Ready" di Alice.
-             I metadati proposti NON esistono: "com.samsung.android.knox.*.cover_screen_ready"
-             e "com.samsung.android.activity.show_on_cover_screen" non risultano in
-             NESSUNA documentazione Android o Samsung (verificato 26/10, due round di
-             ricerca: zero risultati). Il meccanismo REALE di Samsung e' l'impostazione
-             UTENTE: Impostazioni > Funzioni avanzate > Labs > "Apps allowed on cover
-             screen" (supporto Samsung ANS10006881 / TSG10007290). Il meta-dato cutout
-             richiesto nell'activity (righe sotto, gia' presente dalla v1.0.8) NON e'
-             un meccanismo documentato: quello vero e' l'item
-             android:windowLayoutInDisplayCutoutMode nel tema (values*/themes.xml).
-             Leve REALI aggiunte in questa versione: resizeableActivity="true" globale
-             (questo tag) + setDecorFitsSystemWindows(false) in
-             applyImmersiveFullscreen() (MainActivity) cosi' il contenuto del guscio
-             puo' arrivare fino al bordo fisico, buco fotocamere compreso. -->
-
-
-        <!-- ============================================================
-             FIX v1.0.2 — PERCHE' L'APP SI CHIUDEVA SUBITO
-             ============================================================
-             androidbrowserhelper, all'avvio, prova a ABILITARE questo
-             componente (per la scorciatoia "Impostazioni sito" e per
-             "Gestisci spazio"). Se il componente NON e' dichiarato nel
-             manifest, Android lancia:
-
-               IllegalArgumentException: Component class
-               com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity
-               does not exist in com.barbelldiva.app
-
-             e l'app si chiude immediatamente. Questa dichiarazione (con
-             manageSpaceActivity sopra) e' esattamente cio' che fa la demo
-             ufficiale di android-browser-helper. -->
-        <activity
-            android:name="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar">
-            <meta-data
-                android:name="android.support.customtabs.trusted.MANAGE_SPACE_URL"
-                android:value="https://alicecheon.github.io/Coaching-App-/" />
-        </activity>
-
-        <!-- MainActivity (sottoclasse di LauncherActivity): apre il sito a tutto
-             schermo, senza barra del browser, con login Google funzionante. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode|density"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard|uiMode|density|navigation"
             android:resizeableActivity="true"
             android:supportsPictureInPicture="false"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.BarbellDiva.EdgeToEdge">
 
             <intent-filter>
@@ -80,62 +53,14 @@
                     android:host="alicecheon.github.io"
                     android:pathPrefix="/Coaching-App-" />
             </intent-filter>
-
-            <!-- TWA: nessuna barra del browser, con verifica Digital Asset Links. -->
-            <meta-data
-                android:name="android.support.customtabs.trusted.DEFAULT_URL"
-                android:value="https://alicecheon.github.io/Coaching-App-/" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
-                android:resource="@color/colorPrimaryDark" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR"
-                android:resource="@color/colorPrimaryDark" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.FALLBACK_TYPE"
-                android:value="customtabs" />
-
-            <!-- v1.0.5 (26 ottobre 2026) — IL MANICO DEL COVER SCREEN PRIMA DI TUTTO.
-                 Era "sticky-immersive": nasconde le barre di sistema, e sul cover
-                 screen dello Z Flip sparisce anche il MANICO di One UI ("dimensione
-                 app"), cioe' l'unico comando per ridimensionare la finestra. Con
-                 One UI 9 il manico e' diventato parte dell'interfaccia del cover
-                 screen: sopprimerlo lascia Alice senza modo di cambiare modalita'.
-                 Ora "standalone": niente barra del browser, ma l'interfaccia di
-                 sistema resta viva e il manico si vede.
-                 NOTA IMPORTANTE: questo valore e' COTTO NELL'APK. Non c'entra il
-                 manifest web: finche' non si ricompila e reinstalla l'APK, la
-                 vecchia app continua a girare in sticky-immersive. La PWA
-                 installata da Chrome (manifest del sito, display: standalone)
-                 non ha questo problema. -->
-            <!-- v1.0.9 (26 ottobre 2026) — Alice: "forza il fullscreen ovunque sia
-                 necessario". Il valore standalone era la scelta v1.0.5 per non
-                 sopprimere il manico del cover screen: ma One UI 9 il manico l'ha
-                 RIMOSSO a livello di sistema (checkpoint 46, non esiste nemmeno in
-                 Chrome). Il motivo dello standalone e' svanito: si torna a
-                 sticky-immersive, il fullscreen VERO della TWA (barre di sistema
-                 nascoste, la finestra usa tutta la superficie). -->
-            <meta-data
-                android:name="android.support.customtabs.trusted.DISPLAY_MODE"
-                android:value="sticky-immersive" />
-
-            <!-- v1.0.8 (26 ottobre 2026) — richiesta esplicita di Alice dopo One UI 9:
-                 sbloccare l'aspect ratio e il cutout. NOTA DI ONESTA' TECNICA:
-                 android.max_aspect e' documentato a livello di <application> e con
-                 resizeableActivity="true" (che l'attivita' ha gia') non serve;
-                 android.min_aspect e il meta-dato cutout non sono meccanismi
-                 documentati di Android. Restano come da richiesta: la leva VERA al
-                 rendering e' l'item android:windowLayoutInDisplayCutoutMode nel tema. -->
-            <meta-data
-                android:name="android.max_aspect"
-                android:value="2.4" />
-            <meta-data
-                android:name="android.min_aspect"
-                android:value="1.0" />
-            <meta-data
-                android:name="android.window.layoutInDisplayCutoutMode"
-                android:value="always" />
         </activity>
+
+        <!-- Schermata di emergenza (processo separato): mostra l'ultimo errore. -->
+        <activity
+            android:name=".CrashActivity"
+            android:exported="false"
+            android:process=":crash"
+            android:theme="@style/Theme.BarbellDiva" />
     </application>
 
 </manifest>

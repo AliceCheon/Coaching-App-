@@ -1,16 +1,17 @@
-# Barbell Diva — app Android (TWA)
+# Barbell Diva — app Android (WebView propria, dalla 1.3.0)
 
-Questa cartella contiene l'app Android di Barbell Diva. È una **Trusted Web
-Activity (TWA)**: una "scatola" Android che apre il sito
-`https://alicecheon.github.io/Coaching-App-/` a tutto schermo, **senza barra del
-browser** e **con il login Google funzionante** (una WebView normale verrebbe
-bloccata da Google). Non è una riscrittura dell'app: è lo stesso sito, stesso
-account, stessi dati sincronizzati col PC.
+Questa cartella contiene l'app Android di Barbell Diva. Fino alla 1.2.1 era una
+Trusted Web Activity (dentro Chrome, dove il fullscreen della pagina non
+funzionava mai). **Dalla 1.3.0 è un'app con WebView propria** che apre
+`https://alicecheon.github.io/Coaching-App-/`: stesso sito, stesso account,
+stessi dati sincronizzati col PC.
 
-## Cosa fa la TWA
-- Mostra il sito già esistente (nessun codice duplicato).
-- Nessuna barra indirizzi (verificata con Digital Asset Links).
-- Chiede il bordo-schermo (tema `Theme.BarbellDiva.EdgeToEdge`, `shortEdges`).
+## Cosa fa l'app (MainActivity)
+- Fullscreen vero: `requestFullscreen()` della pagina -> `onShowCustomView()`
+  + immersiva della finestra (barre di sistema nascoste, cutout usato).
+- Login Google: user-agent senza `; wv`, cookie attivi, popup che ricade sul redirect.
+- Schermo sempre acceso durante l'allenamento: shim `navigator.wakeLock` -> `FLAG_KEEP_SCREEN_ON`.
+- Export backup salvato nella cartella Download.
 
 ## File importanti
 - `keystore.jks` — chiave di firma (**SEGRETA**, non versionata).
@@ -33,7 +34,7 @@ gradle assembleRelease
 ```
 
 ## Impronta della chiave (SHA-256)
-`60:1C:FD:DB:A7:14:D7:66:21:DC:63:99:AB:87:E8:21:25:F0:04:0F:37:21:2D:D4:14:2D:94:CA:05:B0:86:8C`
+`3B:7E:B4:37:36:84:DE:84:57:BF:CD:D7:27:94:D9:E0:90:49:94:9D:61:4B:6E:5B:C7:CC:17:7C:0D:EC:0A:22` (chiave nuova dalla 1.3.0; la 1.0.8–1.2.1 usava 60:1C:...:86:8C)
 
-Deve combaciare con quella in
+Per i link verificati deve combaciare con quella in
 `https://alicecheon.github.io/.well-known/assetlinks.json`.

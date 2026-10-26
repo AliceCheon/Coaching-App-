@@ -1,4 +1,4 @@
-> Build documentata: v148.33-schermo-pieno
+> Build documentata: v148.34-pulsantino
 
 # Firebase e Login — Barbell Diva
 
@@ -15,8 +15,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v148.33-schermo-pieno` |
-| `cache` | `atlas-app-v14833-schermo-pieno` |
+| `build` | `v148.34-pulsantino` |
+| `cache` | `atlas-app-v14834-pulsantino` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |
