@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Meta-dato Samsung: dichiara il widget come disponibile sulla FlexWindow
-     (schermo esterno, "sub_screen"). Ricetta ufficiale:
-     developer.samsung.com/codelab/galaxy-z/widget-flex-window.html -->
-<samsung-appwidget-provider display="sub_screen">
-</samsung-appwidget-provider>

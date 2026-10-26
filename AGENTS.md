@@ -756,3 +756,20 @@ UFFICIALE: il widget.
 - versionCode 14 / versionName 1.2.0; stessa firma.
 **Regola**: sul cover screen si lotta solo con widget e notifiche; se il fullscreen dell'app
 sul cover non arriva, e' One UI che lo decide, non il guscio.
+
+## v1.2.1 APK — widget rimosso e link "Diagnostica schermo" rimosso (26 ottobre sera, CHIUSURA)
+Verdetto di Alice sul widget 1.2.0: «inutile: comunque se ci clicco sopra mi apre l'app e c'è
+comunque la striscia bianca». Decisione accettata senza obiezioni:
+- RIMOSSO tutto il widget FlexWindow: receiver dal manifest, OggiWidgetProvider.java, layout
+  oggi_widget.xml, xml/oggi_widget_info.xml, xml/oggi_widget_samsung.xml, drawable
+  oggi_widget_bg.xml, widget-config.json in radice e tests/widget-config.test.mjs;
+- rimosso il link «🔧 Diagnostica schermo» da index.html (la pagina diagnostica-schermo.html
+  resta nel repo ma non è più raggiungibile dall'interfaccia);
+- versione web bumpata a v148.33-schermo-pieno / cache atlas-app-v14833 (CACHE_NAME nuovo:
+  il telefono scarica subito l'index senza il link — lezione v147.94). ATTENZIONE: il bump
+  tocca ANCHE FIREBASE-LOGIN.md (test 5 di version-single-source: la doc di login pubblica
+  la build corrente) — era il fallimento della prima iterazione.
+versionCode 15 / versionName 1.2.1; stessa firma 601cfd….
+**Regola**: il capitolo "cover screen" (banda/maschera One UI, widget, diagnostica) è CHIUSO su
+decisione esplicita di Alice. NON riaprirlo e NON riproporre widget o soluzioni se non su sua
+richiesta diretta.

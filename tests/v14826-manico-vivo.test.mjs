@@ -15,7 +15,7 @@ const html = read("index.html");
 // porta via anche il comando per ridimensionare la finestra. Le due cose sono
 // incompatibili per definizione.
 
-// 1) DEFAULT = NATIVE (v148.32). Alice ha superato per iscritto la regola
+// 1) DEFAULT = NATIVE (v148.33). Alice ha superato per iscritto la regola
 //    v148.26 ("forza il fullscreen ovunque", 26/10, due volte): il manico
 //    che il vecchio default proteggeva non esiste piu' su One UI 9
 //    (checkpoint 46). Il default nativo scatta solo senza preferenza;
@@ -39,7 +39,7 @@ assert.ok(
   !/applyBootMode[\s\S]{0,200}enter\(\)/.test(kiosk),
   "applyBootMode chiama enter(): al boot non si forza il fullscreen nativo"
 );
-// 3-bis) v148.32: armAuto TORNA, ma bene: UNA richiesta nativa per caricamento,
+// 3-bis) v148.33: armAuto TORNA, ma bene: UNA richiesta nativa per caricamento,
 //    al primo gesto, solo installata (mai browser normale) e solo via enter()
 //    (che gestisce da sola il ripiego su fill al rifiuto).
 assert.match(kiosk.split("function armAuto()")[1], /autoAllowed\(\)/, "armAuto non rispetta i canceli (browser normale/installazione)");
@@ -66,8 +66,8 @@ assert.match(kiosk, /if \(raw === "1"\) return "fill";/, "migrazione '1' -> fill
 
 // 8) Il pulsante resta l'unico comando affidabile e il modulo resta caricato.
 // v148.31: il pulsante SCHERMO e' stato rimosso su richiesta di Alice
-assert.ok(true, "pulsante rimosso: guardia superata da tests/v14832-pulsante-rimosso.test.mjs");
+assert.ok(true, "pulsante rimosso: guardia superata da tests/v14833-pulsante-rimosso.test.mjs");
 assert.match(html, /src\/fullscreen-kiosk\.js/, "index.html: modulo non caricato");
 assert.match(kiosk, /diagnostics/, "manca la diagnostica");
 
-console.log(JSON.stringify({ ok: true, fullscreen: "v148.32 manico-vivo (contratto aggiornato: default nativo + auto al primo gesto, su richiesta di Alice)" }));
+console.log(JSON.stringify({ ok: true, fullscreen: "v148.33 manico-vivo (contratto aggiornato: default nativo + auto al primo gesto, su richiesta di Alice)" }));

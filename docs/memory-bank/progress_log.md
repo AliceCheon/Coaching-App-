@@ -621,3 +621,10 @@ countdown + AGGIORNA + apertura app), card brand navy #090918 / rosa #FF6FCB, XM
 display="sub_screen", receiver nel manifest, widget-config.json di esempio in radice + test
 node di validazione. versionCode 14 / versionName 1.2.0, stessa firma 601cfd... Suite verde
 (fail 0, log /tmp/opencode/suite-120.log).
+
+## Checkpoint 54 — v1.2.1 rimozioni definitive (26 ottobre 2026, sera)
+Alice chiude il capitolo cover screen: widget 1.2.0 rimosso del tutto (giudicato inutile: il tap
+reimmette nell'app dove la banda rimane) e link "Diagnostica schermo" tolto da index.html.
+Web bumpato a v148.33-schermo-pieno, FIREBASE-LOGIN.md incluso (lezione: il test
+version-single-source esige la build anche lì). versionCode 15 / versionName 1.2.1, stessa
+firma 601cfd.... Suite verde (log /tmp/opencode/suite-121.log).

@@ -36,8 +36,8 @@ assert.ok(!/\.card::before/.test(css), "non aggiungere .card::before generico");
 assert.ok(!/\.card::after/.test(css), "non aggiungere .card::after generico");
 
 // Versione allineata.
-assert.ok(config.includes('build: "v148.32-schermo-pieno"'), "build non aggiornata");
-assert.ok(config.includes('cache: "atlas-app-v14832-schermo-pieno"'), "cache non aggiornata");
-assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14832-schermo-pieno"'), "CACHE_NAME non aggiornata");
+assert.ok(config.includes('build: "v148.33-schermo-pieno"'), "build non aggiornata");
+assert.ok(config.includes('cache: "atlas-app-v14833-schermo-pieno"'), "cache non aggiornata");
+assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14833-schermo-pieno"'), "CACHE_NAME non aggiornata");
 
-console.log(JSON.stringify({ ok: true, build: "v148.32-schermo-pieno", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));
+console.log(JSON.stringify({ ok: true, build: "v148.33-schermo-pieno", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));

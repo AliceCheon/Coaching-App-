@@ -136,26 +136,6 @@
                 android:name="android.window.layoutInDisplayCutoutMode"
                 android:value="always" />
         </activity>
-        <!-- Widget "Allenamento di oggi" (v1.2.0) — ricetta ufficiale Samsung per la
-             FlexWindow (codelab "Develop a widget for Flex Window"): widgetCategory
-             "keyguard" + meta-data com.samsung.android.appwidget.provider con
-             display="sub_screen". Attivazione: Impostazioni > Cover screen > Widget. -->
-        <receiver
-            android:name=".OggiWidgetProvider"
-            android:exported="true"
-            android:label="Allenamento di oggi">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.barbelldiva.app.WIDGET_REFRESH" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/oggi_widget_info" />
-            <meta-data
-                android:name="com.samsung.android.appwidget.provider"
-                android:resource="@xml/oggi_widget_samsung" />
-        </receiver>
-
     </application>
 
 </manifest>

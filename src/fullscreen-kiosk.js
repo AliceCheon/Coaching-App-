@@ -33,7 +33,7 @@
   var doc = root.document;
   if (!doc) return;
 
-  var VERSION = "v148.32";
+  var VERSION = "v148.33";
   var STORAGE_KEY = "barbell-diva.fullscreen";
   var ICON_OFF = "\u2922";   /* expand   */
   var ICON_ON = "\u2921";    /* collapse */
@@ -102,7 +102,7 @@
     if (raw === "off" || raw === "fill" || raw === "native") return raw;
     if (raw === "0") return "off";
     if (raw === "1") return "fill";
-    /* v148.32 — richiesta esplicita di Alice (26/10): "forza il fullscreen
+    /* v148.33 — richiesta esplicita di Alice (26/10): "forza il fullscreen
        ovunque sia necessario, la striscia bianca deve sparire". Default
        NATIVO (era "off" dalla v148.26): il manico che quella regola
        proteggeva non esiste piu' su One UI 9 (checkpoint 46) e Alice ha
@@ -409,7 +409,7 @@
     if (pref() === "fill") applyFill("boot");
   }
 
-  /* v148.32 — il fullscreen automatico TORNA su richiesta esplicita di Alice:
+  /* v148.33 — il fullscreen automatico TORNA su richiesta esplicita di Alice:
      UNA sola richiesta nativa per caricamento, al PRIMO gesto (pointerdown/
      touchstart/keydown, presi sincroni: requestFullscreen esige un gesto),
      solo se installata (mai nel browser normale, vedi autoAllowed).

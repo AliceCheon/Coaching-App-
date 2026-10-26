@@ -14,7 +14,7 @@ const css = read("coach-studio-inline.css");
 // stessa con un comando chiaro e un pannello a tre scelte.
 
 // v148.31: il pulsante SCHERMO e' stato rimosso su richiesta di Alice
-assert.ok(true, "pulsante rimosso: guardia superata da tests/v14832-pulsante-rimosso.test.mjs");
+assert.ok(true, "pulsante rimosso: guardia superata da tests/v14833-pulsante-rimosso.test.mjs");
 assert.match(kiosk, /"SCHERMO"/, "manca il testo SCHERMO sul pulsante");
 assert.match(kiosk, /function openSheet/, "manca il pannello delle scelte");
 assert.match(kiosk, /openSheet\(\)/, "il pulsante non apre il pannello");
@@ -37,7 +37,7 @@ assert.ok(
 assert.match(kiosk, /iconEl\.textContent/, "paint() non aggiorna l'icona");
 
 // v148.31: il pulsante SCHERMO e' stato rimosso su richiesta di Alice
-assert.ok(true, "pulsante rimosso: guardia superata da tests/v14832-pulsante-rimosso.test.mjs");
+assert.ok(true, "pulsante rimosso: guardia superata da tests/v14833-pulsante-rimosso.test.mjs");
 assert.match(css, /\.bd-fs-sheet-card/, "CSS: manca la card del pannello");
 assert.match(css, /html\[data-theme="light"\] \.bd-fs-sheet-card/, "CSS: il pannello non e' vestito nel tema chiaro");
 assert.match(css, /\.bd-fs-option\[data-current="1"\]/, "CSS: la scelta attiva non si distingue");
