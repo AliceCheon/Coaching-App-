@@ -652,3 +652,20 @@ del cover screen vale di piu': senza manico l'app non si ridimensiona e non si
 puo' cambiare modalita'. Non rimettere `fullscreen` nel manifest.
 Test: `tests/v14827-manico-ritrovato.test.mjs`, aggiornato
 `tests/manifest-flexwindow.test.mjs` e `tests/v14825-schermo-esterno-fullscreen`.
+
+## v148.28 — il manico non esiste piu': comando dentro l'app
+Alice, 26 ottobre: lo screenshot del cover screen mostra l'app con la sola barra
+gesti di sistema e **nessuna maniglia Samsung**; confermato che non compare
+nemmeno aprendo Chrome dal cover screen. Quindi **One UI 9 ha rimosso la
+maniglia dal cover screen**: non e' l'app, non e' il manifest (`display:
+standalone` e' gia' corretto), non e' il CSS. Inseguirla e' tempo perso.
+
+Fix: il pulsante in-app smette di essere un puntino muto e diventa una pillola
+con etichetta **"SCHERMO"** che apre un pannello a tre scelte:
+`Normale` / `Riempi schermo (consigliato)` / `Fullscreen vero`, con la scelta
+attiva evidenziata. Un tocco, nessun gesto da indovinare, nessun ciclo alla
+cieca. API: `openSheet()` / `closeSheet()`.
+Test: `tests/v14828-scelta-schermo.test.mjs`.
+
+**Regola**: non reintrodurre dipendenze dal pulsantino di sistema. Il controllo
+della modalita' deve restare dentro l'app.

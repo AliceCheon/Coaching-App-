@@ -78,7 +78,7 @@ function boot(label) {
   return context;
 }
 
-const ctx = boot("v14827");
+const ctx = boot("v14828");
 const esito = await vm.runInContext(`(async () => {
   const out = {};
   const scheda = (nome, nota, quando) => ({ code: "A", name: nome, updatedAt: quando, exercises: [{ name: "Hip_Thrust", progression: { weeks: [{ sets: "3", reps: "8", notes: nota }] } }] });

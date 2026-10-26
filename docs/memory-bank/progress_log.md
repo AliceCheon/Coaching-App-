@@ -538,3 +538,11 @@ Obiettivo:
 
 - **Nota suite**: `tests/dashboard-volume-estimate.test.mjs` e' ROSSO ma **preesistente**: verificato con `git worktree` sul commit `a0c625a` (v148.25), fallisce identico ("volume dashboard non disponibile"). Usa `new Date().toISOString()` e `toLocaleDateString("it-IT")`, quindi dipende dal giorno: date-rot da curare a parte, NON causato dalla v148.27 e non mascherato.
 - **Suite v148.27**: 258 test, 246 pass, 3 fail di cui 2 miei (pinnavano `background_color`) risolti ripristinando `#080817`; resta solo il date-rot preesistente (1 fail).
+
+## Checkpoint 46 — Il manico non c'è più: l'app si arrangia (v148.28)
+- **Prova definitiva**: screenshot del cover screen (app a schermo pieno, solo barra gesti grigia, nessuna maniglia) + "non compare nemmeno in Chrome". Chrome non conosce il nostro manifest né la nostra TWA: se manca anche lì, il responsabile è **One UI 9**, che ha rimosso la maniglia dal cover screen.
+- **Conseguenza**: smettere di inseguire il pulsantino Samsung. `display: standalone` (v148.27) era comunque giusto e resta.
+- **Fix v148.28 "scelta-schermo"**: il pulsante in-app diventa una pillola con etichetta `SCHERMO` e apre un pannello con tre scelte (`Normale` / `Riempi schermo` / `Fullscreen vero`), con la modalità attiva evidenziata. Aggiunti `openSheet()`/`closeSheet()` all'API. Un tocco, nessun ciclo alla cieca.
+- **Guardia**: `tests/v14828-scelta-schermo.test.mjs`.
+- **Suite**: 259 test, 250 pass, 0 fail, 9 skipped — VERDE (il date-rot di `dashboard-volume-estimate` è rientrato da solo: conferma che era legato al giorno, non al codice).
+- **Prossimi step**: se Alice vuole davvero il bordo-schermo pieno, l'unica via è il fullscreen nativo (che nasconde le barre di sistema): è una scelta consapevole nel pannello.

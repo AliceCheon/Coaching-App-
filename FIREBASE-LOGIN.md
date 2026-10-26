@@ -1,4 +1,4 @@
-> Build documentata: v148.27-manico-ritrovato
+> Build documentata: v148.28-scelta-schermo
 
 # Firebase e Login — Barbell Diva
 
@@ -15,8 +15,8 @@ La configurazione è centralizzata in `app-config-v144.js`, che espone
 
 | Chiave | Valore |
 |--------|--------|
-| `build` | `v148.27-manico-ritrovato` |
-| `cache` | `atlas-app-v14827-manico-ritrovato` |
+| `build` | `v148.28-scelta-schermo` |
+| `cache` | `atlas-app-v14828-scelta-schermo` |
 | `backupAutomaticLimit` | `5` |
 | `firebase.projectId` | `barbell-diva` |
 | `firebase.authDomain` | `barbell-diva.firebaseapp.com` |

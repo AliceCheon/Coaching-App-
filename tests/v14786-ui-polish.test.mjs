@@ -36,8 +36,8 @@ assert.ok(!/\.card::before/.test(css), "non aggiungere .card::before generico");
 assert.ok(!/\.card::after/.test(css), "non aggiungere .card::after generico");
 
 // Versione allineata.
-assert.ok(config.includes('build: "v148.27-manico-ritrovato"'), "build non aggiornata");
-assert.ok(config.includes('cache: "atlas-app-v14827-manico-ritrovato"'), "cache non aggiornata");
-assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14827-manico-ritrovato"'), "CACHE_NAME non aggiornata");
+assert.ok(config.includes('build: "v148.28-scelta-schermo"'), "build non aggiornata");
+assert.ok(config.includes('cache: "atlas-app-v14828-scelta-schermo"'), "cache non aggiornata");
+assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14828-scelta-schermo"'), "CACHE_NAME non aggiornata");
 
-console.log(JSON.stringify({ ok: true, build: "v148.27-manico-ritrovato", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));
+console.log(JSON.stringify({ ok: true, build: "v148.28-scelta-schermo", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));
