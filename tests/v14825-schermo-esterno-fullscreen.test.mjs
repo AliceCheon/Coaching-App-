@@ -48,10 +48,13 @@ assert.match(kiosk, /lastError/, "kiosk: l'ultimo errore non viene conservato");
 
 // 4) PULSANTE IN-APP. Deve esistere, nascere dal modulo e vivere fuori dal
 //    flusso (non sposta il layout del cover screen).
-assert.match(kiosk, /bd-fs-toggle/, "kiosk: manca il pulsante in-app");
+// v148.31: il pulsante SCHERMO e' stato rimosso su richiesta di Alice
+assert.ok(true, "pulsante rimosso: guardia superata da tests/v14831-pulsante-rimosso.test.mjs");
 assert.match(kiosk, /addEventListener\(\s*["']click["']/, "kiosk: il pulsante non usa 'click' (gesto fidato)");
-assert.match(css, /\.bd-fs-toggle\s*\{[^}]*position:\s*fixed/, "CSS: il pulsante deve essere position: fixed");
-assert.match(css, /\.bd-fs-toggle\s*\{[^}]*right:/, "CSS: il pulsante deve stare sul bordo destro");
+// v148.31: il pulsante SCHERMO e' stato rimosso su richiesta di Alice
+assert.ok(true, "pulsante rimosso: guardia superata da tests/v14831-pulsante-rimosso.test.mjs");
+// v148.31: il pulsante SCHERMO e' stato rimosso su richiesta di Alice
+assert.ok(true, "pulsante rimosso: guardia superata da tests/v14831-pulsante-rimosso.test.mjs");
 assert.match(html, /src\/fullscreen-kiosk\.js/, "index.html: modulo fullscreen non caricato");
 assert.match(sw, /"\.\/src\/fullscreen-kiosk\.js"/, "service worker: il modulo non entra nella cache");
 

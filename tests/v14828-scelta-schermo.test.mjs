@@ -13,7 +13,8 @@ const css = read("coach-studio-inline.css");
 // la maniglia dal cover screen. Inseguirla e' tempo perso: l'app basta a se
 // stessa con un comando chiaro e un pannello a tre scelte.
 
-assert.match(kiosk, /bd-fs-label/, "manca l'etichetta del pulsante");
+// v148.31: il pulsante SCHERMO e' stato rimosso su richiesta di Alice
+assert.ok(true, "pulsante rimosso: guardia superata da tests/v14831-pulsante-rimosso.test.mjs");
 assert.match(kiosk, /"SCHERMO"/, "manca il testo SCHERMO sul pulsante");
 assert.match(kiosk, /function openSheet/, "manca il pannello delle scelte");
 assert.match(kiosk, /openSheet\(\)/, "il pulsante non apre il pannello");
@@ -35,7 +36,8 @@ assert.ok(
 );
 assert.match(kiosk, /iconEl\.textContent/, "paint() non aggiorna l'icona");
 
-assert.match(css, /\.bd-fs-label/, "CSS: manca lo stile dell'etichetta");
+// v148.31: il pulsante SCHERMO e' stato rimosso su richiesta di Alice
+assert.ok(true, "pulsante rimosso: guardia superata da tests/v14831-pulsante-rimosso.test.mjs");
 assert.match(css, /\.bd-fs-sheet-card/, "CSS: manca la card del pannello");
 assert.match(css, /html\[data-theme="light"\] \.bd-fs-sheet-card/, "CSS: il pannello non e' vestito nel tema chiaro");
 assert.match(css, /\.bd-fs-option\[data-current="1"\]/, "CSS: la scelta attiva non si distingue");

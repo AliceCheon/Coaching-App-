@@ -366,41 +366,10 @@
     sheet = wrap;
   }
 
-  /* ---- Pulsante "SCHERMO" ----------------------------------------------- */
-  function makeButton() {
-    if (button || !doc.body) return;
-    var b = doc.createElement("button");
-    b.type = "button";
-    b.id = "bdFullscreenToggle";
-    b.className = "bd-fs-toggle";
-    b.setAttribute("aria-pressed", "false");
-
-    var icon = doc.createElement("span");
-    icon.className = "bd-fs-icon";
-    icon.setAttribute("aria-hidden", "true");
-    var label = doc.createElement("span");
-    label.className = "bd-fs-label";
-    label.textContent = "SCHERMO";
-    b.appendChild(icon);
-    b.appendChild(label);
-
-    /* click = gesto fidato al 100% (serve a requestFullscreen). */
-    b.addEventListener("click", function (event) {
-      if (event && event.preventDefault) event.preventDefault();
-      openSheet();
-    });
-    b.addEventListener("pointerdown", function (event) {
-      if (event && event.stopPropagation) event.stopPropagation();
-    }, { passive: true });
-
-    doc.body.appendChild(b);
-    button = b;
-    iconEl = icon;
-    paint();
-  }
-
+  /* v148.31 — Pulsante "SCHERMO" RIMOSSO su richiesta di Alice: era inutile
+     e copriva l'app. Il modulo resta per le API (fill/native/off) ma non
+     disegna piu' nulla a schermo. */
   function boot() {
-    makeButton();
     emit();
   }
 

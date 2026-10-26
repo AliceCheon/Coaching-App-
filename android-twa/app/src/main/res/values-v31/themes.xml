@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- v1.0.7 — LA BANDA BIANCA NON E' DELL'APP, E' DELLA BARRA DI SISTEMA.
+         Alice: "togliere quella banda bianca che NON FA PARTE DELL'APP".
+         Nella foto la fascia in basso (circa il 20% dello schermo) contiene solo
+         la barra gesti: il contenuto dell'app finisce prima. Quell'area la
+         disegna il SISTEMA, non il sito. Su Android 15/16 (targetSdk 36) le
+         system bar sono edge-to-edge e i colori dichiarati vengono ignorati:
+         resta visibile il fondo della finestra e la sfumatura di contrasto che
+         il sistema applica in tema chiaro — da qui il BIANCO.
+         Rimedio: tema DARK esplicito (icone chiare), fondo finestra scuro,
+         nessuna velatura di contrasto, e la barra di navigazione dipinta con il
+         colore dell'app invece che dal sistema. -->
+    <style name="Theme.BarbellDiva" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/colorPrimary</item>
+        <item name="android:colorBackground">@color/colorPrimary</item>
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="android:navigationBarColor">@color/colorPrimaryDark</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:navigationBarDividerColor">@color/colorPrimaryDark</item>
+    </style>
+
+    <style name="Theme.BarbellDiva.EdgeToEdge" parent="Theme.BarbellDiva">
+        <!-- stesso tema: il nome resta per compatibilita' con il manifest -->
+        <item name="android:windowBackground">@color/colorPrimary</item>
+        <item name="android:colorBackground">@color/colorPrimary</item>
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="android:navigationBarColor">@color/colorPrimaryDark</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:navigationBarDividerColor">@color/colorPrimaryDark</item>
+        <item name="android:enforceNavigationBarContrast">false</item>
+        <item name="android:enforceStatusBarContrast">false</item>
+        <item name="android:windowSplashScreenBackground">@color/splashBackground</item>
+    </style>
+
+</resources>

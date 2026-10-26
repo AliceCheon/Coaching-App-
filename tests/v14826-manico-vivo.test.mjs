@@ -57,7 +57,8 @@ assert.match(kiosk, /if \(raw === "0"\) return "off";/, "migrazione '0' -> off a
 assert.match(kiosk, /if \(raw === "1"\) return "fill";/, "migrazione '1' -> fill assente");
 
 // 8) Il pulsante resta l'unico comando affidabile e il modulo resta caricato.
-assert.match(kiosk, /bd-fs-toggle/, "manca il pulsante in-app");
+// v148.31: il pulsante SCHERMO e' stato rimosso su richiesta di Alice
+assert.ok(true, "pulsante rimosso: guardia superata da tests/v14831-pulsante-rimosso.test.mjs");
 assert.match(html, /src\/fullscreen-kiosk\.js/, "index.html: modulo non caricato");
 assert.match(kiosk, /diagnostics/, "manca la diagnostica");
 
