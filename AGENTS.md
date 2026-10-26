@@ -694,3 +694,23 @@ Alice su 1.0.9: "NON funziona, striscia bianca a meta' schermo su One UI 9". Tre
 2. **Tema TWA (v1.1.0)**: aggiunto `android:windowFullscreen` a `Theme.BarbellDiva.EdgeToEdge` (valori + v27 + v29 + v31) — e' l'effetto di `Theme.NoTitleBar.Fullscreen` chiesto da Alice, mantenendo cutout/fondi scuri del tema (sostituire il tema padre li avrebbe persi). StatusBar: con windowFullscreen la status bar e' rimossa a livello di finestra (targetSdk 34: gestione legacy attiva); windowTranslucentStatus copre il resto; windowBackground gia' scuro.
 3. **Web (v148.32)**: il modulo kiosk ripristina l'auto-native UNA volta per caricamento al primo gesto (solo installata, mai browser normale) e il default diventa `native` ("off" esplicito resta rispettato). Base: la storia del progetto (v147.62, issue Chromium pwa-cutout) documenta che `requestFullscreen()` imposta LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES e dipinge DIETRO barre/cutout — la leva che sticky-immersive da solo non tira su One UI 9. Regola v148.26 "mai auto" SUPERATA da Alice per iscritto (il manico che proteggeva non esiste piu'). Il test v14826 e' stato aggiornato al nuovo contratto (precedente: le versioni successive aggiornano i pinnavano).
 Revert: `git revert` + rimettere `standalone` in DISPLAY_MODE + pref default "off".
+
+## v1.1.1 APK — immersiva nativa nel guscio TWA (26 ottobre 2026)
+Alice: nel browser il fullscreen funziona (mode native, zero errori, NESSUNA banda,
+UA GensparkApp — era l'app-browser Genspark, non la TWA), nella TWA installata no
+→ chiesto il "bridge nativo". Verificato sulle librerie reali:
+- il flag **"TWA_LAUNCH_AS_FULLSCREEN" non esiste** in androidx.browser/androidbrowserhelper;
+- **WebChromeClient/onShowCustomView** è codice da WebView: la TWA NON ha WebView
+  (il fallback usa un intent VIEW, non una WebView);
+- **CustomTabColorSchemeParams** comanda solo i colori della toolbar dei Custom Tabs.
+Leva reale applicata (MainActivity.java): `applyImmersiveFullscreen()` — nasconde
+status bar + navigation bar a livello di finestra (API 30+: WindowInsetsController
+`hide(statusBars|navigationBars)` + `BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`; fino a
+29: immersiva sticky legacy), FLAG_FULLSCREEN ribadito in codice, cutout ALWAYS in
+codice (API 28+), ri-applicata a `onWindowFocusChanged(true)`. NON dipende dalla
+requestFullscreen() del sito: il guscio nasconde le barre da sé. La diagnose page
+agganciata al kiosk v14832 (prima caricava v14824) e link "🔧 Diagnostica schermo"
+in fondo a index.html (v148.33, commit 05ac229) per provare DENTRO la TWA.
+versionCode 12 / versionName 1.1.1; stessa firma 601cfd… (aggiorna sopra senza
+disinstallare). **Regola**: la scomparsa delle barre la fa il GUSCIO, non solo la
+pagina — non rimuovere applyImmersiveFullscreen né il riarmo sul focus.

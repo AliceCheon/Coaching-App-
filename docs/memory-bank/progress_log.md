@@ -575,3 +575,24 @@ Obiettivo:
 - Test v14826 aggiornato al nuovo contratto (default nativo + armAuto armato) — override esplicito di Alice, motivazione nel codice e qui.
 - Suite: 262 test, 253 pass, 0 fail, 9 skipped (~304s) — VERDE. Build: gradle 8.11.1 + javac, apksigner OK, stessa chiave 60:1C:...86:8C.
 - Consegna: `barbell-diva-1.1.0.apk` (la 1.0.8/1.0.9 sono superate). Revert: ripristinare `standalone` nel meta DISPLAY_MODE, pref "off" e rimuovere windowFullscreen.
+
+## Checkpoint 51 — v1.1.1 immersiva nativa nel guscio TWA (26 ottobre 2026, ~17:45)
+- Diagnosi di Alice: browser OK (mode native, nessun errore, nessuna banda), TWA no.
+  I suoi screenshot erano dell'app-browser Genspark (UA GensparkApp/31300, box verde
+  "non l'app installata") → il web era validato, mancava la prova DENTRO la TWA.
+- v148.33 (commit 05ac229): link "🔧 Diagnostica schermo" in fondo a index.html
+  (per la TWA non c'era modo di aprire la diagnostica) + diagnostica agganciata a
+  fullscreen-kiosk v14832 (prima caricava v14824).
+- APK 1.1.1 (versionCode 12): MainActivity.applyImmersiveFullscreen() — status+nav
+  nascoste a livello finestra (InsetsController sticky/transiente su API 30+,
+  immersiva legacy fino a 29), cutout ALWAYS in codice, FLAG_FULLSCREEN ribadito,
+  riarmo su onWindowFocusChanged(true). Indipendente da requestFullscreen().
+  Chiesto da Alice e inapplicabile: flag TWA_LAUNCH_AS_FULLSCREEN (inesistente),
+  WebChromeClient (non c'è WebView nella TWA), CustomTabColorSchemeParams (solo
+  colori toolbar CCT).
+- Firma: stessa impronta 601cfd… verificata con apksigner sull'APK → aggiorna
+  sopra senza disinstallare; assetlinks.json invariato.
+- Suite: 262 test, 253 pass, 0 fail, 9 skipped (~310s). Web invariato.
+- Prossimo: screenshot della diagnostica DENTRO la TWA (link in home). mode=native
+  + banda persistente → colpevole sistema (Good Lock/MultiStar); errore → nome
+  esplicito del rifiuto. Revert: git revert + immersiva rimossa da MainActivity.
