@@ -45,6 +45,7 @@
             android:launchMode="singleTask"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode|density"
             android:resizeableActivity="true"
+            android:supportsPictureInPicture="false"
             android:theme="@style/Theme.BarbellDiva.EdgeToEdge">
 
             <intent-filter>
@@ -93,6 +94,23 @@
             <meta-data
                 android:name="android.support.customtabs.trusted.DISPLAY_MODE"
                 android:value="standalone" />
+
+            <!-- v1.0.8 (26 ottobre 2026) — richiesta esplicita di Alice dopo One UI 9:
+                 sbloccare l'aspect ratio e il cutout. NOTA DI ONESTA' TECNICA:
+                 android.max_aspect e' documentato a livello di <application> e con
+                 resizeableActivity="true" (che l'attivita' ha gia') non serve;
+                 android.min_aspect e il meta-dato cutout non sono meccanismi
+                 documentati di Android. Restano come da richiesta: la leva VERA al
+                 rendering e' l'item android:windowLayoutInDisplayCutoutMode nel tema. -->
+            <meta-data
+                android:name="android.max_aspect"
+                android:value="2.4" />
+            <meta-data
+                android:name="android.min_aspect"
+                android:value="1.0" />
+            <meta-data
+                android:name="android.window.layoutInDisplayCutoutMode"
+                android:value="always" />
         </activity>
     </application>
 

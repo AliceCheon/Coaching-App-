@@ -34,6 +34,15 @@
         <item name="android:forceDarkAllowed">false</item>
         <item name="android:windowLightNavigationBar">false</item>
         <item name="android:navigationBarDividerColor">@color/colorPrimaryDark</item>
+
+        <!-- v1.0.8 — richiesta One UI 9 di Alice: rendering nativo edge-to-edge
+             (contenuto dietro status/navigation bar e cutout). Le windowTranslucent*
+             rendono IGNORI i colori barra dichiarati qui sopra: e' il prezzo della
+             modalita'. Il cutout mode e' ignorato sulle API 24-27 (attributo nato
+             con Android 9): per questo la variante viene ribadita in -v27/-v29/-v31. -->
+        <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowTranslucentNavigation">true</item>
     </style>
 
 </resources>

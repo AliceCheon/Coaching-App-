@@ -678,3 +678,6 @@ impronta `92:16:F9:A2:...:9A:8F`, aggiunta in `AliceCheon.github.io/.well-known/
 (la vecchia resta elencata). **Conseguenza per Alice**: la firma è diversa, quindi
 Android rifiuta l'aggiornamento — va **disinstallata la vecchia app prima**.
 Build verificata: `aapt2 dump xmltree` mostra `DISPLAY_MODE=standalone`, `apksigner verify` ok.
+
+## v1.0.8 APK — interruttori One UI 9 richiesti da Alice (26 ottobre 2026)
+Richiesta diretta di Alice (commit e push autorizzati in partenza): aspect ratio libero + cutout `always` + window traslucide per tentare il rendering fullscreen nativo su One UI 9. Applicati su `.MainActivity` (manifest) e su `Theme.BarbellDiva.EdgeToEdge` in `values*/themes.xml`; `twamanifest.json` non esiste (progetto Gradle, non Bubblewrap) e il manifest web resta `standalone` (regola v148.27). Nota: `max_aspect` e' leva di `<application>` e morta con `resizeableActivity="true"`; il meta-dato cutout non e' documentato (quello vero e' l'item di tema). Le window traslucide disattivano i colori barra della v1.0.7 e possono far sparire di nuovo il manico: esperimento voluto, revert pronto (`git revert`). versionCode 9 / versionName 1.0.8.
