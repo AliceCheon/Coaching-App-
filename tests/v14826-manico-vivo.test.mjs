@@ -15,13 +15,17 @@ const html = read("index.html");
 // porta via anche il comando per ridimensionare la finestra. Le due cose sono
 // incompatibili per definizione.
 
-// 1) DEFAULT = FILL. L'app riempie il viewport via CSS, il sistema resta
-//    intatto e il manico e' vivo. Il default non deve MAI essere "native".
-assert.match(kiosk, /return "off";/, "la preferenza di default non e' 'off' (serve la finestra per il pulsantino)");
-assert.ok(
-  !/return\s+"native";/.test(kiosk.split("function pref()")[1].split("}")[0]),
-  "pref(): il default e' tornato 'native' (manico Samsung spacciato)"
+// 1) DEFAULT = NATIVE (v148.32). Alice ha superato per iscritto la regola
+//    v148.26 ("forza il fullscreen ovunque", 26/10, due volte): il manico
+//    che il vecchio default proteggeva non esiste piu' su One UI 9
+//    (checkpoint 46). Il default nativo scatta solo senza preferenza;
+//    "off" esplicito resta rispettato.
+assert.match(
+  kiosk.split("function pref()")[1].split("}")[0],
+  /return "native";/,
+  "pref(): il default non e' piu' 'native' (richiesta esplicita di Alice)"
 );
+assert.match(kiosk, /raw === "0"\) return "off"/, "l'off esplicito non e' piu' rispettato");
 
 // 2) CICLO A TRE STATI: off -> fill -> native -> off. Mai intrappolato in native.
 assert.match(kiosk, /if \(m === "off"\) return "fill";/, "il ciclo non parte da off verso fill");
@@ -35,7 +39,11 @@ assert.ok(
   !/applyBootMode[\s\S]{0,200}enter\(\)/.test(kiosk),
   "applyBootMode chiama enter(): al boot non si forza il fullscreen nativo"
 );
-assert.ok(!/requestFullscreen\(\)/.test(kiosk.split("function armAuto()")[1].split("function")[0]), "armAuto richiede ancora il fullscreen automatico: nasconderebbe il pulsantino");
+// 3-bis) v148.32: armAuto TORNA, ma bene: UNA richiesta nativa per caricamento,
+//    al primo gesto, solo installata (mai browser normale) e solo via enter()
+//    (che gestisce da sola il ripiego su fill al rifiuto).
+assert.match(kiosk.split("function armAuto()")[1], /autoAllowed\(\)/, "armAuto non rispetta i canceli (browser normale/installazione)");
+assert.match(kiosk.split("function armAuto()")[1], /enter\(\)/, "armAuto non richiede piu' il fullscreen nativo al primo gesto");
 
 // 4) USCITA DI SISTEMA => FILL, non off. Se One UI esce dal fullscreen la
 //    finestra non deve restare dimezzata ne' perdere il riempimento.
@@ -58,8 +66,8 @@ assert.match(kiosk, /if \(raw === "1"\) return "fill";/, "migrazione '1' -> fill
 
 // 8) Il pulsante resta l'unico comando affidabile e il modulo resta caricato.
 // v148.31: il pulsante SCHERMO e' stato rimosso su richiesta di Alice
-assert.ok(true, "pulsante rimosso: guardia superata da tests/v14831-pulsante-rimosso.test.mjs");
+assert.ok(true, "pulsante rimosso: guardia superata da tests/v14832-pulsante-rimosso.test.mjs");
 assert.match(html, /src\/fullscreen-kiosk\.js/, "index.html: modulo non caricato");
 assert.match(kiosk, /diagnostics/, "manca la diagnostica");
 
-console.log(JSON.stringify({ ok: true, fullscreen: "v148.26 manico-vivo" }));
+console.log(JSON.stringify({ ok: true, fullscreen: "v148.32 manico-vivo (contratto aggiornato: default nativo + auto al primo gesto, su richiesta di Alice)" }));

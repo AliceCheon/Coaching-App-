@@ -35,7 +35,7 @@ const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math
   addEventListener() {}, removeEventListener() {}, matchMedia() { return { matches: true }; }, window: null, globalThis: null };
 context.window = context; context.globalThis = context;
 vm.createContext(context);
-new vm.Script(vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + bootPart, { filename: "v14831.js" }).runInContext(context);
+new vm.Script(vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + bootPart, { filename: "v14832.js" }).runInContext(context);
 
 const esito = vm.runInContext(`(() => {
   const out = {};

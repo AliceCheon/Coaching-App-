@@ -566,3 +566,12 @@ Obiettivo:
 - Alice (14:45): "forza il fullscreen ovunque sia necessario per sovrascrivere i blocchi di One UI 9" (confermata la struttura reale dei file). Gli interruttori del piano erano GIA' pushati (ca5ae27) e la 1.0.8 compilata/consegnata; mancava solo la leva TWA: DISPLAY_MODE da `standalone` a **`sticky-immersive`** — la scelta v1.0.5 si reggeva sul manico, che One UI 9 ha eliminato (checkpoint 46): costo zero, superficie piena. Punto 3 di Alice: manifest web resta standalone, e' il wrapper a essere fullscreen (non legge il display del sito).
 - Build: gradle 8.11.1 + javac (apt), apksigner OK, stessa chiave 60:1C:...86:8C. Test di guardia android/webmanifest/temi verdi (5/5). versionCode 10 / 1.0.9. Consegna: `barbell-diva-1.0.9.apk` (sostituisce la 1.0.8 per l'installazione).
 - Primo tentativo interrotto da Alice a meta' pipeline (tests verdi, build non partita): recuperato integralmente senza rifare le modifiche.
+
+## Checkpoint 50 — v148.32 + APK 1.1.0: tutti gli interruttori del fullscreen (26 ottobre pomeriggio)
+- Test di Alice su 1.0.9: striscia bianca a meta' schermo sul cover display; sticky-immersive da solo non basta su One UI 9.
+- Verifica live: assetlinks.json = firma APK al carattere (l'ipotesi DAL di Alice e' scartata, con evidenza).
+- APK 1.1.0 (versionCode 11): windowFullscreen nel tema EdgeToEdge x4 varianti + cutout always + barre traslucide + DISPLAY_MODE sticky-immersive.
+- Web v148.32: auto-native una volta per caricamento al primo gesto (autoAllowed: mai browser normale), default pref "native", "off" esplicito rispettato. Evidenza storica v147.62: requestFullscreen dipinge dietro barre/cutout, i soli meta no.
+- Test v14826 aggiornato al nuovo contratto (default nativo + armAuto armato) — override esplicito di Alice, motivazione nel codice e qui.
+- Suite: 262 test, 253 pass, 0 fail, 9 skipped (~304s) — VERDE. Build: gradle 8.11.1 + javac, apksigner OK, stessa chiave 60:1C:...86:8C.
+- Consegna: `barbell-diva-1.1.0.apk` (la 1.0.8/1.0.9 sono superate). Revert: ripristinare `standalone` nel meta DISPLAY_MODE, pref "off" e rimuovere windowFullscreen.

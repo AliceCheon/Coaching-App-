@@ -33,7 +33,7 @@
   var doc = root.document;
   if (!doc) return;
 
-  var VERSION = "v148.28";
+  var VERSION = "v148.32";
   var STORAGE_KEY = "barbell-diva.fullscreen";
   var ICON_OFF = "\u2922";   /* expand   */
   var ICON_ON = "\u2921";    /* collapse */
@@ -102,7 +102,13 @@
     if (raw === "off" || raw === "fill" || raw === "native") return raw;
     if (raw === "0") return "off";
     if (raw === "1") return "fill";
-    return "off";
+    /* v148.32 — richiesta esplicita di Alice (26/10): "forza il fullscreen
+       ovunque sia necessario, la striscia bianca deve sparire". Default
+       NATIVO (era "off" dalla v148.26): il manico che quella regola
+       proteggeva non esiste piu' su One UI 9 (checkpoint 46) e Alice ha
+       scelto lo schermo pieno due volte per iscritto. "off" esplicito resta
+       rispettato. */
+    return "native";
   }
   function setPref(value) { storeSet(STORAGE_KEY, value); }
 
@@ -403,10 +409,27 @@
     if (pref() === "fill") applyFill("boot");
   }
 
-  /* NIENTE fullscreen automatico: era lui a nascondere le barre di sistema
-     (e con loro il pulsantino) al primo tocco. Il fullscreen resta solo una
-     scelta esplicita dal pannello. */
-  function armAuto() { /* intenzionalmente vuoto */ }
+  /* v148.32 — il fullscreen automatico TORNA su richiesta esplicita di Alice:
+     UNA sola richiesta nativa per caricamento, al PRIMO gesto (pointerdown/
+     touchstart/keydown, presi sincroni: requestFullscreen esige un gesto),
+     solo se installata (mai nel browser normale, vedi autoAllowed).
+     Perche' serve: la storia del progetto (v147.62, issue Chromium pwa-cutout)
+     documenta che e' requestFullscreen() a impostare
+     LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES e far dipingere DIETRO le barre
+     e il cutout — la leva che sticky-immersive da solo non tira su One UI 9.
+     La regola v148.26 "mai auto" e' superata: proteggeva un manico che
+     One UI 9 ha rimosso, e Alice ha confermato il fullscreen due volte. */
+  function armAuto() {
+    if (!autoAllowed()) return;
+    var arm = function (event) {
+      if (diag.autoFired) return;
+      diag.autoFired = true;
+      try { enter(); } catch (e) { note("auto-throw", e); }
+    };
+    doc.addEventListener("pointerdown", arm, { once: true, capture: true });
+    doc.addEventListener("touchstart", arm, { once: true, capture: true });
+    doc.addEventListener("keydown", arm, { once: true, capture: true });
+  }
 
   if (doc.readyState === "loading") {
     doc.addEventListener("DOMContentLoaded", function () { boot(); applyBootMode(); armAuto(); });
