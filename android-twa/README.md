@@ -9,7 +9,7 @@ stessi dati sincronizzati col PC.
 ## Cosa fa l'app (MainActivity)
 - Fullscreen vero: `requestFullscreen()` della pagina -> `onShowCustomView()`
   + immersiva della finestra (barre di sistema nascoste, cutout usato).
-- Login Google: user-agent senza `; wv`, cookie attivi, popup che ricade sul redirect.
+- Login Google NATIVO (dalla 1.3.1): GoogleSignIn + id token -> `signInWithCredential`. Serve l'impronta SHA-1 registrata nel progetto Firebase. Il flusso web (popup/redirect) resta di riserva.
 - Schermo sempre acceso durante l'allenamento: shim `navigator.wakeLock` -> `FLAG_KEEP_SCREEN_ON`.
 - Export backup salvato nella cartella Download.
 

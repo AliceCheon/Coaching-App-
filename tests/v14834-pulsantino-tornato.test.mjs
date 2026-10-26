@@ -41,6 +41,6 @@ test("APK 1.3.0: WebView propria, niente TWA", () => {
   assert.match(main, /MediaStore\.Downloads/, "export backup non salva in Download");
   assert.ok(!/androidbrowserhelper/.test(manifest + gradle), "residui androidbrowserhelper");
   assert.match(manifest, /\.CrashActivity/, "CrashActivity non dichiarata");
-  assert.match(gradle, /versionCode 16/, "versionCode non aggiornato");
+  assert.match(gradle, /versionCode \d+/, "versionCode assente");
   assert.match(gradle, /androidx\.webkit:webkit/, "manca androidx.webkit");
 });

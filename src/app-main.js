@@ -6694,6 +6694,29 @@ function sanitizeForFirestore(value) {
         showToast("Firebase non caricato. Controlla connessione o GitHub Pages.");
         return;
       }
+      // v148.35 — In app nativa (WebView propria) il redirect di Firebase muore
+      // sulla pagina "missing initial state": lo storage dell'handler e'
+      // partizionato (Android 14+). Se c'e' il ponte nativo dell'APK, l'accesso
+      // lo fa Android (Google con un tocco) e qui arriva solo l'id token.
+      if (mode !== "web-only"
+          && window.BarbellDivaNative
+          && typeof window.BarbellDivaNative.googleSignIn === "function") {
+        try {
+          const idToken = await new Promise((resolve, reject) => {
+            window.__bdGoogleResolve = resolve;
+            window.__bdGoogleReject = reject;
+            window.BarbellDivaNative.googleSignIn();
+          });
+          const natCred = await authService.signInWithCredential(
+            window.firebase.auth.GoogleAuthProvider.credential(idToken)
+          );
+          return natCred ? natCred.user : undefined;
+        } catch (natError) {
+          const natCode = String(natError?.message || "");
+          if (natCode.includes("cancel")) return;
+          showToast("Accesso nativo non riuscito: provo il flusso web.");
+        }
+      }
       const provider = new window.firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
       try {

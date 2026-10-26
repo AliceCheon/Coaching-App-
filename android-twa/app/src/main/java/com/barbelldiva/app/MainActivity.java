@@ -34,6 +34,14 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+
+import org.json.JSONObject;
+
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
 
@@ -65,6 +73,11 @@ public class MainActivity extends Activity {
     private static final String SITE_URL = "https://alicecheon.github.io/Coaching-App-/";
     private static final String SITE_ORIGIN = "https://alicecheon.github.io";
     private static final int REQ_FILE_CHOOSER = 4701;
+    private static final int REQ_GOOGLE_SIGN_IN = 4702;
+    // Web client OAuth del progetto Firebase barbell-diva (pubblico per natura:
+    // identifica l'app, non e' un segreto). Serve per ricevere l'id token.
+    private static final String WEB_CLIENT_ID =
+            "411536425865-77roh93f79srmsi56u3d2s2dtj08furo.apps.googleusercontent.com";
 
     /** navigator.wakeLock per la WebView, appoggiato al bridge nativo. */
     private static final String WAKE_LOCK_SHIM =
@@ -229,9 +242,28 @@ public class MainActivity extends Activity {
             }
         }
 
+        /** Accesso Google nativo: la finestra la apre Android, non il web. */
+        @JavascriptInterface
+        public void googleSignIn() {
+            runOnUiThread(() -> {
+                try {
+                    GoogleSignInOptions gso = new GoogleSignInOptions.Builder(
+                            GoogleSignInOptions.DEFAULT_SIGN_IN)
+                            .requestIdToken(WEB_CLIENT_ID)
+                            .requestEmail()
+                            .build();
+                    GoogleSignInClient client = GoogleSignIn.getClient(MainActivity.this, gso);
+                    startActivityForResult(client.getSignInIntent(), REQ_GOOGLE_SIGN_IN);
+                } catch (Throwable t) {
+                    CrashGuard.report("NativeBridge.googleSignIn", t);
+                    googleReject("avvio-non-riuscito");
+                }
+            });
+        }
+
         @JavascriptInterface
         public String version() {
-            return "1.3.0";
+            return "1.3.1";
         }
     }
 
@@ -261,6 +293,34 @@ public class MainActivity extends Activity {
                 fos.write(data);
             }
         }
+    }
+
+    /** Esito dell'accesso Google tradotto in JavaScript per la pagina. */
+    private String googleResultJs(int resultCode, Intent data) {
+        if (resultCode == RESULT_OK && data != null) {
+            try {
+                GoogleSignInAccount acc = GoogleSignIn.getSignedInAccountFromIntent(data)
+                        .getResult(ApiException.class);
+                String token = acc == null ? null : acc.getIdToken();
+                if (token != null) {
+                    return "window.__bdGoogleResolve&&window.__bdGoogleResolve("
+                            + JSONObject.quote(token) + ")";
+                }
+                return "window.__bdGoogleReject&&window.__bdGoogleReject(new Error('token-mancante'))";
+            } catch (ApiException e) {
+                CrashGuard.event("google", "code-" + e.getStatusCode());
+                return "window.__bdGoogleReject&&window.__bdGoogleReject(new Error('codice-"
+                        + e.getStatusCode() + "'))";
+            }
+        }
+        return "window.__bdGoogleReject&&window.__bdGoogleReject(new Error('cancel'))";
+    }
+
+    /** Segnala al sito che l'accesso nativo non e' andato a buon fine. */
+    private void googleReject(final String msg) {
+        if (mWebView == null) return;
+        runOnUiThread(() -> mWebView.evaluateJavascript(
+                "window.__bdGoogleReject&&window.__bdGoogleReject(new Error('" + msg + "'))", null));
     }
 
     private void toast(final String msg) {
@@ -427,6 +487,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_GOOGLE_SIGN_IN && mWebView != null) {
+            mWebView.evaluateJavascript(googleResultJs(resultCode, data), null);
+            return;
+        }
         if (requestCode != REQ_FILE_CHOOSER || mFileCallback == null) return;
         Uri[] result = null;
         if (resultCode == RESULT_OK && data != null) {

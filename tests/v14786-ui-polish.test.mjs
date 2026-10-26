@@ -36,8 +36,8 @@ assert.ok(!/\.card::before/.test(css), "non aggiungere .card::before generico");
 assert.ok(!/\.card::after/.test(css), "non aggiungere .card::after generico");
 
 // Versione allineata.
-assert.ok(config.includes('build: "v148.34-pulsantino"'), "build non aggiornata");
-assert.ok(config.includes('cache: "atlas-app-v14834-pulsantino"'), "cache non aggiornata");
-assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14834-pulsantino"'), "CACHE_NAME non aggiornata");
+assert.ok(config.includes('build: "v148.35-accesso-nativo"'), "build non aggiornata");
+assert.ok(config.includes('cache: "atlas-app-v14835-accesso-nativo"'), "cache non aggiornata");
+assert.ok(sw.includes('CACHE_NAME = "atlas-app-v14835-accesso-nativo"'), "CACHE_NAME non aggiornata");
 
-console.log(JSON.stringify({ ok: true, build: "v148.34-pulsantino", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));
+console.log(JSON.stringify({ ok: true, build: "v148.35-accesso-nativo", polish: ["buttons", "tabs", "cards", "pages"], themesUntouched: true }));

@@ -653,3 +653,24 @@ funzionare. Soluzione: addio TWA, MainActivity = Activity con WebView PROPRIA.
   assetlinks gia' corretto.
 - versionCode 16 / 1.3.0. Suite: 262 test, 252 pass + guardia nuova verde dopo fix commento,
   0 fail, 9 skipped. Push in attesa del si' di Alice.
+
+## Checkpoint 56 — v1.3.1 accesso Google nativo (v148.35) (26 ottobre 2026, notte)
+Alice installa la 1.3.0: pulsantino OK e manico Samsung TORNATO (il traguardo che inseguiva
+dal checkpoint 44). MA login Google morto con la pagina Firebase "Unable to process request
+due to missing initial state ... storage-partitioned". Causa: in WebView lo storage
+dell'handler Firebase (firebaseapp.com) e' PARTIZIONATO (Android 14+) e lo stato del redirect
+si perde; non esiste flag per disattivarlo. Fix di settore: accesso Google NATIVO.
+- Web v148.35: signInWithGoogle prova PRIMA il ponte nativo (BarbellDivaNative.googleSignIn,
+  ritorno via __bdGoogleResolve/Reject) e chiude con signInWithCredential(GoogleAuthProvider.
+  credential(idToken)); annullamento = silenzio; altri errori -> toast + flusso web di riserva.
+- APK 1.3.1 (versionCode 17): play-services-auth 21.3.0; NativeBridge.googleSignIn ->
+  GoogleSignIn requestIdToken(WEB_CLIENT_ID = 411536425865-77roh... , scoperto via
+  identitytoolkit accounts:createAuthUri del progetto, pubblico per natura); onActivityResult
+  4702 -> token alla pagina. Lezione javac: variabile final assegnata in try E catch ->
+  "might already have been assigned": estratto in helper googleResultJs().
+- REQUISITO ESTERNO (Alice, una tantum): registrare l'impronta SHA-1 60:1C:FD:DB:...:86:8C
+  nel progetto Firebase (Impostazioni progetto > Le tue app > Android com.barbelldiva.app >
+  Aggiungi impronta). Senza di essa GoogleSignIn risponde DEVELOPER_ERROR (codice 10) e si
+  ricade sul flusso web rotto. Propagazione: pochi minuti. Poi 1.3.1 si installa sopra la
+  1.3.0 (stessa firma).
+- Suite: 264 test, fail 0, 9 skipped. PUSH IN ATTESA del si' di Alice.
