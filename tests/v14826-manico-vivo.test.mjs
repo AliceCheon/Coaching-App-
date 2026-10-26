@@ -17,7 +17,7 @@ const html = read("index.html");
 
 // 1) DEFAULT = FILL. L'app riempie il viewport via CSS, il sistema resta
 //    intatto e il manico e' vivo. Il default non deve MAI essere "native".
-assert.match(kiosk, /return "fill";/, "la preferenza di default non e' 'fill'");
+assert.match(kiosk, /return "off";/, "la preferenza di default non e' 'off' (serve la finestra per il pulsantino)");
 assert.ok(
   !/return\s+"native";/.test(kiosk.split("function pref()")[1].split("}")[0]),
   "pref(): il default e' tornato 'native' (manico Samsung spacciato)"
@@ -35,7 +35,7 @@ assert.ok(
   !/applyBootMode[\s\S]{0,200}enter\(\)/.test(kiosk),
   "applyBootMode chiama enter(): al boot non si forza il fullscreen nativo"
 );
-assert.match(kiosk, /if \(pref\(\) !== "native"\) return;/, "armAuto non e' condizionato alla preferenza native");
+assert.ok(!/requestFullscreen\(\)/.test(kiosk.split("function armAuto()")[1].split("function")[0]), "armAuto richiede ancora il fullscreen automatico: nasconderebbe il pulsantino");
 
 // 4) USCITA DI SISTEMA => FILL, non off. Se One UI esce dal fullscreen la
 //    finestra non deve restare dimezzata ne' perdere il riempimento.

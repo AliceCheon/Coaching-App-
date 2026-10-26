@@ -1,18 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Tema base: nessuna barra del titolo, sfondo scuro del brand. -->
     <style name="Theme.BarbellDiva" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@color/colorPrimary</item>
         <item name="android:statusBarColor">@color/colorPrimaryDark</item>
         <item name="android:navigationBarColor">@color/colorPrimaryDark</item>
     </style>
 
-    <!-- Tema della TWA: bordo-schermo (dietro fotocamere e barra di sistema).
-         windowLayoutInDisplayCutoutMode = shortEdges e' in values-v27. -->
+    <!-- v1.0.6 (26 ottobre 2026) — FINESTRA NORMALE, NON EDGE-TO-EDGE.
+         Prima questa finestra disegnava DIETRO le barre di sistema (barra di
+         navigazione trasparente + shortEdges). Per One UI questo significa
+         "app gia' a tutto schermo": non c'e' niente da espandere, quindi il
+         pulsantino di espansione del cover screen NON viene offerto. Su
+         Facebook compare proprio perche' l'app sta in una finestra normale.
+         Ora la barra di navigazione e' opaca e colorata del tema: la finestra
+         finisce prima dell'area di sistema, One UI la tratta come le altre app
+         e mostra il suo pulsantino. La striscia non e' piu' bianca: e' il
+         colore del tema. -->
     <style name="Theme.BarbellDiva.EdgeToEdge" parent="Theme.BarbellDiva">
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:windowNoTitle">true</item>
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="android:navigationBarColor">@color/colorPrimaryDark</item>
     </style>
 
 </resources>

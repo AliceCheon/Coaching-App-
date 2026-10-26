@@ -102,7 +102,7 @@
     if (raw === "off" || raw === "fill" || raw === "native") return raw;
     if (raw === "0") return "off";
     if (raw === "1") return "fill";
-    return "fill";
+    return "off";
   }
   function setPref(value) { storeSet(STORAGE_KEY, value); }
 
@@ -434,25 +434,10 @@
     if (pref() === "fill") applyFill("boot");
   }
 
-  function armAuto() {
-    if (typeof requestFn() !== "function" || !autoAllowed()) return;
-    if (pref() !== "native") return;
-    var fired = false;
-    var once = function () {
-      if (fired) return;
-      fired = true;
-      diag.autoFired = true;
-      if (!autoAllowed() || isOn()) return;
-      enter();
-    };
-    try {
-      root.addEventListener("pointerdown", once, { passive: true, once: true });
-      root.addEventListener("touchstart", once, { passive: true, once: true });
-      root.addEventListener("keydown", once, { once: true });
-    } catch (e) {
-      root.addEventListener("pointerdown", once);
-    }
-  }
+  /* NIENTE fullscreen automatico: era lui a nascondere le barre di sistema
+     (e con loro il pulsantino) al primo tocco. Il fullscreen resta solo una
+     scelta esplicita dal pannello. */
+  function armAuto() { /* intenzionalmente vuoto */ }
 
   if (doc.readyState === "loading") {
     doc.addEventListener("DOMContentLoaded", function () { boot(); applyBootMode(); armAuto(); });

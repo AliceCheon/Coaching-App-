@@ -41,7 +41,7 @@ assert.match(css, /body\s*\{[^}]*background-color:/, "body senza fondo opaco (il
 
 // 3) IL MODULO RESTA MA NON E' PIU' IL RESPONSABILE DEL MANICO: il fullscreen
 //    nativo e' una SCELTA (tondino), non l'avvio. Il default resta fill.
-assert.match(kiosk, /return "fill";/, "il default del tondino non e' piu' fill");
+assert.match(kiosk, /return "off";/, "il default del tondino deve essere off (finestra = pulsantino visibile)");
 assert.match(kiosk, /function fill\(\)/, "manca la modalita' fill");
 assert.match(kiosk, /bbd:fullscreenchange|bd:fullscreenchange/, "manca l'evento di stato");
 
