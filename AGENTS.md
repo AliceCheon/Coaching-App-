@@ -669,3 +669,12 @@ Test: `tests/v14828-scelta-schermo.test.mjs`.
 
 **Regola**: non reintrodurre dipendenze dal pulsantino di sistema. Il controllo
 della modalita' deve restare dentro l'app.
+
+## v1.0.5 APK — ricompilato da zero (26 ottobre 2026)
+`android-twa`: `DISPLAY_MODE` = **standalone** (era `sticky-immersive`, che sopprimeva
+il manico del cover screen), `versionCode 6` / `versionName 1.0.5`.
+**Nuova chiave di firma** (la vecchia `keystore.jks` non era nel repo):
+impronta `92:16:F9:A2:...:9A:8F`, aggiunta in `AliceCheon.github.io/.well-known/assetlinks.json`
+(la vecchia resta elencata). **Conseguenza per Alice**: la firma è diversa, quindi
+Android rifiuta l'aggiornamento — va **disinstallata la vecchia app prima**.
+Build verificata: `aapt2 dump xmltree` mostra `DISPLAY_MODE=standalone`, `apksigner verify` ok.
