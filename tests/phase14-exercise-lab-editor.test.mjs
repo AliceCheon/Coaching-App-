@@ -1,0 +1,103 @@
+import fs from "node:fs/promises";
+import vm from "node:vm";
+
+const html = await fs.readFile(new URL("../index.html", import.meta.url), "utf8");
+const appMain = await fs.readFile(new URL("../src/app-main.js", import.meta.url), "utf8");
+const vmLibs = await Promise.all(["exercise-library-19.8.js","master-exercise-library.js","app-config-v144.js","athlete-context.js","coach-ai-engine-2.js","knowledge-graph.js","decision-rules.js","decision-engine.js","coach-ai3-programming.js","coach-studio.js"].map(p => fs.readFile(new URL("../" + p, import.meta.url), "utf8")));
+const VM_PROLOGUE = "window.matchMedia=window.matchMedia||(q=>({matches:false,media:q,addEventListener(){},removeEventListener(){},addListener(){},removeListener(){}}));window.AudioContext=window.AudioContext||function(){};window.webkitAudioContext=window.AudioContext;window.setInterval=window.setInterval||function(){return 1};window.clearInterval=window.clearInterval||function(){};window.history=window.history||{pushState(){},replaceState(){},back(){}};window.performance=window.performance||{now:()=>Date.now(),mark(){},measure(){},getEntriesByType(){return[]}};";
+const appCss = await fs.readFile(new URL("../coach-studio-inline.css", import.meta.url), "utf8");
+const script = vmLibs.join("\n;\n") + "\n;\n" + VM_PROLOGUE + appMain.replace(/\s*const firebaseBootStarted = initFirebase\(\);[\s\S]*$/, "");
+const storage = new Map();
+const localStorage = { getItem:k=>storage.get(k)??null, setItem:(k,v)=>storage.set(k,String(v)), removeItem:k=>storage.delete(k) };
+const element = { addEventListener(){}, querySelector(){return null}, querySelectorAll(){return[]}, classList:{add(){},remove(){},toggle(){}}, style:{}, dataset:{}, setAttribute(){}, innerHTML:"", textContent:"" };
+const document = { getElementById(){return element}, querySelector(){return null}, querySelectorAll(){return[]}, createElement(){return {...element}}, body:element, documentElement:element, addEventListener(){} };
+const context = { console, TextEncoder, TextDecoder, structuredClone, Date, Math, JSON, Intl, Map, Set, WeakMap, Array, Object, String, Number, Boolean, RegExp, Promise, parseInt, parseFloat, isNaN, localStorage, sessionStorage:localStorage, document, navigator:{}, location:{protocol:"file:",origin:"null",hash:"",reload(){}}, URL:{createObjectURL(){return "blob:test"},revokeObjectURL(){}}, Blob:class{}, FileReader:class{}, setTimeout(){return 1}, clearTimeout(){}, requestAnimationFrame(){return 1}, addEventListener(){}, removeEventListener(){}, window:null, globalThis:null };
+context.window=context; context.globalThis=context; context.sourceHtml = html + appCss + appMain; vm.createContext(context); new vm.Script(script).runInContext(context);
+
+const result = vm.runInContext(`(() => {
+  const checks=[]; const check=(name,value)=>{ checks.push({name,passed:!!value}); if(!value) throw new Error(name); };
+  const baselineCounts=technicalProfileCounts();
+  state=clone(baseState); state.programs=[]; state.training.sessions=[]; state.coach.exerciseLibrary=[]; state.profile.mode="coach"; state.ui={coachEditorView:"weeks"};
+  coachProgramUi.drafts.clear(); coachProgramUi.programId=""; coachProgramUi.sheetId="";
+  const program=programRepository.createProgram({id:"lab-program",name:"Intensificazione",durationWeeks:8,sheets:[]},{save:false}).value;
+  const sheet=programRepository.createSheet(program.id,{id:"lab-sheet",code:"D",name:"Scheda D"},{save:false}).value;
+  const baseExercise=programRepository.createExercise(program.id,sheet.id,{id:"base-ex",name:"Hip Thrust",muscle:"Glutei",prescription:{sets:3,reps:"8-12",rir:"1-2",rest:{seconds:120}},progression:{weeks:Array.from({length:8},(_,i)=>({weekNumber:i+1,sets:3,reps:"8-12",rir:"1-2",prescribedLoad:{value:80+i,unit:"kg"},technique:"normal"}))}},{save:false}).value;
+  coachProgramUi.programId=program.id; coachProgramUi.sheetId=sheet.id;
+
+  const weeksHtml=coachBuilderHtml();
+  check("TEST 1 viste Settimane ed Esercizi",weeksHtml.includes('data-coach-builder-view="weeks"')&&weeksHtml.includes('data-coach-builder-view="exercises"'));
+  state.ui.coachEditorView="exercises"; const exerciseHtml=coachBuilderHtml();
+  check("TEST 2 editor esercizi completo",exerciseHtml.includes('data-builder-exercise-profile')&&exerciseHtml.includes('data-builder-row-field="secondaryMuscles"')&&exerciseHtml.includes('data-builder-row-field="cues"')&&!exerciseHtml.includes('phase4-exercise-table coach-compact-hidden'));
+
+  const custom=upsertTechnicalExercise({id:"custom-stable-1",name:"Glute Drive Alice",isCustom:true,origin:"custom",equipment:"Cavo",primaryMuscles:["Glutei"],secondaryMuscles:["Femorali"],bodyPosition:"in piedi",trajectory:"estensione anca",rangeOfMotion:"completo",forceDirection:"posteriore",loadApplication:"caviglia",jointActions:["estensione anca"],resistanceProfile:{type:"unknown",confidence:"low"},ratings:{stability:3,systemicFatigue:2,progressionEase:3,technicalDifficulty:2},programming:{repRanges:["10-15"],recommendedSets:"3",recovery:"90"}});
+  const customId=window.BarbellDivaMasterLibrary.stableId("custom","Glute Drive Alice"), deleteId=window.BarbellDivaMasterLibrary.stableId("custom","Custom da eliminare");
+  check("TEST 3 creazione custom",custom.id===customId&&custom.isCustom);
+  const snapshot=JSON.parse(JSON.stringify(state)); state=mergeState(clone(baseState),snapshot);
+  check("TEST 4 custom dopo refresh",technicalExerciseLibrary().some(x=>x.id===customId));
+  coachProgramUi.programId=program.id; coachProgramUi.sheetId=sheet.id;
+  const added=addTechnicalExerciseToActiveSheet(technicalExerciseLibrary().find(x=>x.id===customId));
+  check("TEST 5 custom aggiunto alla scheda",added.ok&&programRepository.getExercises(program.id,sheet.id).some(x=>x.metadata?.technicalProfileId===customId));
+  const addedExercise=programRepository.getExercises(program.id,sheet.id).find(x=>x.metadata?.technicalProfileId===customId);
+  check("range consigliato dalla libreria non diventa prescrizione workout",addedExercise.prescription.reps.label===""&&addedExercise.prescription.reps.min==null&&addedExercise.prescription.reps.max==null);
+  const progression=Array.from({length:8},(_,i)=>parseWeekPrescription({weekNumber:i+1,sets:3,reps:"10-15",rir:"1-2"},i+1));
+  programRepository.updateExercise(program.id,sheet.id,addedExercise.id,{progression:{weeks:progression}},{save:false,forceLocked:true});
+  check("TEST 6 custom con progressioni",programRepository.getExerciseById(program.id,sheet.id,addedExercise.id).progression.weeks.length===8);
+
+  state.coach.activeTab="library"; const workbench=coachWorkbenchHtml();
+  // Il titolo visibile della sezione è cambiato in Fase 22 ("Master Exercise
+  // Library"): l'assert verifica la struttura (tab Libreria + laboratorio
+  // effettivamente renderizzato dentro il workbench del Coach), non la copy.
+  check("TEST 7 Libreria solo nel Coach",workbench.includes('data-coach-tab="library"')&&workbench.includes("exercise-lab-hero")&&workbench.includes("data-lab-query"));
+  const mobileNav=sourceHtml.slice(sourceHtml.indexOf('<nav class="bottom-nav"'),sourceHtml.indexOf('</nav>',sourceHtml.indexOf('<nav class="bottom-nav"')));
+  check("TEST 8 Libreria assente nav mobile",!mobileNav.includes("Libreria esercizi")&&sourceHtml.includes('@media(max-width:980px){ .exercise-lab,.coach-internal-tabs{display:none!important;}'));
+  coachProgramUi.labQuery="glute drive"; coachProgramUi.labFilters={muscle:"Glutei"};
+  check("TEST 9 ricerca e filtri",exerciseLabFilteredProfiles().some(x=>x.id===customId));
+  const detail=technicalProfileDetailHtml(custom);
+  check("TEST 10 profilo tecnico",detail.includes("Biomeccanica")&&detail.includes("Programmazione"));
+  check("TEST 11 grafici offline",detail.includes("technical-curve")&&detail.includes("technical-radar")&&!detail.includes('<img src="http'));
+  const systemAnalysis=analyzeTechnicalExercise(technicalExerciseLibrary().find(x=>normalizeExerciseName(x.name).includes("hip thrust")));
+  check("TEST 12 analisi sistema",systemAnalysis.aiAnalysis.generatedAt&&systemAnalysis.aiAnalysis.confidence!=="low"&&systemAnalysis.resistanceProfile.type!=="unknown");
+  const customAnalysis=analyzeTechnicalExercise(custom);
+  check("TEST 13 analisi custom",customAnalysis.aiAnalysis.generatedAt&&customAnalysis.aiAnalysis.generated);
+  check("TEST 13b inferenza custom reale",customAnalysis.resistanceProfile.type!=="unknown"&&customAnalysis.stimulusProfile.midRange>0&&customAnalysis.ratings.stability>0&&customAnalysis.programming.repRanges.length>0);
+  check("TEST 13c motivazione specifica",customAnalysis.aiAnalysis.reasoning.includes("cavo")||customAnalysis.aiAnalysis.reasoning.includes("Cavo")||customAnalysis.aiAnalysis.reasoning.includes("curva"));
+  const sparse=technicalExerciseProfile({id:"sparse",name:"Macchina sconosciuta Alice",isCustom:true,origin:"custom"}); const sparseAnalysis=analyzeTechnicalExercise(sparse);
+  check("TEST 14 incertezza esplicita",sparseAnalysis.aiAnalysis.confidence==="low"&&sparseAnalysis.aiAnalysis.reasoning.includes("non determinabile"));
+  check("TEST 15 confidence visibile",detail.includes("Affidabilità:"));
+  const manual=upsertTechnicalExercise({...sparse,manualOverrides:{resistanceProfile:{type:"ascending"},ratings:{stability:4},updatedAt:new Date().toISOString(),confirmedByCoach:true}});
+  check("TEST 16 dati modificabili manualmente",manual.resistanceProfile.type==="ascending"&&manual.ratings.stability===4);
+  const analyzedManual=upsertTechnicalExercise(analyzeTechnicalExercise(manual)); const refreshedManual=technicalExerciseLibrary().find(x=>x.id===manual.id);
+  check("TEST 17 override dopo refresh/analisi",analyzedManual.resistanceProfile.type==="ascending"&&refreshedManual.manualOverrides.confirmedByCoach);
+  check("TEST 17b generato separato dal manuale",analyzedManual.aiAnalysis.generated.resistanceProfile&&analyzedManual.manualOverrides.resistanceProfile.type==="ascending");
+  const perceived=analyzeTechnicalExercise({...custom,perceivedHardestRom:"fine ROM"});
+  check("TEST 17c difficoltà percepita",perceived.resistanceProfile.type==="ascending"&&perceived.stimulusProfile.shortened===5);
+  const deleteProfile=upsertTechnicalExercise({...custom,id:"delete-profile",name:"Custom da eliminare"});
+  const deleteAdded=addTechnicalExerciseToActiveSheet(deleteProfile);
+  check("TEST 17d profilo usato in una scheda",deleteAdded.ok&&technicalProfileUsage(deleteId).length===1);
+  openCoachModal("technical-exercise-delete",{exerciseId:deleteId});
+  // Da quando i modal vivono nel portale (#coachModalPortalHost), coachUiModalHtml()
+  // produce markup solo mentre è il portale a richiederlo: si riproduce lo stesso
+  // passaggio usato da renderCoachModalPortal (src/app-main.js).
+  coachModalRenderingPortal=true; const deleteModal=coachUiModalHtml(); coachModalRenderingPortal=false;
+  // Fase 22 (Master Exercise Library): l'azione non cancella più il record ma lo
+  // ARCHIVIA (ID, cronologia e relazioni restano validi) e la copy è cambiata di
+  // conseguenza; la scheda non incorpora più una copia del profilo (fonte unica).
+  check("TEST 17e conferma con conteggio",deleteModal.includes("collegato a 1 scheda")&&deleteModal.includes("Archivia esercizio"));
+  saveCoachUiModal();
+  const embeddedAfterDelete=programRepository.getExercises(program.id,sheet.id).find(x=>x.metadata?.technicalProfileId===deleteId);
+  check("TEST 17f archiviazione non rompe scheda",!technicalExerciseLibrary().some(x=>x.id===deleteId)&&!!embeddedAfterDelete&&embeddedAfterDelete.metadata?.technicalProfileId===deleteId);
+  const beforeWeeks=programRepository.getExerciseById(program.id,sheet.id,baseExercise.id).progression.weeks.map(x=>x.prescribedLoad?.value);
+  discardCoachDraft(program.id,sheet.id); const draft=activeCoachBuilder(); const row=draft.rows.find(x=>x.id===baseExercise.id); row.note="nota vista esercizi"; draft.dirtyRows.add(row.id); commitActiveCoachDraft({immediate:true,quiet:true});
+  const afterWeeks=programRepository.getExerciseById(program.id,sheet.id,baseExercise.id).progression.weeks.map(x=>x.prescribedLoad?.value);
+  check("TEST 18 stesse entità canoniche",programRepository.getExerciseById(program.id,sheet.id,baseExercise.id).note==="nota vista esercizi");
+  check("TEST 19 nessuna progressione persa",JSON.stringify(beforeWeeks)===JSON.stringify(afterWeeks)&&afterWeeks.length===8);
+  check("TEST 20 JavaScript valido",typeof exerciseLabHtml==="function"&&typeof technicalExerciseProfile==="function");
+  check("TEST 20b inferenza locale disponibile",typeof inferTechnicalExerciseAnalysis==="function"&&sourceHtml.includes('id="techPerceivedHardest"'));
+  // Assert comportamentali: il gate desktop usa ora optional chaining e la libreria
+  // vive nella Master Library (state.coach.exerciseLibrary è lo store legacy).
+  check("TEST 21 esperienza mobile atleta invariata",sourceHtml.includes('.coach-nav,')&&sourceHtml.includes('.bottom-nav .coach-nav')&&sourceHtml.includes("(min-width: 981px)")&&sourceHtml.includes("window.matchMedia?.("));
+  check("TEST 22 sync Firebase conservato",sourceHtml.includes("scheduleCloudSave")&&sourceHtml.includes("saveCloudState")&&technicalExerciseLibrary().some(x=>x.id===customId));
+  return {ok:true,checks,baselineCounts,countsAfterTest:technicalProfileCounts(),examples:{known:{name:systemAnalysis.name,confidence:systemAnalysis.aiAnalysis.confidence,resistanceProfile:systemAnalysis.resistanceProfile.type,hardestRom:systemAnalysis.resistanceProfile.hardestRom,reasoning:systemAnalysis.aiAnalysis.reasoning,ratings:systemAnalysis.ratings,programming:systemAnalysis.programming},custom:{name:customAnalysis.name,confidence:customAnalysis.aiAnalysis.confidence,resistanceProfile:customAnalysis.resistanceProfile.type,hardestRom:customAnalysis.resistanceProfile.hardestRom,reasoning:customAnalysis.aiAnalysis.reasoning,ratings:customAnalysis.ratings,programming:customAnalysis.programming}}};
+})()`, context);
+
+console.log(JSON.stringify(result,null,2));

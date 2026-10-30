@@ -1,0 +1,37 @@
+REGOLE FIRESTORE — BARBELL DIVA
+Versione nel repo (Fase 2, dopo la rimozione della Nutrizione).
+Copia leggibile di `firestore.rules`, la fonte canonica.
+
+⚠️ IMPORTANTE: questo file descrive le regole che devono essere ATTIVE.
+Dopo ogni modifica va incollato in:
+  Firebase Console → Firestore Database → Regole → incolla → Pubblica.
+
+=====================================================================
+regole attive
+=====================================================================
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Ogni utente autenticato accede solo al proprio documento
+    // barbellDivaAccounts/{uid} e a TUTTE le sue sottoraccolte
+    // (programmi, sessioni, stateBlobs, backup, ...).
+    match /barbellDivaAccounts/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+  }
+}
+
+=====================================================================
+note
+=====================================================================
+- La regola wildcard sulle sottoraccolte evita di dover elencare a mano ogni
+  raccolta: l'elenco precedente non includeva `stateBlobs`, usata dal salvataggio
+  a blocchi, e le scritture di quella raccolta risultavano negate.
+- Nessun accesso anonimo: serve `request.auth != null`.
+- Ogni utente può leggere e scrivere soltanto sotto il proprio uid.

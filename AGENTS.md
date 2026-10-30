@@ -1,0 +1,775 @@
+# AGENTS.md — Coaching-App (Alice / Barbell Diva)
+
+## Cosa è
+App web statica (HTML + JS vanilla, nessun bundler) per la programmazione di
+allenamento. Il cuore logico è `src/app-main.js` (file molto grande): contiene
+stato, modelli, UI e la logica di derivazione della Fase.
+
+## Comandi
+- Test: `node --test tests/*.test.mjs`
+- Test singolo: `node --test tests/<file>.test.mjs`
+- Sintassi: `node --check src/app-main.js`
+- Preview statico: `python3 -m http.server 12000 --bind 0.0.0.0`
+
+## Harness dei test
+I test caricano `src/app-main.js` in una VM Node con stub di `window`/`document`
+e un prologo per `matchMedia`, `setInterval`, `performance`, `history`. Vedi
+`tests/v14756-motore-fasi-inferenza.test.mjs` come modello pulito.
+
+## Verifica layout su viewport piccoli (FlexWindow / cover screen)
+Chromium headless ignora `--window-size` sotto ~500px di larghezza, quindi per
+misurare davvero 400x365 si usa una pagina con `<iframe width=400 height=365>`
+e si legge `contentDocument.title` (misure) via `--dump-dom`. Vedi
+`tests/v14757-canvas-not-white.test.mjs` (motore di cascata CSS in Node).
+
+**Trappola nota**: elementi "fantasma" fuori dai `<media>` di `min-width:981px`
+restano in flusso su mobile e allungano il documento oltre `100dvh`
+(`.coach-editor-nav-restore`, `#globalDivaBotHost` reso `position:static` da
+`coach-studio.css`). Bastano pochi px per far scivolare la scena sotto la piega.
+
+## Fonte unica di versione
+1. `app-config-v144.js` → `build: "v147.X-suffisso"` e `cache: "atlas-app-v147X-suffisso"`.
+2. Allinea i `?v=v147X` in `index.html`, `manifest.webmanifest` e `CACHE_NAME` in `service-worker.js`.
+3. Il token deriva da `vMAJOR.MINOR` → `vMAJOR+MINOR` (es. `v147.57` → `v14757`).
+4. `tests/version-single-source.test.mjs` e molti altri test hardcodano build/cache: aggiornali tutti con un `sed` globale.
+
+## Fase dell'allenamento — architettura (v147.56)
+Motore a 3 strati in `src/app-main.js`:
+- **Strato A** `phaseWeekSignals(program)`: estrae segnali per settimana dalle
+  prescrizioni reali (serie, forma delle reps, test, RIR, tempo).
+- **Strato B** `phaseWeekScores(...)`: assegna punteggi per fase con evidenze
+  pesate, in modo **relativo al blocco** (volume vs massimo, posizione nel blocco).
+- **Strato C** `classifyProgramWeeks(program)`: sceglie la fase, calcola la
+  confidenza ed espone `evidence`/`signals`/`requiredSignal`/`blockPhase`.
+
+### Due livelli distinti (non confonderli)
+- **Fase/obiettivo del BLOCCO** (`phaseBlockMethodology`): la metodologia
+  dominante dell'intero blocco, dedotta dalla forma di prescrizione ricorrente.
+  `"12-8"` discendente ricorrente → `intensità`; range ascendente `"8-12"` → `accumulo`.
+  Esposta come `blockPhase` (non come `phase`).
+- **Tipo della SETTIMANA** (`phase`): deciso **relativamente alle altre settimane**,
+  con questa scala:
+  1. test dominanti a fine blocco → `peaking`;
+  2. calo di volume rispetto alla mediana del blocco (`volumeDrop >= 0.15` o
+     `setsDrop >= 0.15`, con `volumeRatio <= 0.72`) → `deload`;
+  3. test dominanti a inizio blocco → `tecnica`;
+  4. altrimenti settimana di lavoro → `blockPhase` (o segnali locali se il blocco
+     non ha metodologia riconoscibile).
+
+**Regola d'oro**: un segnale stabile nel blocco (es. `"12-8"` in tutte le settimane)
+NON può provare il tipo di una singola settimana. Un calo di volume è uno scarico
+anche dentro un blocco di intensità. Mai far vincere la fase del blocco sul tipo
+della settimana, né viceversa.
+
+Gerarchia in `phaseFromProgramData`:
+1. override esplicito `program.periodization.weeks` → `source: "explicit"`;
+2. motore → `source: "inferred"`, `estimated: true`;
+3. etichetta canonica del blocco o del programma (ultima spiaggia).
+
+## Distinzione fondante (non regredire)
+- **Segnale intra-settimana**: forma della prescrizione dentro la seduta.
+  `"12-8"` = discendente nella serie → tecnica di **intensità/intensificazione**.
+- **Segnale inter-settimana**: variazione fra settimane (es. 15 → 12 → 10).
+Confonderli fa leggere `"12-8"` come calo di volume, producendo deload/volume
+errati. Verificato sui dati reali: `Intensità Agosto-Ottobre` ha rapporto
+`descPairRatio` 0.50-0.60 (dominante `12-8`), `Intensificazione` 0.00 (solo
+range ascendenti `15-20`).
+
+## Vincoli di prodotto
+- La Fase **non** dipende dal nome del programma né da una tabella seminata.
+  La v147.52 scriveva una mappa per nome: `migrateRemoveSeededWeekPlans` la
+  rimuove (solo se identica ai semi originali) per non sovrascrivere override
+  scritti a mano.
+- La Fase **non** è determinata dal `type` del singolo esercizio (`sheetWeekType`
+  rimosso).
+- `periodization.weeks` resta un **override opzionale** dell'autore.
+- Le fasi che i dati non bastano a dedurre (forza, tecnica, mantenimento,
+  ricondizionamento, specializzazione) restano a bassa confidenza e dichiarano
+  il segnale mancante via `requiredSignal` invece di inventare una fase.
+
+## FlexWindow (schermo esterno Galaxy Z Flip) — v147.57
+- Il FlexWindow è 948×1048 px fisici ≈ **400×365 CSS px** (entra in
+  `max-height:430px` + `max-width:560px`), quindi il tema di default è quello
+  scuro: la barra in basso è scura, non chiara.
+- **La banda bianca in fondo non era più un overflow** (a 400×365 il documento
+  riempie il viewport). Era l'**area non dipinta sotto il documento**: `html` e
+  `body` avevano sfondo trasparente (solo gradienti con bordi trasparenti), e il
+  canvas radice del browser è **bianco** di default.
+- Fix (v147.57): `html` dipinge lo sfondo del tema (`html` scuro di default,
+  `html[data-theme="light"]` lavender), con `background-attachment: fixed`, e
+  `render`/`syncThemeUi` rispecchiano `data-theme` su `documentElement`. Uno
+  script inline in `<head>` imposta il tema su `<html>` **prima del primo
+  paint** leggendo `alice-method-app.v8`.
+- Test: `tests/v14757-canvas-not-white.test.mjs` (fallisce se lo sfondo su
+  `html` o la sincronizzazione di `data-theme` spariscono).
+
+## FlexWindow — edge-to-edge del canvas (v147.59)
+- La v147.57 dipingeva su `html` una **background-image** ma il
+  **background-color** restava trasparente. Con `viewport-fit=cover` il browser
+  estende al bordo fisico **solo il colore** del root: il gradiente resta dentro
+  il layout viewport, che sul cover screen e' **piu' basso dello schermo fisico**
+  (100dvh esclude la system navigation). L'area sotto tornava quindi al canvas
+  BIANCO, generando la fascia chiara.
+- In piu' `body { padding-bottom: env(safe-area-inset-bottom) }` sommava l'inset
+  all'altezza del documento, che superava il layout viewport (misurato col CDP a
+  400x365 + inset 32px: **397px su 365px**), allargando la fascia scoperta.
+- Fix (v147.59): `background-color` opaco su `html` (e su `html[data-theme=light]`),
+  dichiarato **dopo** la shorthand `background`; rimosso il `padding-bottom` dal
+  `body` (il fondo schermo e' gia' gestito da `.screen` e `.bottom-nav`).
+- Test: `tests/v14759-flexwindow-edge-to-edge.test.mjs`.
+- Verifica col CDP (Chromium headless + `Emulation.setSafeAreaInsetsOverride`):
+  `html` deve riportare `background-color: rgb(8,7,25)` e il documento non deve
+  superare il layout viewport. Dopo il fix, a 300px di layout viewport su 365px
+  di schermo, la fascia sotto e' del colore del tema, non bianca.
+
+## FlexWindow — display cutout e due livelli (v147.60)
+Il bug vero non era il colore: la PWA veniva **confinata nell'area sopra il foro
+fotocamere** e non usava tutta la superficie fisica. Leva trovata nel manifest:
+`"orientation": "portrait"` segnala un'app a orientamento/aspect **fisso**, che
+One UI sul cover screen (finestra ~400x365, landscape) letterboxa nell'area
+"sicura" sopra le fotocamere. Da li' la scena in alto e la versione "piu'
+piccola" quando si cambia formato col tasto Samsung.
+
+- **Non confondere i due livelli**:
+  1. **LAYOUT/CANVAS** edge-to-edge su tutta la superficie, anche dietro/attorno
+     al cutout. Leve: manifest **senza** `orientation` forzato +
+     `display_override: ["standalone","fullscreen"]`; `viewport-fit=cover`;
+     `background-color` opaco del root (v14759). Il canvas non deve avere inset.
+  2. **UI INTERATTIVA** (header, tab, card, bottom-nav) dentro la safe area:
+     inset del cutout applicati **solo** agli elementi di interfaccia.
+- `index.html` non forzava `orientation` via JS: nessuna modifica necessaria.
+- Fix (v147.60): rimosso `"orientation": "portrait"` dal manifest; aggiunti
+  `.app-header`/`.phone-status`/`.top-tabs` con `env(safe-area-inset-top)` e
+  `.bottom-nav` con gli inset laterali/basso, in `@media (max-height: 520px)`.
+- **Verifica in landscape** (fondamentale, perche' senza l'orientamento fisso il
+  display interno puo' ruotare): a 915x412 e 844x390 il layout non ha overflow
+  (`.phone` riempie `100dvh`, `scrollWidth == clientWidth`).
+- Test: `tests/v14760-flexwindow-cutout-edge-to-edge.test.mjs`.
+- CDP con cutout in alto (28px) + gesture bar (20px) a 400x365: header a 32px
+  (4+28), nav a 25px (5+20); telefono aperto e desktop invariati.
+
+## FlexWindow — canvas senza `background-attachment: fixed` (v147.61)
+Sul dispositivo la banda chiara **restava** e, in modalita' "schermo intero"
+Samsung, copriva **anche la bottom nav**. Ricerca autorevole (Chrome/Android
+edge-to-edge, layoutInDisplayCutoutMode, WebView insets, segnalazioni One UI 8):
+
+- L'estensione della finestra dietro/attorno al cutout e' decisa dal **container
+  Android / One UI**, non dal CSS: `viewport-fit=cover` ed `env(safe-area-inset-*)`
+  dispongono solo dentro la superficie che il sistema espone. Una PWA con
+  `display: standalone/fullscreen` puo' non ricevere la modalita' cutout che
+  invece ottiene `requestFullscreen()`, e One UI puo' letterboxare in base
+  all'aspect/aspect-override per-app.
+- E' inoltre **bug noto di Chrome su One UI 8**: barra vuota in fondo su *tutti*
+  i siti (Chrome 140+); workaround segnalato: `chrome://flags` →
+  `EdgeToEdgeEverywhere` disabilitato. Non dipende dal sito.
+- `background-attachment: fixed` e' **inaffidabile** su Chrome/Android: non
+  ridipinge l'area scoperta quando il viewport cambia (es. al toggle di
+  modalita'), lasciandola bianca.
+
+Fix (v147.61), hardening indipendente dal container:
+- rimuovere `background-attachment: fixed` dal canvas (`html`);
+- `html { height: 100% }` + `background-color` opaco del tema, cosi' il canvas
+  copre l'intera finestra e il colore arriva fino ai bordi.
+- Verificato: FlexWindow 365/365, Z Flip aperto 915/915, desktop invariato.
+- Test: `tests/v14760-flexwindow-cutout-edge-to-edge.test.mjs` (esteso) e
+  `tests/v14757-canvas-not-white.test.mjs` (aggiornato al nuovo meccanismo).
+
+**Limite noto**: se One UI/Chrome dipingono la banda o confinano la finestra,
+non e' superabile dal solo web. Mitigazioni lato utente: Chrome aggiornato,
+flag `EdgeToEdgeEverywhere`, GoodLock/MultiStar per l'aspect del cover screen.
+
+## FlexWindow — edge-to-edge via `requestFullscreen()`, NIENTE TWA (v147.62)
+Il limite precedente e' superabile **senza** TWA. Un bug report Chromium
+documentato (`chromium-pwa-cutout-bug`) mostra la differenza:
+
+| Metodo | Renderizza dietro il cutout? |
+| --- | --- |
+| `requestFullscreen()` su primo gesto utente | **si** |
+| `display: "fullscreen"` nel manifest | no (fascia bianca/nera) |
+
+Causa: `requestFullscreen()` imposta sull'Activity Android
+`LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES` (superficie del cutout sbloccata),
+mentre il manifest `fullscreen` resta sul cutout mode DEFAULT/NEVER. Stesso
+problema nei TWA generati con Bubblewrap senza `shortEdges` (issue #1035).
+
+Fix (v147.62), tutto web, nessun packaging Android:
+- **rimosso `"fullscreen"` da `display_override`** (resta `display: standalone`):
+  e' proprio il fullscreen del manifest a causare la fascia;
+- `index.html` chiede `documentElement.requestFullscreen()` **al primo gesto
+  utente** (`pointerdown`/`keydown`, `{ once: true }`, `catch` silenzioso, guardia
+  su `requestFullscreen`). Se il browser rifiuta, l'app resta come prima.
+- Il canvas (fuori dalla safe area) arriva ai bordi fisici, dietro il cutout;
+  l'UI resta dentro `env(safe-area-inset-*)`.
+- Test: `tests/v14762-flexwindow-request-fullscreen.test.mjs`; aggiornato
+  `tests/v14760-flexwindow-cutout-edge-to-edge.test.mjs` (niente fullscreen nel
+  manifest). Suite 151/151. Boot smoke: nessun errore, layout intatto.
+
+**Perche' non complica la repo**: nessun progetto Android, nessuna build, nessun
+APK. Restano i soli file web gia' deployati da GitHub Pages; le modifiche
+future si fanno come sempre su `main`.
+
+## Tema chiaro "Lavender Diva 2026" — NON forzare lo scuro (v147.63)
+Regressione: gli upload "Add files via upload"/"genspark" hanno riportato il
+progetto a uno snapshot v147.51, sovrascrivendo il sistema di temi v147.62.
+Nello snapshot c'erano forzature scure che cancellavano il tema chiaro su TUTTA
+l'app (html/body/sidebar/header/card), esattamente il look indesiderato:
+- `:root { color-scheme: dark; }` con `--bg-main: #17101F`;
+- `html { background: #090918 !important }` (e variante nella fascia cover);
+- `body, .phone-shell, .phone, .stage, .screen { background-color: #090918 }`;
+- rimozione di `body[data-theme="light"]` come gestione sfondo;
+- `manifest` con `orientation: portrait` + `display_override: ["fullscreen"]`.
+
+Fix: ripristinati i file del tema all'ultimo stato sano (v147.62) —
+`coach-studio-inline.css`, `index.html`, `manifest.webmanifest`,
+`service-worker.js`, `app-config-v144.js`, `FIREBASE-LOGIN.md` — e le due righe
+di sincronizzazione `document.documentElement.dataset.theme` in `src/app-main.js`
+(`syncThemeUi` + `render`). Il canvas segue il tema via `html[data-theme]`
+(scuro di default, chiaro = gradiente lavender + `background-color` opaco).
+
+**Regola**: il canvas si dipinge col COLORE DEL TEMA, mai con un `#090918`
+forzato/`!important`. `:root`/`html` non devono forzare `color-scheme: dark`
+in modo che il tema chiaro resti possibile. Test di guardia:
+`tests/lavender-diva-theme.test.mjs`, `tests/theme-toggle.test.mjs`,
+`tests/v14757-canvas-not-white.test.mjs`,
+`tests/v14759-flexwindow-edge-to-edge.test.mjs`,
+`tests/v14760-flexwindow-cutout-edge-to-edge.test.mjs`,
+`tests/v14762-flexwindow-request-fullscreen.test.mjs`.
+
+Lo stesso revert aveva toccato anche la **logica**: `src/app-main.js` e
+`workout-flow-v147.js` erano tornati a v147.51, perdendo ~768 righe (motore
+Fasi v147.54, override `periodization.weeks`, contesto workout appuntato v147.58,
+selettore Scheda/Programma manuale). Ripristinati all'ultimo stato sano nella
+stessa tornata di fix (v147.63), insieme alla rimozione di
+`tests/v14750-cover-and-reference.test.mjs` — test introdotto dal revert per una
+riscrittura mai esistita nello stato sano.
+
+**Stato**: suite **151/151** verde, `main` e GitHub Pages allineati.
+
+## FlexWindow — fullscreen riarmato ad ogni gesto (v147.82)
+Sintomo: in modalità "schermo intero" del cover screen resta una **fascia chiara
+in basso**, dove stanno obiettivi e flash, e non cambia col tema (chiaro/scuro).
+Non è il colore del canvas (già opaco, v147.57-59): è l'area che la finestra
+della PWA non dipinge (fuori dal viewport), sbloccabile solo col cutout mode
+SHORT_EDGES di `requestFullscreen()`.
+
+Perché la v147.62 non bastava: il fullscreen veniva richiesto **una sola volta**
+(`{ once: true }`). Il tasto "dimensione app" di Samsung ridimensiona la finestra
+e fa **uscire** dal fullscreen → la fascia chiara torna e non se ne esce più.
+
+Fix (v147.82): il fullscreen è (ri)richiesto **a ogni gesto** — `pointerdown`,
+`touchstart`, `keydown` persistenti, più `pageshow`/`resize`/`visibilitychange`
+(differiti 60ms) — così al tap successivo si rientra in fullscreen e la fascia
+sparisce. Guardia cover screen su `innerHeight <= 560 && innerWidth <= 760`
+(invece del solo `innerWidth`), così non scatta né sul telefono aperto in
+orizzontale (844x390 / 915x412) né su desktop.
+Test: `tests/v14782-flexwindow-fullscreen-rearm.test.mjs` (sostituito in v147.83).
+
+## FlexWindow — perché la fascia restava "immobile" (v147.83)
+Diagnosi su dispositivo reale (pagina `diagnostica-schermo.html` aperta sul
+FlexWindow Z Flip 7). Misure CSS reali: viewport **361×399** in fullscreen,
+**361×237** in browser, schermo fisico **362×400** (DPR 2.625),
+`safe-area-inset-* = 0`. Confermano che in fullscreen la pagina **riempie** il
+viewport che il sistema concede (399/400): la fascia non è un overflow della
+pagina, è l'area che One UI riserva al **manico delle app** del cover screen.
+
+Tre cause web, tutte corrette (nessuna di queste cancella il manico di sistema,
+che non è controllabile via CSS):
+
+1. **Gate fullscreen che si auto-disattivava** (bug vero, v147.82): il cancello
+   `matchMedia("(display-mode: standalone)")` diventa **falso** appena si entra
+   in fullscreen (display-mode passa a `fullscreen`). Risultato: il primo gesto
+   entrava in fullscreen, tutti i gesti successivi uscivano dalla funzione e
+   **non si rientrava mai più** → fascia "immobile" per sempre. Fix: rimosso il
+   cancello `standalone`; ora si esclude solo il **browser normale**
+   (`display-mode: browser`) e si tiene la guardia dimensione (`innerHeight <= 560`,
+   `innerWidth <= 760`). Così il rientro in fullscreen funziona anche da
+   fullscreen e dopo un ridimensionamento del tasto Samsung.
+2. **Regressione padding sul body**: `body { padding-bottom: env(safe-area-inset-bottom) }`
+   era rientrata (v147.59 l'aveva rimossa). Sul cover screen somma l'inset
+   all'altezza del documento e allarga la fascia scoperta. Rimossa di nuovo.
+3. **Elemento fantasma**: `#globalDivaBotHost { position: static !important }`
+   (in `@media(max-width:700px)` di `coach-studio.css`) riportava l'host **nel
+   flusso**, potendo allungare il documento oltre `100dvh`. Il bot è
+   `position: fixed`, quindi l'host resta vuoto: basta `position: relative`
+   (fuori flusso, nessun cambio di layout del bot).
+4. **Guscio oltre il visibile**: `.phone-shell` aveva `min-height: 100vh`
+   (viewport GRANDE ≈400px) mentre il visibile è 365px → sforava la scena di
+   ~35px. Sul cover screen `.phone-shell`/`.phone` ora pinnati a `100dvh`.
+
+Test: `tests/v14783-cover-screen-fullscreen.test.mjs` (guardia anti-regressione
+su tutte e quattro le cause); aggiornato `tests/theme-canvas-flexwindow.test.mjs`
+(il fullscreen non usa più `display-mode: standalone`).
+
+**Limite noto (confermato)**: il manico/la fascia in basso del FlexWindow è
+**disegnato da One UI sopra tutte le app** e non è rimovibile dal web. Una PWA
+non entra nella lista "App a schermo intero" di Samsung come le app native; le
+uniche leve utente sono le impostazioni di sistema/Good Lock (che sul dispositivo
+non hanno risolto). Lato web si garantisce che, quando il sistema concede la
+superficie piena, l'app la occupi **senza buchi** (canvas a tema, nessun inset,
+nessun elemento in flusso fuori schermo).
+
+## App Android (TWA) — perché l'APK si chiudeva subito (v1.0.2)
+
+**Sintomo**: installata l'app, il tap sull'icona "fa per aprirsi e si chiude
+subito" (crash immediato all'avvio).
+
+**Come è stata trovata la causa**: la build diagnostica (v1.0.1) installa un
+`CrashGuard` (`DivaApp.attachBaseContext`) che cattura le eccezioni non gestite,
+le salva su file e le invia a un raccoglitore. Lo stack trace arrivato dal
+dispositivo reale (SM-F766B, Galaxy Z Flip 7, Android 16) è stato decisivo:
+
+```
+java.lang.IllegalArgumentException: Component class
+com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity
+does not exist in com.barbelldiva.app
+  at ...ManageDataLauncherActivity.addSiteSettingsShortcut(ManageDataLauncherActivity.java:387)
+  at ...LauncherActivity.launchTwa(LauncherActivity.java:272)
+  at com.barbelldiva.app.MainActivity.launchTwa(MainActivity.java:44)
+  at ...LauncherActivity.onCreate(LauncherActivity.java:185)
+```
+
+**Causa reale**: `androidbrowserhelper`, in `LauncherActivity.launchTwa()`, chiama
+`ManageDataLauncherActivity.addSiteSettingsShortcut()`, che esegue
+`setComponentEnabledSetting(new ComponentName(context, ManageDataLauncherActivity.class), ...)`.
+Se quel componente **non è dichiarato nel manifest**, Android lancia
+`IllegalArgumentException` e l'app muore. La v1.0.0 non lo dichiarava → crash
+sempre, su qualsiasi dispositivo. (La v1.0.1 sopravviveva solo grazie alla rete
+di sicurezza: l'eccezione veniva intercettata e l'app apriva il sito con un
+intent VIEW.)
+
+**Fix (v1.0.2)**: dichiarare il componente come nella demo ufficiale di
+android-browser-helper:
+
+```xml
+<application
+    android:manageSpaceActivity="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
+    ...>
+  <activity
+      android:name="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
+      android:theme="@android:style/Theme.Translucent.NoTitleBar">
+    <meta-data
+        android:name="android.support.customtabs.trusted.MANAGE_SPACE_URL"
+        android:value="https://alicecheon.github.io/Coaching-App-/" />
+  </activity>
+  ...
+</application>
+```
+
+**Nota per il futuro**: quando si usa `androidbrowserhelper`, il manifest deve
+dichiarare **tutti** i componenti che la libreria manipola per nome —
+`ManageDataLauncherActivity` (+ `manageSpaceActivity`) e, se serve il pulsante
+"apri in browser", `FocusActivity`. Un componente mancante = crash immediato.
+
+**Esito**: v1.0.2 si apre subito, a tutto schermo (TWA verificata, nessun
+fallback), login Google e sync col PC invariati. Release `v1.0.2-app`.
+
+## FASE 3 — Animazioni + mascotte (v147.93)
+Perimetro: **mascotte Diva Bot + motion UI generale**, con modi `full`/`reduced`/`off`
+e `prefers-reduced-motion`. Tutto in `src/app-main.js` + `coach-studio-inline.css`.
+
+- **3.1 Transizioni**: `.screen.screen-enter` scatta solo su **cambio reale**;
+  nuova transizione di **route** Coach Studio (`.coach-studio-page.route-enter`
+  + `@keyframes premiumRouteIn`); **ingresso modali** (`@keyframes coachModalIn` +
+  backdrop `premiumFadeIn`). `render()` usa una `renderKey` (schermo + route coach)
+  per non ri-triggerare le animazioni ad ogni render interno.
+- **3.2 Micro-animazioni**: hover-lift su card/kpi/shortcut/`exercise-lab-card`
+  (solo `@media (hover:hover) and (pointer:fine)`), nav pop sul tab attivo
+  (`@keyframes navPop`). Il feedback serie `.compact-set-done.done` c'era già.
+- **3.3 Mascotte**: nuovi eventi `program_saved` e `backup_exported` in
+  `DIVA_BOT_EVENTS`/`DIVA_BOT_MESSAGES`, agganciati in `handleProgramAction("save")`
+  e `exportBackup()`.
+- **3.4 Guardia**: `tests/v14793-animazioni.test.mjs`.
+- **Regola**: ogni nuova animazione deve degradare in `reduced`/`off` e dentro
+  `@media (prefers-reduced-motion: reduce)`. `#globalDivaBotHost` resta fuori
+  flusso (`position: relative`).
+
+## FASE 3-bis — Animazioni più evidenti (v147.94)
+Alice: *"Non noto molto cambiamenti"*. Le animazioni erano troppo sottili e il
+vecchio service worker serviva ancora la v14793 dalla cache. Rende il motion
+**più visibile ma non invasivo** (sempre dietro `premiumMotionEnabled()` /
+`effectiveAnimationMode()`), in `src/app-main.js` + `coach-studio-inline.css`.
+
+- **Transizioni più marcate**: `premiumScreenIn` 9→16px + `scale(.994)`;
+  `premiumRouteIn` 10→18px; `coachModalIn` 14px/.982 → 22px/.955.
+- **Entrata a cascata** della route: `.coach-studio-page.route-enter > *`
+  (`@keyframes premiumStagger`, 340ms) con delay `.02→.22s`. Solo sul cambio
+  reale di route (`renderKey`), non ad ogni render.
+- **"Pop" mascotte** ad ogni reazione: `.coach-avatar.mascot-pop`
+  (`@keyframes mascotPop`) via `popCoachMascot()` dentro `setCoachMascotState()`;
+  timer in `coachMascotController.popTimer`.
+- **Bump `v147.94-animazioni`** (29 file): cambia `CACHE_NAME` del SW così il PWA
+  scarica subito la versione nuova (era la vera causa del "non vedo cambiamenti").
+
+## FASE 3-ter — Diva Bot movibile + espressioni (v147.95)
+Alice: *"il robottino durante gli allenamenti è in un angolino in alto e non posso
+muoverlo a piacimento; vorrei che fosse movibile e facesse tutte le espressioni
+nuove."* Rende la mascotte del Workout **liberamente posizionabile** e le fa
+"girare" tutte le facce (`src/app-main.js` + `coach-studio-inline.css`).
+
+- **Posizione libera**: `state.ui.workoutMascotFree/XPct/YPct` (frazioni 0..1,
+  così sopravvivono a resize/rotazione). Helper `workoutMascotFreeBounds()`,
+  `workoutMascotFreePixels()`, `currentWorkoutMascotLeftTop()`,
+  `applyWorkoutMascotFree()`, `persistWorkoutMascotFree()`. Il layer è ancorato
+  in alto a **destra**, quindi lo spostamento x è **negativo** (`left - maxX`).
+  Il vecchio bug `-max(0, layer.clientWidth - anchorWidth)` (sempre 0) è sparito:
+  il drag ora è vero e non snap-a più nei 4 angoli. `nearestWorkoutMascotPosition`
+  rimosso; `avoidWorkoutMascotOverlap` salta quando la posizione è libera.
+- **Espressioni**: `WORKOUT_MASCOT_SHOW_EXPRESSIONS` (tutte e 7) +
+  `WORKOUT_MASCOT_IDLE_EXPRESSIONS` (rotazione ambientale ogni 26s, solo facce
+  allegre/neutre → non invadente). `showWorkoutMascotExpressionShow()` passa in
+  rassegna tutte le facce. **Doppio tocco** sulla mascotte o voce di menu
+  "Mostra tutte le espressioni". Menu: "+ Rimetti in alto a destra". Tocco lungo
+  = menu anche su desktop. `render()` chiama `stopWorkoutMascotExpressions()`
+  fuori dall'Allenamento.
+- **Fumetto lato giusto**: `.workout-mascot-anchor[data-side="left"]` sposta
+  bubble/menu a sinistra quando la mascotte è nella metà sinistra.
+- **Guardia**: `tests/phase23-floating-workout-mascot.test.mjs` esteso.
+- **Bump `v147.95-robottino-mobile`** (29 file) → nuovo `CACHE_NAME` del SW.
+
+## FASE 3-ter-bis — Diva Bot contestuale + menu che si chiude (v147.96)
+Alice: *"non mi piace che le faccia tutte assieme; vorrei le facesse in base a
+quello che scrivo… e anche mentre sto sull'app, di compagnia. Inoltre il popup
+del menu non si toglie più."* Due interventi in `src/app-main.js`.
+
+- **Espressioni CONTESTUALI (già pronte)**: ogni faccia segue l'evento reale via
+  `DIVA_BOT_EVENTS` → `setCoachMascotState(config.state)`: `set_completed`→happy,
+  `personal_record`/`workout_completed`→celebrate, `load_increased`→lifting,
+  `recovery_warning`/`rir_too_low`→warning, `coach_analysis_started`→thinking,
+  `idle_too_long`→rest.
+- **"Compagnia" (nuova, al posto dello "show" di tutte le facce)**:
+  `WORKOUT_MASCOT_COMPANIONSHIP` (facce + messaggini brevi),
+  `startWorkoutMascotCompanionship()` (ogni 32–58s, **solo quando `idle`**, salta
+  se stai scrivendo in input/textarea/select), `stopWorkoutMascotCompanionship()`,
+  `reactWorkoutMascotCompanionship()` (doppio tocco = una faccia + un saluto, non
+  più tutte assieme). Entra in `bindWorkoutMascot()`, esce in `render()`.
+  Rimossi `WORKOUT_MASCOT_SHOW_EXPRESSIONS`/`WORKOUT_MASCOT_IDLE_EXPRESSIONS`/
+  `showWorkoutMascotExpressionShow()` e il pulsante "Mostra tutte le espressioni".
+- **Menu che si chiude**: su `pointerdown` (capture) fuori da `#workoutMascotMenu`
+  (e non sul bottone) → `showWorkoutMascotMenuHide()`; anche **tasto Esc**.
+- **Guardia**: `tests/phase23-floating-workout-mascot.test.mjs` esteso
+  (compagnia contestuale + `menu.contains(event.target)` + `Escape`).
+- **Bump `v147.96-robottina-compagnia`** (29 file).
+
+## FASE 3-ter-quater — Fix: Diva Bot immobile + menu sparito (v147.97)
+Alice: *"La robottina non si muove mai e il menù è sparito."* REGRESSIONE mia.
+- **Causa**: trascinamento e menu erano legati direttamente a `#workoutMascotButton`,
+  che viene ricreato ad ogni render dell'Allenamento: alla prima ricreazione i
+  listener sparivano → bot immobile e menu assente (mentre la "compagnia" restava
+  attiva perché su un timer).
+- **Fix**: `ensureWorkoutMascotDelegation()` lega **una sola volta** sul `document`
+  (delega: `contextmenu`, `pointerdown` capture per drag + chiusura fuori, `pointerup`,
+  `keydown` Esc, `click` per doppio tocco/reset/hide/show, `change` per le preferenze).
+  Sopravvive a TUTTI i re-render. `bindWorkoutMascot()` chiama la delega per prima.
+- **Guardia**: `tests/phase23-floating-workout-mascot.test.mjs` (delegationBound,
+  fromMascot, niente `layer.dataset.workoutMascotBound`/`menuOutsideBound`).
+- **Bump `v147.97-robottina-fix`** (29 file).
+
+## FASE 4 — Sezione STATISTICHE (mockup navigabile) (v147.98)
+Alice: *"al posto di Analisi progressi voglio Statistiche e poi dentro Statistiche ci
+rimetti Analisi progressi e Volume"* + mockup dentro l'app con grafico a torta,
+grafico a linee per settimana e confronto volumi tra schede **per gruppo muscolare**.
+- **Nav rinominata**: "Analisi progressi" → **"Statistiche"** (rail-dot + top-tab +
+  `titleMap.progress`), l'id schermata resta `progress` (nessun routing rotto).
+- **`statisticsHtml()`** (in `src/app-main.js`): due tab `data-statistics-tab`
+  ("Analisi progressi" = `progressHtml()` esistente, "Volume" = `statisticsVolumeHtml()`).
+- **Tab Volume**: selettore scheda (`#volumeSheetSelect`) su `VOLUME_HISTORY` +
+  **grafico a torta** per gruppo muscolare (`drawVolumePie`) + **grafico a linee**
+  per settimana (`drawVolumeLines`, top 6 gruppi, palette `VOLUME_PALETTE`) + legenda.
+- **Confronto schede per gruppo muscolare** (`volumeComparisonHtml(blocks)`): griglia
+  gruppi × schede con barre proporzionali (`--w`/`--c`).
+- **Stato UI**: `state.ui.statisticsTab` ("progress"|"volume"), `state.ui.volumeSheet`.
+- **CSS** in `coach-studio-inline.css` (`.statistics-tabs`, `.statistics-tab.active`,
+  `.volume-chart-card`, `.volume-compare-row`, `.vc-cell`, …). Grafici ridisegnati in
+  `drawCharts()`.
+- **Guardia**: `tests/phase30-statistiche-volume.test.mjs`.
+- **Bump `v147.98-statistiche`** (29 file).
+
+## FASE 4-bis — Torta con freccette + settimane di un solo gruppo (v147.99)
+Alice: *"nel grafico a torta aggiungi anche la legenda con i gruppi muscolari
+(magari una freccetta su ogni colore con scritto il nome del gruppo)… un po' più
+carina con animazioni… Aggiungi anche il grafico per settimane di un solo gruppo
+alla volta."*
+- **Torta**: `drawVolumePie()` ora disegna **freccette (callout)** attorno al cerchio,
+  ognuna con il **nome del gruppo muscolare + percentuale** (`edge()`, label
+  `` `${muscle} ${round(total/total*100)}%` ``). Raggio ridotto (`- 52`) per fare spazio.
+- **Animazione**: `animateVolumePie()` rivela la torta da 0→1 in ~650ms via
+  `requestAnimationFrame`; rispetta `prefers-reduced-motion`, ha paracadute
+  `maxFrames` per harness con rAF sincrono, e fallback immediato senza rAF.
+  `drawCharts(animate)` → `drawVolumeCharts(animate !== false)`: animazione sui render
+  completi, ridisegno immediato sul resize. Helper `volumeHexAlpha()` per i gradienti.
+- **Settimane di UN solo gruppo**: `drawVolumeLines()` mostra una sola linea (gruppo
+  scelto) con **area sfumata**, punti e nome in alto a sinistra. Nuovo selettore
+  `#volumeGroupSelect` + `state.ui.volumeGroup` (helpers `clampVolumeGroup()`,
+  `currentVolumeLineRows()`, `currentVolumeGroupRow()`). Cambiando scheda riparte dal
+  gruppo col volume più alto (`state.ui.volumeGroup = 0`).
+- **CSS**: `.volume-chart-card` con hover (`translateY(-2px)`), `.mini` per l'etichetta
+  del selettore.
+- **Guardia**: `tests/phase30-statistiche-volume.test.mjs` esteso (callout label,
+  `volumeGroupSelect`, `animateVolumePie`, hover).
+- **Bump `v147.99-torta-frecce`** (29 file).
+
+## FASE 4-ter — Nomi schede, selezione confronto e stop al "torna a bozza" (v148.00)
+Alice: *"le freccette non si vedono... l'unica cosa è che non capisco come mai non
+compare la scheda intensità ottobre-dicembre, e quella che compare si chiama solo
+intensità... metti i nomi completi delle schede... c'è un tastino 'tutte le schede'
+però non funziona, rendilo attivo e rendi selezionabili le schede che dico io
+(confronto tra due/tre schede a piacimento)... Di default ci deve stare quella attiva
+(intensità agosto ottobre). Tra l'altro sono diverse volte che metto attivo dentro le
+schede e archiviate dentro altre schede ma poi puntualmente tornano tutte a bozza."*
+- **Nomi completi + fasi corrette**: `VOLUME_HISTORY` non è più una tabella scritta a
+  mano (aveva una fase fantasma "B program 3" e mancava "Intensità ottobre-dicembre"):
+  ora è **calcolato** da `PROGRAM_LIBRARY` con `volumeHistoryFromProgramLibrary()`
+  (5 blocchi reali). I nomi usano `volumeSheetLabel()` (COMPLETI, niente
+  `shortVolumeTitle`).
+- **Freccette rimosse**: `drawVolumePie()` torna alla torta centrata, senza callout
+  (`edge()` eliminato); i gruppi stanno nella legenda sotto.
+- **Confronto selezionabile**: il chip inerte "tutte le schede" è ora una **selezione
+  multipla** di chip (`volumeCompareChipHtml()`, `data-volume-compare`,
+  `state.ui.volumeCompare`); si confrontano 2/3/n schede a piacere.
+- **Default = scheda attiva**: `activeVolumeBlockIndex()` mappa la fase del programma
+  ATTIVO (`explicitActiveTrainingProgram()`) sul blocco-volume; senza scelta salvata il
+  confronto parte da QUELLA scheda (es. "Intensità Agosto-Ottobre").
+- **BUG "torna a bozza" (radice trovata e corretta)**: i due blocchi di re-seed forzato
+  in `loadState()` ("Intensità Agosto-Ottobre" e "Intensità ottobre-dicembre")
+  sostituivano **tutto** il programma con la copia del workbook, il cui `status` è
+  `"available"` → `programStatusLabel()` lo rende come **"Bozza"**. Ogni cambio di build
+  del seed (o flag di meta assente dopo un pull cloud) riportava quindi Attivo/Archiviato
+  a Bozza. Ora dal workbook si aggiornano SOLO fase mancante, schede e timestamp: stato,
+  `active`, cartella e nome restano quelli scelti dall'utente.
+- **Guardia**: `tests/phase30-statistiche-volume.test.mjs` esteso (default = scheda attiva).
+- **Bump `v148.00-nomi-schede-confronto-stato`** (29 file).
+
+
+## Schermo intero — pulsantino di sistema e schermo esterno (v148.25)
+Sintomo (Alice, 25 ottobre): "dopo l'aggiornamento l'app non si mette piu' a
+schermo intero sullo schermo esterno e il pulsantino e' freezato".
+
+Tre cause, tutte nel codice web (nessuna impostazione del telefono):
+1. **Riarmo a ogni tocco.** `index.html` chiamava `requestFullscreen()` su ogni
+   `pointerdown`/`touchstart`/`keydown`. Quando One UI usciva dal fullscreen
+   (manico / "dimensione app" del cover screen), l'app rientrava un istante
+   dopo: il comando di sistema veniva annullato subito e sembrava morto.
+2. **Cancello di misura.** L'auto-fullscreen era protetto da altezza <= 560 e
+   larghezza <= 760: se la finestra cambia formato (aggiornamento One UI,
+   manico, dimensioni diverse del cover), l'app non chiedeva piu' nulla, in
+   silenzio.
+3. **Fallimento silenzioso.** La promise veniva `.catch`-ata nel vuoto: nessun
+   messaggio, nessun modo di riprovare.
+
+Fix (v148.25 "schermo-esterno"), tutto in `src/fullscreen-kiosk.js`:
+- **Una sola** richiesta automatica per caricamento, al primo gesto, e solo se
+  l'app gira installata (`standalone`/`fullscreen`/`minimal-ui`); mai nel
+  browser normale. Niente riarmo: il comando di sistema resta sovrano.
+- **Pulsante in-app** `#bdFullscreenToggle` (`.bd-fs-toggle`, fixed sul bordo
+  destro, fuori dal flusso: il layout FlexWindow non si muove). Funziona anche
+  quando il pulsantino di Samsung e' bloccato. `click` = gesto fidato.
+- **Stato sincronizzato** su `fullscreenchange` + `webkitfullscreenchange`:
+  uscendo in qualunque modo il pulsante lo sa (era questo il "freezato" lato
+  UI).
+- **Ripiego `html.bd-fill`** (modalita' "riempi schermo"): se il browser
+  rifiuta, l'app riempie il viewport via CSS senza toccare lo stato di
+  sistema, cosi' il manico di One UI continua a funzionare.
+- **Diagnostica**: `window.BarbellDivaFullscreen.diagnostics()` e
+  `diagnostica-schermo.html` mostrano `mode`, `lastError` (nome + messaggio),
+  tentativi e display-mode. Non si indovina piu'.
+- API: `supported/isOn/isNative/isFill/mode/state/enter/exit/toggle/isAuto/setAuto`.
+  Evento `bd:fullscreenchange`. Preferenza `barbell-diva.fullscreen`
+  ("0" = mai automatico; spegnere col pulsante scrive "0").
+
+**Scelte da non disfare**: il manifest resta `display: fullscreen` (leva
+v147.84: nasconde la barra di sistema della TWA). Il riarmo a ogni tocco NON
+torna: per rientrare c'e' il pulsante. Test:
+`tests/v14825-schermo-esterno-fullscreen.test.mjs`, aggiornati
+`v14783-cover-screen-fullscreen` e `theme-canvas-flexwindow`.
+
+**Da verificare sul dispositivo** (non verificabile in sandbox): posizione del
+pulsante sul cover screen e reazione del comando Samsung.
+
+
+## Schermo intero — il manico Samsung e il fullscreen nativo si escludono (v148.26)
+Sintomo (Alice, 25 ottobre sera, v148.25): "il tondino diventa rosa ma il
+pulsantino Samsung non compare proprio piu' sotto e non funziona".
+
+**Non e' un guasto, e' una incompatibilita' per definizione**: il fullscreen
+nativo (`requestFullscreen()`, tondino rosa) nasconde l'interfaccia di sistema,
+quindi si porta via anche il manico/la barretta di One UI del cover screen che
+serve a ridimensionare la finestra. Nella v148.24 il manico si vedeva solo
+perche' l'app non restava in fullscreen abbastanza a lungo (rientrava a ogni
+tocco: da li' il "freezato").
+
+**Scala a tre stati** (v148.26, `src/fullscreen-kiosk.js`):
+| stato | cosa fa | manico Samsung |
+| --- | --- | --- |
+| `off` | app nella finestra com'e' | vivo |
+| `fill` (**default**) | riempie il viewport via CSS, nessuna richiesta al sistema | **vivo** |
+| `native` | fullscreen vero (`requestFullscreen`) | **assente** |
+
+- Il tondino cicla `off -> fill -> native -> off`: non intrappola mai.
+- Al boot si applica solo la preferenza, **mai** il native: serve la scelta
+  esplicita col tondino (e comunque al primo gesto).
+- Uscita di sistema dal fullscreen (gesto, ridimensionamento One UI) => `fill`:
+  schermo pieno e manico vivo, la finestra non resta dimezzata.
+- Rifiuto del browser => `fill` + traccia in `diagnostics()`.
+- Preferenza `barbell-diva.fullscreen` = `off|fill|native` (migrazione: `0`->off,
+  `1`->fill). API: `enter/fill/exit/toggle/nextMode/pref/isInstalled`.
+
+**Regola da non disfare**: non si torna al "fullscreen a ogni tocco" e non si
+mette `native` come default. Se Alice vuole i ~35px del manico, tocca il tondino
+una seconda volta: e' una scelta, non un default.
+Test: `tests/v14826-manico-vivo.test.mjs`.
+
+
+## Il manico Samsung non c'era piu': colpa del manifest (v148.27)
+Sintomo (Alice, 26 ottobre, One UI 9.0): "non mi esce il pulsantino samsung
+quando apro l'app, la barra e' completamente bianca, non ho modo di cambiare
+modalita'. Prima dell'aggiornamento a One UI 9.0 non c'era".
+
+**Causa**: `"display": "fullscreen"` nel manifest (messo in v147.84 per
+nascondere la barra di sistema della TWA). MDN: `fullscreen` apre l'app con la
+UI del browser nascosta e usa tutta l'area disponibile; **e' separato dalla
+Fullscreen API** (`document.fullscreenElement` resta `null`). One UI 9, che ha
+rinnovato il cover screen con home screen, app drawer e recenti (SamMobile), lo
+applica alla lettera: **il manico e' interfaccia di sistema e sparisce**. Non
+era un fullscreen da cui "uscire": era la modalita' con cui il sistema lancia
+l'app, quindi nessun `exitFullscreen()` poteva rimediare — il tondino diceva
+"fill" mentre il sistema era in fullscreen.
+
+**La barra bianca**: in fullscreen di sistema il layout viewport resta piu'
+basso dello schermo fisico e l'area del manico finisce sul canvas del WebView,
+che e' bianco. Nessun `background` del body ci arriva se il root non copre.
+
+Fix:
+- manifest `display: "standalone"`, `display_override: ["standalone",
+  "minimal-ui"]`, **niente fullscreen**; `background_color` opaco `#090918`.
+- CSS: `min-height: 100lvh` su `html` (+ `[data-theme=light]`, `body`, e le
+  regole `bd-fill`) e fondo opaco anche sul body: `100lvh` include proprio
+  l'area che il sistema riserva, quindi la fascia prende il colore del tema.
+- Il tondino resta come **scelta**: `fill` di default, `native` solo su tocco.
+
+**Tradeoff dichiarato**: chi usa la TWA (APK in `android-twa/`) avra' la barra
+di sistema visibile, perche' non c'e' piu' il fullscreen del manifest. Il manico
+del cover screen vale di piu': senza manico l'app non si ridimensiona e non si
+puo' cambiare modalita'. Non rimettere `fullscreen` nel manifest.
+Test: `tests/v14827-manico-ritrovato.test.mjs`, aggiornato
+`tests/manifest-flexwindow.test.mjs` e `tests/v14825-schermo-esterno-fullscreen`.
+
+## v148.28 — il manico non esiste piu': comando dentro l'app
+Alice, 26 ottobre: lo screenshot del cover screen mostra l'app con la sola barra
+gesti di sistema e **nessuna maniglia Samsung**; confermato che non compare
+nemmeno aprendo Chrome dal cover screen. Quindi **One UI 9 ha rimosso la
+maniglia dal cover screen**: non e' l'app, non e' il manifest (`display:
+standalone` e' gia' corretto), non e' il CSS. Inseguirla e' tempo perso.
+
+Fix: il pulsante in-app smette di essere un puntino muto e diventa una pillola
+con etichetta **"SCHERMO"** che apre un pannello a tre scelte:
+`Normale` / `Riempi schermo (consigliato)` / `Fullscreen vero`, con la scelta
+attiva evidenziata. Un tocco, nessun gesto da indovinare, nessun ciclo alla
+cieca. API: `openSheet()` / `closeSheet()`.
+Test: `tests/v14828-scelta-schermo.test.mjs`.
+
+**Regola**: non reintrodurre dipendenze dal pulsantino di sistema. Il controllo
+della modalita' deve restare dentro l'app.
+
+## v1.0.5 APK — ricompilato da zero (26 ottobre 2026)
+`android-twa`: `DISPLAY_MODE` = **standalone** (era `sticky-immersive`, che sopprimeva
+il manico del cover screen), `versionCode 6` / `versionName 1.0.5`.
+**Nuova chiave di firma** (la vecchia `keystore.jks` non era nel repo):
+impronta `92:16:F9:A2:...:9A:8F`, aggiunta in `AliceCheon.github.io/.well-known/assetlinks.json`
+(la vecchia resta elencata). **Conseguenza per Alice**: la firma è diversa, quindi
+Android rifiuta l'aggiornamento — va **disinstallata la vecchia app prima**.
+Build verificata: `aapt2 dump xmltree` mostra `DISPLAY_MODE=standalone`, `apksigner verify` ok.
+
+## v1.0.8 APK — interruttori One UI 9 richiesti da Alice (26 ottobre 2026)
+Richiesta diretta di Alice (commit e push autorizzati in partenza): aspect ratio libero + cutout `always` + window traslucide per tentare il rendering fullscreen nativo su One UI 9. Applicati su `.MainActivity` (manifest) e su `Theme.BarbellDiva.EdgeToEdge` in `values*/themes.xml`; `twamanifest.json` non esiste (progetto Gradle, non Bubblewrap) e il manifest web resta `standalone` (regola v148.27). Nota: `max_aspect` e' leva di `<application>` e morta con `resizeableActivity="true"`; il meta-dato cutout non e' documentato (quello vero e' l'item di tema). Le window traslucide disattivano i colori barra della v1.0.7 e possono far sparire di nuovo il manico: esperimento voluto, revert pronto (`git revert`). versionCode 9 / versionName 1.0.8.
+
+## v1.0.8 build del 26/10 pomeriggio — APK compilato in sandbox, chiave rigenerata
+La vecchia keystore.jks (impronta E8:6C:...EE:56, nata alla v1.0.5) viveva solo nella workspace riciclata: PERSA. Rigenerata chiave nuova (impronta 60:1C:FD:DB:A7:14:D7:66:21:DC:63:99:AB:87:E8:21:25:F0:04:0F:37:21:2D:D4:14:2D:94:CA:05:B0:86:8C, alias barbelldiva; password consegnata SOLO ad Alice con i file consegnati + copia nel workspace locale, MAI nel repo). APK 1.0.8 compilato e firmato in sandbox (Gradle 8.11.1, AGP 8.9.1, SDK platform 36 + build-tools 35.0.0 — NOTA: AGP 8.9.1 esige Gradle >= 8.11.1; l'8.11 liscio fallisce con "Minimum supported Gradle version is 8.11.1"). assetlinks.json aggiornato con la TERZA impronta (le vecchie restano). Per aggiornare l'app sul telefono: DISINSTALLARE PRIMA (firma diversa) — i dati sono al sicuro (sync Firestore). .gitignore ora copre keystore.jks e password (prima potevano finire in un commit).
+
+## v1.0.9 APK — ultimo interruttore: DISPLAY_MODE sticky-immersive (26 ottobre pomeriggio)
+Richiesta Alice: "forza il fullscreen ovunque sia necessario". Lo standalone della v1.0.5 proteggeva il manico del cover screen, ma One UI 9 lo ha rimosso a livello di sistema (checkpoint 46): il motivo e' svanito. DISPLAY_MODE torna **sticky-immersive** (il fullscreen VERO della TWA: barre nascoste, superficie piena) + gli interruttori gia' in 1.0.8 (cutout always, window traslucide, meta aspect). Il manifest web resta `standalone` (la PWA da Chrome non cambia; il wrapper TWA non legge il display del sito: la sua modalita' e' il meta DISPLAY_MODE). versionCode 10 / versionName 1.0.9. Revert: rimettere `standalone` nel meta DISPLAY_MODE.
+
+## v1.0.9 -> v1.1.0 (26 ottobre pomeriggio) — il rapporto di test di Alice e la risposta completa
+Alice su 1.0.9: "NON funziona, striscia bianca a meta' schermo su One UI 9". Tre verifiche/interventi:
+1. **assetlinks.json verificato LIVE** contro la firma dell'APK spedito: MATCH al carattere (impronta 60:1C:FD:DB:...86:8C, terza voce, pkg com.barbelldiva.app). L'ipotesi "mismatch DAL -> niente fullscreen" e' SCARTATA dai fatti.
+2. **Tema TWA (v1.1.0)**: aggiunto `android:windowFullscreen` a `Theme.BarbellDiva.EdgeToEdge` (valori + v27 + v29 + v31) — e' l'effetto di `Theme.NoTitleBar.Fullscreen` chiesto da Alice, mantenendo cutout/fondi scuri del tema (sostituire il tema padre li avrebbe persi). StatusBar: con windowFullscreen la status bar e' rimossa a livello di finestra (targetSdk 34: gestione legacy attiva); windowTranslucentStatus copre il resto; windowBackground gia' scuro.
+3. **Web (v148.32)**: il modulo kiosk ripristina l'auto-native UNA volta per caricamento al primo gesto (solo installata, mai browser normale) e il default diventa `native` ("off" esplicito resta rispettato). Base: la storia del progetto (v147.62, issue Chromium pwa-cutout) documenta che `requestFullscreen()` imposta LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES e dipinge DIETRO barre/cutout — la leva che sticky-immersive da solo non tira su One UI 9. Regola v148.26 "mai auto" SUPERATA da Alice per iscritto (il manico che proteggeva non esiste piu'). Il test v14826 e' stato aggiornato al nuovo contratto (precedente: le versioni successive aggiornano i pinnavano).
+Revert: `git revert` + rimettere `standalone` in DISPLAY_MODE + pref default "off".
+
+## v1.1.1 APK — immersiva nativa nel guscio TWA (26 ottobre 2026)
+Alice: nel browser il fullscreen funziona (mode native, zero errori, NESSUNA banda,
+UA GensparkApp — era l'app-browser Genspark, non la TWA), nella TWA installata no
+→ chiesto il "bridge nativo". Verificato sulle librerie reali:
+- il flag **"TWA_LAUNCH_AS_FULLSCREEN" non esiste** in androidx.browser/androidbrowserhelper;
+- **WebChromeClient/onShowCustomView** è codice da WebView: la TWA NON ha WebView
+  (il fallback usa un intent VIEW, non una WebView);
+- **CustomTabColorSchemeParams** comanda solo i colori della toolbar dei Custom Tabs.
+Leva reale applicata (MainActivity.java): `applyImmersiveFullscreen()` — nasconde
+status bar + navigation bar a livello di finestra (API 30+: WindowInsetsController
+`hide(statusBars|navigationBars)` + `BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`; fino a
+29: immersiva sticky legacy), FLAG_FULLSCREEN ribadito in codice, cutout ALWAYS in
+codice (API 28+), ri-applicata a `onWindowFocusChanged(true)`. NON dipende dalla
+requestFullscreen() del sito: il guscio nasconde le barre da sé. La diagnose page
+agganciata al kiosk v14832 (prima caricava v14824) e link "🔧 Diagnostica schermo"
+in fondo a index.html (v148.33, commit 05ac229) per provare DENTRO la TWA.
+versionCode 12 / versionName 1.1.1; stessa firma 601cfd… (aggiorna sopra senza
+disinstallare). **Regola**: la scomparsa delle barre la fa il GUSCIO, non solo la
+pagina — non rimuovere applyImmersiveFullscreen né il riarmo sul focus.
+
+## v1.1.2 APK — edge-to-edge del guscio + resizeableActivity globale (26 ottobre 2026)
+Alice ha riportato i metadati "Cover Screen Ready" Samsung da inserire nel manifest.
+Verificati e INESISTENTI (2 round di ricerca indipendenti, 26/10):
+- "com.samsung.android.knox.*.cover_screen_ready" e
+  "com.samsung.android.activity.show_on_cover_screen": ZERO risultati ovunque;
+  il nome Knox richiesto conteneva uno spazio corrotto ("knox. those.") = firma
+  classica di API inventata;
+- "Cover Screen Ready" come certificazione/flag app: non esiste;
+- il meta-dato "android.window.layoutInDisplayCutoutMode" richiesto era GIA' nel
+  manifest dalla v1.0.8 (non e' un meccanismo documentato: quello vero e' l'item
+  di tema android:windowLayoutInDisplayCutoutMode, gia' in values*/themes.xml).
+Leva REALE Samsung individuata: impostazione UTENTE Impostazioni > Funzioni
+avanzate > Labs > "Apps allowed on cover screen" (Samsung ANS10006881 e
+TSG10007290; su One UI 9 la voce risulta spostata/rimossa dai Labs secondo la
+community — verificare sul telefono).
+Implementato (reale): (1) android:resizeableActivity="true" a livello
+<application> (l'activity ce l'aveva gia'); (2) setDecorFitsSystemWindows(false)
+in applyImmersiveFullscreen() su API 30+ — il contenuto del guscio puo' occupare
+il bordo fisico fino al buco fotocamere, senza inset del decor.
+versionCode 13 / versionName 1.1.2; stessa firma 601cfd….
+**Regola**: mai aggiungere metadati Samsung non documentati; la verifica di
+esistenza (2 ricerche indipendenti) viene SEMPRE prima del commit.
+
+## v1.2.0 APK — widget nativo "Allenamento di oggi" per la FlexWindow (26 ottobre sera)
+Dopo la conferma di Alice che Labs (rimossi in One UI 9) e MultiStar non tolgono la banda
+(verdetto finale: la zona fotocamere del cover e' dipinta da One UI sopra ogni app; la
+documentazione FlexWindow offre solo widget/notifiche/launch), si costruisce per la STRADA
+UFFICIALE: il widget.
+- Ricetta Samsung (codelab widget-flex-window): receiver AppWidgetProvider con meta-data
+  "android.appwidget.provider" (@xml/oggi_widget_info, widgetCategory="keyguard") + meta-data
+  "com.samsung.android.appwidget.provider" (@xml/oggi_widget_samsung, display="sub_screen").
+- OggiWidgetProvider.java: scarica widget-config.json da GitHub Pages (radice di questo repo),
+  cache offline in SharedPreferences ("oggi_widget"), calcola oggi + prossimo allenamento e
+  countdown, tasto AGGIORNA (ACTION_REFRESH), tap sulla card = apertura app. Aggiornamento
+  periodico 30 min (attributo XML android:updatePeriodMillis — il campo Java e' updatePeriodMs,
+  NON confonderli: updatePeriodMs come attributo fa fallire il link AAPT).
+- Attivazione: Impostazioni > Cover screen > Widget.
+- Dati: widget-config.json alla radice del repo (contenuto ESEMPIO da sostituire con la fase vera).
+- versionCode 14 / versionName 1.2.0; stessa firma.
+**Regola**: sul cover screen si lotta solo con widget e notifiche; se il fullscreen dell'app
+sul cover non arriva, e' One UI che lo decide, non il guscio.
+
+## v1.2.1 APK — widget rimosso e link "Diagnostica schermo" rimosso (26 ottobre sera, CHIUSURA)
+Verdetto di Alice sul widget 1.2.0: «inutile: comunque se ci clicco sopra mi apre l'app e c'è
+comunque la striscia bianca». Decisione accettata senza obiezioni:
+- RIMOSSO tutto il widget FlexWindow: receiver dal manifest, OggiWidgetProvider.java, layout
+  oggi_widget.xml, xml/oggi_widget_info.xml, xml/oggi_widget_samsung.xml, drawable
+  oggi_widget_bg.xml, widget-config.json in radice e tests/widget-config.test.mjs;
+- rimosso il link «🔧 Diagnostica schermo» da index.html (la pagina diagnostica-schermo.html
+  resta nel repo ma non è più raggiungibile dall'interfaccia);
+- versione web bumpata a v148.33-schermo-pieno / cache atlas-app-v14833 (CACHE_NAME nuovo:
+  il telefono scarica subito l'index senza il link — lezione v147.94). ATTENZIONE: il bump
+  tocca ANCHE FIREBASE-LOGIN.md (test 5 di version-single-source: la doc di login pubblica
+  la build corrente) — era il fallimento della prima iterazione.
+versionCode 15 / versionName 1.2.1; stessa firma 601cfd….
+**Regola**: il capitolo "cover screen" (banda/maschera One UI, widget, diagnostica) è CHIUSO su
+decisione esplicita di Alice. NON riaprirlo e NON riproporre widget o soluzioni se non su sua
+richiesta diretta.

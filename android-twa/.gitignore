@@ -1,0 +1,11 @@
+# Non versionare segreti e artefatti di build Android.
+.keystore-pass.txt
+keystore.jks
+local.properties
+.gradle/
+build/
+app/build/
+*.apk
+*.aab
+crash-collector/
+barbell_diva_keystore_backup*.tar.gz

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Solo per Android 9 e precedenti: il DownloadManager scrive in Download. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <!-- v1.3.0 (26 ottobre 2026) — "APK VERO".
+         Addio Trusted Web Activity: in TWA la pagina gira dentro Chrome e il
+         fullscreen della pagina non e' mai arrivato. Ora l'app ha una WebView
+         propria (MainActivity): il "Fullscreen vero" del pulsantino SCHERMO
+         passa da onShowCustomView() e nasconde davvero le barre di sistema.
+         Rimossi: meta-data della libreria TWA, ManageDataLauncherActivity,
+         manageSpaceActivity. Dichiarata CrashActivity (prima mancava e la
+         schermata di emergenza falliva in silenzio). -->
+    <application
+        android:name=".DivaApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="false"
+        android:hardwareAccelerated="true"
+        android:theme="@style/Theme.BarbellDiva.EdgeToEdge"
+        android:resizeableActivity="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard|uiMode|density|navigation"
+            android:resizeableActivity="true"
+            android:supportsPictureInPicture="false"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.BarbellDiva.EdgeToEdge">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Apre i link del sito DENTRO l'app. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="alicecheon.github.io"
+                    android:pathPrefix="/Coaching-App-" />
+            </intent-filter>
+        </activity>
+
+        <!-- Schermata di emergenza (processo separato): mostra l'ultimo errore. -->
+        <activity
+            android:name=".CrashActivity"
+            android:exported="false"
+            android:process=":crash"
+            android:theme="@style/Theme.BarbellDiva" />
+    </application>
+
+</manifest>

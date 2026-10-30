@@ -1,0 +1,53 @@
+name: App smoke test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dev dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check runtime files
+        run: |
+          test -f index.html
+          test -f manifest.webmanifest
+          test -f service-worker.js
+          test -f app-config-v144.js
+          test -f workout-flow-v147.js
+
+      - name: Check JavaScript syntax
+        run: |
+          for file in *.js src/*.js; do node --check "$file"; done
+
+      - name: Run full test suite
+        run: node --test
+
+      - name: Check Intensita nuovo and sync repair are embedded
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          // Dopo la modularizzazione le stringhe di runtime vivono in src/app-main.js:
+          // si verifica il contenuto combinato di index.html e del modulo principale.
+          const html = fs.readFileSync('index.html', 'utf8') + '\n' + fs.readFileSync('src/app-main.js', 'utf8');
+          for (const required of ['Intensità Agosto-Ottobre', 'intensitaNuovoBuild', '2026-08-31-sync-notes-v8-note-fallback', 'synchronizeReliableNow', 'programModelCache.clear', 'Programma salvato e sincronizzato']) {
+            if (!html.includes(required)) throw new Error(`Missing: ${required}`);
+          }
+          console.log('Barbell Diva runtime, notes and sync repair: OK');
+          NODE
